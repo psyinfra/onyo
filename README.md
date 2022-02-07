@@ -201,8 +201,6 @@ converted to a folder, and the license moved into it.
     `value` can be a string or a Python regular expression. Onyo's string
     representation of types can also be used for queries, such as "[list]",
     "[dict]", or "[unset]" (for keys that don't exist).
-
-    TODO: Support OR by allowing multiple --filter statements?
   - `--machine-readable`: Display output in a form more easily parsed by
     scripts. Headers are omitted, and fields are separated by a single tab.
   - `--sort-ascending`: Sort the results in ascending order according to the
@@ -230,19 +228,11 @@ converted to a folder, and the license moved into it.
   - lists: `key=[list]` or `key=[]`
   - dictionaries: `key=[dict]` or `key={}`
 
-  TODO: list support is weak.
-    - determine if a value is in a list
-    - append item
-    - remove item
-
   The `type`, `make`, `model`, and `serial` pseudo-keys (see "File Contents")
   can be set when the `--rename` flag is used. It will result in the file(s)
   being renamed.
 
   See `onyo unset` to remove keys.
-
-  TODO: implementation corner-case. `onyo set key=[unset]` should be the same as
-        `onyo unset key`.
 
   If no `asset` or `directory` is specified, the current working directory is
   used. If Onyo is invoked from outside of the Onyo repository, the root of the
@@ -261,8 +251,6 @@ converted to a folder, and the license moved into it.
     `value` can be a string or a Python regular expression. Onyo's string
     representation of types can also be used for queries, such as "[list]",
     "[dict]", or "[unset]" (for keys that don't exist).
-
-    TODO: Support OR by allowing multiple --filter statements?
   - `--rename`: permit assigning values to pseudo-keys that would result in the
     file(s) being renamed.
   - `--quiet`: silence the diff-like output of key-value changes.
