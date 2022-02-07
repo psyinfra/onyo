@@ -162,7 +162,8 @@ converted to a folder, and the license moved into it.
   to `destination`.
 
   - `--force`: silently overwrite the destination file if it already exists.
-  - `--rename`: allow `source` file names to change.
+  - `--rename`: allow a `source` file to be renamed to a different (valid)
+    file name.
 - `onyo cat asset-file...`:
 
   Print the contents of `asset` to the terminal without parsing or validating
