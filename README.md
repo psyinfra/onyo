@@ -137,6 +137,7 @@ converted to a folder, and the license moved into it.
 ## Commands
 
 - `onyo init [directory]`:
+
   Initialize an Onyo repository. The directory will be initialized as a git
   repository (if it is not one already), the `.onyo/` configuration folder
   created, and template files generated and committed.
@@ -148,24 +149,32 @@ converted to a folder, and the license moved into it.
   Running `onyo init` on an existing repository is safe. It will not overwrite
   anything; it will exit with an error.
 - `onyo ls subfolder`:
+
   List names of assets
+
   TODO
 - `onyo tree directory...`:
+
   List the assets and directories in `directory` using the `tree` program.
 - `onyo mv [ --force, -f ] [--rename, -r] source... destination`:
+
   Move `source`(s) to the `destination` directory, or rename `source` directory
   to `destination`.
 
   - `--force`: silently overwrite the destination file if it already exists.
   - `--rename`: allow `source` file names to change.
 - `onyo cat asset-file...`:
+
   Print the contents of `asset` to the terminal without parsing or validating
   the contents.
 - `onyo edit asset-file`:
+
   Opens the asset file using the default text editor specified by the
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
+
   TODO: Describe validation
-- `onyo get [--depth num, -d] [--filter key=value[,key=value]..., -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] keyname... [asset | directory]...`
+- `onyo get [--depth num, -d] [--filter key=value[,key=value]..., -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] keyname... [asset | directory]...`:
+
   Print the requested `key`(s) in tabular form for matching assets.
 
   If no `asset` or `directory` is specified, the current working directory is
@@ -205,7 +214,8 @@ converted to a folder, and the license moved into it.
     descending order.
 
   Errors reading or parsing files print to STDERR, but do not halt Onyo.
-- `onyo set [--depth num, -d] [--dry-run, -n ] [--filter key=value[,key=value]..., -f] [--quiet, -q] [--rename, -r] [--yes, -y] key=value[,key=value]... [asset | directory]...`
+- `onyo set [--depth num, -d] [--dry-run, -n ] [--filter key=value[,key=value]..., -f] [--quiet, -q] [--rename, -r] [--yes, -y] key=value[,key=value]... [asset | directory]...`:
+
   Set the `value` of `key` for matching assets. If the key does not exist, it is
   added and set appropriately.
 
@@ -262,6 +272,7 @@ converted to a folder, and the license moved into it.
   error encountered while writing a file will cause Onyo to error and exit
   immediately.
 - `onyo git git-command-args...`:
+
   Pass `git-command-args` as arguments to `git`, using the Onyo repository as
   the git repository. This is most valuable when used in conjunction with
   `ONYO_REPOSITORY_DIR`.
