@@ -103,8 +103,11 @@ also extend to any metadata you wish to track (software, associated purchase
 order numbers, etc).
 
 TODO: template format
+
 TODO: validation
+
 TODO: template matching
+
 TODO: pseudo-keys
 
 
@@ -156,7 +159,7 @@ converted to a folder, and the license moved into it.
 - `onyo tree directory...`:
 
   List the assets and directories in `directory` using the `tree` program.
-- `onyo mv [ --force, -f ] [--rename, -r] source... destination`:
+- `onyo mv [--force, -f] [--rename, -r] source... destination`:
 
   Move `source`(s) to the `destination` directory, or rename `source` directory
   to `destination`.
