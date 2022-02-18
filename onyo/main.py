@@ -83,7 +83,19 @@ def parse_args():
         metavar='file',
         help='Filename of asset to edit'
     )
-
+    # subcommand "tree"
+    cmd_tree = subcommands.add_parser(
+        'tree',
+        help='Show tree of folder'
+    )
+    cmd_tree.set_defaults(run=commands.tree)
+    cmd_tree.add_argument(
+        'directory',
+        metavar='directory',
+        nargs='?',
+        default= ".",
+        help='Directory to show tree'
+    )
     return parser
 
 
