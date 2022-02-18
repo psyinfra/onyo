@@ -72,6 +72,18 @@ def parse_args():
         metavar='location',
         help='Directory to add the new onyo asset'
     )
+    # subcommand "edit"
+    cmd_edit = subcommands.add_parser(
+        'edit',
+        help='Edit an existing onyo asset'
+    )
+    cmd_edit.set_defaults(run=commands.edit)
+    cmd_edit.add_argument(
+        'file',
+        metavar='file',
+        help='Filename of asset to edit'
+    )
+
     return parser
 
 

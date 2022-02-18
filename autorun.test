@@ -34,3 +34,5 @@ git add user
 onyo mv shelf/laptop_apple_macbookpro.2345 user/
 onyo mv --rename shelf/laptop_apple_macbookpro.99999999 user/laptop_apple_macbookpro.88888
 onyo mv --rename --force shelf/laptop_apple_macbookpro.867 user/laptop_apple_macbookpro.88888
+
+onyo edit user/laptop_apple_macbookpro.88888
