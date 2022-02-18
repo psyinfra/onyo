@@ -9,19 +9,6 @@ import argparse
 logging.basicConfig()
 logger = logging.getLogger('onyo init')
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Frying Onyo'
-    )
-    parser.add_argument(
-        'directory',
-        metavar='directory',
-        nargs='?',
-        default= ".",
-        help='Directory to initialize as onyo repository'
-    )
-    return parser.parse_args()
-
 def run_cmd(cmd, comment=""):
     if comment != "":
         run_process = subprocess.Popen(cmd.split() + [comment],
@@ -63,9 +50,7 @@ def create_file_cmd(directory):
     return "touch " + directory + "/.onyo/onyo.txt"
 
 
-def main():
-    args = parse_args()
-
+def init(args):
     # build commands
     git_init_command = build_git_init_cmd(args.directory)
     onyo_init_command = build_onyo_init_cmd(args.directory)
@@ -79,9 +64,3 @@ def main():
     run_cmd(create_file_command)
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
-
-
-
-if __name__ == '__main__':
-    main()
-

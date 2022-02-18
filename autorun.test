@@ -5,23 +5,23 @@ mkdir shelf/
 mkdir user/
 
 #onyo
-onyo_init .
+onyo init .
 
-onyo_new shelf <<EOF
+onyo new shelf <<EOF
 laptop
 apple
 macbookpro
 867
 EOF
 
-onyo_new shelf <<EOF
+onyo new shelf <<EOF
 laptop
 apple
 macbookpro
 2345
 EOF
 
-onyo_new shelf <<EOF
+onyo new shelf <<EOF
 laptop
 apple
 macbookpro
@@ -31,6 +31,6 @@ EOF
 git add shelf
 git add user
 
-onyo_mv shelf/laptop_apple_macbookpro.2345 user/
-onyo_mv --rename shelf/laptop_apple_macbookpro.99999999 user/laptop_apple_macbookpro.88888
-onyo_mv --rename --force shelf/laptop_apple_macbookpro.867 user/laptop_apple_macbookpro.88888
+onyo mv shelf/laptop_apple_macbookpro.2345 user/
+onyo mv --rename shelf/laptop_apple_macbookpro.99999999 user/laptop_apple_macbookpro.88888
+onyo mv --rename --force shelf/laptop_apple_macbookpro.867 user/laptop_apple_macbookpro.88888

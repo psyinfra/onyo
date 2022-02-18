@@ -18,9 +18,10 @@ setup(
 #       'argparse'
     ],
     python_requires=">=3.0",
-    scripts=[
-        'onyo/onyo_mv',
-        'onyo/onyo_init',
-        'onyo/onyo_new'
-    ],
+    entry_points={
+        'console_scripts': [
+            'onyo=onyo.main:main'
+        ],
+    },
+
 )

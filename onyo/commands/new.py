@@ -9,16 +9,6 @@ import argparse
 logging.basicConfig()
 logger = logging.getLogger('onyo new')
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Frying Onyo'
-    )
-    parser.add_argument(
-        'location',
-        metavar='location',
-        help='Directory to add the new onyo asset'
-    )
-    return parser.parse_args()
 
 def run_cmd(cmd, comment=""):
     if comment != "":
@@ -34,6 +24,7 @@ def run_cmd(cmd, comment=""):
         sys.exit(0)
     else:
         logger.warning("ran: " + cmd + " " + comment)
+
 
 def build_commit_cmd(file):
     return ["git commit -m", "\'add " + file + " to onyo\'"]
@@ -68,9 +59,7 @@ def create_asset_file_cmd(location, filename):
     return "touch " + location + "/" + filename
 
 
-def main():
-    args = parse_args()
-
+def new(args):
     # create file for asset, fill in fields
     created_file = run_onyo_new(args.location)
 
@@ -79,9 +68,3 @@ def main():
 
     # run commands
     run_cmd(commit_cmd, commit_msg)
-
-
-
-if __name__ == '__main__':
-    main()
-

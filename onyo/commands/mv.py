@@ -10,37 +10,6 @@ logging.basicConfig()
 logger = logging.getLogger('onyo mv')
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Frying Onyo'
-    )
-    parser.add_argument(
-        '-f', '--force',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Forcing to move file'
-    )
-    parser.add_argument(
-        '-r', '--rename',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Rename file'
-    )
-    parser.add_argument(
-        'source',
-        metavar='source',
-        help='Source file'
-    )
-    parser.add_argument(
-        'destination',
-        metavar='destination',
-        help='Destination file'
-    )
-    return parser.parse_args()
-
-
 def run_cmd(cmd, comment=""):
     if comment != "":
         run_process = subprocess.Popen(cmd.split() + [comment],
@@ -90,9 +59,7 @@ def build_commit_cmd(source, destination):
     return ["git commit -m", "\'move " + source + " to " + destination + "\'"]
 
 
-def main():
-    args = parse_args()
-
+def mv(args):
     # build commands
     mv_cmd = build_mv_cmd(args.source, args.destination, args.force, args.rename)
     [commit_cmd, commit_msg] = build_commit_cmd(args.source, args.destination)
@@ -100,7 +67,3 @@ def main():
     # run commands
     run_cmd(mv_cmd)
     run_cmd(commit_cmd, commit_msg)
-
-if __name__ == '__main__':
-    main()
-
