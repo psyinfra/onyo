@@ -16,6 +16,7 @@ setup(
 #        'os',
 #        'sys',
 #       'argparse'
+        'GitPython'
     ],
     python_requires=">=3.0",
     entry_points={
