@@ -9,6 +9,7 @@ import argparse
 from git import Repo, exc
 
 logging.basicConfig()
+logger = logging.getLogger('onyo')
 
 
 def is_git_dir(directory):
@@ -34,10 +35,10 @@ def run_cmd(cmd, comment=""):
                 stderr=subprocess.PIPE, universal_newlines=True)
     run_output, run_error = run_process.communicate()
     if (run_error != ""):
-        logger.warning("err: " + run_error)
+        logger.error(run_error)
         sys.exit(0)
     else:
-        logger.warning("ran: " + cmd + " " + comment)
+        logger.info(cmd + " " + comment)
 
 def build_commit_cmd(file):
     return ["git commit -m", "\'edit " + file + "\'"]
@@ -45,7 +46,7 @@ def build_commit_cmd(file):
 
 def edit_file_cmd(file):
     if not os.path.isfile(file):
-        logger.warning("err: " + file + " does not exist.")
+        logger.error(file + " does not exist.")
         sys.exit(0)
     os.system(get_editor() + " " + file)
     return

@@ -7,7 +7,7 @@ import sys
 import argparse
 
 logging.basicConfig()
-logger = logging.getLogger('onyo tree')
+logger = logging.getLogger('onyo')
 
 def run_cmd(cmd, comment=""):
     if comment != "":
@@ -19,14 +19,14 @@ def run_cmd(cmd, comment=""):
                 stderr=subprocess.PIPE, universal_newlines=True)
     run_output, run_error = run_process.communicate()
     if (run_error != ""):
-        logger.warning("err: " + run_error)
+        logger.error(run_error)
         sys.exit(0)
     else:
-        print(run_output)
+        logger.info(run_output)
 
 def build_tree_cmd(directory):
     if not os.path.isdir(directory):
-        logger.warning("err: " + directory + " does not exist.")
+        logger.error(directory + " does not exist.")
         sys.exit(0)
     return "tree " + directory
 

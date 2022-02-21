@@ -7,7 +7,7 @@ import sys
 import argparse
 
 logging.basicConfig()
-logger = logging.getLogger('onyo init')
+logger = logging.getLogger('onyo')
 
 def run_cmd(cmd, comment=""):
     if comment != "":
@@ -19,10 +19,10 @@ def run_cmd(cmd, comment=""):
                 stderr=subprocess.PIPE, universal_newlines=True)
     run_output, run_error = run_process.communicate()
     if (run_error != ""):
-        logger.warning("err: " + run_error)
+        logger.error(run_error)
         sys.exit(0)
     else:
-        logger.warning("ran: " + cmd + " " + comment)
+        logger.info(cmd + " " + comment)
 
 def build_commit_cmd(directory):
     return ["git commit -m", "\'initialize " + directory + " as onyo repository\'"]
@@ -30,14 +30,14 @@ def build_commit_cmd(directory):
 
 def build_git_init_cmd(directory):
     if os.path.isdir(directory + "/.git"):
-        logger.warning("err: " + directory + "/.git already exists.")
+        logger.error(directory + "/.git already exists.")
         sys.exit(0)
     return "git init --initial-branch=master " + directory
 
 
 def build_onyo_init_cmd(directory):
     if os.path.isdir(directory + "/.onyo"):
-        logger.warning("err: " + directory + "/.onyo already exists.")
+        logger.error(directory + "/.onyo already exists.")
         sys.exit(0)
     return "mkdir " + directory + "/.onyo"
 

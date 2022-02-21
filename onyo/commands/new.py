@@ -7,7 +7,7 @@ import sys
 import argparse
 
 logging.basicConfig()
-logger = logging.getLogger('onyo new')
+logger = logging.getLogger('onyo')
 
 
 def run_cmd(cmd, comment=""):
@@ -20,10 +20,10 @@ def run_cmd(cmd, comment=""):
                 stderr=subprocess.PIPE, universal_newlines=True)
     run_output, run_error = run_process.communicate()
     if (run_error != ""):
-        logger.warning("err: " + run_error)
+        logger.error(run_error)
         sys.exit(0)
     else:
-        logger.warning("ran: " + cmd + " " + comment)
+        logger.info(cmd + " " + comment)
 
 
 def build_commit_cmd(file):
@@ -32,7 +32,7 @@ def build_commit_cmd(file):
 
 def run_onyo_new(location):
     if not os.path.isdir(location):
-        logger.warning("err: " + location + " does not exist.")
+        logger.error(location + " does not exist.")
         sys.exit(0)
 
     type_str = str(input('<type>*:'))

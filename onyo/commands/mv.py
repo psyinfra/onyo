@@ -7,8 +7,7 @@ import sys
 import argparse
 
 logging.basicConfig()
-logger = logging.getLogger('onyo mv')
-
+logger = logging.getLogger('onyo')
 
 def run_cmd(cmd, comment=""):
     if comment != "":
@@ -20,15 +19,15 @@ def run_cmd(cmd, comment=""):
                 stderr=subprocess.PIPE, universal_newlines=True)
     run_output, run_error = run_process.communicate()
     if (run_error != ""):
-        logger.warning("err: " + run_error)
+        logger.error(run_error)
         sys.exit(0)
     else:
-        logger.warning("ran: " + cmd + " " + comment)
+        logger.info(cmd + " " + comment)
 
 
 def build_mv_cmd(source, destination, force, rename):
     if not os.path.exists(source):
-        logger.warning("err: " + source + " does not exist.")
+        logger.error(source + " does not exist.")
         sys.exit(0)
     # to look at destination path/file separately
     if os.path.isdir(destination):
@@ -39,18 +38,16 @@ def build_mv_cmd(source, destination, force, rename):
         destination_filename = os.path.basename(destination)
     # should check if folder exists. Is os.path.exists() the better function?
     if not os.path.isdir(destination_path):
-        logger.warning("err: " + destination_path + " does not exist.")
+        logger.error(destination_path + " does not exist.")
         sys.exit(0)
     if destination_filename != os.path.basename(source) and rename == False:
-        logger.warning("err: " + destination_path + "/" + destination_filename +
-                " no renaming allowed.")
+        logger.error(destination_path + "/" + destination_filename + " no renaming allowed.")
         sys.exit(0)
     if os.path.isfile(destination_path + "/" + destination_filename):
         if force == True:
             return "git mv -f " + source + " " + destination_path + "/" + destination_filename
         else:
-            logger.warning("err: " + destination_path + "/" +
-                    destination_filename + " already exists.")
+            logger.error(destination_path + "/" + destination_filename + " already exists.")
             sys.exit(0)
     return "git mv " + source + " " + destination_path + "/" + destination_filename
 

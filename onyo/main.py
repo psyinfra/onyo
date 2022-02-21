@@ -8,6 +8,7 @@ import sys
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
+logger.setLevel(logging.WARNING)
 
 def parse_args():
     parser = argparse.ArgumentParser(
