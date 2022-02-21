@@ -6,8 +6,19 @@ import os
 import sys
 import argparse
 
+from git import Repo, exc
+
 logging.basicConfig()
 logger = logging.getLogger('onyo')
+
+
+def is_git_dir(directory):
+    try:
+        Repo(directory).git_dir
+        return True
+    except exc.InvalidGitRepositoryError:
+        return False
+
 
 def run_cmd(cmd, comment=""):
     if comment != "":
@@ -29,8 +40,8 @@ def build_commit_cmd(directory):
 
 
 def build_git_init_cmd(directory):
-    if os.path.isdir(directory + "/.git"):
-        logger.error(directory + "/.git already exists.")
+    if is_git_dir(directory):
+        logger.error(directory + " is already a git-repository.")
         sys.exit(0)
     return "git init --initial-branch=master " + directory
 
