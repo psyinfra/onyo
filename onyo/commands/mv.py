@@ -41,15 +41,19 @@ def build_mv_cmd(source, destination, force, rename):
         logger.error(destination_path + " does not exist.")
         sys.exit(0)
     if destination_filename != os.path.basename(source) and rename == False:
-        logger.error(destination_path + "/" + destination_filename + " no renaming allowed.")
+        logger.error(os.path.join(destination_path, destination_filename) +
+                " no renaming allowed.")
         sys.exit(0)
-    if os.path.isfile(destination_path + "/" + destination_filename):
+    if os.path.isfile(os.path.join(destination_path, destination_filename)):
         if force == True:
-            return "git mv -f " + source + " " + destination_path + "/" + destination_filename
+            return "git mv -f " + source + " " + os.path.join(destination_path,
+                    destination_filename)
         else:
-            logger.error(destination_path + "/" + destination_filename + " already exists.")
+            logger.error(os.path.join(destination_path, destination_filename) +
+                    " already exists.")
             sys.exit(0)
-    return "git mv " + source + " " + destination_path + "/" + destination_filename
+    return "git mv " + source + " " + os.path.join(destination_path,
+            destination_filename)
 
 
 def build_commit_cmd(source, destination):

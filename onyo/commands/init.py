@@ -47,18 +47,18 @@ def build_git_init_cmd(directory):
 
 
 def build_onyo_init_cmd(directory):
-    if os.path.isdir(directory + "/.onyo"):
-        logger.error(directory + "/.onyo already exists.")
+    if os.path.isdir(os.path.join(directory + "/.onyo")):
+        logger.error(os.path.join(directory + "/.onyo") + " already exists.")
         sys.exit(0)
-    return "mkdir " + directory + "/.onyo"
+    return "mkdir " + os.path.join(directory + "/.onyo")
 
 
 def build_git_add_cmd(directory):
-    return "git add " + directory + "/.onyo/"
+    return "git add " + os.path.join(directory + "/.onyo/")
 
 
 def create_file_cmd(directory):
-    return "touch " + directory + "/.onyo/onyo.txt"
+    return "touch " + os.path.join(directory + "/.onyo/onyo.txt")
 
 
 def init(args):

@@ -41,9 +41,9 @@ def run_onyo_new(location):
     serial_str = str(input('<serial*>:'))
     filename = create_filename(type_str, make_str, model_str, serial_str)
     run_cmd(create_asset_file_cmd(location, filename))
-    git_add_cmd = build_git_add_cmd(location + "/" + filename)
+    git_add_cmd = build_git_add_cmd(os.path.join(location, filename))
     run_cmd(git_add_cmd)
-    return location + "/" + filename
+    return os.path.join(location, filename)
 
 
 def create_filename(type_str, make_str, model_str, serial_str):
@@ -56,7 +56,7 @@ def build_git_add_cmd(file):
 
 
 def create_asset_file_cmd(location, filename):
-    return "touch " + location + "/" + filename
+    return "touch " + os.path.join(location, filename)
 
 
 def new(args):
