@@ -61,10 +61,13 @@ def build_commit_cmd(source, destination):
 
 
 def mv(args):
-    # build commands
-    mv_cmd = build_mv_cmd(args.source, args.destination, args.force, args.rename)
-    [commit_cmd, commit_msg] = build_commit_cmd(args.source, args.destination)
 
-    # run commands
-    run_cmd(mv_cmd)
-    run_cmd(commit_cmd, commit_msg)
+    for source in args.source:
+
+        # build commands
+        mv_cmd = build_mv_cmd(source, args.destination, args.force, args.rename)
+        [commit_cmd, commit_msg] = build_commit_cmd(source, args.destination)
+
+        # run commands
+        run_cmd(mv_cmd)
+        run_cmd(commit_cmd, commit_msg)

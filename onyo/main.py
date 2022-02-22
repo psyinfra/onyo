@@ -55,6 +55,7 @@ def parse_args():
     cmd_mv.add_argument(
         'source',
         metavar='source',
+        nargs='+',
         help='Source file'
     )
     cmd_mv.add_argument(
