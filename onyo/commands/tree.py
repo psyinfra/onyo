@@ -23,6 +23,7 @@ def run_cmd(cmd, comment=""):
         sys.exit(0)
     else:
         logger.info(run_output)
+        print(run_output)
 
 def build_tree_cmd(directory):
     if not os.path.isdir(directory):

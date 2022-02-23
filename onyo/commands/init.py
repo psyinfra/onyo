@@ -36,7 +36,7 @@ def run_cmd(cmd, comment=""):
         logger.info(cmd + " " + comment)
 
 def build_commit_cmd(directory):
-    return ["git commit -m", "\'initialize " + directory + " as onyo repository\'"]
+    return ["git -C " + directory + " commit -m", "\'initialize " + directory + " as onyo repository\'"]
 
 
 def build_git_init_cmd(directory):
@@ -54,7 +54,7 @@ def build_onyo_init_cmd(directory):
 
 
 def build_git_add_cmd(directory):
-    return "git add " + os.path.join(directory + "/.onyo/")
+    return "git -C " + directory + " add " + ".onyo/"
 
 
 def create_file_cmd(directory):

@@ -5,6 +5,7 @@ from onyo import commands
 import logging
 import argparse
 import sys
+import os
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -14,6 +15,14 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.'
     )
+
+    # if ONYO_REPOSITORY_DIR as environmental variable is set, uses it as
+    # default onyo dir, otherwise it uses the current working directory as
+    # default, but this can always be overwritten by terminal.
+    onyo_default_repo = os.environ.get('ONYO_REPOSITORY_DIR')
+    if onyo_default_repo == None:
+        onyo_default_repo = os.getcwd()
+
     # subcommands
     subcommands = parser.add_subparsers(
         title="onyo commands",
@@ -29,7 +38,7 @@ def parse_args():
         'directory',
         metavar='directory',
         nargs='?',
-        default= ".",
+        default=onyo_default_repo,
         help='Directory to initialize onyo repository'
     )
     # subcommand "mv"
@@ -85,13 +94,6 @@ def parse_args():
         metavar='file',
         help='Filename of asset to edit'
     )
-    cmd_edit.add_argument(
-        'directory',
-        metavar='directory',
-        nargs='?',
-        default= ".",
-        help='Directory to show tree'
-    )
     # subcommand "tree"
     cmd_tree = subcommands.add_parser(
         'tree',
@@ -102,7 +104,7 @@ def parse_args():
         'directory',
         metavar='directory',
         nargs='?',
-        default= ".",
+        default=onyo_default_repo,
         help='Directory to show tree'
     )
     return parser
