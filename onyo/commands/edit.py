@@ -65,11 +65,15 @@ def get_git_root(path):
         return git_root
     # otherwise checks if given file relative to $ONYO_REPOSITORY_DIR is in a
     # git repository
-    except exc.NoSuchPathError:
+    except (exc.NoSuchPathError, exc.InvalidGitRepositoryError):
         onyo_path = os.environ.get('ONYO_REPOSITORY_DIR')
         if onyo_path == None:
-            logger.error("wrong.")
+            logger.error(path + " is no onyo repository.")
             sys.exit(0)
+        elif not is_git_dir(onyo_path):
+            logger.error(path + " is no onyo repository.")
+            sys.exit(0)
+
         git_repo = Repo(os.path.join(path, onyo_path), search_parent_directories=True)
         git_root = git_repo.git.rev_parse("--show-toplevel")
         return git_root
