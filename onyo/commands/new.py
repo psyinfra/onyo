@@ -53,7 +53,12 @@ def get_location(location):
 def new(args):
     # set paths
     git_directory = get_git_root(args.location)
-    location = os.path.join(git_directory, args.location)
+    location = os.path.join(os.getcwd(), args.location)
+    if not os.path.isdir(location):
+        location = os.path.join(git_directory, args.location)
+    if not os.path.isdir(location):
+        logger.error(args.location + " does not exist.")
+        sys.exit(0)
 
     # create file for asset, fill in fields
     created_file = run_onyo_new(location)
