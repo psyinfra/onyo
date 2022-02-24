@@ -6,24 +6,11 @@ import os
 import sys
 import argparse
 
+from onyo.utils import run_cmd
+
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
-def run_cmd(cmd, comment=""):
-    if comment != "":
-        run_process = subprocess.Popen(cmd.split() + [comment],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                universal_newlines=True)
-    else:
-        run_process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, universal_newlines=True)
-    run_output, run_error = run_process.communicate()
-    if (run_error != ""):
-        logger.error(run_error)
-        sys.exit(0)
-    else:
-        logger.info(run_output)
-        print(run_output)
 
 def build_tree_cmd(directory):
     if not os.path.isdir(directory):
@@ -37,4 +24,5 @@ def tree(args):
     tree_command = build_tree_cmd(args.directory)
 
     # run commands
-    run_cmd(tree_command)
+    output = run_cmd(tree_command)
+    print(output)

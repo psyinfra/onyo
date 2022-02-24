@@ -8,35 +8,14 @@ import argparse
 
 from git import Repo, exc
 
+from onyo.utils import *
+
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def is_git_dir(directory):
-    try:
-        Repo(directory).git_dir
-        return True
-    except exc.InvalidGitRepositoryError:
-        return False
-
-
-def run_cmd(cmd, comment=""):
-    if comment != "":
-        run_process = subprocess.Popen(cmd.split() + [comment],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                universal_newlines=True)
-    else:
-        run_process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, universal_newlines=True)
-    run_output, run_error = run_process.communicate()
-    if (run_error != ""):
-        logger.error(run_error)
-        sys.exit(0)
-    else:
-        logger.info(cmd + " " + comment)
-
 def build_commit_cmd(directory):
-    return ["git -C " + directory + " commit -m", "\'initialize " + directory + " as onyo repository\'"]
+    return ["git -C " + directory + " commit -m", "\'initialize onyo repository\'"]
 
 
 def build_git_init_cmd(directory):
@@ -53,10 +32,6 @@ def build_onyo_init_cmd(directory):
     return "mkdir " + os.path.join(directory + "/.onyo")
 
 
-def build_git_add_cmd(directory):
-    return "git -C " + directory + " add " + ".onyo/"
-
-
 def create_file_cmd(directory):
     return "touch " + os.path.join(directory + "/.onyo/onyo.txt")
 
@@ -66,7 +41,7 @@ def init(args):
     git_init_command = build_git_init_cmd(args.directory)
     onyo_init_command = build_onyo_init_cmd(args.directory)
     create_file_command = create_file_cmd(args.directory)
-    git_add_command = build_git_add_cmd(args.directory)
+    git_add_command = build_git_add_cmd(args.directory, ".onyo/")
     [commit_cmd, commit_msg] = build_commit_cmd(args.directory)
 
     # run commands
