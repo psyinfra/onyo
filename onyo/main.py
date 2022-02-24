@@ -11,6 +11,7 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 logger.setLevel(logging.WARNING)
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.'
@@ -20,7 +21,7 @@ def parse_args():
     # default onyo dir, otherwise it uses the current working directory as
     # default, but this can always be overwritten by terminal.
     onyo_default_repo = os.environ.get('ONYO_REPOSITORY_DIR')
-    if onyo_default_repo == None:
+    if onyo_default_repo is None:
         onyo_default_repo = os.getcwd()
 
     # subcommands
@@ -118,7 +119,6 @@ def main():
         args.run(args)
     else:
         parser.print_help()
-
 
 
 if __name__ == '__main__':

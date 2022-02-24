@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
-import subprocess
 import logging
 import os
 import sys
-import argparse
 
-from git import Repo, exc
-
-from onyo.utils import *
+from onyo.utils import (
+                        build_git_add_cmd,
+                        get_git_root,
+                        run_cmd
+                        )
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(file, git_directory):
-    return ["git -C "+ git_directory + " commit -m", "\'new " + file + "\'"]
+    return ["git -C " + git_directory + " commit -m", "\'new " + file + "\'"]
 
 
 def run_onyo_new(location):
@@ -42,7 +42,7 @@ def create_asset_file_cmd(directory, filename):
 def get_location(location):
     if not os.path.isdir(location):
         onyo_dir = os.environ.get('ONYO_REPOSITORY_DIR')
-        if onyo_dir != None:
+        if onyo_dir is not None:
             location = os.path.join(onyo_dir, location)
         else:
             logger.error(location + " does not exist.")

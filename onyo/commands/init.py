@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
-import subprocess
 import logging
 import os
 import sys
-import argparse
 
-from git import Repo, exc
-
-from onyo.utils import *
-
+from onyo.utils import (
+                        build_git_add_cmd,
+                        is_git_dir,
+                        run_cmd
+                        )
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(directory):
-    return ["git -C " + directory + " commit -m", "\'initialize onyo repository\'"]
+    return ["git -C " + directory + " commit -m",
+            "\'initialize onyo repository\'"]
 
 
 def build_git_init_cmd(directory):

@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-import subprocess
 import logging
 import os
 import sys
-import argparse
 
 from onyo.utils import run_cmd
 

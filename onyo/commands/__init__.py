@@ -7,4 +7,3 @@ from .tree import tree
 __all__ = [
     'init', 'new', 'mv', 'edit', 'tree'
 ]
-

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
-import subprocess
 import logging
 import os
 import sys
-import argparse
 
-from git import Repo, exc
+from git import Repo
 
-from onyo.utils import *
+from onyo.utils import (
+                        build_git_add_cmd,
+                        get_full_filepath,
+                        get_git_root,
+                        run_cmd
+                        )
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -16,13 +19,13 @@ logger = logging.getLogger('onyo')
 
 def get_editor():
     editor = os.environ.get('EDITOR')
-    if editor == None:
+    if editor is None:
         editor = 'nano'
     return editor
 
 
 def build_commit_cmd(file, git_directory):
-    return ["git -C "+ git_directory + " commit -m", "\'edit " + file + "\'"]
+    return ["git -C " + git_directory + " commit -m", "\'edit " + file + "\'"]
 
 
 def edit_file_cmd(file):
@@ -44,7 +47,7 @@ def edit(args):
     # check if file is in git. There might be a better test, since this just
     # tests for "untracked", not for newest version.
     run_output = run_cmd("git -C " + git_directory + " ls-tree -r HEAD ")
-    if not git_filepath in run_output:
+    if git_filepath not in run_output:
         logger.error(git_filepath + " is not in onyo.")
         sys.exit(0)
 
@@ -55,11 +58,12 @@ def edit(args):
 
     # check if changes happened and add+commit them
     repo = Repo(git_directory)
-    changedFiles = [ item.a_path for item in repo.index.diff(None) ]
+    changedFiles = [item.a_path for item in repo.index.diff(None)]
     if len(changedFiles) != 0:
         git_add_cmd = build_git_add_cmd(git_directory, git_filepath)
 
-        [commit_cmd, commit_msg] = build_commit_cmd(git_filepath, git_directory)
+        [commit_cmd, commit_msg] = build_commit_cmd(git_filepath,
+                                                    git_directory)
 
         # run commands
         run_cmd(git_add_cmd)

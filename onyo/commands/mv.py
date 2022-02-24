@@ -1,41 +1,42 @@
 #!/usr/bin/env python3
 
-import subprocess
 import logging
 import os
 import sys
-import argparse
 
-from onyo.utils import *
+from onyo.utils import (
+                        get_git_root,
+                        run_cmd
+                        )
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
-logger.setLevel(logging.INFO)
 
-def build_mv_cmd(git_path, source_filename, destination_filename, force, rename):
 
-    if not os.path.exists( os.path.join(git_path, source_filename)):
-        logger.error(source_filename + " does not exist.")
+def build_mv_cmd(git_path, source, destination, force, rename):
+    if not os.path.exists(os.path.join(git_path, source)):
+        logger.error(source + " does not exist.")
         sys.exit(0)
-    if os.path.basename(destination_filename) != os.path.basename(source_filename) and rename == False:
-        logger.error( os.path.basename(destination_filename) +" -> " +  os.path.basename(source_filename) #os.path.join(git_path, destination_filename) +
-                + " no renaming allowed.")
+    if (os.path.basename(destination) != os.path.basename(source) and
+            not rename):
+        logger.error(os.path.basename(destination) + " -> " +
+                     os.path.basename(source) + " no renaming allowed.")
         sys.exit(0)
-    if os.path.isfile(os.path.join(git_path, destination_filename)):
-        if force == True:
-            return "git -C " + git_path + " mv -f " + source_filename + " " + destination_filename #os.path.join(git_path, destination_filename)
+    if os.path.isfile(os.path.join(git_path, destination)):
+        if force:
+            return "git -C " + git_path + " mv -f " + source + " " + destination
         else:
-            logger.error(os.path.join(git_path, destination_filename) + " already exists.")
+            logger.error(os.path.join(git_path, destination) + " already exists.")
             sys.exit(0)
-    return "git -C " + git_path + " mv " + source_filename + " " + destination_filename
+    return "git -C " + git_path + " mv " + source + " " + destination
 
 
 def build_commit_cmd(source, destination, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'move " + source + " to " + destination + "\'"]
+    return ["git -C " + git_directory + " commit -m", "\'move " + source +
+            " to " + destination + "\'"]
 
 
 def mv(args):
-
     for source in args.source:
         # set all paths
         git_path = get_git_root(os.path.dirname(args.destination))
@@ -49,7 +50,7 @@ def mv(args):
             sys.exit(0)
         if not os.path.isdir(os.path.dirname(destination_filename)):
             logger.error(source + " does not exist. :(")
-            system.exit(0)
+            sys.exit(0)
         # if it is just directory, but not file, add filename
         if os.path.isdir(destination_filename):
             destination_filename = os.path.join(destination_filename, os.path.basename(source_filename))
@@ -60,7 +61,8 @@ def mv(args):
         # build commands
         mv_cmd = build_mv_cmd(git_path, source_filename, destination_filename, args.force, args.rename)
         [commit_cmd, commit_msg] = build_commit_cmd(source_filename,
-                destination_filename, git_path)
+                                                    destination_filename,
+                                                    git_path)
 
         # run commands
         run_cmd(mv_cmd)
