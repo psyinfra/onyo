@@ -1,0 +1,21 @@
+.
+├── test_1
+│   ├── shelf
+│   ├── user
+│   └── user2
+│       ├── laptop_apple_macbookpro.1
+│       └── laptop_apple_macbookpro.4
+├── test_2
+│   ├── shelf
+│   ├── user
+│   └── user2
+│       ├── laptop_apple_macbookpro.1
+│       └── laptop_apple_macbookpro.4
+└── test_3
+    ├── shelf
+    ├── user
+    └── user2
+        ├── laptop_apple_macbookpro.1
+        └── laptop_apple_macbookpro.4
+
+12 directories, 6 files
