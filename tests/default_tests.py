@@ -64,7 +64,9 @@ class TestClass:
                      ("onyo mv --rename shelf/laptop_apple_macbookpro.2 user/laptop_apple_macbookpro.4", "", test_output + "empty_file.txt"),
                      ("onyo mv --rename --force shelf/laptop_apple_macbookpro.3 user/laptop_apple_macbookpro.4", "", test_output + "empty_file.txt"),
                      ("onyo mv " + "user/*" + " user2/", "", test_output + "empty_file.txt"),
-                     ("git status", "", test_output + "git_status_working_tree_clean.txt")
+                     ("git status", "", test_output + "git_status_working_tree_clean.txt"),
+                     ("onyo mv --rename user2 no_user", "", test_output + "empty_file.txt"),
+                     ("git status", "", test_output + "git_status_working_tree_clean.txt"),
                      ]
 
     # run commands from INSIDE the current test folder (without ONYO_REPOSITORY_DIR)

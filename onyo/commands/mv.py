@@ -18,7 +18,7 @@ def build_mv_cmd(git_path, source, destination, force, rename):
         logger.error(source + " does not exist.")
         sys.exit(0)
     if (os.path.basename(destination) != os.path.basename(source) and
-            not rename):
+            not (rename or os.path.isdir(source))):
         logger.error(os.path.basename(destination) + " -> " +
                      os.path.basename(source) + " no renaming allowed.")
         sys.exit(0)
@@ -40,19 +40,18 @@ def mv(args):
     for source in args.source:
         # set all paths
         git_path = get_git_root(os.path.dirname(args.destination))
-        source_filename = os.path.join(os.getcwd(), source)
-        destination_filename = os.path.join(os.getcwd(), args.destination)
-        if not os.path.isfile(source_filename):
+        source_filename = os.path.join(git_path, source)
+        destination_filename = os.path.join(git_path, args.destination)
+        if not os.path.exists(source_filename):
+            logger.error(source + " does not exist.")
+            sys.exit(0)
+        if os.path.isfile(source_filename):
             source_filename = os.path.join(git_path, source)
             destination_filename = os.path.join(git_path, args.destination)
-        if not os.path.isfile(source_filename):
-            logger.error(source + " does not exist. :(")
-            sys.exit(0)
-        if not os.path.isdir(os.path.dirname(destination_filename)):
-            logger.error(source + " does not exist. :(")
-            sys.exit(0)
-        # if it is just directory, but not file, add filename
-        if os.path.isdir(destination_filename):
+        if os.path.isdir(source_filename):
+            source_filename = os.path.join(git_path, source)
+            destination_filename = os.path.join(git_path, args.destination)
+        if os.path.isdir(destination_filename) and not os.path.isdir(source_filename):
             destination_filename = os.path.join(destination_filename, os.path.basename(source_filename))
 
         destination_filename = os.path.relpath(destination_filename, git_path)

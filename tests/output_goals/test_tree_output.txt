@@ -1,21 +1,21 @@
 .
 ├── test_1
+│   ├── no_user
+│   │   ├── laptop_apple_macbookpro.1
+│   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
-│   ├── user
-│   └── user2
-│       ├── laptop_apple_macbookpro.1
-│       └── laptop_apple_macbookpro.4
+│   └── user
 ├── test_2
+│   ├── no_user
+│   │   ├── laptop_apple_macbookpro.1
+│   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
-│   ├── user
-│   └── user2
-│       ├── laptop_apple_macbookpro.1
-│       └── laptop_apple_macbookpro.4
+│   └── user
 └── test_3
+    ├── no_user
+    │   ├── laptop_apple_macbookpro.1
+    │   └── laptop_apple_macbookpro.4
     ├── shelf
-    ├── user
-    └── user2
-        ├── laptop_apple_macbookpro.1
-        └── laptop_apple_macbookpro.4
+    └── user
 
 12 directories, 6 files
