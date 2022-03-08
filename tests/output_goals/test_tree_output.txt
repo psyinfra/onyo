@@ -11,11 +11,17 @@
 │   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
 │   └── user
-└── test_3
+├── test_3
+│   ├── no_user
+│   │   ├── laptop_apple_macbookpro.1
+│   │   └── laptop_apple_macbookpro.4
+│   ├── shelf
+│   └── user
+└── test_4
     ├── no_user
     │   ├── laptop_apple_macbookpro.1
     │   └── laptop_apple_macbookpro.4
     ├── shelf
     └── user
 
-12 directories, 6 files
+16 directories, 8 files
