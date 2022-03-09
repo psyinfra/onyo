@@ -44,7 +44,7 @@ def mv(args):
             destination_filename = os.path.join(git_path, args.destination)
         if not os.path.exists(source_filename):
             logger.error(source + " does not exist.")
-            system.exit(0)
+            sys.exit(0)
         if os.path.isdir(destination_filename) and not os.path.isdir(source_filename):
             destination_filename = os.path.join(destination_filename, os.path.basename(source_filename))
 

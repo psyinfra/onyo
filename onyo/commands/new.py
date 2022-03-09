@@ -24,6 +24,9 @@ def run_onyo_new(location):
     model_str = str(input('<model*>:'))
     serial_str = str(input('<serial*>:'))
     filename = create_filename(type_str, make_str, model_str, serial_str)
+    if os.path.exists(os.path.join(location, filename)):
+        logger.error(os.path.join(location, filename) + " asset already exists.")
+        sys.exit(0)
     run_cmd(create_asset_file_cmd(location, filename))
     git_add_cmd = build_git_add_cmd(location, filename)
     run_cmd(git_add_cmd)
@@ -37,17 +40,6 @@ def create_filename(type_str, make_str, model_str, serial_str):
 
 def create_asset_file_cmd(directory, filename):
     return "touch " + os.path.join(directory, filename)
-
-
-def get_location(location):
-    if not os.path.isdir(location):
-        onyo_dir = os.environ.get('ONYO_REPOSITORY_DIR')
-        if onyo_dir is not None:
-            location = os.path.join(onyo_dir, location)
-        else:
-            logger.error(location + " does not exist.")
-            sys.exit(0)
-    return location
 
 
 def new(args):
