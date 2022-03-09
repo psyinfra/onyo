@@ -52,7 +52,6 @@ class TestClass:
     test_commands = [
                      ("onyo init", "", test_output + "empty_file.txt"),
                      ("git status", "", test_output + "git_status_working_tree_clean.txt"),
-                     ("mkdir shelf/", "", test_output + "empty_file.txt"),
                      ("mkdir user/", "", test_output + "empty_file.txt"),
                      ("mkdir user2/", "", test_output + "empty_file.txt"),
                      ("git status", "", test_output + "git_status_working_tree_clean.txt"),
@@ -117,12 +116,10 @@ class TestClass:
         command = command.replace("git status", "git -C " + current_test_dir + " status")
         check_output_with_file(command, input_str, file)
 
-
     # run commands from OUTSIDE the current test folder, but with relative paths
     rel_path_test_commands = [
                               ("onyo init test_4", "", test_output + "empty_file.txt"),
                               ("git status", "", test_output + "git_status_working_tree_clean.txt"),
-                              ("mkdir ./test_4/shelf/", "", test_output + "empty_file.txt"),
                               ("mkdir ./test_4/user/", "", test_output + "empty_file.txt"),
                               ("mkdir ./test_4/user2/", "", test_output + "empty_file.txt"),
                               ("git status", "", test_output + "git_status_working_tree_clean.txt"),
@@ -138,6 +135,7 @@ class TestClass:
                               ("onyo mv --rename ./test_4/user2 ./test_4/no_user", "", test_output + "empty_file.txt"),
                               ("git status", "", test_output + "git_status_working_tree_clean.txt"),
                               ]
+
     @pytest.mark.parametrize("command, input_str, file", rel_path_test_commands)
     def test_from_outside_dir_with_relative_path(self, command, input_str, file):
         current_test_dir = os.path.join(self.test_dir, "test_4")
@@ -152,12 +150,9 @@ class TestClass:
         command = command.replace("git status", "git -C " + current_test_dir + " status")
         check_output_with_file(command, input_str, file)
 
-
-
     # tests the complete directory, all test-folders, for there structure
     def test_onyo_tree(self):
         test_tree_output = os.path.join(self.test_output, "test_tree_output.txt")
         test_tree_cmd = "onyo tree ."
         os.chdir(self.test_dir)
         check_output_with_file(test_tree_cmd, "", test_tree_output)
-
