@@ -95,6 +95,18 @@ def parse_args():
         metavar='file',
         help='Filename of asset to edit'
     )
+    # subcommand cat
+    cmd_cat = subcommands.add_parser(
+        'cat',
+        help='Show contents of file'
+    )
+    cmd_cat.set_defaults(run=commands.cat)
+    cmd_cat.add_argument(
+        'file',
+        metavar='file',
+        nargs='+',
+        help='File to show content'
+    )
     # subcommand "tree"
     cmd_tree = subcommands.add_parser(
         'tree',
