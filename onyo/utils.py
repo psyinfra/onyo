@@ -74,3 +74,20 @@ def get_full_filepath(git_directory, file):
 
 def build_git_add_cmd(directory, file):
     return "git -C " + directory + " add " + file
+
+
+def prepare_directory(directory):
+    if os.path.isdir(os.path.join(os.getcwd(), directory)):
+        location = os.path.join(os.getcwd(), directory)
+    elif os.environ.get('ONYO_REPOSITORY_DIR') is not None and os.path.isdir(os.path.join(os.environ.get('ONYO_REPOSITORY_DIR'), directory)) and os.path.isdir(os.path.join(get_git_root(directory), directory)):
+        location = os.path.join(get_git_root(directory), directory)
+    elif os.path.isdir(os.path.join(os.getcwd(), os.path.split(directory)[0])) and (os.path.split(directory)[0] != ""):
+        location = os.path.join(os.getcwd(), directory)
+        run_cmd("mkdir " + location)
+    elif os.path.isdir(os.path.join(get_git_root(os.path.split(directory)[0]), os.path.split(directory)[0])):
+        location = os.path.join(get_git_root(os.path.split(directory)[0]), directory)
+        run_cmd("mkdir " + location)
+    else:
+        logger.error(directory + " does not exist.")
+        sys.exit(0)
+    return location

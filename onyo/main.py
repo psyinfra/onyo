@@ -80,8 +80,8 @@ def parse_args():
     )
     cmd_new.set_defaults(run=commands.new)
     cmd_new.add_argument(
-        'location',
-        metavar='location',
+        'directory',
+        metavar='directory',
         help='Directory to add the new onyo asset'
     )
     # subcommand "edit"

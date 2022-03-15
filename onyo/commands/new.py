@@ -7,7 +7,8 @@ import sys
 from onyo.utils import (
                         build_git_add_cmd,
                         get_git_root,
-                        run_cmd
+                        run_cmd,
+                        prepare_directory
                         )
 
 logging.basicConfig()
@@ -18,19 +19,19 @@ def build_commit_cmd(file, git_directory):
     return ["git -C " + git_directory + " commit -m", "\'new " + file + "\'"]
 
 
-def run_onyo_new(location):
+def run_onyo_new(directory):
     type_str = str(input('<type>*:'))
     make_str = str(input('<make>*:'))
     model_str = str(input('<model*>:'))
     serial_str = str(input('<serial*>:'))
     filename = create_filename(type_str, make_str, model_str, serial_str)
-    if os.path.exists(os.path.join(location, filename)):
-        logger.error(os.path.join(location, filename) + " asset already exists.")
+    if os.path.exists(os.path.join(directory, filename)):
+        logger.error(os.path.join(directory, filename) + " asset already exists.")
         sys.exit(0)
-    run_cmd(create_asset_file_cmd(location, filename))
-    git_add_cmd = build_git_add_cmd(location, filename)
+    run_cmd(create_asset_file_cmd(directory, filename))
+    git_add_cmd = build_git_add_cmd(directory, filename)
     run_cmd(git_add_cmd)
-    return os.path.join(location, filename)
+    return os.path.join(directory, filename)
 
 
 def create_filename(type_str, make_str, model_str, serial_str):
@@ -44,23 +45,11 @@ def create_asset_file_cmd(directory, filename):
 
 def new(args):
     # set paths
-    if os.path.isdir(os.path.join(os.getcwd(), args.location)):
-        location = os.path.join(os.getcwd(), args.location)
-    elif os.environ.get('ONYO_REPOSITORY_DIR') is not None and os.path.isdir(os.path.join(os.environ.get('ONYO_REPOSITORY_DIR'), args.location)) and os.path.isdir(os.path.join(get_git_root(args.location), args.location)):
-        location = os.path.join(get_git_root(args.location), args.location)
-    elif os.path.isdir(os.path.join(os.getcwd(), os.path.split(args.location)[0])) and (os.path.split(args.location)[0] != ""):
-        location = os.path.join(os.getcwd(), args.location)
-        run_cmd("mkdir " + location)
-    elif os.path.isdir(os.path.join(get_git_root(os.path.split(args.location)[0]), os.path.split(args.location)[0])):
-        location = os.path.join(get_git_root(os.path.split(args.location)[0]), args.location)
-        run_cmd("mkdir " + location)
-    else:
-        logger.error(args.location + " does not exist.")
-        sys.exit(0)
-    git_directory = get_git_root(location)
+    directory = prepare_directory(args.directory)
+    git_directory = get_git_root(directory)
 
     # create file for asset, fill in fields
-    created_file = run_onyo_new(location)
+    created_file = run_onyo_new(directory)
     git_filepath = os.path.relpath(created_file, git_directory)
 
     # build commit command
