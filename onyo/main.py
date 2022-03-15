@@ -120,6 +120,30 @@ def parse_args():
         default=onyo_default_repo,
         help='Directory to show tree'
     )
+    # subcommand "anchor"
+    cmd_anchor = subcommands.add_parser(
+        'anchor',
+        help='Anchor folder permanently to onyo, even if empty'
+    )
+    cmd_anchor.set_defaults(run=commands.anchor)
+    cmd_anchor.add_argument(
+        'directory',
+        metavar='directory',
+        nargs='+',
+        help='Directory to anchor to onyo'
+    )
+    # subcommand "unanchor"
+    cmd_unanchor = subcommands.add_parser(
+        'unanchor',
+        help='Unanchor folder from onyo'
+    )
+    cmd_unanchor.set_defaults(run=commands.unanchor)
+    cmd_unanchor.add_argument(
+        'directory',
+        metavar='directory',
+        nargs='+',
+        help='Directory to delete anchor from onyo'
+    )
     return parser
 
 
