@@ -18,7 +18,7 @@ setup(
 #       'argparse'
         'GitPython'
     ],
-    python_requires=">=3.0",
+    python_requires=">=3.5",
     entry_points={
         'console_scripts': [
             'onyo=onyo.main:main'
