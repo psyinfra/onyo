@@ -7,6 +7,7 @@ import sys
 from onyo.utils import (
                         build_git_add_cmd,
                         is_git_dir,
+                        get_git_root,
                         run_cmd
                         )
 logging.basicConfig()
@@ -50,3 +51,4 @@ def init(args):
     run_cmd(create_file_command)
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
+    logger.info(commit_msg + ": " + get_git_root(args.directory))

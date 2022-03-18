@@ -27,7 +27,7 @@ def run_cmd(cmd, comment=""):
         logger.error(run_error)
         sys.exit(0)
     else:
-        logger.info(cmd + " " + comment)
+        logger.debug(cmd + " " + comment)
     return run_output
 
 
