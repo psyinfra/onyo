@@ -151,7 +151,7 @@ converted to a folder, and the license moved into it.
 
   Running `onyo init` on an existing repository is safe. It will not overwrite
   anything; it will exit with an error.
-- `onyo ls subfolder`:
+- `onyo ls directory`:
 
   List names of assets
 
@@ -177,6 +177,12 @@ converted to a folder, and the license moved into it.
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
 
   TODO: Describe validation
+- `onyo anchor directory`:
+
+  Creates a file  directory/.anchor to track a folder even if it has no assets.
+- `onyo unanchor directory`:
+
+  Removes the directory/.anchor file from a folder.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value]..., -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] keyname... [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.

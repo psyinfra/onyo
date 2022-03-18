@@ -53,7 +53,10 @@ class TestClass:
                      ("onyo init", "", test_output + "empty_file.txt"),
                      ("git status", "", test_output + "git_status_working_tree_clean.txt"),
                      ("mkdir user/", "", test_output + "empty_file.txt"),
+                     ("onyo anchor user/", "", test_output + "empty_file.txt"),
                      ("mkdir user2/", "", test_output + "empty_file.txt"),
+                     ("onyo anchor user2", "", test_output + "empty_file.txt"),
+                     ("onyo unanchor user2", "", test_output + "empty_file.txt"),
                      ("git status", "", test_output + "git_status_working_tree_clean.txt"),
                      ("onyo new shelf", "laptop\napple\nmacbookpro\n1", test_output + "onyo_new_works.txt"),
                      ("onyo new shelf", "laptop\napple\nmacbookpro\n2", test_output + "onyo_new_works.txt"),
@@ -123,6 +126,8 @@ class TestClass:
                               ("mkdir ./test_4/user/", "", test_output + "empty_file.txt"),
                               ("mkdir ./test_4/user2/", "", test_output + "empty_file.txt"),
                               ("git status", "", test_output + "git_status_working_tree_clean.txt"),
+                              ("onyo anchor ./test_4/*", "", test_output + "empty_file.txt"),
+                              ("onyo unanchor ./test_4/*", "", test_output + "empty_file.txt"),
                               ("onyo new ./test_4/shelf", "laptop\napple\nmacbookpro\n1", test_output + "onyo_new_works.txt"),
                               ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n2", test_output + "onyo_new_works.txt"),
                               ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n3", test_output + "onyo_new_works.txt"),
@@ -147,6 +152,7 @@ class TestClass:
         # Test-specific changes:
         if "*" in command:
             command = command.replace("test_4/user/*", " ".join(glob.glob(os.path.join("test_4/user/*"))))
+            command = command.replace("test_4/*", " ".join(glob.glob(os.path.join("test_4/*"))))
         command = command.replace("git status", "git -C " + current_test_dir + " status")
         check_output_with_file(command, input_str, file)
 
