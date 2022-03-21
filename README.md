@@ -183,7 +183,7 @@ converted to a folder, and the license moved into it.
 - `onyo unanchor directory`:
 
   Removes the directory/.anchor file from a folder.
-- `onyo get [--depth num, -d] [--filter key=value[,key=value]..., -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
+- `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
 
@@ -224,7 +224,7 @@ converted to a folder, and the license moved into it.
     descending order.
 
   Errors reading or parsing files print to STDERR, but do not halt Onyo.
-- `onyo set [--depth num, -d] [--dry-run, -n ] [--filter key=value[,key=value]..., -f] [--quiet, -q] [--rename, -r] [--yes, -y] key=value[,key=value]... [asset | directory]...`:
+- `onyo set [--depth num, -d] [--dry-run, -n ] [--filter key=value[,key=value...], -f] [--quiet, -q] [--rename, -r] [--yes, -y] key=value[,key=value...] [asset | directory]...`:
 
   Set the `value` of `key` for matching assets. If the key does not exist, it is
   added and set appropriately.
