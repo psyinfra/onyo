@@ -183,7 +183,7 @@ converted to a folder, and the license moved into it.
 - `onyo unanchor directory`:
 
   Removes the directory/.anchor file from a folder.
-- `onyo get [--depth num, -d] [--filter key=value[,key=value]..., -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] keyname... [asset | directory]...`:
+- `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
 
@@ -194,6 +194,8 @@ converted to a folder, and the license moved into it.
   Key names can be any valid YAML key name. Dictionary keys can be addressed
   using a `.` (e.g. `parent.child`). Multiple pseudo-keys (that do not appear in
   the actual asset file) are available for queries (see "File Contents").
+
+  Multiple `key`s can be queried by joining them with a `,`.
 
   `value`s that are a dictionary or list are output literally as "[dict]" or
   "[list]"; the contents are not listed. Dictionary keys can be addressed using
@@ -222,7 +224,7 @@ converted to a folder, and the license moved into it.
     descending order.
 
   Errors reading or parsing files print to STDERR, but do not halt Onyo.
-- `onyo set [--depth num, -d] [--dry-run, -n ] [--filter key=value[,key=value]..., -f] [--quiet, -q] [--rename, -r] [--yes, -y] key=value[,key=value]... [asset | directory]...`:
+- `onyo set [--depth num, -d] [--dry-run, -n ] [--filter key=value[,key=value...], -f] [--quiet, -q] [--rename, -r] [--yes, -y] key=value[,key=value...] [asset | directory]...`:
 
   Set the `value` of `key` for matching assets. If the key does not exist, it is
   added and set appropriately.
@@ -353,9 +355,9 @@ onyo get filename --filter type=headset shelf
 onyo history accounting/Bingo Bob/laptop_lenovo_T490s
 ```
 
-**List all laptops assign to the accounting department; sort first by manufacturer (make), then model, then purchase date**:
+**Get the filename, make, model, and purchase data of all laptops assigned to the accounting department; sort first by make, then model, then purchase date**:
 ```
-onyo get -f type=laptop -s make -s model -s purchase_date accounting/
+onyo get --filter type=laptop -s make -s model -s purchase_date filename,make,model,purchase_date accounting/
 ```
 
 
