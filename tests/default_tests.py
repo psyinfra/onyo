@@ -35,21 +35,26 @@ def run_test_cmd(cmd, comment="", input_str=""):
     return run_output
 
 
-def read_file(file):
+def read_file(file, test_dir):
     file_contents = open(file).readlines()
     file_contents = "".join(file_contents).rstrip("\n")
+    file_contents = file_contents.replace("<test_dir>", test_dir)
     return file_contents
 
 
-def check_output_with_file(command, input_str, file):
-    assert read_file(file) == run_test_cmd(command, input_str=input_str).rstrip("\n")
+def check_output_with_file(command, input_str, file, test_dir):
+    assert read_file(file, test_dir) == run_test_cmd(command, input_str=input_str).rstrip("\n")
 
 
 class TestClass:
 
-    test_dir = os.getcwd()
+    test_dir = os.path.join(os.getcwd(), "onyo_tests")
+    if not os.path.isdir(test_dir):
+        run_test_cmd("mkdir " + test_dir)
 
-    test_output = "/Users/tkadelka/INM7/onyo/tests/output_goals/"
+    # the folder for the wished output lies relative to this script:
+    test_output = os.path.join(os.path.dirname(os.path.realpath(__file__)), "output_goals/")
+
     test_commands = [
                      ("onyo init", "", test_output, "init_test.txt"),
                      ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
@@ -87,7 +92,7 @@ class TestClass:
         # onyo mv user/* needs to expand
         command = command.replace("user/*", " ".join(glob.glob("user/*")))
         # run actual test
-        check_output_with_file(command, input_str, test_folder + "/test_1/" + file)
+        check_output_with_file(command, input_str, test_folder + "/test_1/" + file, current_test_dir)
 
     # run commands from INSIDE the current test folder (with ONYO_REPOSITORY_DIR)
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
@@ -102,7 +107,7 @@ class TestClass:
         # onyo mv user/* needs to expand
         command = command.replace("user/*", " ".join(glob.glob("user/*")))
         # run actual test
-        check_output_with_file(command, input_str, test_folder + "/test_2/" + file)
+        check_output_with_file(command, input_str, test_folder + "/test_2/" + file, current_test_dir)
 
     # run commands from OUTSIDE the current test folder (with ONYO_REPOSITORY_DIR)
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
@@ -117,7 +122,7 @@ class TestClass:
         command = command.replace("user/*", " ".join(glob.glob(os.path.join(current_test_dir + "/user/*"))))
         command = command.replace(current_test_dir + "/", "")
         command = command.replace("mkdir ", "mkdir " + current_test_dir + "/")
-        check_output_with_file(command, input_str, test_folder + "/test_3/" + file)
+        check_output_with_file(command, input_str, test_folder + "/test_3/" + file, current_test_dir)
 
     # run commands from OUTSIDE the current test folder, but with relative paths
     rel_path_test_commands = [
@@ -153,11 +158,11 @@ class TestClass:
         if "*" in command:
             command = command.replace("test_4/user/*", " ".join(glob.glob(os.path.join("test_4/user/*"))))
             command = command.replace("test_4/*", " ".join(glob.glob(os.path.join("test_4/*"))))
-        check_output_with_file(command, input_str, test_folder + "/test_4/" + file)
+        check_output_with_file(command, input_str, test_folder + "/test_4/" + file, current_test_dir)
 
     # tests the complete directory, all test-folders, for there structure
     def test_onyo_tree(self):
         test_tree_output = os.path.join(self.test_output, "test_tree_output.txt")
         test_tree_cmd = "onyo tree ."
         os.chdir(self.test_dir)
-        check_output_with_file(test_tree_cmd, "", test_tree_output)
+        check_output_with_file(test_tree_cmd, "", test_tree_output, self.test_dir)

@@ -45,7 +45,10 @@ def get_git_root(path):
     try:
         git_repo = Repo(path, search_parent_directories=True)
         git_root = git_repo.git.rev_parse("--show-toplevel")
-        return git_root
+        if os.path.isdir(os.path.join(git_root, ".onyo")):
+            return git_root
+        else:
+            raise exc.InvalidGitRepositoryError
     # otherwise checks if given file relative to $ONYO_REPOSITORY_DIR is in a
     # git repository
     except (exc.NoSuchPathError, exc.InvalidGitRepositoryError):
