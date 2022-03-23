@@ -144,6 +144,24 @@ def parse_args():
         nargs='+',
         help='Directory to delete anchor from onyo'
     )
+    # subcommand "git"
+    cmd_git = subcommands.add_parser(
+        'git',
+        help='Run git command in onyo'
+    )
+    cmd_git.set_defaults(run=commands.git)
+    cmd_git.add_argument(
+         '-C', '--directory',
+         metavar='directory',
+         default=onyo_default_repo,
+         help='Command to run in onyo'
+    )
+    cmd_git.add_argument(
+        'command',
+        metavar='command',
+        nargs=argparse.REMAINDER,
+        help='Command to run in onyo'
+    )
     return parser
 
 

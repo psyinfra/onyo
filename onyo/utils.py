@@ -2,6 +2,8 @@ import subprocess
 import logging
 import os
 import sys
+import shlex
+
 
 from git import Repo, exc
 
@@ -11,12 +13,12 @@ logger = logging.getLogger('onyo')
 
 def run_cmd(cmd, comment=""):
     if comment != "":
-        run_process = subprocess.Popen(cmd.split() + [comment],
+        run_process = subprocess.Popen(shlex.split(cmd) + [comment],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE,
                                        universal_newlines=True)
     else:
-        run_process = subprocess.Popen(cmd.split(),
+        run_process = subprocess.Popen(shlex.split(cmd),
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE,
                                        universal_newlines=True)

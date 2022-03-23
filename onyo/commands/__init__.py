@@ -6,7 +6,8 @@ from .tree import tree
 from .cat import cat
 from .anchor import anchor
 from .unanchor import unanchor
+from .git import git
 
 __all__ = [
-    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'anchor', 'unanchor'
+    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'anchor', 'unanchor', 'git'
 ]
