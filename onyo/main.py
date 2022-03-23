@@ -9,7 +9,7 @@ import os
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 
 def parse_args():

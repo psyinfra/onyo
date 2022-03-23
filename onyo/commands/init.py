@@ -7,6 +7,7 @@ import sys
 from onyo.utils import (
                         build_git_add_cmd,
                         is_git_dir,
+                        get_git_root,
                         run_cmd
                         )
 logging.basicConfig()
@@ -19,9 +20,12 @@ def build_commit_cmd(directory):
 
 
 def build_git_init_cmd(directory):
-    if is_git_dir(directory):
-        logger.error(directory + " is already a git-repository.")
+    if is_git_dir(directory) and os.path.isdir(directory + "/.onyo"):
+        logger.info(directory + " is already a onyo-directory and git-repository.")
         sys.exit(0)
+    elif is_git_dir(directory):
+        logger.info(directory + " is already a  git-repository.")
+        return None
     return "git init --initial-branch=master " + directory
 
 
@@ -33,7 +37,7 @@ def build_onyo_init_cmd(directory):
 
 
 def create_file_cmd(directory):
-    return "touch " + os.path.join(directory + "/.onyo/onyo.txt")
+    return "touch " + os.path.join(directory + "/.onyo/.anchor")
 
 
 def init(args):
@@ -45,8 +49,10 @@ def init(args):
     [commit_cmd, commit_msg] = build_commit_cmd(args.directory)
 
     # run commands
-    run_cmd(git_init_command)
+    if git_init_command is not None:
+        run_cmd(git_init_command)
     run_cmd(onyo_init_command)
     run_cmd(create_file_command)
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
+    logger.info(commit_msg + ": " + get_git_root(args.directory))

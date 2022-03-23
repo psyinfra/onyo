@@ -1,0 +1,1 @@
+INFO:onyo:'initialize onyo repository': /Users/tkadelka/new-onyo/test_2
