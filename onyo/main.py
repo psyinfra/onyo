@@ -16,6 +16,15 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.'
     )
+    parser.add_argument(
+        '-d',
+        '--debug',
+        #metavar='debug',
+        required=False,
+        default=False,
+        action='store_true',
+        help='wayyy more output'
+        )
 
     # if ONYO_REPOSITORY_DIR as environmental variable is set, uses it as
     # default onyo dir, otherwise it uses the current working directory as
@@ -169,7 +178,11 @@ def main():
     parser = parse_args()
     args = parser.parse_args()
 
-    if len(sys.argv) > 1:
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    if len(sys.argv) > 1 and not args.debug:
+        args.run(args)
+    elif len(sys.argv) > 2:
         args.run(args)
     else:
         parser.print_help()
