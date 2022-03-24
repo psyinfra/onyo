@@ -151,11 +151,20 @@ converted to a folder, and the license moved into it.
 
   Running `onyo init` on an existing repository is safe. It will not overwrite
   anything; it will exit with an error.
-- `onyo ls directory`:
+- `onyo ls [asset | directory]...`:
 
-  List names of assets
+  List the names of files and directories contained within a directory. If the
+  argument is a file, the filename will be listed. The results are listed
+  alphabetically.
 
-  TODO
+  Arguments are relative to `ONYO_REPOSITORY_DIR` (if set); otherwise, arguments
+  are relative to the current working directory.
+
+  If no arguments are given, the contents of `ONYO_REPOSITORY_DIR` (if set) are
+  listed; otherwise the current working directory is listed.
+
+  If `ONYO_REPOSITORY_DIR` is not set and the current working directory is not
+  in an Onyo repository, Onyo will throw an error.
 - `onyo tree directory...`:
 
   List the assets and directories in `directory` using the `tree` program.
