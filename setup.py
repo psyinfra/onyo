@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='onyo',
-    version='1.0.1',
+    version='0.0.1',
     description='Textual inventory system backed by git.',
     author='Tobias Kadelka',
     author_email='t.kadelka@fz-juelich.de',

@@ -19,11 +19,10 @@ def parse_args():
     parser.add_argument(
         '-d',
         '--debug',
-        #metavar='debug',
         required=False,
         default=False,
         action='store_true',
-        help='wayyy more output'
+        help='Enable debug logging'
         )
 
     # if ONYO_REPOSITORY_DIR as environmental variable is set, uses it as

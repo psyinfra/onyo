@@ -16,8 +16,10 @@ logger = logging.getLogger('onyo')
 
 anchor_name = ".anchor"
 
+
 def build_commit_cmd(file, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'remove anchor: " + file + "\'"]
+    return ["git -C " + git_directory + " commit -m",
+            "\'remove anchor: " + file + "\'"]
 
 
 def run_unanchor(directory):
@@ -32,8 +34,8 @@ def run_unanchor(directory):
 
 
 def unanchor(args):
-    # set paths
     for folder in args.directory:
+        # set paths
         directory = prepare_directory(folder)
         git_directory = get_git_root(directory)
 
