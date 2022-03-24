@@ -21,17 +21,24 @@ def build_commit_cmd(directory):
 
 def build_git_init_cmd(directory):
     if is_git_dir(directory) and os.path.isdir(directory + "/.onyo"):
-        logger.info(directory + " is already a onyo-directory and git-repository.")
+        logger.info(directory + " has already a onyo configuration directory " +
+            "and is a git repository.")
         sys.exit(0)
     elif is_git_dir(directory):
-        logger.info(directory + " is already a  git-repository.")
+        logger.info(directory + " is already a  git repository.")
         return None
     return "git init --initial-branch=master " + directory
 
 
 def build_onyo_init_cmd(directory):
-    if os.path.isdir(os.path.join(directory + "/.onyo")):
-        logger.error(os.path.join(directory + "/.onyo") + " already exists.")
+    if os.path.isdir(os.path.join(directory + "/.onyo")) and not os.path.isdir(os.path.join(directory + "/.git")):
+        logger.error(directory + " has an onyo configuration directory, but " +
+                "is not a git repository. Either delete the onyo " +
+                "configuration directory or use git init to manually " +
+                "initialize as git repository.")
+        sys.exit(0)
+    elif os.path.isdir(os.path.join(directory + "/.onyo")):
+        logger.error(directory + " has already an onyo configuration directory.")
         sys.exit(0)
     return "mkdir " + os.path.join(directory + "/.onyo")
 
