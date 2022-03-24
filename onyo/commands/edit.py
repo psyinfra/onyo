@@ -31,7 +31,7 @@ def build_commit_cmd(file, git_directory):
 def edit_file_cmd(file):
     if not os.path.isfile(file):
         logger.error(file + " does not exist.")
-        sys.exit(0)
+        sys.exit(1)
     os.system(get_editor() + " " + file)
     return
 
@@ -47,7 +47,7 @@ def edit(args):
     run_output = run_cmd("git -C " + git_directory + " ls-tree -r HEAD ")
     if git_filepath not in run_output:
         logger.error(git_filepath + " is not in onyo.")
-        sys.exit(0)
+        sys.exit(1)
 
     # change file
     edit_file_cmd(full_filepath)
@@ -64,4 +64,4 @@ def edit(args):
         run_cmd(commit_cmd, commit_msg)
     else:
         logger.error("no changes made.")
-        sys.exit(0)
+        sys.exit(1)

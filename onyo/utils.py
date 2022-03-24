@@ -25,7 +25,7 @@ def run_cmd(cmd, comment=""):
     run_output, run_error = run_process.communicate()
     if (run_error != ""):
         logger.error(run_error)
-        sys.exit(0)
+        sys.exit(1)
     else:
         logger.debug(cmd + " " + comment)
     return run_output
@@ -55,10 +55,10 @@ def get_git_root(path):
         onyo_path = os.environ.get('ONYO_REPOSITORY_DIR')
         if onyo_path is None:
             logger.error(path + " is no onyo repository.")
-            sys.exit(0)
+            sys.exit(1)
         elif not is_git_dir(onyo_path):
             logger.error(path + " is no onyo repository.")
-            sys.exit(0)
+            sys.exit(1)
 
         git_repo = Repo(os.path.join(path, onyo_path),
                         search_parent_directories=True)
@@ -73,7 +73,7 @@ def get_full_filepath(git_directory, file):
         full_filepath = os.path.join(full_filepath, file)
     if not os.path.isfile(full_filepath):
         logger.error(file + " not found.")
-        sys.exit(0)
+        sys.exit(1)
     return full_filepath
 
 
@@ -94,5 +94,5 @@ def prepare_directory(directory):
         run_cmd("mkdir " + location)
     else:
         logger.error(directory + " does not exist.")
-        sys.exit(0)
+        sys.exit(1)
     return location

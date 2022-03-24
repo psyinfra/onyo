@@ -36,10 +36,10 @@ def build_onyo_init_cmd(directory):
                 "is not a git repository. Either delete the onyo " +
                 "configuration directory or use git init to manually " +
                 "initialize as git repository.")
-        sys.exit(0)
+        sys.exit(1)
     elif os.path.isdir(os.path.join(directory + "/.onyo")):
         logger.error(directory + " has already an onyo configuration directory.")
-        sys.exit(0)
+        sys.exit(1)
     return "mkdir " + os.path.join(directory + "/.onyo")
 
 
