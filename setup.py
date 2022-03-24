@@ -11,12 +11,8 @@ setup(
     packages=find_packages(),
     license='ISC',
     install_requires=[
-#        'subprocess',
-#        'logging',
-#        'os',
-#        'sys',
-#       'argparse'
-        'GitPython'
+        'GitPython',
+        'pytest'
     ],
     python_requires=">=3.5",
     entry_points={

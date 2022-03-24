@@ -1,1 +1,1 @@
-INFO:onyo:'initialize onyo repository': /Users/tkadelka/new-onyo/test_2
+INFO:onyo:'initialize onyo repository': <test_dir>
