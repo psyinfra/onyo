@@ -27,7 +27,7 @@ def run_onyo_new(directory):
     filename = create_filename(type_str, make_str, model_str, serial_str)
     if os.path.exists(os.path.join(directory, filename)):
         logger.error(os.path.join(directory, filename) + " asset already exists.")
-        sys.exit(0)
+        sys.exit(1)
     run_cmd(create_asset_file_cmd(directory, filename))
     git_add_cmd = build_git_add_cmd(directory, filename)
     run_cmd(git_add_cmd)

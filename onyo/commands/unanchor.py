@@ -26,7 +26,7 @@ def run_unanchor(directory):
     filename = anchor_name
     if not os.path.exists(os.path.join(directory, filename)):
         logger.error(os.path.join(directory, filename) + " has no anchor.")
-        sys.exit(0)
+        sys.exit(1)
     run_cmd("rm -f " + os.path.join(directory, filename))
     git_add_cmd = build_git_add_cmd(directory, filename)
     run_cmd(git_add_cmd)
