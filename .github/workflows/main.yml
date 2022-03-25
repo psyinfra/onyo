@@ -22,6 +22,10 @@ jobs:
     - name: Install dependencies
       run: |
         pip install .
+        pip install flake8
+    - name: flake8 linting
+      run: |
+        flake8 $(find . -type f -name "*.py")
     - name: Test with pytest
       run: |
         pytest tests/default_tests.py
