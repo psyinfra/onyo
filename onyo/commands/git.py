@@ -3,9 +3,9 @@
 import logging
 
 from onyo.utils import (
-                        get_git_root,
-                        run_cmd,
-                        )
+    get_git_root,
+    run_cmd,
+)
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
