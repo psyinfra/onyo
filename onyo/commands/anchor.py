@@ -16,6 +16,7 @@ logger = logging.getLogger('onyo')
 
 anchor_name = ".anchor"
 
+
 def build_commit_cmd(file, git_directory):
     return ["git -C " + git_directory + " commit -m", "\'anchor: " + file + "\'"]
 
@@ -36,8 +37,8 @@ def create_asset_file_cmd(directory, filename):
 
 
 def anchor(args):
-    # set paths
     for folder in args.directory:
+        # set paths
         directory = prepare_directory(folder)
         git_directory = get_git_root(directory)
 

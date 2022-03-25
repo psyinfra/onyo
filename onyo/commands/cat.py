@@ -2,7 +2,6 @@
 
 import logging
 import os
-import sys
 
 from onyo.utils import run_cmd
 
@@ -25,6 +24,7 @@ def cat(args):
     for file in args.file:
         # build command
         cat_command = build_cat_cmd(file)
+
         # run commands
         if cat_command is not None:
             output = run_cmd(cat_command)
