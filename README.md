@@ -183,7 +183,7 @@ laptop asset should be converted to a folder, and the license moved into it.
   If the directory already exists, Onyo will throw an error. When multiple
   directories are passed to Onyo, all will be checked before attempting to
   create them.
-- `onyo cat asset-file...`:
+- `onyo cat asset...`:
 
   Print the contents of `asset` to the terminal without parsing or validating
   the contents.
@@ -196,12 +196,13 @@ laptop asset should be converted to a folder, and the license moved into it.
 
   - `--quiet`: Silence the output (requires the `--yes` flag)
   - `--yes`: Respond "yes" to the prompt and run non-interactively
-- `onyo edit asset-file`:
+- `onyo edit asset`:
 
-  Open the asset file using the default text editor specified by the
+  Open the `asset` file using the default text editor specified by the
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
 
   TODO: Describe validation
+  TODO: How to handle folder assets.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
