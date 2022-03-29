@@ -132,9 +132,8 @@ TODO:
   - laptop (tracked) and software license (tracked)
 
 If licensing is attached to a particular machine (such as an OEM licence), then
-it is best encoded as a metadata field. If the license is transferable, and you
-are tracking your software licenses with Onyo, then the laptop asset should be
-converted to a folder, and the license moved into it.
+it is best encoded as a metadata field. If the license is transferable, then the
+laptop asset should be converted to a folder, and the license moved into it.
 
 
 ## Commands
@@ -293,8 +292,7 @@ TODO:
 
 - `ONYO_REPOSITORY_DIR`:
 
-   Location of an Onyo repository. Onyo's default behavior is to assume that it is
-   run from inside an Onyo repository. This allows `onyo` to be invoked from
+   Location of an Onyo repository. This can be used to invoke `onyo` from
    anywhere on the filesystem.
 - `EDITOR`:
    The text editor spawned by Onyo.
