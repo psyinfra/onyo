@@ -175,6 +175,14 @@ laptop asset should be converted to a folder, and the license moved into it.
   - `--force`: silently overwrite the destination file if it already exists.
   - `--rename`: allow a `source` file to be renamed to a different (valid)
     file name.
+- `onyo mkdir directory...`:
+
+  Create `directory`(s). Intermediate directories will be created as needed
+  (i.e. parent and child directories to be created in one call).
+
+  If the directory already exists, Onyo will throw an error. When multiple
+  directories are passed to Onyo, all will be checked before attempting to
+  create them.
 - `onyo cat asset-file...`:
 
   Print the contents of `asset` to the terminal without parsing or validating
