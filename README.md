@@ -179,6 +179,15 @@ laptop asset should be converted to a folder, and the license moved into it.
 
   Print the contents of `asset` to the terminal without parsing or validating
   the contents.
+- `onyo rm [--quiet, -q] [--yes, -y] asset | directory...`:
+
+  Delete the `asset`(s) and `directory`(s).
+
+  Onyo will present a complete list of all files and folders to delete, and
+  prompt the user for confirmation.
+
+  - `--quiet`: Silence the output (requires the `--yes` flag)
+  - `--yes`: Respond "yes" to the prompt and run non-interactively
 - `onyo edit asset-file`:
 
   Opens the asset file using the default text editor specified by the
@@ -283,7 +292,6 @@ laptop asset should be converted to a folder, and the license moved into it.
 TODO:
 - onyo new
 - onyo unset
-- onyo rm
 - onyo fsck
 - onyo history
 
