@@ -5,17 +5,17 @@ import os
 import sys
 
 from onyo.utils import (
-                        get_git_root,
-                        run_cmd
-                        )
+    get_git_root,
+    run_cmd
+)
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
 def build_mv_cmd(git_path, source, destination, force, rename):
-    if (os.path.basename(destination) != os.path.basename(source) and
-            not (rename or os.path.isdir(source))):
+    if (os.path.basename(destination) != os.path.basename(source) and not
+            (rename or os.path.isdir(source))):
         logger.error(os.path.basename(source) + " -> " +
                      os.path.basename(destination) + " no renaming allowed.")
         sys.exit(1)

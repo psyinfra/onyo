@@ -23,7 +23,7 @@ def parse_args():
         default=False,
         action='store_true',
         help='Enable debug logging'
-        )
+    )
 
     # if ONYO_REPOSITORY_DIR as environmental variable is set, uses it as
     # default onyo dir, otherwise it uses the current working directory as
@@ -159,10 +159,10 @@ def parse_args():
     )
     cmd_git.set_defaults(run=commands.git)
     cmd_git.add_argument(
-         '-C', '--directory',
-         metavar='directory',
-         default=onyo_default_repo,
-         help='Command to run in onyo'
+        '-C', '--directory',
+        metavar='directory',
+        default=onyo_default_repo,
+        help='Command to run in onyo'
     )
     cmd_git.add_argument(
         'command',

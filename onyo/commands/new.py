@@ -5,11 +5,11 @@ import os
 import sys
 
 from onyo.utils import (
-                        build_git_add_cmd,
-                        get_git_root,
-                        run_cmd,
-                        prepare_directory
-                        )
+    build_git_add_cmd,
+    get_git_root,
+    run_cmd,
+    prepare_directory
+)
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')

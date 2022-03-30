@@ -7,11 +7,11 @@ import sys
 from git import Repo
 
 from onyo.utils import (
-                        build_git_add_cmd,
-                        get_full_filepath,
-                        get_git_root,
-                        run_cmd
-                        )
+    build_git_add_cmd,
+    get_full_filepath,
+    get_git_root,
+    run_cmd
+)
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
