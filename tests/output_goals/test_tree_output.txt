@@ -1,27 +1,35 @@
 .
 ├── test_1
-│   ├── no_user
+│   ├── no user
 │   │   ├── laptop_apple_macbookpro.1
 │   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
+│   ├── trash bin
+│   │   └── this_device_is very.good
 │   └── user
 ├── test_2
-│   ├── no_user
+│   ├── no user
 │   │   ├── laptop_apple_macbookpro.1
 │   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
+│   ├── trash bin
+│   │   └── this_device_is very.good
 │   └── user
 ├── test_3
-│   ├── no_user
+│   ├── no user
 │   │   ├── laptop_apple_macbookpro.1
 │   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
+│   ├── trash bin
+│   │   └── this_device_is very.good
 │   └── user
 └── test_4
-    ├── no_user
+    ├── no user
     │   ├── laptop_apple_macbookpro.1
     │   └── laptop_apple_macbookpro.4
     ├── shelf
+    ├── trash bin
+    │   └── this_device_is very.good
     └── user
 
-16 directories, 8 files
+20 directories, 12 files

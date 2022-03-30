@@ -16,7 +16,7 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(file, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'new " + file + "\'"]
+    return ["git -C " + git_directory + " commit -m", "\'new \"" + file + "\"\'"]
 
 
 def run_onyo_new(directory):
@@ -40,7 +40,7 @@ def create_filename(type_str, make_str, model_str, serial_str):
 
 
 def create_asset_file_cmd(directory, filename):
-    return "touch " + os.path.join(directory, filename)
+    return "touch \"" + os.path.join(directory, filename) + "\""
 
 
 def new(args):

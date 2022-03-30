@@ -16,7 +16,7 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(directory):
-    return ["git -C " + directory + " commit -m",
+    return ["git -C \"" + directory + "\" commit -m",
             "\'initialize onyo repository\'"]
 
 
@@ -28,7 +28,7 @@ def build_git_init_cmd(directory):
     elif is_git_dir(directory):
         logger.info(directory + " is already a  git repository.")
         return None
-    return "git init --initial-branch=master " + directory
+    return "git -C \"" + directory + "\"" + " init --initial-branch=master "
 
 
 def build_onyo_init_cmd(directory):
@@ -41,11 +41,11 @@ def build_onyo_init_cmd(directory):
     elif os.path.isdir(os.path.join(directory + "/.onyo")):
         logger.error(directory + " has already an onyo configuration directory.")
         sys.exit(1)
-    return "mkdir " + os.path.join(directory + "/.onyo")
+    return "mkdir \"" + os.path.join(directory + "/.onyo") + "\""
 
 
 def create_file_cmd(directory):
-    return "touch " + os.path.join(directory + "/.onyo/.anchor")
+    return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\""
 
 
 def init(args):
