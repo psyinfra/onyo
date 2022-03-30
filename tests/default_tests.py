@@ -58,11 +58,9 @@ class TestClass:
     test_commands = [
         ("onyo init", "", test_output, "init_test.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("mkdir user/", "", test_output, "empty_file.txt"),
-        ("onyo anchor user/", "", test_output, "empty_file.txt"),
-        ("mkdir user2/", "", test_output, "empty_file.txt"),
-        ("onyo anchor user2", "", test_output, "empty_file.txt"),
-        ("onyo unanchor user2", "", test_output, "empty_file.txt"),
+        ("onyo mkdir user/", "", test_output, "empty_file.txt"),
+        ("onyo mkdir user2/", "", test_output, "empty_file.txt"),
+        ("onyo mkdir shelf/", "", test_output, "empty_file.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
         ("onyo new shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
         ("onyo new shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
@@ -121,18 +119,16 @@ class TestClass:
         # Test-specific changes:
         command = command.replace("user/*", " ".join(glob.glob(os.path.join(current_test_dir + "/user/*"))))
         command = command.replace(current_test_dir + "/", "")
-        command = command.replace("mkdir ", "mkdir " + current_test_dir + "/")
         check_output_with_file(command, input_str, test_folder + "/test_3/" + file, current_test_dir)
 
     # run commands from OUTSIDE the current test folder, but with relative paths
     rel_path_test_commands = [
         ("onyo init test_4", "", test_output, "init_test.txt"),
         ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("mkdir ./test_4/user/", "", test_output, "empty_file.txt"),
-        ("mkdir ./test_4/user2/", "", test_output, "empty_file.txt"),
+        ("onyo mkdir ./test_4/user/", "", test_output, "empty_file.txt"),
+        ("onyo mkdir ./test_4/user2/", "", test_output, "empty_file.txt"),
+        ("onyo mkdir ./test_4/shelf", "", test_output, "empty_file.txt"),
         ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("onyo anchor ./test_4/*", "", test_output, "empty_file.txt"),
-        ("onyo unanchor ./test_4/*", "", test_output, "empty_file.txt"),
         ("onyo new ./test_4/shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
         ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
         ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n3", test_output, "onyo_new_works.txt"),

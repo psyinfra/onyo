@@ -170,6 +170,18 @@ def parse_args():
         nargs=argparse.REMAINDER,
         help='Command to run in onyo'
     )
+    # subcommand "mkdir"
+    cmd_mkdir = subcommands.add_parser(
+        'mkdir',
+        help='Create folder(s) in onyo'
+    )
+    cmd_mkdir.set_defaults(run=commands.mkdir)
+    cmd_mkdir.add_argument(
+        'directory',
+        metavar='directory',
+        nargs='+',
+        help='Directory to create in onyo'
+    )
     return parser
 
 
