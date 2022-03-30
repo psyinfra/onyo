@@ -172,8 +172,8 @@ laptop asset should be converted to a folder, and the license moved into it.
   Move `source`(s) to the `destination` directory, or rename `source` directory
   to `destination`.
 
-  - `--force`: silently overwrite the destination file if it already exists.
-  - `--rename`: allow a `source` file to be renamed to a different (valid)
+  - `--force`: Silently overwrite the destination file if it already exists.
+  - `--rename`: Allow a `source` file to be renamed to a different (valid)
     file name.
 - `onyo mkdir directory...`:
 
@@ -183,7 +183,7 @@ laptop asset should be converted to a folder, and the license moved into it.
   If the directory already exists, Onyo will throw an error. When multiple
   directories are passed to Onyo, all will be checked before attempting to
   create them.
-- `onyo cat asset-file...`:
+- `onyo cat asset...`:
 
   Print the contents of `asset` to the terminal without parsing or validating
   the contents.
@@ -196,12 +196,13 @@ laptop asset should be converted to a folder, and the license moved into it.
 
   - `--quiet`: Silence the output (requires the `--yes` flag)
   - `--yes`: Respond "yes" to the prompt and run non-interactively
-- `onyo edit asset-file`:
+- `onyo edit asset`:
 
-  Opens the asset file using the default text editor specified by the
+  Open the `asset` file using the default text editor specified by the
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
 
   TODO: Describe validation
+  TODO: How to handle folder assets.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
@@ -271,7 +272,7 @@ laptop asset should be converted to a folder, and the license moved into it.
 
   Changes are printed to the terminal in the style of `diff`.
 
-  - `--depth num`: limit the maximum number of levels of directories to search
+  - `--depth num`: Limit the maximum number of levels of directories to search
     beneath `directory`. `--depth 1` limits to files that are direct children of
     `directory`.
   - `--dry-run`: Perform a non-interactive trial run with no changes made.
@@ -282,9 +283,9 @@ laptop asset should be converted to a folder, and the license moved into it.
     `value` can be a string or a Python regular expression. Onyo's string
     representation of types can also be used for queries, such as "[list]",
     "[dict]", or "[unset]" (for keys that don't exist).
-  - `--rename`: permit assigning values to pseudo-keys that would result in the
+  - `--rename`: Permit assigning values to pseudo-keys that would result in the
     file(s) being renamed.
-  - `--quiet`: silence the diff-like output of key-value changes.
+  - `--quiet`: Silence the diff-like output of key-value changes.
   - `--yes`: Respond "yes" to all prompts and run non-interactively.
 
   Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
