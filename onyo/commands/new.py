@@ -14,16 +14,32 @@ from onyo.utils import (
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
+reserved_characters = [".", "_"]
+
 
 def build_commit_cmd(file, git_directory):
     return ["git -C " + git_directory + " commit -m", "\'new \"" + file + "\"\'"]
 
 
+def read_new_word(word_description):
+    # read word for field from keyboard
+    word = str(input(word_description))
+    # if field contains one of the reserved characters, read new word.
+    for char in reserved_characters:
+        if char in word:
+            logger.info(char + " is in list of reserved characters: " + ", ".join(reserved_characters))
+            return read_new_word(word_description)
+    # if enter pressed without input, read new word
+    if len(word) == 0:
+        return read_new_word(word_description)
+    return word
+
+
 def run_onyo_new(directory):
-    type_str = str(input('<type>*:'))
-    make_str = str(input('<make>*:'))
-    model_str = str(input('<model*>:'))
-    serial_str = str(input('<serial*>:'))
+    type_str = read_new_word('<type>*:')
+    make_str = read_new_word('<make>*:')
+    model_str = read_new_word('<model*>:')
+    serial_str = read_new_word('<serial*>:')
     filename = create_filename(type_str, make_str, model_str, serial_str)
     if os.path.exists(os.path.join(directory, filename)):
         logger.error(os.path.join(directory, filename) + " asset already exists.")
@@ -44,8 +60,12 @@ def create_asset_file_cmd(directory, filename):
 
 
 def new(args):
+
     # set paths
     directory = prepare_directory(args.directory)
+    if not os.path.isdir(directory):
+        logger.error(directory + " is not a directory.")
+        sys.exit(1)
     git_directory = get_git_root(directory)
 
     # create file for asset, fill in fields
