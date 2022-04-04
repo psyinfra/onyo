@@ -18,7 +18,7 @@ def build_command(command, git_directory):
             cmd_str += " \"" + arg + "\""
         else:
             cmd_str += " " + arg
-    return " ".join(["git -C " + git_directory + " " + cmd_str])
+    return " ".join(["git -C \"" + git_directory + "\" " + cmd_str])
 
 
 def git(args):

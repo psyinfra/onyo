@@ -78,7 +78,7 @@ def get_full_filepath(git_directory, file):
 
 
 def build_git_add_cmd(directory, file):
-    return "git -C " + directory + " add " + file
+    return "git -C \"" + directory + "\" add \"" + file + "\""
 
 
 def prepare_directory(directory):

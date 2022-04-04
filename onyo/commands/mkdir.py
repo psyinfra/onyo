@@ -32,8 +32,8 @@ def run_mkdir(git_directory, new_directory):
         current_directory = os.path.join(current_directory, folder)
         if os.path.isdir(current_directory):
             continue
-        run_cmd("mkdir " + current_directory)
-        run_cmd("touch " + os.path.join(current_directory, filename))
+        run_cmd("mkdir \"" + current_directory + "\"")
+        run_cmd("touch \"" + os.path.join(current_directory, filename) + "\"")
         git_add_cmd = build_git_add_cmd(git_directory, os.path.join(current_directory, filename))
         run_cmd(git_add_cmd)
     return full_directory

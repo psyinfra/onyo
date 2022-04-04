@@ -21,16 +21,16 @@ def build_mv_cmd(git_path, source, destination, force, rename):
         sys.exit(1)
     if os.path.isfile(os.path.join(git_path, destination)):
         if force:
-            return "git -C " + git_path + " mv -f " + source + " " + destination
+            return "git -C " + git_path + " mv -f \"" + source + "\" \"" + destination + "\""
         else:
             logger.error(os.path.join(git_path, destination) + " already exists.")
             sys.exit(1)
-    return "git -C " + git_path + " mv " + source + " " + destination
+    return "git -C " + git_path + " mv \"" + source + "\" \"" + destination + "\""
 
 
 def build_commit_cmd(source, destination, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'move " + source +
-            " to " + destination + "\'"]
+    return ["git -C " + git_directory + " commit -m", "\'move \"" + source +
+            "\" to \"" + destination + "\"\'"]
 
 
 def mv(args):

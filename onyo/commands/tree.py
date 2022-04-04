@@ -14,7 +14,7 @@ def build_tree_cmd(directory):
     if not os.path.isdir(directory):
         logger.error(directory + " does not exist.")
         sys.exit(1)
-    return "tree " + directory
+    return "tree \"" + directory + "\""
 
 
 def tree(args):

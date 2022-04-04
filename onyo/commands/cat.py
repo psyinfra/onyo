@@ -17,7 +17,7 @@ def build_cat_cmd(file):
     if not os.path.isfile(this_asset):
         logger.warning(file + " does not exist.")
         return None
-    return "cat " + this_asset
+    return "cat \"" + this_asset + "\""
 
 
 def cat(args):

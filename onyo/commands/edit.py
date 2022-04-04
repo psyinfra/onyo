@@ -25,14 +25,14 @@ def get_editor():
 
 
 def build_commit_cmd(file, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'edit " + file + "\'"]
+    return ["git -C \"" + git_directory + "\" commit -m", "\'edit " + file + "\'"]
 
 
 def edit_file_cmd(file):
     if not os.path.isfile(file):
         logger.error(file + " does not exist.")
         sys.exit(1)
-    os.system(get_editor() + " " + file)
+    os.system(get_editor() + " \"" + file + "\"")
     return
 
 
@@ -44,7 +44,7 @@ def edit(args):
     git_filepath = os.path.relpath(full_filepath, git_directory)
 
     # check if file is in git
-    run_output = run_cmd("git -C " + git_directory + " ls-tree -r HEAD ")
+    run_output = run_cmd("git -C \"" + git_directory + "\" ls-tree -r HEAD ")
     if git_filepath not in run_output:
         logger.error(git_filepath + " is not in onyo.")
         sys.exit(1)
