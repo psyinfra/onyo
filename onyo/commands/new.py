@@ -21,17 +21,19 @@ def build_commit_cmd(file, git_directory):
     return ["git -C " + git_directory + " commit -m", "\'new \"" + file + "\"\'"]
 
 
-def read_new_word(word_description):
+def read_new_word(word_description, char_checks=True):
     # read word for field from keyboard
     word = str(input(word_description))
-    # if field contains one of the reserved characters, read new word.
-    for char in reserved_characters:
-        if char in word:
-            logger.info(char + " is in list of reserved characters: " + ", ".join(reserved_characters))
-            return read_new_word(word_description)
+    # if checks=True and field contains one of the reserved characters,
+    # read new word.
+    if char_checks:
+        for char in reserved_characters:
+            if char in word:
+                logger.info(char + " is in list of reserved characters: " + ", ".join(reserved_characters))
+                return read_new_word(word_description, char_checks=char_checks)
     # if enter pressed without input, read new word
     if len(word) == 0:
-        return read_new_word(word_description)
+        return read_new_word(word_description, char_checks=char_checks)
     return word
 
 
@@ -39,7 +41,7 @@ def run_onyo_new(directory):
     type_str = read_new_word('<type>*:')
     make_str = read_new_word('<make>*:')
     model_str = read_new_word('<model*>:')
-    serial_str = read_new_word('<serial*>:')
+    serial_str = read_new_word('<serial*>:', char_checks=False)
     filename = create_filename(type_str, make_str, model_str, serial_str)
     if os.path.exists(os.path.join(directory, filename)):
         logger.error(os.path.join(directory, filename) + " asset already exists.")
