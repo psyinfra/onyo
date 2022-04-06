@@ -66,13 +66,20 @@ class TestClass:
         ("onyo new shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
         ("onyo new shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
         ("onyo new shelf", "laptop\napple\nmacbookpro\n3", test_output, "onyo_new_works.txt"),
+        ("onyo new shelf", "laptop\napple\nmacbookpro\n4", test_output, "onyo_new_works.txt"),
+        ("onyo new shelf", "laptop\napple\nmacbookpro\n5", test_output, "onyo_new_works.txt"),
+        ("onyo new shelf", "laptop\napple\nmacbookpro\n6", test_output, "onyo_new_works.txt"),
+        ("onyo new shelf", "laptop\napple\nmacbookpro\n7", test_output, "onyo_new_works.txt"),
         ("onyo new trash\ bin/", "this\ndevice\nis very\ngood", test_output, "onyo_new_works.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("onyo mv shelf/laptop_apple_macbookpro.1 user/", "", test_output, "empty_file.txt"),
+        ("onyo rm shelf/laptop_apple_macbookpro.7", "y", test_output, "delete_device.txt"),
         ("onyo mv --rename shelf/laptop_apple_macbookpro.2 user/laptop_apple_macbookpro.4", "", test_output, "empty_file.txt"),
         ("onyo mv --rename --force shelf/laptop_apple_macbookpro.3 user/laptop_apple_macbookpro.4", "", test_output, "empty_file.txt"),
         ("onyo mv " + "user/*" + " user\ 2/", "", test_output, "empty_file.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("onyo mv shelf/laptop_apple_macbookpro.4 user/", "", test_output, "empty_file.txt"),
+        ("onyo mv shelf/laptop_apple_macbookpro.5 user/", "", test_output, "empty_file.txt"),
+        ("onyo mv shelf/laptop_apple_macbookpro.6 user/", "", test_output, "empty_file.txt"),
         ("onyo mv --rename user\ 2 no\ user", "", test_output, "empty_file.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
     ]
@@ -92,7 +99,10 @@ class TestClass:
         # onyo mv user/* needs to expand
         command = command.replace("user/*", " ".join(glob.glob("user/*")))
         # run actual test
-        check_output_with_file(command, input_str, test_folder + "/test_1/" + file, current_test_dir)
+        if "onyo rm" in command:
+            check_output_with_file(command, input_str, test_folder + "/test_1/" + file, os.path.join(current_test_dir, command.replace("onyo rm ", "")))
+        else:
+            check_output_with_file(command, input_str, test_folder + "/test_1/" + file, current_test_dir)
 
     # run commands from INSIDE the current test folder (with ONYO_REPOSITORY_DIR)
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
@@ -107,7 +117,10 @@ class TestClass:
         # onyo mv user/* needs to expand
         command = command.replace("user/*", " ".join(glob.glob("user/*")))
         # run actual test
-        check_output_with_file(command, input_str, test_folder + "/test_2/" + file, current_test_dir)
+        if "onyo rm" in command:
+            check_output_with_file(command, input_str, test_folder + "/test_2/" + file, os.path.join(current_test_dir, command.replace("onyo rm ", "")))
+        else:
+            check_output_with_file(command, input_str, test_folder + "/test_2/" + file, current_test_dir)
 
     # run commands from OUTSIDE the current test folder (with ONYO_REPOSITORY_DIR)
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
@@ -121,7 +134,10 @@ class TestClass:
         # Test-specific changes:
         command = command.replace("user/*", " ".join(glob.glob(os.path.join(current_test_dir + "/user/*"))))
         command = command.replace(current_test_dir + "/", "")
-        check_output_with_file(command, input_str, test_folder + "/test_3/" + file, current_test_dir)
+        if "onyo rm" in command:
+            check_output_with_file(command, input_str, test_folder + "/test_3/" + file, os.path.join(current_test_dir, command.replace("onyo rm ", "")))
+        else:
+            check_output_with_file(command, input_str, test_folder + "/test_3/" + file, current_test_dir)
 
     # run commands from OUTSIDE the current test folder, but with relative paths
     rel_path_test_commands = [
@@ -135,13 +151,21 @@ class TestClass:
         ("onyo new ./test_4/shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
         ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
         ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n3", test_output, "onyo_new_works.txt"),
+        ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n4", test_output, "onyo_new_works.txt"),
+        ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n5", test_output, "onyo_new_works.txt"),
+        ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n6", test_output, "onyo_new_works.txt"),
+        ("onyo new test_4/shelf", "laptop\napple\nmacbookpro\n7", test_output, "onyo_new_works.txt"),
         ("onyo new test_4/trash\ bin/", "this\ndevice\nis very\ngood", test_output, "onyo_new_works.txt"),
         ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("onyo rm test_4/shelf/laptop_apple_macbookpro.7", "y", test_output, "delete_device.txt"),
         ("onyo mv ./test_4/shelf/laptop_apple_macbookpro.1 ./test_4/user/", "", test_output, "empty_file.txt"),
         ("onyo mv --rename ./test_4/shelf/laptop_apple_macbookpro.2 test_4/user/laptop_apple_macbookpro.4", "", test_output, "empty_file.txt"),
         ("onyo mv --rename --force ./test_4/shelf/laptop_apple_macbookpro.3 ./test_4/user/laptop_apple_macbookpro.4", "", test_output, "empty_file.txt"),
         ("onyo mv " + "./test_4/user/*" + " ./test_4/user\ 2/", "", test_output, "empty_file.txt"),
         ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("onyo mv test_4/shelf/laptop_apple_macbookpro.4 ./test_4/user/", "", test_output, "empty_file.txt"),
+        ("onyo mv test_4/shelf/laptop_apple_macbookpro.5 ./test_4/user/", "", test_output, "empty_file.txt"),
+        ("onyo mv test_4/shelf/laptop_apple_macbookpro.6 ./test_4/user/", "", test_output, "empty_file.txt"),
         ("onyo mv --rename ./test_4/user\ 2 ./test_4/no\ user", "", test_output, "empty_file.txt"),
         ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
     ]
@@ -158,7 +182,11 @@ class TestClass:
         if "*" in command:
             command = command.replace("test_4/user/*", " ".join(glob.glob(os.path.join("test_4/user/*"))))
             command = command.replace("test_4/*", " ".join(glob.glob(os.path.join("test_4/*"))))
-        check_output_with_file(command, input_str, test_folder + "/test_4/" + file, current_test_dir)
+        # run actual commands
+        if "onyo rm" in command:
+            check_output_with_file(command, input_str, test_folder + "/test_4/" + file, os.path.join(current_test_dir, command.replace("onyo rm test_4/", "")))
+        else:
+            check_output_with_file(command, input_str, test_folder + "/test_4/" + file, current_test_dir)
 
     # tests the complete directory, all test-folders, for there structure
     def test_onyo_tree(self):

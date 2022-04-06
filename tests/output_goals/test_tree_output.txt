@@ -1,28 +1,37 @@
 .
 ├── test_1
 │   ├── no user
-│   │   ├── laptop_apple_macbookpro.1
 │   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
+│   │   └── laptop_apple_macbookpro.1
 │   ├── trash bin
 │   │   └── this_device_is very.good
 │   └── user
+│       ├── laptop_apple_macbookpro.4
+│       ├── laptop_apple_macbookpro.5
+│       └── laptop_apple_macbookpro.6
 ├── test_2
 │   ├── no user
-│   │   ├── laptop_apple_macbookpro.1
 │   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
+│   │   └── laptop_apple_macbookpro.1
 │   ├── trash bin
 │   │   └── this_device_is very.good
 │   └── user
+│       ├── laptop_apple_macbookpro.4
+│       ├── laptop_apple_macbookpro.5
+│       └── laptop_apple_macbookpro.6
 ├── test_3
 │   ├── no user
-│   │   ├── laptop_apple_macbookpro.1
 │   │   └── laptop_apple_macbookpro.4
 │   ├── shelf
+│   │   └── laptop_apple_macbookpro.1
 │   ├── trash bin
 │   │   └── this_device_is very.good
 │   └── user
+│       ├── laptop_apple_macbookpro.4
+│       ├── laptop_apple_macbookpro.5
+│       └── laptop_apple_macbookpro.6
 └── test_4
     ├── no user
     │   ├── laptop_apple_macbookpro.1
@@ -31,5 +40,8 @@
     ├── trash bin
     │   └── this_device_is very.good
     └── user
+        ├── laptop_apple_macbookpro.4
+        ├── laptop_apple_macbookpro.5
+        └── laptop_apple_macbookpro.6
 
-20 directories, 12 files
+20 directories, 24 files

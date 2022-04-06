@@ -6,7 +6,8 @@ from .tree import tree
 from .cat import cat
 from .git import git
 from .mkdir import mkdir
+from .rm import rm
 
 __all__ = [
-    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'git', 'mkdir'
+    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'git', 'mkdir', 'rm'
 ]
