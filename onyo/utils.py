@@ -77,6 +77,21 @@ def get_full_filepath(git_directory, file):
     return full_filepath
 
 
+def get_editor():
+    editor = os.environ.get('EDITOR')
+    if editor is None:
+        editor = 'nano'
+    return editor
+
+
+def edit_file(file):
+    if not os.path.isfile(file):
+        logger.error(file + " does not exist.")
+        sys.exit(1)
+    os.system(get_editor() + " \"" + file + "\"")
+    return
+
+
 def build_git_add_cmd(directory, file):
     return "git -C \"" + directory + "\" add \"" + file + "\""
 

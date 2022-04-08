@@ -10,30 +10,16 @@ from onyo.utils import (
     build_git_add_cmd,
     get_full_filepath,
     get_git_root,
-    run_cmd
+    run_cmd,
+    edit_file
 )
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def get_editor():
-    editor = os.environ.get('EDITOR')
-    if editor is None:
-        editor = 'nano'
-    return editor
-
-
 def build_commit_cmd(file, git_directory):
     return ["git -C \"" + git_directory + "\" commit -m", "\'edit " + file + "\'"]
-
-
-def edit_file_cmd(file):
-    if not os.path.isfile(file):
-        logger.error(file + " does not exist.")
-        sys.exit(1)
-    os.system(get_editor() + " \"" + file + "\"")
-    return
 
 
 def edit(args):
@@ -50,7 +36,7 @@ def edit(args):
         sys.exit(1)
 
     # change file
-    edit_file_cmd(full_filepath)
+    edit_file(full_filepath)
 
     # check if changes happened and add+commit them
     repo = Repo(git_directory)
