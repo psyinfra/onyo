@@ -36,7 +36,8 @@ def edit(args):
         sys.exit(1)
 
     # change file
-    edit_file(full_filepath)
+    if not args.non_interactive:
+        edit_file(full_filepath)
 
     # check if changes happened and add+commit them
     repo = Repo(git_directory)
@@ -48,6 +49,8 @@ def edit(args):
         # run commands
         run_cmd(git_add_cmd)
         run_cmd(commit_cmd, commit_msg)
+    elif args.non_interactive:
+        logger.info("no changes made.")
     else:
         logger.error("no changes made.")
         sys.exit(1)

@@ -88,6 +88,13 @@ def parse_args():
     )
     cmd_new.set_defaults(run=commands.new)
     cmd_new.add_argument(
+        '-I', '--non-interactive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='Creates the new asset without opening editor'
+    )
+    cmd_new.add_argument(
         'directory',
         metavar='directory',
         help='Directory to add the new onyo asset'
@@ -98,6 +105,13 @@ def parse_args():
         help='Edit an existing onyo asset'
     )
     cmd_edit.set_defaults(run=commands.edit)
+    cmd_edit.add_argument(
+        '-I', '--non-interactive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='Suppress opening the editor'
+    )
     cmd_edit.add_argument(
         'file',
         metavar='file',
