@@ -201,6 +201,8 @@ laptop asset should be converted to a folder, and the license moved into it.
   Open the `asset` file using the default text editor specified by the
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
 
+  - `--non-interactive`: Suppress opening of editor
+
   TODO: Describe validation
   TODO: How to handle folder assets.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
@@ -324,7 +326,7 @@ onyo new warehouse
 <make>*: lenovo
 <model>*: T490s
 <serial>*: abc123
-<spawns VIM, the above fields are pre-filled. The user edits remaining fields>
+<spawns editor, the above fields are pre-filled. The user edits remaining fields>
 <writes out to shelf/laptop_lenovo_T490s.abc123
 ```
 

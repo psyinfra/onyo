@@ -8,7 +8,8 @@ from onyo.utils import (
     build_git_add_cmd,
     get_git_root,
     run_cmd,
-    prepare_directory
+    prepare_directory,
+    edit_file
 )
 
 logging.basicConfig()
@@ -37,7 +38,7 @@ def read_new_word(word_description, char_checks=True):
     return word
 
 
-def run_onyo_new(directory):
+def run_onyo_new(directory, non_interactive):
     type_str = read_new_word('<type>*:')
     make_str = read_new_word('<make>*:')
     model_str = read_new_word('<model*>:')
@@ -47,6 +48,8 @@ def run_onyo_new(directory):
         logger.error(os.path.join(directory, filename) + " asset already exists.")
         sys.exit(1)
     run_cmd(create_asset_file_cmd(directory, filename))
+    if not non_interactive:
+        edit_file(os.path.join(directory, filename))
     git_add_cmd = build_git_add_cmd(directory, filename)
     run_cmd(git_add_cmd)
     return os.path.join(directory, filename)
@@ -71,7 +74,7 @@ def new(args):
     git_directory = get_git_root(directory)
 
     # create file for asset, fill in fields
-    created_file = run_onyo_new(directory)
+    created_file = run_onyo_new(directory, args.non_interactive)
     git_filepath = os.path.relpath(created_file, git_directory)
 
     # build commit command
