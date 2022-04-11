@@ -158,6 +158,32 @@ def parse_args():
         nargs='+',
         help='Directory to create in onyo'
     )
+    # subcommand "rm"
+    cmd_rm = subcommands.add_parser(
+        'rm',
+        help='Delete assets from onyo'
+    )
+    cmd_rm.set_defaults(run=commands.rm)
+    cmd_rm.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='Silence output (requires the --yes flag)'
+    )
+    cmd_rm.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='Respond "yes" to the prompt'
+    )
+    cmd_rm.add_argument(
+        'source',
+        metavar='source',
+        nargs='+',
+        help='Assets to delete from onyo'
+    )
     return parser
 
 
