@@ -138,9 +138,8 @@ def parse_args():
     cmd_tree.add_argument(
         'directory',
         metavar='directory',
-        nargs='?',
-        default=onyo_default_repo,
-        help='Directory to show tree'
+        nargs='*',
+        help='Directories to show tree'
     )
     # subcommand "git"
     cmd_git = subcommands.add_parser(
