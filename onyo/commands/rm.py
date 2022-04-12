@@ -21,9 +21,6 @@ def build_commit_cmd(sources, git_directory):
 
 def run_rm(git_directory, source):
     full_path = os.path.join(git_directory, source)
-    if not os.path.exists(full_path):
-        logger.error(full_path + " does not exist.")
-        sys.exit(1)
     # run the rm commands
     run_cmd("rm -rdf \"" + full_path + "\"")
     # git add
@@ -45,7 +42,7 @@ def check_sources(sources):
     if problem_str != "":
         logger.error(problem_str + "\nNo folders or assets deleted.")
         sys.exit(1)
-    return list_of_sources
+    return list(dict.fromkeys(list_of_sources))
 
 
 def rm(args):
@@ -69,7 +66,11 @@ def rm(args):
     # build commit command and message
     [commit_cmd, commit_msg] = build_commit_cmd(args.source[0], get_git_root(args.source[0]))
 
-    for source in args.source:
+    for source in list_of_sources:
+        # if stopped existing since check_sources(), it was deleted
+        # with the loop before
+        if not os.path.exists(source):
+            continue
         # set paths
         git_directory = get_git_root(source)
         current_source = get_full_filepath(git_directory, source)
