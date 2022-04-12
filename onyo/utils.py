@@ -68,10 +68,10 @@ def get_git_root(path):
 
 def get_full_filepath(git_directory, file):
     full_filepath = os.path.join(git_directory, file)
-    if not os.path.isfile(full_filepath):
+    if not os.path.exists(full_filepath):
         full_filepath = os.path.join(git_directory, os.getcwd())
         full_filepath = os.path.join(full_filepath, file)
-    if not os.path.isfile(full_filepath):
+    if not os.path.exists(full_filepath):
         logger.error(file + " not found.")
         sys.exit(1)
     return full_filepath
