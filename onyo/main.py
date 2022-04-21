@@ -115,6 +115,7 @@ def parse_args():
     cmd_edit.add_argument(
         'file',
         metavar='file',
+        nargs='+',
         help='Filename of asset to edit'
     )
     # subcommand cat
