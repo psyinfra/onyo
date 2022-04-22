@@ -196,11 +196,12 @@ laptop asset should be converted to a folder, and the license moved into it.
 
   - `--quiet`: Silence the output (requires the `--yes` flag)
   - `--yes`: Respond "yes" to the prompt and run non-interactively
-- `onyo edit asset`:
+- `onyo edit asset...`:
 
-  Open the `asset` file using the default text editor specified by the
+  Open the `asset` file(s) using the default text editor specified by the
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
 
+  When multiple asset files are given, Onyo will open them in sequence.
   - `--non-interactive`: Suppress opening of editor
 
   TODO: Describe validation
