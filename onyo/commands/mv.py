@@ -16,7 +16,7 @@ logger = logging.getLogger('onyo')
 def build_mv_cmd(git_path, source, destination, force, rename):
     if (os.path.basename(destination) != os.path.basename(source) and not
             (rename or os.path.isdir(source))):
-        return (os.path.basename(source) + " -> " + os.path.basename(destination) + " no renaming allowed.")
+        return (os.path.basename(source) + " -> " + os.path.basename(destination) + " Assets can't be renamed without --rename.")
     if os.path.isfile(os.path.join(git_path, destination)):
         if force:
             return "git -C " + git_path + " mv -f \"" + source + "\" \"" + destination + "\""
