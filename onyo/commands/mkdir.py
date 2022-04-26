@@ -16,8 +16,8 @@ logger = logging.getLogger('onyo')
 anchor_name = ".anchor"
 
 
-def build_commit_cmd(folder, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'new folder: " + folder + "\'"]
+def build_commit_cmd(folders, git_directory):
+    return ["git -C " + git_directory + " commit -m", "new folder(s)\n\n" + "\n".join(folders)]
 
 
 def run_mkdir(git_directory, new_directory):
@@ -55,31 +55,34 @@ def get_existing_subpath(directory):
 
 def check_directories(directories):
     problem_str = ""
+    list_of_folders = []
     for folder in directories:
         [existing_path, missing_path] = get_existing_subpath(folder)
         if missing_path == "":
             problem_str = problem_str + "\n" + existing_path + " already exists."
+        else:
+            list_of_folders.append(folder)
     if problem_str != "":
         logger.error(problem_str + "\nNo folders created.")
         sys.exit(1)
+    return list(dict.fromkeys(list_of_folders))
 
 
 def mkdir(args):
-
-    check_directories(args.directory)
-
-    for folder in args.directory:
+    # check and set paths
+    list_of_folders = check_directories(args.directory)
+    git_directory = ""
+    for folder in list_of_folders:
         # set paths
         [existing_path, missing_path] = get_existing_subpath(folder)
         git_directory = get_git_root(existing_path)
         new_directory = os.path.join(existing_path, missing_path).replace(git_directory + os.path.sep, "")
 
         # create anchor file and add it
-        created_directory = run_mkdir(git_directory, new_directory)
-        git_folder_path = os.path.relpath(created_directory, git_directory)
+        run_mkdir(git_directory, new_directory)
 
-        # build commit command
-        [commit_cmd, commit_msg] = build_commit_cmd(git_folder_path, git_directory)
+    # build commit command
+    [commit_cmd, commit_msg] = build_commit_cmd(list_of_folders, git_directory)
 
-        # run commands
-        run_cmd(commit_cmd, commit_msg)
+    # run commands
+    run_cmd(commit_cmd, commit_msg)

@@ -115,6 +115,7 @@ def parse_args():
     cmd_edit.add_argument(
         'file',
         metavar='file',
+        nargs='+',
         help='Filename of asset to edit'
     )
     # subcommand cat
@@ -138,9 +139,8 @@ def parse_args():
     cmd_tree.add_argument(
         'directory',
         metavar='directory',
-        nargs='?',
-        default=onyo_default_repo,
-        help='Directory to show tree'
+        nargs='*',
+        help='Directories to show tree'
     )
     # subcommand "git"
     cmd_git = subcommands.add_parser(

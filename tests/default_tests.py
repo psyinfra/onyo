@@ -61,7 +61,7 @@ class TestClass:
         ("onyo mkdir user/", "", test_output, "empty_file.txt"),
         ("onyo mkdir user\ 2/", "", test_output, "empty_file.txt"),
         ("onyo mkdir shelf/", "", test_output, "empty_file.txt"),
-        ("onyo mkdir trash\ bin/", "", test_output, "empty_file.txt"),
+        ("onyo mkdir trash\ bin/ delete_me", "", test_output, "empty_file.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
         ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
         ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
@@ -81,6 +81,7 @@ class TestClass:
         ("onyo mv shelf/laptop_apple_macbookpro.5 user/", "", test_output, "empty_file.txt"),
         ("onyo mv shelf/laptop_apple_macbookpro.6 user/", "", test_output, "empty_file.txt"),
         ("onyo mv --rename user\ 2 no\ user", "", test_output, "empty_file.txt"),
+        ("onyo rm -q -y delete_me/", "", test_output, "empty_file.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
     ]
 
@@ -146,7 +147,7 @@ class TestClass:
         ("onyo mkdir ./test_4/user/", "", test_output, "empty_file.txt"),
         ("onyo mkdir ./test_4/user\ 2/", "", test_output, "empty_file.txt"),
         ("onyo mkdir ./test_4/shelf", "", test_output, "empty_file.txt"),
-        ("onyo mkdir ./test_4/trash\ bin", "", test_output, "empty_file.txt"),
+        ("onyo mkdir ./test_4/trash\ bin test_4/delete_me/", "", test_output, "empty_file.txt"),
         ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
         ("onyo new --non-interactive ./test_4/shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
         ("onyo new --non-interactive test_4/shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
@@ -167,6 +168,7 @@ class TestClass:
         ("onyo mv test_4/shelf/laptop_apple_macbookpro.5 ./test_4/user/", "", test_output, "empty_file.txt"),
         ("onyo mv test_4/shelf/laptop_apple_macbookpro.6 ./test_4/user/", "", test_output, "empty_file.txt"),
         ("onyo mv --rename ./test_4/user\ 2 ./test_4/no\ user", "", test_output, "empty_file.txt"),
+        ("onyo rm -q -y test_4/delete_me/", "", test_output, "empty_file.txt"),
         ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
     ]
 

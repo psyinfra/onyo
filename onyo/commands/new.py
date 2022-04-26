@@ -64,13 +64,17 @@ def create_asset_file_cmd(directory, filename):
     return "touch \"" + os.path.join(directory, filename) + "\""
 
 
-def new(args):
-
-    # set paths
-    directory = prepare_directory(args.directory)
+def check_sources(sources):
+    directory = prepare_directory(sources)
     if not os.path.isdir(directory):
         logger.error(directory + " is not a directory.")
         sys.exit(1)
+    return directory
+
+
+def new(args):
+    # set and check paths
+    directory = check_sources(args.directory)
     git_directory = get_git_root(directory)
 
     # create file for asset, fill in fields

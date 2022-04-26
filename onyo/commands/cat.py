@@ -9,23 +9,26 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def build_cat_cmd(file):
-    this_asset = file
+def build_cat_cmd(files):
+    list_of_cat_commands = []
+    problem_str = ""
     onyo_repository_dir = os.environ.get('ONYO_REPOSITORY_DIR')
-    if not os.path.isfile(this_asset) and onyo_repository_dir is not None:
-        this_asset = os.path.join(onyo_repository_dir, this_asset)
-    if not os.path.isfile(this_asset):
-        logger.warning(file + " does not exist.")
-        return None
-    return "cat \"" + this_asset + "\""
+    for file in files:
+        if os.path.isfile(file):
+            list_of_cat_commands.append("cat \"" + file + "\"")
+        elif not os.path.isfile(file) and onyo_repository_dir is not None:
+            list_of_cat_commands.append("cat \"" + os.path.join(onyo_repository_dir, file) + "\"")
+        else:
+            problem_str = problem_str + "\n" + file + " does not exist."
+    if problem_str != "":
+        logger.warning(problem_str)
+    return list_of_cat_commands
 
 
 def cat(args):
-    for file in args.file:
-        # build command
-        cat_command = build_cat_cmd(file)
-
+    # check paths and build commands
+    list_of_cat_commands = build_cat_cmd(args.file)
+    for command in list_of_cat_commands:
         # run commands
-        if cat_command is not None:
-            output = run_cmd(cat_command)
-            print(output.strip())
+        output = run_cmd(command)
+        print(output.strip())
