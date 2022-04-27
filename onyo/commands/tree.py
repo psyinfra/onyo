@@ -19,7 +19,7 @@ def build_tree_cmd(directory):
     return "tree \"" + directory + "\""
 
 
-def check_sources(sources):
+def prepare_arguments(sources):
     problem_str = ""
     list_of_sources = []
 
@@ -57,7 +57,7 @@ def check_sources(sources):
 def tree(args):
 
     # check sources
-    list_of_sources = check_sources(args.directory)
+    list_of_sources = prepare_arguments(args.directory)
 
     # build and run commands
     for source in list_of_sources:

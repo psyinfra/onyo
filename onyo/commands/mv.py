@@ -29,7 +29,7 @@ def build_commit_cmd(list_of_commands, git_directory):
     return ["git -C " + git_directory + " commit -m", "move assets.\n" + "\n".join(list_of_commands)]
 
 
-def check_sources(sources, destination, force, rename):
+def prepare_arguments(sources, destination, force, rename):
     problem_str = ""
     list_of_commands = []
     list_of_destinations = []
@@ -66,7 +66,7 @@ def check_sources(sources, destination, force, rename):
 def mv(args):
     # check and set paths
     git_path = get_git_root(os.path.dirname(args.destination))
-    list_of_commands = check_sources(args.source, args.destination, args.force, args.rename)
+    list_of_commands = prepare_arguments(args.source, args.destination, args.force, args.rename)
     # run list of commands, afterwards commit
     for command in list_of_commands:
         run_cmd(command)

@@ -64,7 +64,7 @@ def create_asset_file_cmd(directory, filename):
     return "touch \"" + os.path.join(directory, filename) + "\""
 
 
-def check_sources(sources):
+def prepare_arguments(sources):
     directory = prepare_directory(sources)
     if not os.path.isdir(directory):
         logger.error(directory + " is not a directory.")
@@ -74,7 +74,7 @@ def check_sources(sources):
 
 def new(args):
     # set and check paths
-    directory = check_sources(args.directory)
+    directory = prepare_arguments(args.directory)
     git_directory = get_git_root(directory)
 
     # create file for asset, fill in fields

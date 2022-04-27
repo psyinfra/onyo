@@ -53,7 +53,7 @@ def get_existing_subpath(directory):
     return [existing_path, missing_path]
 
 
-def check_directories(directories):
+def prepare_arguments(directories):
     problem_str = ""
     list_of_folders = []
     for folder in directories:
@@ -70,7 +70,7 @@ def check_directories(directories):
 
 def mkdir(args):
     # check and set paths
-    list_of_folders = check_directories(args.directory)
+    list_of_folders = prepare_arguments(args.directory)
     git_directory = ""
     for folder in list_of_folders:
         # set paths
