@@ -196,11 +196,12 @@ laptop asset should be converted to a folder, and the license moved into it.
 
   - `--quiet`: Silence the output (requires the `--yes` flag)
   - `--yes`: Respond "yes" to the prompt and run non-interactively
-- `onyo edit asset`:
+- `onyo edit asset...`:
 
-  Open the `asset` file using the default text editor specified by the
+  Open the `asset` file(s) using the default text editor specified by the
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
 
+  When multiple asset files are given, Onyo will open them in sequence.
   - `--non-interactive`: Suppress opening of editor
 
   TODO: Describe validation
@@ -319,9 +320,9 @@ TODO:
 
 ## Examples
 
-**Inventory a new asset; add it to the warehouse**:
+**Inventory a new asset; add it to the shelf**:
 ```
-onyo new warehouse
+onyo new shelf
 <type>*: laptop
 <make>*: lenovo
 <model>*: T490s
@@ -332,23 +333,23 @@ onyo new warehouse
 
 **Assign an asset**:
 ```
-onyo mv shelf/laptop_lenovo_T490s.abc123 accounting/Bingo Bob/
+onyo mv shelf/laptop_lenovo_T490s.abc123 accounting/Bingo\ Bob/
 ```
 
 **Retire an asset**:
 ```
-onyo mv accounting/Bingo Bob/laptop_lenovo_T490s retired/
+onyo mv accounting/Bingo\ Bob/laptop_lenovo_T490s retired/
 ```
 
 **Upgrade an asset**:
 ```
-onyo set RAM=16GB accounting/Bingo Bob/laptop_lenovo_T490s
+onyo set RAM=16GB accounting/Bingo\ Bob/laptop_lenovo_T490s
 - RAM: 8GB
 + RAM: 16GB
 ```
 or
 ```
-onyo edit accounting/Bingo Bob/laptop_lenovo_T490s
+onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s
 <spawns VIM; user edits ram field>
 ```
 
@@ -372,7 +373,7 @@ onyo get filename --filter type=headset shelf
 
 **List the history of an asset**:
 ```
-onyo history accounting/Bingo Bob/laptop_lenovo_T490s
+onyo history accounting/Bingo\ Bob/laptop_lenovo_T490s
 ```
 
 **Get the filename, make, model, and purchase data of all laptops assigned to the accounting department; sort first by make, then model, then purchase date**:
