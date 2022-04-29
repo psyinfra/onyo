@@ -6,8 +6,6 @@ import sys
 
 from onyo.utils import (
     build_git_add_cmd,
-    get_git_root,
-    get_full_filepath,
     run_cmd
 )
 
@@ -15,21 +13,21 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def build_commit_cmd(sources, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'deleted assets.\'"]
+def build_commit_cmd(sources, onyo_root):
+    return ["git -C " + onyo_root + " commit -m", "\'deleted assets.\'"]
 
 
-def run_rm(git_directory, source):
-    full_path = os.path.join(git_directory, source)
+def run_rm(onyo_root, source):
+    full_path = os.path.join(onyo_root, source)
     # run the rm commands
     run_cmd("rm -rdf \"" + full_path + "\"")
     # git add
-    git_add_cmd = build_git_add_cmd(git_directory, source)
+    git_add_cmd = build_git_add_cmd(onyo_root, source)
     run_cmd(git_add_cmd)
     return full_path
 
 
-def prepare_arguments(sources, quiet, yes):
+def prepare_arguments(sources, quiet, yes, onyo_root):
     problem_str = ""
     list_of_sources = []
     # check flags
@@ -37,8 +35,7 @@ def prepare_arguments(sources, quiet, yes):
         problem_str = problem_str + "\nonyo rm --quiet can't be run without --yes flag."
     # check sources
     for source in sources:
-        test_git = get_git_root(source)
-        current_source = get_full_filepath(test_git, source)
+        current_source = os.path.join(onyo_root, source)
         if not os.path.exists(current_source):
             problem_str = problem_str + "\n" + current_source + " does not exist."
         else:
@@ -49,9 +46,9 @@ def prepare_arguments(sources, quiet, yes):
     return list(dict.fromkeys(list_of_sources))
 
 
-def rm(args):
+def rm(args, onyo_root):
     # needs to check onyo root or rel path, also if in git
-    list_of_sources = prepare_arguments(args.source, args.quiet, args.yes)
+    list_of_sources = prepare_arguments(args.source, args.quiet, args.yes, onyo_root)
 
     if not args.quiet:
         print("onyo wants to delete:")
@@ -63,7 +60,7 @@ def rm(args):
             sys.exit(0)
 
     # build commit command and message
-    [commit_cmd, commit_msg] = build_commit_cmd(args.source[0], get_git_root(args.source[0]))
+    [commit_cmd, commit_msg] = build_commit_cmd(args.source[0], onyo_root)
 
     for source in list_of_sources:
         # if stopped existing since prepare_arguments(), it was deleted
@@ -71,10 +68,6 @@ def rm(args):
         if not os.path.exists(source):
             continue
         # set paths
-        git_directory = get_git_root(source)
-        current_source = get_full_filepath(git_directory, source)
-        git_folder_path = os.path.relpath(current_source, git_directory)
-        run_rm(git_directory, git_folder_path)
-
+        run_rm(onyo_root, source)
     # run commit command
     run_cmd(commit_cmd, commit_msg)

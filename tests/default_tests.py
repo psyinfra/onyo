@@ -140,56 +140,6 @@ class TestClass:
         else:
             check_output_with_file(command, input_str, test_folder + "/test_3/" + file, current_test_dir)
 
-    # run commands from OUTSIDE the current test folder, but with relative paths
-    rel_path_test_commands = [
-        ("onyo init test_4", "", test_output, "init_test.txt"),
-        ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("onyo mkdir ./test_4/user/", "", test_output, "empty_file.txt"),
-        ("onyo mkdir ./test_4/user\ 2/", "", test_output, "empty_file.txt"),
-        ("onyo mkdir ./test_4/shelf", "", test_output, "empty_file.txt"),
-        ("onyo mkdir ./test_4/trash\ bin test_4/delete_me/", "", test_output, "empty_file.txt"),
-        ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("onyo new --non-interactive ./test_4/shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
-        ("onyo new --non-interactive test_4/shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
-        ("onyo new --non-interactive test_4/shelf", "laptop\napple\nmacbookpro\n3", test_output, "onyo_new_works.txt"),
-        ("onyo new --non-interactive test_4/shelf", "laptop\napple\nmacbookpro\n4", test_output, "onyo_new_works.txt"),
-        ("onyo new --non-interactive test_4/shelf", "laptop\napple\nmacbookpro\n5", test_output, "onyo_new_works.txt"),
-        ("onyo new --non-interactive test_4/shelf", "laptop\napple\nmacbookpro\n6", test_output, "onyo_new_works.txt"),
-        ("onyo new --non-interactive test_4/shelf", "laptop\napple\nmacbookpro\n7", test_output, "onyo_new_works.txt"),
-        ("onyo new --non-interactive test_4/trash\ bin/", "this\ndevice\nis very\ngood", test_output, "onyo_new_works.txt"),
-        ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("onyo rm test_4/shelf/laptop_apple_macbookpro.7", "y", test_output, "delete_device.txt"),
-        ("onyo mv ./test_4/shelf/laptop_apple_macbookpro.1 ./test_4/user/", "", test_output, "empty_file.txt"),
-        ("onyo mv --rename ./test_4/shelf/laptop_apple_macbookpro.2 test_4/user/laptop_apple_macbookpro.4", "", test_output, "empty_file.txt"),
-        ("onyo mv --rename --force ./test_4/shelf/laptop_apple_macbookpro.3 ./test_4/user/laptop_apple_macbookpro.4", "", test_output, "empty_file.txt"),
-        ("onyo mv " + "./test_4/user/*" + " ./test_4/user\ 2/", "", test_output, "empty_file.txt"),
-        ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
-        ("onyo mv test_4/shelf/laptop_apple_macbookpro.4 ./test_4/user/", "", test_output, "empty_file.txt"),
-        ("onyo mv test_4/shelf/laptop_apple_macbookpro.5 ./test_4/user/", "", test_output, "empty_file.txt"),
-        ("onyo mv test_4/shelf/laptop_apple_macbookpro.6 ./test_4/user/", "", test_output, "empty_file.txt"),
-        ("onyo mv --rename ./test_4/user\ 2 ./test_4/no\ user", "", test_output, "empty_file.txt"),
-        ("onyo rm -q -y test_4/delete_me/", "", test_output, "empty_file.txt"),
-        ("onyo git -C test_4 status", "", test_output, "git_status_working_tree_clean.txt"),
-    ]
-
-    @pytest.mark.parametrize("command, input_str, test_folder, file", rel_path_test_commands)
-    def test_from_outside_dir_with_relative_path(self, command, input_str, test_folder, file):
-        current_test_dir = os.path.join(self.test_dir, "test_4")
-        os.chdir(self.test_dir)
-        if os.getenv('ONYO_REPOSITORY_DIR') is not None:
-            del os.environ['ONYO_REPOSITORY_DIR']
-        if not os.path.isdir(current_test_dir):
-            run_test_cmd("mkdir " + current_test_dir)
-        # Test-specific changes:
-        if "*" in command:
-            command = command.replace("test_4/user/*", " ".join(glob.glob(os.path.join("test_4/user/*"))))
-            command = command.replace("test_4/*", " ".join(glob.glob(os.path.join("test_4/*"))))
-        # run actual commands
-        if "onyo rm" in command:
-            check_output_with_file(command, input_str, test_folder + "/test_4/" + file, os.path.join(current_test_dir, command.replace("onyo rm test_4/", "")))
-        else:
-            check_output_with_file(command, input_str, test_folder + "/test_4/" + file, current_test_dir)
-
     # tests the complete directory, all test-folders, for there structure
     def test_onyo_tree(self):
         test_tree_output = os.path.join(self.test_output, "test_tree_output.txt")

@@ -6,9 +6,7 @@ import sys
 
 from onyo.utils import (
     build_git_add_cmd,
-    get_git_root,
     run_cmd,
-    prepare_directory,
     edit_file
 )
 
@@ -18,8 +16,8 @@ logger = logging.getLogger('onyo')
 reserved_characters = [".", "_"]
 
 
-def build_commit_cmd(file, git_directory):
-    return ["git -C " + git_directory + " commit -m", "\'new \"" + file + "\"\'"]
+def build_commit_cmd(file, onyo_root):
+    return ["git -C " + onyo_root + " commit -m", "\'new \"" + file + "\"\'"]
 
 
 def read_new_word(word_description, char_checks=True):
@@ -64,25 +62,24 @@ def create_asset_file_cmd(directory, filename):
     return "touch \"" + os.path.join(directory, filename) + "\""
 
 
-def prepare_arguments(sources):
-    directory = prepare_directory(sources)
+def prepare_arguments(directory, onyo_root):
+    directory = os.path.join(onyo_root, directory)
     if not os.path.isdir(directory):
         logger.error(directory + " is not a directory.")
         sys.exit(1)
     return directory
 
 
-def new(args):
+def new(args, onyo_root):
     # set and check paths
-    directory = prepare_arguments(args.directory)
-    git_directory = get_git_root(directory)
+    directory = prepare_arguments(args.directory, onyo_root)
 
     # create file for asset, fill in fields
     created_file = run_onyo_new(directory, args.non_interactive)
-    git_filepath = os.path.relpath(created_file, git_directory)
+    git_filepath = os.path.relpath(created_file, onyo_root)
 
     # build commit command
-    [commit_cmd, commit_msg] = build_commit_cmd(git_filepath, git_directory)
+    [commit_cmd, commit_msg] = build_commit_cmd(git_filepath, onyo_root)
 
     # run commands
     run_cmd(commit_cmd, commit_msg)

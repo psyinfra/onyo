@@ -48,13 +48,22 @@ def create_file_cmd(directory):
     return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\""
 
 
-def init(args):
+def prepare_arguments(directory, onyo_root):
+    if directory is None:
+        directory = onyo_root
+    return directory
+
+
+def init(args, onyo_root):
+    # set and check path
+    directory = prepare_arguments(args.directory, onyo_root)
+
     # build commands
-    git_init_command = build_git_init_cmd(args.directory)
-    onyo_init_command = build_onyo_init_cmd(args.directory)
-    create_file_command = create_file_cmd(args.directory)
-    git_add_command = build_git_add_cmd(args.directory, ".onyo/")
-    [commit_cmd, commit_msg] = build_commit_cmd(args.directory)
+    git_init_command = build_git_init_cmd(directory)
+    onyo_init_command = build_onyo_init_cmd(directory)
+    create_file_command = create_file_cmd(directory)
+    git_add_command = build_git_add_cmd(directory, ".onyo/")
+    [commit_cmd, commit_msg] = build_commit_cmd(directory)
 
     # run commands
     if git_init_command is not None:
@@ -63,4 +72,4 @@ def init(args):
     run_cmd(create_file_command)
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
-    logger.info(commit_msg + ": " + get_git_root(args.directory))
+    logger.info(commit_msg + ": " + get_git_root(directory))
