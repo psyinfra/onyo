@@ -25,13 +25,6 @@ def parse_args():
         help='Enable debug logging'
     )
 
-    # if ONYO_REPOSITORY_DIR as environmental variable is set, uses it as
-    # default onyo dir, otherwise it uses the current working directory as
-    # default, but this can always be overwritten by terminal.
-    onyo_default_repo = os.environ.get('ONYO_REPOSITORY_DIR')
-    if onyo_default_repo is None:
-        onyo_default_repo = os.getcwd()
-
     # subcommands
     subcommands = parser.add_subparsers(
         title="onyo commands",
@@ -47,7 +40,6 @@ def parse_args():
         'directory',
         metavar='directory',
         nargs='?',
-        default=onyo_default_repo,
         help='Directory to initialize onyo repository'
     )
     # subcommand "mv"
@@ -151,7 +143,6 @@ def parse_args():
     cmd_git.add_argument(
         '-C', '--directory',
         metavar='directory',
-        default=onyo_default_repo,
         help='Command to run in onyo'
     )
     cmd_git.add_argument(
@@ -205,12 +196,21 @@ def main():
     parser = parse_args()
     args = parser.parse_args()
 
+    # if ONYO_REPOSITORY_DIR as environmental variable is set, uses it as
+    # default onyo dir, otherwise it uses the current working directory as
+    # default, but this can always be overwritten by terminal.
+    onyo_root = os.environ.get('ONYO_REPOSITORY_DIR')
+    if onyo_root is None:
+        onyo_root = os.getcwd()
+
+    # TODO: Do onyo fsck here, test if .onyo exists, is git repo, other checks
+
     if args.debug:
         logger.setLevel(logging.DEBUG)
     if len(sys.argv) > 1 and not args.debug:
-        args.run(args)
+        args.run(args, onyo_root)
     elif len(sys.argv) > 2:
-        args.run(args)
+        args.run(args, onyo_root)
     else:
         parser.print_help()
 
