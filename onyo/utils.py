@@ -79,8 +79,23 @@ def get_full_filepath(git_directory, file):
 
 def get_editor():
     editor = os.environ.get('EDITOR')
-    if editor is None:
+    if not editor:
+        logger.info("$EDITOR is not set.")
+    elif editor and run_cmd("which " + editor).rstrip("\n") == "":
+        logger.warning(editor + " could not be found.")
+    else:
+        return editor
+    # try using vi/nano as editor
+    if run_cmd("which nano").rstrip("\n") != "":
+        logger.info("nano is used as editor.")
         editor = 'nano'
+    elif run_cmd("which vi").rstrip("\n") != "":
+        logger.info("vi is used as editor.")
+        editor = 'vi'
+    # if no editor is set, and nano/vi both are not found.
+    else:
+        logger.error("No editor found.")
+        sys.exit(1)
     return editor
 
 

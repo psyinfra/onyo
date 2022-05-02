@@ -22,7 +22,7 @@ def build_commit_cmd(files, git_directory):
     return ["git -C \"" + git_directory + "\" commit -m", "edit files\n" + "\n".join(files)]
 
 
-def check_sources(sources):
+def prepare_arguments(sources):
     problem_str = ""
     list_of_sources = []
     if isinstance(sources, str):
@@ -45,7 +45,7 @@ def check_sources(sources):
 
 def edit(args):
     # check and set paths
-    list_of_sources = check_sources(args.file)
+    list_of_sources = prepare_arguments(args.file)
 
     for source in list_of_sources:
         git_directory = get_git_root(source)

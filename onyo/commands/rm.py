@@ -29,9 +29,13 @@ def run_rm(git_directory, source):
     return full_path
 
 
-def check_sources(sources):
+def prepare_arguments(sources, quiet, yes):
     problem_str = ""
     list_of_sources = []
+    # check flags
+    if quiet and not yes:
+        problem_str = problem_str + "\nonyo rm --quiet can't be run without --yes flag."
+    # check sources
     for source in sources:
         test_git = get_git_root(source)
         current_source = get_full_filepath(test_git, source)
@@ -46,13 +50,8 @@ def check_sources(sources):
 
 
 def rm(args):
-    # check flags
-    if args.quiet and not args.yes:
-        logger.error("onyo rm --quiet can't be run without --yes flag.")
-        sys.exit(1)
-
     # needs to check onyo root or rel path, also if in git
-    list_of_sources = check_sources(args.source)
+    list_of_sources = prepare_arguments(args.source, args.quiet, args.yes)
 
     if not args.quiet:
         print("onyo wants to delete:")
@@ -67,7 +66,7 @@ def rm(args):
     [commit_cmd, commit_msg] = build_commit_cmd(args.source[0], get_git_root(args.source[0]))
 
     for source in list_of_sources:
-        # if stopped existing since check_sources(), it was deleted
+        # if stopped existing since prepare_arguments(), it was deleted
         # with the loop before
         if not os.path.exists(source):
             continue
