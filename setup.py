@@ -12,7 +12,8 @@ setup(
     license='ISC',
     install_requires=[
         'GitPython',
-        'pytest'
+        'pytest',
+        'pyyaml'
     ],
     python_requires=">=3.5",
     entry_points={
