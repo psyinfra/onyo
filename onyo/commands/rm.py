@@ -14,7 +14,7 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(sources, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "\'deleted assets.\'"]
+    return ["git -C " + onyo_root + " commit -m", "deleted asset(s).\n\n" + "\n".join(sources)]
 
 
 def run_rm(onyo_root, source):
@@ -60,7 +60,7 @@ def rm(args, onyo_root):
             sys.exit(0)
 
     # build commit command and message
-    [commit_cmd, commit_msg] = build_commit_cmd(args.source[0], onyo_root)
+    [commit_cmd, commit_msg] = build_commit_cmd(list_of_sources, onyo_root)
 
     for source in list_of_sources:
         # if stopped existing since prepare_arguments(), it was deleted

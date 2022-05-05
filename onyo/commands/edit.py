@@ -17,7 +17,7 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(files, onyo_root):
-    return ["git -C \"" + onyo_root + "\" commit -m", "edit files\n\n" + "\n".join(files)]
+    return ["git -C \"" + onyo_root + "\" commit -m", "edit asset(s).\n\n" + "\n".join(files)]
 
 
 def prepare_arguments(sources, onyo_root):

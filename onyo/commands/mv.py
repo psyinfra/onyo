@@ -25,7 +25,7 @@ def build_mv_cmd(onyo_root, source, destination, force, rename):
 
 
 def build_commit_cmd(list_of_commands, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "move assets.\n" + "\n".join(list_of_commands)]
+    return ["git -C " + onyo_root + " commit -m", "move asset(s).\n\n" + "\n".join(list_of_commands)]
 
 
 def prepare_arguments(sources, destination, force, rename, onyo_root):

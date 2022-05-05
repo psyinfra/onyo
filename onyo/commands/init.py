@@ -16,8 +16,7 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(directory):
-    return ["git -C \"" + directory + "\" commit -m",
-            "\'initialize onyo repository\'"]
+    return ["git -C \"" + directory + "\" commit -m", "initialize onyo repository."]
 
 
 def build_git_init_cmd(directory):

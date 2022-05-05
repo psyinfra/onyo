@@ -17,7 +17,7 @@ reserved_characters = [".", "_"]
 
 
 def build_commit_cmd(file, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "\'new \"" + file + "\"\'"]
+    return ["git -C " + onyo_root + " commit -m", "new asset.\n\n" + file]
 
 
 def read_new_word(word_description, char_checks=True):
