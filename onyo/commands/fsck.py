@@ -10,6 +10,7 @@ from git import Repo, exc
 
 from onyo.utils import (
     run_cmd,
+    get_list_of_assets
 )
 
 logging.basicConfig()
@@ -68,13 +69,11 @@ def fsck(args, onyo_root):
 
     # check if it is possible to load yaml file for syntax check
     yaml_str = ""
-    assets = []
     for elem in glob.iglob(repo_path + '**/**', recursive=True):
         if os.path.isfile(elem):
             if run_cmd("git check-ignore --no-index \"" + elem + "\""):
                 continue
             # "assets" saves all names/paths, to later check if they are unique
-            assets.append([os.path.relpath(elem, repo_path), os.path.basename(elem)])
             with open(elem, "r") as stream:
                 try:
                     yaml.safe_load(stream)
@@ -84,6 +83,7 @@ def fsck(args, onyo_root):
         problem_str = problem_str + "\n\nyaml files with incorrect syntax:\n" + yaml_str
 
     # filenames in two assets:
+    assets = get_list_of_assets(repo_path)
     double_elements = []
     for elem in [i[1] for i in assets]:
         elements = [string for string in [i[0] for i in assets] if elem == os.path.basename(string)]
