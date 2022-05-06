@@ -5,6 +5,7 @@ import os
 import sys
 
 from onyo.utils import (
+    get_list_of_assets,
     run_cmd
 )
 
@@ -32,6 +33,7 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
     problem_str = ""
     list_of_commands = []
     list_of_destinations = []
+    assets = get_list_of_assets(onyo_root)
     for source in sources:
         # set all paths
         source_filename = os.path.join(onyo_root, source)
@@ -44,6 +46,13 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
         source_filename = os.path.relpath(source_filename, onyo_root)
         # build commands
         current_cmd = build_mv_cmd(onyo_root, source_filename, destination_filename, force, rename)
+        # when trying to rename a file to a name that is used by another asset:
+        if os.path.basename(destination_filename) != os.path.basename(source_filename):
+            for asset in assets:
+                if os.path.basename(destination_filename) == asset[1] and force and rename:
+                    continue
+                if os.path.basename(destination_filename) == asset[1]:
+                    problem_str = problem_str + "\nAsset names must be unique. Can't rename " + source_filename + " to " + destination_filename + " because of " + asset[0]
         if destination_filename in list_of_destinations:
             problem_str = problem_str + "\n" + "Can't move multiple assets to " + destination_filename
         list_of_destinations.append(destination_filename)
