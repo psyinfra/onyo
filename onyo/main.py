@@ -189,6 +189,12 @@ def parse_args():
         nargs='+',
         help='Assets to delete from onyo'
     )
+    # subcommand "fsck"
+    cmd_fsck = subcommands.add_parser(
+        'fsck',
+        help='Checks the consistency and validity of the onyo repository and its contents'
+    )
+    cmd_fsck.set_defaults(run=commands.fsck)
     return parser
 
 

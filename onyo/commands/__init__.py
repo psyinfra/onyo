@@ -7,7 +7,8 @@ from .cat import cat
 from .git import git
 from .mkdir import mkdir
 from .rm import rm
+from .fsck import fsck
 
 __all__ = [
-    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'git', 'mkdir', 'rm'
+    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'git', 'mkdir', 'rm', 'fsck'
 ]
