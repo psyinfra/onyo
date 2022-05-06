@@ -116,7 +116,7 @@ def get_list_of_assets(repo_path):
     for elem in glob.iglob(repo_path + '**/**', recursive=True):
         if os.path.isfile(elem):
             # when assets are in .gitignore, they should not be listed as such
-            if run_cmd("git check-ignore --no-index \"" + elem + "\""):
+            if run_cmd("git -C \"" + repo_path + "\" check-ignore --no-index \"" + elem + "\""):
                 continue
             assets.append([os.path.relpath(elem, repo_path), os.path.basename(elem)])
     return assets
