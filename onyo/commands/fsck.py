@@ -60,7 +60,7 @@ def fsck(args, onyo_root):
             # the onyo root folder has no .anchor
             if os.path.samefile(elem, repo_path):
                 continue
-            if run_cmd("git check-ignore --no-index \"" + elem + "\""):
+            if run_cmd("git -C " + repo_path + " check-ignore --no-index \"" + elem + "\""):
                 continue
             if not os.path.isfile(os.path.join(elem, ".anchor")):
                 anchor_str = anchor_str + "\n\t" + os.path.relpath(os.path.join(elem, ".anchor"), repo_path)
@@ -71,7 +71,7 @@ def fsck(args, onyo_root):
     yaml_str = ""
     for elem in glob.iglob(repo_path + '**/**', recursive=True):
         if os.path.isfile(elem):
-            if run_cmd("git check-ignore --no-index \"" + elem + "\""):
+            if run_cmd("git -C " + repo_path + " check-ignore --no-index \"" + elem + "\""):
                 continue
             # "assets" saves all names/paths, to later check if they are unique
             with open(elem, "r") as stream:
