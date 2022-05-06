@@ -1,7 +1,8 @@
 .
 ├── test_1
 │   ├── no user
-│   │   └── laptop_apple_macbookpro.4
+│   │   ├── laptop_apple_macbookpro.8
+│   │   └── laptop_apple_macbookpro.9
 │   ├── shelf
 │   │   └── laptop_apple_macbookpro.1
 │   ├── trash bin
@@ -12,7 +13,8 @@
 │       └── laptop_apple_macbookpro.6
 ├── test_2
 │   ├── no user
-│   │   └── laptop_apple_macbookpro.4
+│   │   ├── laptop_apple_macbookpro.8
+│   │   └── laptop_apple_macbookpro.9
 │   ├── shelf
 │   │   └── laptop_apple_macbookpro.1
 │   ├── trash bin
@@ -23,7 +25,8 @@
 │       └── laptop_apple_macbookpro.6
 └── test_3
     ├── no user
-    │   └── laptop_apple_macbookpro.4
+    │   ├── laptop_apple_macbookpro.8
+    │   └── laptop_apple_macbookpro.9
     ├── shelf
     │   └── laptop_apple_macbookpro.1
     ├── trash bin
@@ -33,4 +36,4 @@
         ├── laptop_apple_macbookpro.5
         └── laptop_apple_macbookpro.6
 
-15 directories, 18 files
+15 directories, 21 files
