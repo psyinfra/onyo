@@ -17,13 +17,8 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def fsck(args, onyo_root, quiet=False):
-    # set variables
-    repo = ""
-    repo_path = ""
-    problem_str = ""
+def verify_onyo_existence(onyo_root):
     info_str = ""
-    # check if is git, and .git and .onyo exist, identify top-level of onyo directory
     try:
         git_repo = Repo(onyo_root, search_parent_directories=True)
         repo_path = git_repo.git.rev_parse("--show-toplevel")
@@ -35,11 +30,16 @@ def fsck(args, onyo_root, quiet=False):
     if not os.path.exists(os.path.join(repo_path, ".onyo")):
         logger.error(repo_path + " is not a valid onyo repository.")
         sys.exit(1)
+    return [repo, repo_path, info_str]
 
-    # check if git status is clean
+
+def verify_onyo_working_tree(repo):
+    # set variables
+    problem_str = ""
     changed_files = [item.a_path for item in repo.index.diff(None)]
     untracked_files = repo.untracked_files
     staged_files = [item.a_path for item in repo.index.diff("HEAD")]
+    # list problems
     if len(changed_files) != 0 or len(untracked_files) != 0 or len(staged_files) != 0:
         problem_str = problem_str + "\n\nThe Onyo working tree is not clean."
         if len(staged_files) != 0:
@@ -49,8 +49,10 @@ def fsck(args, onyo_root, quiet=False):
         if len(untracked_files) != 0:
             problem_str = problem_str + "\nUntracked files: \n\t " + "\n\t ".join(untracked_files)
         problem_str = problem_str + "\nPlease commit all changes or add new files to .gitignore"
+    return problem_str
 
-    # onyo anchor check for all folders
+
+def verify_anchors(repo_path):
     anchor_str = ""
     for elem in glob.iglob(repo_path + '**/**', recursive=True):
         if os.path.isdir(elem):
@@ -65,9 +67,11 @@ def fsck(args, onyo_root, quiet=False):
             if not os.path.isfile(os.path.join(elem, ".anchor")):
                 anchor_str = anchor_str + "\n\t" + os.path.relpath(os.path.join(elem, ".anchor"), repo_path)
     if anchor_str:
-        problem_str = problem_str + "\n\n.anchor is missing:" + anchor_str
+        return "\n\n.anchor is missing:" + anchor_str
+    return ""
 
-    # check if it is possible to load yaml file for syntax check
+
+def verify_yaml(repo_path):
     yaml_str = ""
     for elem in glob.iglob(repo_path + '**/**', recursive=True):
         if os.path.isfile(elem):
@@ -80,9 +84,12 @@ def fsck(args, onyo_root, quiet=False):
                 except yaml.YAMLError:
                     yaml_str = yaml_str + "\t" + os.path.relpath(elem, repo_path) + "\n"
     if yaml_str:
-        problem_str = problem_str + "\n\nyaml files with incorrect syntax:\n" + yaml_str
+        return "\n\nyaml files with incorrect syntax:\n" + yaml_str
+    return ""
 
-    # filenames in two assets:
+
+def verify_filenames(repo_path):
+    problem_str = ""
     assets = get_list_of_assets(repo_path)
     double_elements = []
     for elem in [i[1] for i in assets]:
@@ -94,7 +101,45 @@ def fsck(args, onyo_root, quiet=False):
         problem_str = problem_str + "\nAsset files must be unique:\n"
         for i in double_elements:
             problem_str = problem_str + "\t" + i[0] + "\n\t\t" + i[1] + "\n"
+    return problem_str
 
+
+def read_only_fsck(args, onyo_root, quiet=False):
+    # set variables
+    repo = ""
+    repo_path = ""
+    problem_str = ""
+    info_str = ""
+    # check if is git, and .git and .onyo exist, identify top-level of onyo directory
+    [repo, repo_path, info_str] = verify_onyo_existence(onyo_root)
+    # check if it is possible to load yaml file for syntax check
+    problem_str = problem_str + verify_yaml(repo_path)
+    # end block, display problems or state repo is clean.
+    if problem_str:
+        logger.error(problem_str)
+        sys.exit(1)
+    else:
+        info_str = info_str + "\n" + repo_path + " is clean."
+        if not quiet:
+            print(info_str)
+
+
+def fsck(args, onyo_root, quiet=False):
+    # set variables
+    repo = ""
+    repo_path = ""
+    problem_str = ""
+    info_str = ""
+    # check if is git, and .git and .onyo exist, identify top-level of onyo directory
+    [repo, repo_path, info_str] = verify_onyo_existence(onyo_root)
+    # check if git status is clean
+    problem_str = problem_str + verify_onyo_working_tree(repo)
+    # onyo anchor check for all folders
+    problem_str = problem_str + verify_anchors(repo_path)
+    # check if it is possible to load yaml file for syntax check
+    problem_str = problem_str + verify_yaml(repo_path)
+    # check uniqueness of asset filenames
+    problem_str = problem_str + verify_filenames(repo_path)
     # end block, display problems or state repo is clean.
     if problem_str:
         logger.error(problem_str)
