@@ -17,18 +17,18 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def fsck(args, onyo_root):
+def fsck(args, onyo_root, quiet=False):
     # set variables
     repo = ""
     repo_path = ""
     problem_str = ""
-
+    info_str = ""
     # check if is git, and .git and .onyo exist, identify top-level of onyo directory
     try:
         git_repo = Repo(onyo_root, search_parent_directories=True)
         repo_path = git_repo.git.rev_parse("--show-toplevel")
         repo = Repo(repo_path)
-        print("onyo repo: " + repo_path)
+        info_str = info_str + "onyo repo: " + repo_path
     except exc.InvalidGitRepositoryError:
         logger.error(onyo_root + " is not a valid git repository.")
         sys.exit(1)
@@ -100,4 +100,6 @@ def fsck(args, onyo_root):
         logger.error(problem_str)
         sys.exit(1)
     else:
-        print(repo_path + " is clean.")
+        info_str = info_str + "\n" + repo_path + " is clean."
+        if not quiet:
+            print(info_str)
