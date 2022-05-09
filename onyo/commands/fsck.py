@@ -41,7 +41,7 @@ def verify_onyo_working_tree(repo):
     staged_files = [item.a_path for item in repo.index.diff("HEAD")]
     # list problems
     if len(changed_files) != 0 or len(untracked_files) != 0 or len(staged_files) != 0:
-        problem_str = problem_str + "\n\nThe Onyo working tree is not clean."
+        problem_str = problem_str + "\nThe Onyo working tree is not clean."
         if len(staged_files) != 0:
             problem_str = problem_str + "\nChanges to be committed: \n\t " + "\n\t ".join(staged_files)
         if len(changed_files) != 0:
@@ -67,7 +67,7 @@ def verify_anchors(repo_path):
             if not os.path.isfile(os.path.join(elem, ".anchor")):
                 anchor_str = anchor_str + "\n\t" + os.path.relpath(os.path.join(elem, ".anchor"), repo_path)
     if anchor_str:
-        return "\n\n.anchor is missing:" + anchor_str
+        return "\n\n.anchor is missing:" + anchor_str + "\nYou can create them with\ntouch <path/to/.anchor>\nor .gitignore the directories.\n"
     return ""
 
 
@@ -84,7 +84,7 @@ def verify_yaml(repo_path):
                 except yaml.YAMLError:
                     yaml_str = yaml_str + "\t" + os.path.relpath(elem, repo_path) + "\n"
     if yaml_str:
-        return "\n\nyaml files with incorrect syntax:\n" + yaml_str
+        return "\n\nyaml files with incorrect syntax:\n" + yaml_str + "Please correct the syntax of these files and add the changes to git, or .gitignore them."
     return ""
 
 
@@ -98,10 +98,13 @@ def verify_filenames(repo_path):
             double_elements.append(elements)
     if double_elements:
         double_elements = [list(tupl) for tupl in {tuple(item) for item in double_elements}]
-        problem_str = problem_str + "\nAsset files must be unique:\n"
+        problem_str = problem_str + "\n\nAsset files must be unique:\n"
         for i in double_elements:
             problem_str = problem_str + "\t" + i[0] + "\n\t\t" + i[1] + "\n"
-    return problem_str
+    if problem_str:
+        return problem_str + "Please change file names to unique and valid asset names and add them to git, or .gitignore them.\n"
+    else:
+        return ""
 
 
 def read_only_fsck(args, onyo_root, quiet=False):
@@ -119,6 +122,7 @@ def read_only_fsck(args, onyo_root, quiet=False):
         logger.error(problem_str)
         sys.exit(1)
     else:
+        problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str
         info_str = info_str + "\n" + repo_path + " is clean."
         if not quiet:
             print(info_str)
@@ -142,6 +146,7 @@ def fsck(args, onyo_root, quiet=False):
     problem_str = problem_str + verify_filenames(repo_path)
     # end block, display problems or state repo is clean.
     if problem_str:
+        problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str
         logger.error(problem_str)
         sys.exit(1)
     else:
