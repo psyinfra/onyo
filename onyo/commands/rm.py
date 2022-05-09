@@ -8,6 +8,7 @@ from onyo.utils import (
     build_git_add_cmd,
     run_cmd
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -47,6 +48,8 @@ def prepare_arguments(sources, quiet, yes, onyo_root):
 
 
 def rm(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # needs to check onyo root or rel path, also if in git
     list_of_sources = prepare_arguments(args.source, args.quiet, args.yes, onyo_root)
 

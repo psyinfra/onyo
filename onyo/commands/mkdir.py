@@ -8,6 +8,7 @@ from onyo.utils import (
     build_git_add_cmd,
     run_cmd
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -65,6 +66,8 @@ def prepare_arguments(directories, onyo_root):
 
 
 def mkdir(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # check and set paths
     list_of_folders = prepare_arguments(args.directory, onyo_root)
     # loop over folders and create them with an anchor file

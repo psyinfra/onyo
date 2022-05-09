@@ -10,6 +10,7 @@ from onyo.utils import (
     get_list_of_assets,
     edit_file
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -77,14 +78,14 @@ def prepare_arguments(directory, onyo_root):
 
 
 def new(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # set and check paths
     directory = prepare_arguments(args.directory, onyo_root)
-
     # create file for asset, fill in fields
     created_file = run_onyo_new(directory, args.non_interactive, onyo_root)
     git_filepath = os.path.relpath(created_file, onyo_root)
     # build commit command
     [commit_cmd, commit_msg] = build_commit_cmd(git_filepath, onyo_root)
-
     # run commands
     run_cmd(commit_cmd, commit_msg)

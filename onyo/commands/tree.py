@@ -7,6 +7,7 @@ import sys
 from onyo.utils import (
     run_cmd
 )
+from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -47,6 +48,8 @@ def prepare_arguments(sources, onyo_root):
 
 
 def tree(args, onyo_root):
+    # run onyo fsck for read only commands
+    read_only_fsck(args, onyo_root, quiet=True)
     # check sources
     list_of_sources = prepare_arguments(args.directory, onyo_root)
     # build and run commands

@@ -11,6 +11,7 @@ from onyo.utils import (
     run_cmd,
     edit_file
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -44,6 +45,8 @@ def prepare_arguments(sources, onyo_root):
 
 
 def edit(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # check and set paths
     list_of_sources = prepare_arguments(args.file, onyo_root)
     # iterate over file list, edit them, add changes

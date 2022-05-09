@@ -8,6 +8,7 @@ from onyo.utils import (
     get_list_of_assets,
     run_cmd
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -67,6 +68,8 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
 
 
 def mv(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # check and set paths
     list_of_commands = prepare_arguments(args.source, args.destination, args.force, args.rename, onyo_root)
     # run list of commands, afterwards commit
