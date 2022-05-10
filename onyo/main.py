@@ -60,18 +60,18 @@ def parse_args():
         required=False,
         default=False,
         action='store_true',
-        help='Rename file'
+        help='Enable renaming of asset file'
     )
     cmd_mv.add_argument(
         'source',
         metavar='source',
         nargs='+',
-        help='Source file'
+        help='Source ...'
     )
     cmd_mv.add_argument(
         'destination',
         metavar='destination',
-        help='Destination file'
+        help='Destination'
     )
     # subcommand "new"
     cmd_new = subcommands.add_parser(
