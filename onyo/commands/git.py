@@ -5,6 +5,7 @@ import logging
 from onyo.utils import (
     run_cmd
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -21,12 +22,12 @@ def build_command(command, onyo_root):
 
 
 def git(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # if "onyo git -C <dir>" is called
     if args.directory is not None:
         onyo_root = args.directory
-
     # build command
     command = build_command(args.command, onyo_root)
-
     # run commands
     print(run_cmd(command))

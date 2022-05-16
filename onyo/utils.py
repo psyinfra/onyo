@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import shlex
-
+import glob
 
 from git import Repo, exc
 
@@ -109,6 +109,17 @@ def edit_file(file):
 
 def build_git_add_cmd(directory, file):
     return "git -C \"" + directory + "\" add \"" + file + "\""
+
+
+def get_list_of_assets(repo_path):
+    assets = []
+    for elem in glob.iglob(repo_path + '**/**', recursive=True):
+        if os.path.isfile(elem):
+            # when assets are in .gitignore, they should not be listed as such
+            if run_cmd("git -C \"" + repo_path + "\" check-ignore --no-index \"" + elem + "\""):
+                continue
+            assets.append([os.path.relpath(elem, repo_path), os.path.basename(elem)])
+    return assets
 
 
 def prepare_directory(directory):

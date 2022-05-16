@@ -16,15 +16,13 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(directory):
-    return ["git -C \"" + directory + "\" commit -m",
-            "\'initialize onyo repository\'"]
+    return ["git -C \"" + directory + "\" commit -m", "initialize onyo repository."]
 
 
 def build_git_init_cmd(directory):
     if is_git_dir(directory) and os.path.isdir(directory + "/.onyo"):
-        logger.info(directory + " has already a onyo configuration directory " +
-                    "and is a git repository.")
-        sys.exit(0)
+        logger.error(directory + " has already a onyo configuration directory and is a git repository.")
+        sys.exit(1)
     elif is_git_dir(directory):
         logger.info(directory + " is already a  git repository.")
         return None

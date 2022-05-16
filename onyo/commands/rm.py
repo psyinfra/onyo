@@ -8,13 +8,14 @@ from onyo.utils import (
     build_git_add_cmd,
     run_cmd
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(sources, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "\'deleted assets.\'"]
+    return ["git -C " + onyo_root + " commit -m", "deleted asset(s).\n\n" + "\n".join(sources)]
 
 
 def run_rm(onyo_root, source):
@@ -47,6 +48,8 @@ def prepare_arguments(sources, quiet, yes, onyo_root):
 
 
 def rm(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # needs to check onyo root or rel path, also if in git
     list_of_sources = prepare_arguments(args.source, args.quiet, args.yes, onyo_root)
 
@@ -60,7 +63,7 @@ def rm(args, onyo_root):
             sys.exit(0)
 
     # build commit command and message
-    [commit_cmd, commit_msg] = build_commit_cmd(args.source[0], onyo_root)
+    [commit_cmd, commit_msg] = build_commit_cmd(list_of_sources, onyo_root)
 
     for source in list_of_sources:
         # if stopped existing since prepare_arguments(), it was deleted

@@ -5,8 +5,10 @@ import os
 import sys
 
 from onyo.utils import (
+    get_list_of_assets,
     run_cmd
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -25,13 +27,14 @@ def build_mv_cmd(onyo_root, source, destination, force, rename):
 
 
 def build_commit_cmd(list_of_commands, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "move assets.\n" + "\n".join(list_of_commands)]
+    return ["git -C " + onyo_root + " commit -m", "move asset(s).\n\n" + "\n".join(list_of_commands)]
 
 
 def prepare_arguments(sources, destination, force, rename, onyo_root):
     problem_str = ""
     list_of_commands = []
     list_of_destinations = []
+    assets = get_list_of_assets(onyo_root)
     for source in sources:
         # set all paths
         source_filename = os.path.join(onyo_root, source)
@@ -44,6 +47,13 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
         source_filename = os.path.relpath(source_filename, onyo_root)
         # build commands
         current_cmd = build_mv_cmd(onyo_root, source_filename, destination_filename, force, rename)
+        # when trying to rename a file to a name that is used by another asset:
+        if os.path.basename(destination_filename) != os.path.basename(source_filename):
+            for asset in assets:
+                if os.path.basename(destination_filename) == asset[1] and force and rename:
+                    continue
+                if os.path.basename(destination_filename) == asset[1]:
+                    problem_str = problem_str + "\nAsset names must be unique. Can't rename " + source_filename + " to " + destination_filename + " because of " + asset[0]
         if destination_filename in list_of_destinations:
             problem_str = problem_str + "\n" + "Can't move multiple assets to " + destination_filename
         list_of_destinations.append(destination_filename)
@@ -58,6 +68,8 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
 
 
 def mv(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # check and set paths
     list_of_commands = prepare_arguments(args.source, args.destination, args.force, args.rename, onyo_root)
     # run list of commands, afterwards commit

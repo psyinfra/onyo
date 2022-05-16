@@ -8,6 +8,7 @@ from onyo.utils import (
     build_git_add_cmd,
     run_cmd
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -16,7 +17,7 @@ anchor_name = ".anchor"
 
 
 def build_commit_cmd(folders, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "new folder(s)\n\n" + "\n".join(folders)]
+    return ["git -C " + onyo_root + " commit -m", "new folder(s).\n\n" + "\n".join(folders)]
 
 
 def run_mkdir(onyo_root, new_directory):
@@ -65,6 +66,8 @@ def prepare_arguments(directories, onyo_root):
 
 
 def mkdir(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # check and set paths
     list_of_folders = prepare_arguments(args.directory, onyo_root)
     # loop over folders and create them with an anchor file

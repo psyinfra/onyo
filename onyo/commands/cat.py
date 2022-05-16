@@ -4,6 +4,7 @@ import logging
 import os
 
 from onyo.utils import run_cmd
+from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -25,6 +26,10 @@ def build_cat_cmd(files, onyo_root):
 
 
 def cat(args, onyo_root):
+
+    # run onyo fsck for read only commands
+    read_only_fsck(args, onyo_root, quiet=True)
+
     # check paths and build commands
     list_of_cat_commands = build_cat_cmd(args.file, onyo_root)
     for command in list_of_cat_commands:

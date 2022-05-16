@@ -7,8 +7,10 @@ import sys
 from onyo.utils import (
     build_git_add_cmd,
     run_cmd,
+    get_list_of_assets,
     edit_file
 )
+from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -17,7 +19,7 @@ reserved_characters = [".", "_"]
 
 
 def build_commit_cmd(file, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "\'new \"" + file + "\"\'"]
+    return ["git -C " + onyo_root + " commit -m", "new asset.\n\n" + file]
 
 
 def read_new_word(word_description, char_checks=True):
@@ -36,12 +38,8 @@ def read_new_word(word_description, char_checks=True):
     return word
 
 
-def run_onyo_new(directory, non_interactive):
-    type_str = read_new_word('<type>*:')
-    make_str = read_new_word('<make>*:')
-    model_str = read_new_word('<model*>:')
-    serial_str = read_new_word('<serial*>:', char_checks=False)
-    filename = create_filename(type_str, make_str, model_str, serial_str)
+def run_onyo_new(directory, non_interactive, onyo_root):
+    filename = create_filename(onyo_root)
     if os.path.exists(os.path.join(directory, filename)):
         logger.error(os.path.join(directory, filename) + " asset already exists.")
         sys.exit(1)
@@ -53,8 +51,17 @@ def run_onyo_new(directory, non_interactive):
     return os.path.join(directory, filename)
 
 
-def create_filename(type_str, make_str, model_str, serial_str):
+def create_filename(onyo_root):
+    type_str = read_new_word('<type>*:')
+    make_str = read_new_word('<make>*:')
+    model_str = read_new_word('<model*>:')
+    serial_str = read_new_word('<serial*>:', char_checks=False)
     filename = type_str + "_" + make_str + "_" + model_str + "." + serial_str
+    assets = get_list_of_assets(onyo_root)
+    for asset in assets:
+        if filename == asset[1]:
+            logger.info(filename + " exists already in " + asset[0] + "\nCreate a new filename:")
+            return create_filename(onyo_root)
     return filename
 
 
@@ -71,15 +78,14 @@ def prepare_arguments(directory, onyo_root):
 
 
 def new(args, onyo_root):
+    # run onyo fsck
+    fsck(args, onyo_root, quiet=True)
     # set and check paths
     directory = prepare_arguments(args.directory, onyo_root)
-
     # create file for asset, fill in fields
-    created_file = run_onyo_new(directory, args.non_interactive)
+    created_file = run_onyo_new(directory, args.non_interactive, onyo_root)
     git_filepath = os.path.relpath(created_file, onyo_root)
-
     # build commit command
     [commit_cmd, commit_msg] = build_commit_cmd(git_filepath, onyo_root)
-
     # run commands
     run_cmd(commit_cmd, commit_msg)
