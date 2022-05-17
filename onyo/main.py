@@ -134,6 +134,31 @@ def parse_args():
         nargs='*',
         help='Directories to show tree'
     )
+    # subcommand "history"
+    cmd_history = subcommands.add_parser(
+        'history',
+        help='Show history of asset or folder'
+    )
+    cmd_history.set_defaults(run=commands.history)
+    cmd_history.add_argument(
+        'source',
+        metavar='source',
+        nargs='?',
+        help='Directory or asset to show history of'
+    )
+    cmd_history.add_argument(
+        '-I', '--non-interactive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='print log instead of opening interactive tig menu'
+    )
+    cmd_history.add_argument(
+        '-t', '--tool',
+        metavar='tool',
+        required=False,
+        help='overwrite default log tool/flags (\"tig --follow\" for interactive, \"git --no-pager log --follow\" for non-interactive mode'
+    )
     # subcommand "git"
     cmd_git = subcommands.add_parser(
         'git',
