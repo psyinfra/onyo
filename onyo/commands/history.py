@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+import configparser
 
 from onyo.utils import (
     run_cmd
@@ -13,10 +14,29 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def prepare_arguments(source, tool, onyo_root):
+def prepare_arguments(source, onyo_root):
     problem_str = ""
-    if tool and run_cmd("which " + tool.split()[0]).rstrip("\n") == "":
-        problem_str = problem_str + "\n" + tool.split()[0] + " is not available."
+    # find log/history tools:
+    config = configparser.ConfigParser()
+    config.read(os.path.join(onyo_root, ".onyo/config"))
+    interactive_tool = ""
+    non_interactive_tool = ""
+    try:
+        interactive_tool = config['history']['interactive']
+    except KeyError:
+        pass
+    try:
+        non_interactive_tool = config['history']['non-interactive']
+    except KeyError:
+        pass
+    if not interactive_tool:
+        problem_str = problem_str + "\n" + "No interactive logging tool is set. Set with e.g:\n\tonyo config history.interactive \"tig --follow\""
+    elif run_cmd("which " + interactive_tool.split()[0].rstrip("\n")) == "":
+        problem_str = problem_str + "\nLogging tool " + interactive_tool.split()[0] + " is not available. Set with e.g:\n\tonyo config history.interactive \"tig --follow\""
+    if not non_interactive_tool:
+        problem_str = problem_str + "\n" + "No non-interactive logging tool is set. Set with e.g:\n\tonyo config history.non-interactive \"git --no-pager log --follow\""
+    elif run_cmd("which " + non_interactive_tool.split()[0].rstrip("\n")) == "":
+        problem_str = problem_str + "\nLogging tool " + non_interactive_tool.split()[0] + " is not available. Set with e.g:\n\tonyo config history.non-interactive \"git --no-pager log --follow\""
     # find directory/asset to show history of
     current_source = source
     # when no source is given, it uses the onyo root
@@ -31,18 +51,16 @@ def prepare_arguments(source, tool, onyo_root):
     if problem_str != "":
         logger.error(problem_str)
         sys.exit(1)
-    return current_source
+    return [current_source, interactive_tool, non_interactive_tool]
 
 
 def history(args, onyo_root):
     # run onyo fsck for read only commands
     read_only_fsck(args, onyo_root, quiet=True)
-    # check source
-    source = prepare_arguments(args.source, args.tool, onyo_root)
+    # check source, set variables
+    [source, interactive_tool, non_interactive_tool] = prepare_arguments(args.source, onyo_root)
     # run history command depending on mode
-    if args.tool:
-        os.system(args.tool + " \"" + source + "\"")
-    elif not args.non_interactive and sys.stdout.isatty():
-        os.system("tig --follow \"" + source + "\"")
+    if not args.non_interactive and sys.stdout.isatty():
+        os.system(interactive_tool + " \"" + source + "\"")
     else:
-        print(run_cmd("git --no-pager log --follow \"" + source + "\""))
+        os.system(non_interactive_tool + " \"" + source + "\"")
