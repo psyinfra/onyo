@@ -176,6 +176,18 @@ def parse_args():
         nargs=argparse.REMAINDER,
         help='Command to run in onyo'
     )
+    # subcommand "config"
+    cmd_config = subcommands.add_parser(
+        'config',
+        help='Config onyo options'
+    )
+    cmd_config.set_defaults(run=commands.config)
+    cmd_config.add_argument(
+        'command',
+        metavar='command',
+        nargs=argparse.REMAINDER,
+        help='Variable to set in .onyo/config'
+    )
     # subcommand "mkdir"
     cmd_mkdir = subcommands.add_parser(
         'mkdir',

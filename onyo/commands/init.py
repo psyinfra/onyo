@@ -49,6 +49,8 @@ def create_file_cmd(directory):
 def prepare_arguments(directory, onyo_root):
     if directory is None:
         directory = onyo_root
+    else:
+        directory = os.path.join(onyo_root, directory)
     return directory
 
 
@@ -68,6 +70,9 @@ def init(args, onyo_root):
         run_cmd(git_init_command)
     run_cmd(onyo_init_command)
     run_cmd(create_file_command)
+    os.chdir(directory)
+    os.system("onyo config history.interactive \\\"tig --follow\\\"")
+    os.system("onyo config history.non-interactive \\\"git --no-pager log --follow\\\"")
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
     logger.info(commit_msg + ": " + get_git_root(directory))
