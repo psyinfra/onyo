@@ -367,7 +367,7 @@ onyo new shelf
 <make>*: lenovo
 <model>*: T490s
 <serial>*: abc123
-<spawns editor, the above fields are pre-filled. The user edits remaining fields>
+<spawns editor. The user edits fields>
 <writes out to shelf/laptop_lenovo_T490s.abc123
 ```
 
@@ -390,7 +390,7 @@ onyo set RAM=16GB accounting/Bingo\ Bob/laptop_lenovo_T490s
 or
 ```
 onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s
-<spawns VIM; user edits ram field>
+<spawns $EDITOR; user edits ram field>
 ```
 
 **List all assets on the shelf**:
@@ -416,6 +416,10 @@ onyo get filename --filter type=headset shelf
 onyo history accounting/Bingo\ Bob/laptop_lenovo_T490s
 ```
 
+**List the history of all assets of a user**:
+```
+onyo history accounting/Bingo\ Bob
+```
 **Get the filename, make, model, and purchase data of all laptops assigned to the accounting department; sort first by make, then model, then purchase date**:
 ```
 onyo get --filter type=laptop -s make -s model -s purchase_date filename,make,model,purchase_date accounting/
