@@ -328,10 +328,24 @@ laptop asset should be converted to a folder, and the license moved into it.
   Set a `variable` to `value` in the `.onyo/config` file. This command can for
   example change the default tool for the interactive mode of `onyo history`
   with `onyo config history.interactive "git log --follow"`.
+- `onyo fsck`:
+
+  Runs a comprehensive suite of checks to verify the integrity and validity of
+  an onyo repository and it's contents:
+  - Checks first if an `onyo repository` is given (a valid git repository, which
+    contains an `.onyo` folder), otherwise it errors out and does no further
+    checks. If the directory is valid, `onyo fsck` runs these checks for the
+    whole onyo repository and it's contents, and lists all problems encountered:
+    - all asset names are unique
+    - all files are valid YAML
+    - the git working tree is clean (no untracked or changed files)
+    - all directories and sub-directories have a .anchor file
+
+  Files and directories that should not be checked for their validity can be
+  added to .gitignore.
 
 TODO:
 - onyo unset
-- onyo fsck
 
 
 ## Environment Variables
