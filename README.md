@@ -308,11 +308,26 @@ laptop asset should be converted to a folder, and the license moved into it.
   it's YAML syntax.
 
   - `--non-interactive` : Suppress opening of editor after file creation.
+- `onyo history [--non-interactive, -I] asset | directory`:
+
+  Show the history of a `directory` or `asset` file.
+  By default, to show the history in interactive mode, the command uses
+  `tig --follow asset | directory`, and for the non-interactive mode it calls
+  `git --no-pager log --follow asset | directory`. The default tools can be
+  changed with `onyo config`.
+
+  - `--non-interactive` : Force usage of the non-interactive tool to show the
+  history of a `asset` or `directory`, and do not detect whether the TTY is
+  interactive.
+- `onyo config variable value`:
+
+  Set a `variable` to `value` in the `.onyo/config` file. This command can for
+  example change the default tool for the interactive mode of `onyo history`
+  with `onyo config history.interactive "git log --follow"`.
 
 TODO:
 - onyo unset
 - onyo fsck
-- onyo history
 
 
 ## Environment Variables
