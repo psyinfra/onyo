@@ -116,7 +116,11 @@ TODO: pseudo-keys
 Configuration files are stored in the `.onyo/` folder in the top-level of the
 repository.
 
-TODO: list the files and explain them
+- `.onyo/config` specifies:
+  - tools used by `onyo history`.
+    The values can be updated with e.g.:
+    - `onyo config history.interactive "tig --follow"`
+    - `onyo config history.non-interactive "git --no-pager log --follow"`
 
 
 ## Advanced
@@ -141,8 +145,8 @@ laptop asset should be converted to a folder, and the license moved into it.
 - `onyo init [directory]`:
 
   Initialize an Onyo repository. The directory will be initialized as a git
-  repository (if it is not one already), the `.onyo/` configuration folder
-  created, and template files generated and committed.
+  repository (if it is not one already), the .onyo/ directory created
+  (containing default config files, templates, etc), and everything committed.
 
   The current working directory will be initialized if neither `directory` nor
   the `ONYO_REPOSITORY_DIR` environment variable are specified. If both are set,
