@@ -299,10 +299,17 @@ laptop asset should be converted to a folder, and the license moved into it.
   Pass `git-command-args` as arguments to `git`, using the Onyo repository as
   the git repository. This is most valuable when used in conjunction with
   `ONYO_REPOSITORY_DIR`.
+- `onyo new [--non-interactive, -I] directory`:
 
+  Creates a new `asset` in `directory`. The command opens a dialog that asks for
+  the field names defined by the asset name scheme, and after creation opens the
+  new `asset` file with the editor.
+  After the editing is done, the new file will be checked for the validity of
+  it's YAML syntax.
+
+  - `--non-interactive` : Suppress opening of editor after file creation.
 
 TODO:
-- onyo new
 - onyo unset
 - onyo fsck
 - onyo history
