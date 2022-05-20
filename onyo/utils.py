@@ -4,6 +4,7 @@ import os
 import sys
 import shlex
 import glob
+import yaml
 
 from git import Repo, exc
 
@@ -99,11 +100,43 @@ def get_editor():
     return editor
 
 
-def edit_file(file):
+def edit_file(file, onyo_root):
     if not os.path.isfile(file):
         logger.error(file + " does not exist.")
         sys.exit(1)
-    os.system(get_editor() + " \"" + file + "\"")
+    # create and edit a temporary file, and if that is valid replace original
+    temp_file = os.path.join(onyo_root, os.path.join(".onyo/temp/", os.path.basename(file)))
+    if not os.path.isfile(temp_file):
+        run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+    # When temp-file exists, ask if to use it
+    elif os.path.isfile(temp_file):
+        while True:
+            edit_temp = str(input("Temporary changes for " + file + " exist. Continue editing? (y/n)"))
+            if edit_temp == 'y':
+                break
+            elif edit_temp == 'n':
+                run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+                break
+    further_editing = 'y'
+    while further_editing == 'y':
+        # do actual editing:
+        os.system(get_editor() + " \"" + temp_file + "\"")
+        # check syntax
+        with open(temp_file, "r") as stream:
+            try:
+                yaml.safe_load(stream)
+                run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
+                return
+            except yaml.YAMLError:
+                logger.error(file + " is no legal yaml syntax.")
+                while True:
+                    further_editing = str(input("Continue editing? (y/n)"))
+                    if further_editing == 'y':
+                        break
+                    elif further_editing == 'n':
+                        run_cmd("rm \"" + temp_file + "\"")
+                        logger.info("No changes made.")
+                        sys.exit(1)
     return
 
 

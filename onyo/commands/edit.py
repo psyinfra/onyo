@@ -54,7 +54,7 @@ def edit(args, onyo_root):
         git_filepath = os.path.relpath(source, onyo_root)
         # change file
         if not args.non_interactive:
-            edit_file(source)
+            edit_file(source, onyo_root)
         # check if changes happened and add them
         repo = Repo(onyo_root)
         changed_files = [item.a_path for item in repo.index.diff(None)]

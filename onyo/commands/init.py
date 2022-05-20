@@ -39,11 +39,11 @@ def build_onyo_init_cmd(directory):
     elif os.path.isdir(os.path.join(directory + "/.onyo")):
         logger.error(directory + " has already an onyo configuration directory.")
         sys.exit(1)
-    return "mkdir \"" + os.path.join(directory + "/.onyo") + "\""
+    return "mkdir \"" + os.path.join(directory + "/.onyo") + "\" \"" + os.path.join(directory + "/.onyo/temp") + "\""
 
 
 def create_file_cmd(directory):
-    return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\""
+    return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/temp/.anchor") + "\""
 
 
 def prepare_arguments(directory, onyo_root):

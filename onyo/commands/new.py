@@ -45,7 +45,7 @@ def run_onyo_new(directory, non_interactive, onyo_root):
         sys.exit(1)
     run_cmd(create_asset_file_cmd(directory, filename))
     if not non_interactive:
-        edit_file(os.path.join(directory, filename))
+        edit_file(os.path.join(directory, filename), onyo_root)
     git_add_cmd = build_git_add_cmd(directory, filename)
     run_cmd(git_add_cmd)
     return os.path.join(directory, filename)
