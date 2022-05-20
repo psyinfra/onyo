@@ -134,6 +134,25 @@ def parse_args():
         nargs='*',
         help='Directories to show tree'
     )
+    # subcommand "history"
+    cmd_history = subcommands.add_parser(
+        'history',
+        help='Show history of asset or folder'
+    )
+    cmd_history.set_defaults(run=commands.history)
+    cmd_history.add_argument(
+        'source',
+        metavar='source',
+        nargs='?',
+        help='Directory or asset to show history of'
+    )
+    cmd_history.add_argument(
+        '-I', '--non-interactive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='print log instead of opening interactive tig menu'
+    )
     # subcommand "git"
     cmd_git = subcommands.add_parser(
         'git',
@@ -150,6 +169,18 @@ def parse_args():
         metavar='command',
         nargs=argparse.REMAINDER,
         help='Command to run in onyo'
+    )
+    # subcommand "config"
+    cmd_config = subcommands.add_parser(
+        'config',
+        help='Config onyo options'
+    )
+    cmd_config.set_defaults(run=commands.config)
+    cmd_config.add_argument(
+        'command',
+        metavar='command',
+        nargs=argparse.REMAINDER,
+        help='Variable to set in .onyo/config'
     )
     # subcommand "mkdir"
     cmd_mkdir = subcommands.add_parser(
