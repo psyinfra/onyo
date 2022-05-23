@@ -1,1 +1,1 @@
-<type>*:<make>*:<model*>:<serial*>:
+<type>*:<make>*:<model>*:<serial>*:
