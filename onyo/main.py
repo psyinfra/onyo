@@ -87,6 +87,12 @@ def parse_args():
         help='Creates the new asset without opening editor'
     )
     cmd_new.add_argument(
+        '-t', '--template',
+        required=False,
+        default='default',
+        help='Define a template to use for the creation of a new asset'
+    )
+    cmd_new.add_argument(
         'directory',
         metavar='directory',
         help='Directory to add the new onyo asset'
