@@ -1,0 +1,14 @@
+---
+name: type_make_model.serial
+name_fields:
+    -
+        name: "type"
+        reserved_characters: _.
+    -
+        name: "make"
+        reserved_characters: _.
+    -
+        name: "model"
+        reserved_characters: _.
+    -
+        name: "serial"
