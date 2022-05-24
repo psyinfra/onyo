@@ -1,1 +1,1 @@
-include onyo/templates/default
+include onyo/templates/*

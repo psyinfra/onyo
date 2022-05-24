@@ -83,7 +83,7 @@ def create_filename(onyo_root, template_contents):
         word = read_new_word('<' + field['name'] + '>*:', reserved_characters)
         words.append(word)
         if field['name'] in filename:
-            filename = filename.replace(field['name'], word)
+            filename = filename.replace("<" + field['name'] + ">", word)
     # check if the new filename is actually unique in onyo repository
     assets = get_list_of_assets(onyo_root)
     for asset in assets:
