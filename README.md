@@ -180,8 +180,9 @@ repository.
   When multiple asset files are given, Onyo will open them in sequence.
   - `--non-interactive`: Suppress opening of editor
 
-  TODO: Describe validation
-  TODO: How to handle folder assets.
+  After editing an `asset`, `onyo` will check the validity of the YAML syntax,
+  and if problems are found it gives the choice to either correct them or
+  discard the changes to make sure that the repository stays in a valid state.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
