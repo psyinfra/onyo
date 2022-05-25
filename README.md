@@ -394,13 +394,3 @@ onyo history accounting/Bingo\ Bob
 ```
 onyo get --filter type=laptop -s make -s model -s purchase_date filename,make,model,purchase_date accounting/
 ```
-
-
-## Example Layout
-
-TODO
-
-
-## Names
-
-TODO Short name vs long name. Globbing.
