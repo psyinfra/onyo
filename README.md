@@ -85,14 +85,11 @@ The `serial` field has no restrictions.
 ### Field Validation
 
 Values for the `type`, `make`, and `model` fields are checked against a
-field-specific allow-list in the config folder (see "Config Files"). Entries can
-be strings or, for more complex needs, any valid [Python Regular Expression](https://docs.python.org/3/library/re.html#regular-expression-syntax).
+field-specific list of reserved characters in the template
+.onyo/templates/default (see "Config Files").
 
-Values are checked for reserved characters before they are checked against the
-validation strings/patterns.
-
-One can effectively disable validation for a field by adding `.*` to the
-corresponding validation list.
+Additional templates with customized name schemes and reserved characters can be
+defined in that folder.
 
 
 ## File Contents
@@ -101,14 +98,6 @@ Files are written in YAML and contain metadata about the asset. This can
 describe the physical attributes of the hardware (CPU type, RAM size, ), but can
 also extend to any metadata you wish to track (software, associated purchase
 order numbers, etc).
-
-TODO: template format
-
-TODO: validation
-
-TODO: template matching
-
-TODO: pseudo-keys
 
 
 ## Config Files
@@ -121,23 +110,6 @@ repository.
     The values can be updated with e.g.:
     - `onyo config history.interactive "tig --follow"`
     - `onyo config history.non-interactive "git --no-pager log --follow"`
-
-
-## Advanced
-
-A folder can also bundle multiple assets together into a larger asset, such as a
-server with a separately tracked network card, or a laptop with a specific
-software license.
-
-
-TODO:
-- what is the file-name to describe the folder-asset?
-  - server (tracked) and a NIC (tracked)
-  - laptop (tracked) and software license (tracked)
-
-If licensing is attached to a particular machine (such as an OEM licence), then
-it is best encoded as a metadata field. If the license is transferable, then the
-laptop asset should be converted to a folder, and the license moved into it.
 
 
 ## Commands
