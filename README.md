@@ -344,9 +344,6 @@ laptop asset should be converted to a folder, and the license moved into it.
   Files and directories that should not be checked for their validity can be
   added to .gitignore.
 
-TODO:
-- onyo unset
-
 
 ## Environment Variables
 
