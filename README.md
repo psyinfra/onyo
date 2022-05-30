@@ -85,14 +85,11 @@ The `serial` field has no restrictions.
 ### Field Validation
 
 Values for the `type`, `make`, and `model` fields are checked against a
-field-specific allow-list in the config folder (see "Config Files"). Entries can
-be strings or, for more complex needs, any valid [Python Regular Expression](https://docs.python.org/3/library/re.html#regular-expression-syntax).
+field-specific list of reserved characters in the template
+.onyo/templates/default (see "Config Files").
 
-Values are checked for reserved characters before they are checked against the
-validation strings/patterns.
-
-One can effectively disable validation for a field by adding `.*` to the
-corresponding validation list.
+Additional templates with customized name schemes and reserved characters can be
+defined in that folder.
 
 
 ## File Contents
@@ -102,38 +99,17 @@ describe the physical attributes of the hardware (CPU type, RAM size, ), but can
 also extend to any metadata you wish to track (software, associated purchase
 order numbers, etc).
 
-TODO: template format
-
-TODO: validation
-
-TODO: template matching
-
-TODO: pseudo-keys
-
 
 ## Config Files
 
 Configuration files are stored in the `.onyo/` folder in the top-level of the
 repository.
 
-TODO: list the files and explain them
-
-
-## Advanced
-
-A folder can also bundle multiple assets together into a larger asset, such as a
-server with a separately tracked network card, or a laptop with a specific
-software license.
-
-
-TODO:
-- what is the file-name to describe the folder-asset?
-  - server (tracked) and a NIC (tracked)
-  - laptop (tracked) and software license (tracked)
-
-If licensing is attached to a particular machine (such as an OEM licence), then
-it is best encoded as a metadata field. If the license is transferable, then the
-laptop asset should be converted to a folder, and the license moved into it.
+- `.onyo/config` specifies:
+  - tools used by `onyo history`.
+    The values can be updated with e.g.:
+    - `onyo config history.interactive "tig --follow"`
+    - `onyo config history.non-interactive "git --no-pager log --follow"`
 
 
 ## Commands
@@ -141,8 +117,8 @@ laptop asset should be converted to a folder, and the license moved into it.
 - `onyo init [directory]`:
 
   Initialize an Onyo repository. The directory will be initialized as a git
-  repository (if it is not one already), the `.onyo/` configuration folder
-  created, and template files generated and committed.
+  repository (if it is not one already), the .onyo/ directory created
+  (containing default config files, templates, etc), and everything committed.
 
   The current working directory will be initialized if neither `directory` nor
   the `ONYO_REPOSITORY_DIR` environment variable are specified. If both are set,
@@ -204,8 +180,9 @@ laptop asset should be converted to a folder, and the license moved into it.
   When multiple asset files are given, Onyo will open them in sequence.
   - `--non-interactive`: Suppress opening of editor
 
-  TODO: Describe validation
-  TODO: How to handle folder assets.
+  After editing an `asset`, `onyo` will check the validity of the YAML syntax,
+  and if problems are found it gives the choice to either correct them or
+  discard the changes to make sure that the repository stays in a valid state.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
@@ -299,13 +276,46 @@ laptop asset should be converted to a folder, and the license moved into it.
   Pass `git-command-args` as arguments to `git`, using the Onyo repository as
   the git repository. This is most valuable when used in conjunction with
   `ONYO_REPOSITORY_DIR`.
+- `onyo new [--non-interactive, -I] directory`:
 
+  Creates a new `asset` in `directory`. The command opens a dialog that asks for
+  the field names defined by the asset name scheme, and after creation opens the
+  new `asset` file with the editor.
+  After the editing is done, the new file will be checked for the validity of
+  it's YAML syntax.
 
-TODO:
-- onyo new
-- onyo unset
-- onyo fsck
-- onyo history
+  - `--non-interactive` : Suppress opening of editor after file creation.
+- `onyo history [--non-interactive, -I] asset | directory`:
+
+  Show the history of a `directory` or `asset` file.
+  By default, to show the history in interactive mode, the command uses
+  `tig --follow asset | directory`, and for the non-interactive mode it calls
+  `git --no-pager log --follow asset | directory`. The default tools can be
+  changed with `onyo config`.
+
+  - `--non-interactive` : Force usage of the non-interactive tool to show the
+  history of a `asset` or `directory`, and do not detect whether the TTY is
+  interactive.
+- `onyo config variable value`:
+
+  Set a `variable` to `value` in the `.onyo/config` file. This command can for
+  example change the default tool for the interactive mode of `onyo history`
+  with `onyo config history.interactive "git log --follow"`.
+- `onyo fsck`:
+
+  Runs a comprehensive suite of checks to verify the integrity and validity of
+  an onyo repository and it's contents:
+  - Checks first if an `onyo repository` is given (a valid git repository, which
+    contains an `.onyo` folder), otherwise it errors out and does no further
+    checks. If the directory is valid, `onyo fsck` runs these checks for the
+    whole onyo repository and it's contents, and lists all problems encountered:
+    - all asset names are unique
+    - all files are valid YAML
+    - the git working tree is clean (no untracked or changed files)
+    - all directories and sub-directories have a .anchor file
+
+  Files and directories that should not be checked for their validity can be
+  added to .gitignore.
 
 
 ## Environment Variables
@@ -327,7 +337,7 @@ onyo new shelf
 <make>*: lenovo
 <model>*: T490s
 <serial>*: abc123
-<spawns editor, the above fields are pre-filled. The user edits remaining fields>
+<spawns editor. The user edits fields>
 <writes out to shelf/laptop_lenovo_T490s.abc123
 ```
 
@@ -350,7 +360,7 @@ onyo set RAM=16GB accounting/Bingo\ Bob/laptop_lenovo_T490s
 or
 ```
 onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s
-<spawns VIM; user edits ram field>
+<spawns $EDITOR; user edits ram field>
 ```
 
 **List all assets on the shelf**:
@@ -376,17 +386,11 @@ onyo get filename --filter type=headset shelf
 onyo history accounting/Bingo\ Bob/laptop_lenovo_T490s
 ```
 
+**List the history of all assets of a user**:
+```
+onyo history accounting/Bingo\ Bob
+```
 **Get the filename, make, model, and purchase data of all laptops assigned to the accounting department; sort first by make, then model, then purchase date**:
 ```
 onyo get --filter type=laptop -s make -s model -s purchase_date filename,make,model,purchase_date accounting/
 ```
-
-
-## Example Layout
-
-TODO
-
-
-## Names
-
-TODO Short name vs long name. Globbing.
