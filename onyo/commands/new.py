@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import yaml
+import configparser
 
 from onyo.utils import (
     build_git_add_cmd,
@@ -99,6 +100,14 @@ def create_asset_file_cmd(directory, filename):
 
 def prepare_arguments(directory, template, onyo_root):
     directory = os.path.join(onyo_root, directory)
+    # find the template to use:
+    config = configparser.ConfigParser()
+    config.read(os.path.join(onyo_root, ".onyo/config"))
+    if not template:
+        try:
+            template = config['template']['default']
+        except KeyError:
+            pass
     template = os.path.join(onyo_root, os.path.join(".onyo/templates", template))
     template_contents = ""
     problem_str = ""

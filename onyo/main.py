@@ -89,7 +89,7 @@ def parse_args():
     cmd_new.add_argument(
         '-t', '--template',
         required=False,
-        default='default',
+        default='',
         help='Define a template to use for the creation of a new asset'
     )
     cmd_new.add_argument(

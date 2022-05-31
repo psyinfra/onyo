@@ -75,6 +75,7 @@ def init(args, onyo_root):
     os.chdir(directory)
     os.system("onyo config history.interactive \\\"tig --follow\\\"")
     os.system("onyo config history.non-interactive \\\"git --no-pager log --follow\\\"")
+    os.system("onyo config template.default standard")
     run_cmd("cp -R " + " ".join(glob.glob(os.path.join(template_path, "*"), recursive=True)) + " " + os.path.join(onyo_root, ".onyo/templates/"))
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
