@@ -86,9 +86,9 @@ and `.` characters. The `serial` field has no restrictions.
 
 ### Field Validation
 
-Values for the type, make, and model fields are checked against a field-specific
-list of reserved characters in the folder .onyo/validation/validation
-(see "Config Files").
+Values for the `type`, `make`, and `model` fields are checked against a
+field-specific list of reserved characters in the file
+`.onyo/validation/validation` (see "Config Files").
 
 Additional templates with customized name schemes and reserved characters can be
 defined in that folder.
@@ -96,8 +96,8 @@ defined in that folder.
 ## File Contents
 
 Files are written in YAML and contain metadata about the asset. This can
-describe the physical attributes of the hardware (CPU type, RAM size, ), but can
-also extend to any metadata you wish to track (software, associated purchase
+describe the physical attributes of the hardware (CPU type, RAM size, etc), but
+can also extend to any metadata you wish to track (software, associated purchase
 order numbers, etc).
 
 ## Config Files
@@ -116,13 +116,16 @@ repository.
 - `.onyo/templates/` contains:
   - the templates for the `onyo new --template <template>` command (see
     "Template Files")
+- `.onyo/validation/`
+  - Files describing rules for asset files and their fields
 
 ## Template Files
 
 Templates can be used with the command `onyo new --template <template>
 <directory>` and are stored in the folder `.onyo/templates/`.
-Templates will then be copied as a basis for a new asset file, and after
-saving the newly created asset will be checked for valid YAML syntax.
+Templates will be copied as a basis for a new asset file, and can then be
+edited. After saving the newly created asset will be checked for valid YAML
+syntax.
 
 The default template that gets used when `onyo new` is called is
 `.onyo/templates/standard`. It can be updated with
