@@ -3,7 +3,6 @@
 import logging
 import os
 import sys
-import yaml
 import configparser
 
 from onyo.utils import (
@@ -17,53 +16,38 @@ from onyo.commands.fsck import fsck
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
+reserved_characters = ['_', '.']
+
 
 def build_commit_cmd(file, onyo_root):
     return ["git -C " + onyo_root + " commit -m", "new asset.\n\n" + file]
 
 
-def read_new_word(word_description, reserved_characters):
+def read_new_word(word_description):
     # read word for field from keyboard
     word = str(input(word_description))
     # if word contains reserved character, inform and read new word
     for char in reserved_characters:
         if char in word:
             logger.info(char + " is in list of reserved characters: " + ", ".join(reserved_characters))
-            return read_new_word(word_description, reserved_characters)
+            return read_new_word(word_description)
     # if enter pressed without input, read new word
     if len(word) == 0:
-        return read_new_word(word_description, reserved_characters)
+        return read_new_word(word_description)
     return word
 
 
-def run_onyo_new(directory, template_contents, non_interactive, onyo_root):
+def run_onyo_new(directory, template, non_interactive, onyo_root):
     # create an asset file, first without content
-    filename = create_filename(onyo_root, template_contents)
+    filename = create_filename(onyo_root, template)
     if os.path.exists(os.path.join(directory, filename)):
         logger.error(os.path.join(directory, filename) + " asset already exists.")
         sys.exit(1)
-    run_cmd(create_asset_file_cmd(directory, filename))
-    # read values for asset, if given, and write them into the new asset file
-    value_fields = []
-    values = {}
-    try:
-        value_fields = template_contents['value_fields']
-    except KeyError:
-        pass
-    if value_fields != []:
-        for field in value_fields:
-            reserved_characters = []
-            try:
-                reserved_characters = [str(x) for x in str(field['reserved_characters'])]
-            except KeyError:
-                pass
-            word = read_new_word('<' + field['name'] + '>*:', reserved_characters)
-            values[field['name']] = word
-        # actual writing in file:
-        file = open(os.path.join(directory, filename), "w")
-        yaml.dump(values, file)
-        file.close()
-    # open editor after creating/writing file, if not called non-interactive
+    if template:
+        run_cmd("cp \"" + template + "\" \"" + os.path.join(os.path.join(onyo_root, directory), filename) + "\"")
+    else:
+        run_cmd(create_asset_file_cmd(directory, filename))
+    # open new file?
     if not non_interactive:
         edit_file(os.path.join(directory, filename), onyo_root)
     # add file to git
@@ -72,25 +56,19 @@ def run_onyo_new(directory, template_contents, non_interactive, onyo_root):
     return os.path.join(directory, filename)
 
 
-def create_filename(onyo_root, template_contents):
+def create_filename(onyo_root, template):
     words = []
-    filename = template_contents['name']
-    for field in template_contents['name_fields']:
-        reserved_characters = []
-        try:
-            reserved_characters = [str(x) for x in str(field['reserved_characters'])]
-        except KeyError:
-            pass
-        word = read_new_word('<' + field['name'] + '>*:', reserved_characters)
+    # build new name, read these words
+    for field in ["type", "make", "model", "serial"]:
+        word = read_new_word('<' + field + '>*:')
         words.append(word)
-        if field['name'] in filename:
-            filename = filename.replace("<" + field['name'] + ">", word)
+    filename = words[0] + "_" + words[1] + "_" + words[2] + "." + words[3]
     # check if the new filename is actually unique in onyo repository
     assets = get_list_of_assets(onyo_root)
     for asset in assets:
         if filename == asset[1]:
             logger.info(filename + " exists already in " + asset[0] + "\nCreate a new filename:")
-            return create_filename(onyo_root, template_contents)
+            return create_filename(onyo_root, template)
     return filename
 
 
@@ -109,30 +87,24 @@ def prepare_arguments(directory, template, onyo_root):
         except KeyError:
             pass
     template = os.path.join(onyo_root, os.path.join(".onyo/templates", template))
-    template_contents = ""
     problem_str = ""
     if not os.path.isfile(template):
         problem_str = problem_str + "\nTemplate file " + os.path.join(".onyo/templates", template) + " does not exist."
-    with open(template, "r") as stream:
-        try:
-            template_contents = yaml.safe_load(stream)
-        except yaml.YAMLError:
-            problem_str = problem_str + "\nTemplate file " + os.path.join(".onyo/templates", template) + " can't be loaded."
     if not os.path.isdir(directory):
         problem_str = problem_str + "\n" + directory + " is not a directory."
     if problem_str != "":
         logger.error(problem_str)
         sys.exit(1)
-    return [directory, template_contents]
+    return [directory, template]
 
 
 def new(args, onyo_root):
     # run onyo fsck
     fsck(args, onyo_root, quiet=True)
     # set and check paths
-    [directory, template_contents] = prepare_arguments(args.directory, args.template, onyo_root)
+    [directory, template] = prepare_arguments(args.directory, args.template, onyo_root)
     # create file for asset, fill in fields
-    created_file = run_onyo_new(directory, template_contents, args.non_interactive, onyo_root)
+    created_file = run_onyo_new(directory, template, args.non_interactive, onyo_root)
     git_filepath = os.path.relpath(created_file, onyo_root)
     # build commit command
     [commit_cmd, commit_msg] = build_commit_cmd(git_filepath, onyo_root)
