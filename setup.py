@@ -21,5 +21,5 @@ setup(
             'onyo=onyo.main:main'
         ],
     },
-
+    include_package_data=True,
 )

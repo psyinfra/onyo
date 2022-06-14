@@ -78,27 +78,27 @@ the combination of type, make, model, and serial is sufficient to avoid all
 
 ### Reserved Characters
 
-The `type`, `make`, or `model` fields reserve the `_` and `.` characters.
+A list of reserved characters can be defined for each field in every template
+under `.onyo/templates/` (see "Template Files").
 
-The `serial` field has no restrictions.
+For the default template, the `type`, `make`, or `model` fields reserve the `_`
+and `.` characters. The `serial` field has no restrictions.
 
 ### Field Validation
 
 Values for the `type`, `make`, and `model` fields are checked against a
-field-specific list of reserved characters in the template
-.onyo/templates/default (see "Config Files").
+field-specific list of reserved characters in the file
+`.onyo/validation/validation` (see "Config Files").
 
 Additional templates with customized name schemes and reserved characters can be
 defined in that folder.
 
-
 ## File Contents
 
 Files are written in YAML and contain metadata about the asset. This can
-describe the physical attributes of the hardware (CPU type, RAM size, ), but can
-also extend to any metadata you wish to track (software, associated purchase
+describe the physical attributes of the hardware (CPU type, RAM size, etc), but
+can also extend to any metadata you wish to track (software, associated purchase
 order numbers, etc).
-
 
 ## Config Files
 
@@ -110,7 +110,28 @@ repository.
     The values can be updated with e.g.:
     - `onyo config history.interactive "tig --follow"`
     - `onyo config history.non-interactive "git --no-pager log --follow"`
+  - default template to use with `onyo new <dir>`
+    The standard template can be updated with e.g.:
+    - `onyo config template.default standard`
+- `.onyo/templates/` contains:
+  - the templates for the `onyo new --template <template>` command (see
+    "Template Files")
+- `.onyo/validation/`
+  - Files describing rules for asset files and their fields
 
+## Template Files
+
+Templates can be used with the command `onyo new --template <template>
+<directory>` and are stored in the folder `.onyo/templates/`.
+Templates will be copied as a basis for a new asset file, and can then be
+edited. After saving the newly created asset will be checked for valid YAML
+syntax.
+
+The default template that gets used when `onyo new` is called is
+`.onyo/templates/standard`. It can be updated with
+`onyo config template.default standard`.
+
+For examples, see the section "example templates" at the end of the README.
 
 ## Commands
 
@@ -276,14 +297,15 @@ repository.
   Pass `git-command-args` as arguments to `git`, using the Onyo repository as
   the git repository. This is most valuable when used in conjunction with
   `ONYO_REPOSITORY_DIR`.
-- `onyo new [--non-interactive, -I] directory`:
+- `onyo new [--template template, -t template] [--non-interactive, -I] directory`:
 
   Creates a new `asset` in `directory`. The command opens a dialog that asks for
   the field names defined by the asset name scheme, and after creation opens the
   new `asset` file with the editor.
   After the editing is done, the new file will be checked for the validity of
   it's YAML syntax.
-
+  - `--template template`: specifies the template copied by the command. If not
+    specified, it uses the standard template.
   - `--non-interactive` : Suppress opening of editor after file creation.
 - `onyo history [--non-interactive, -I] asset | directory`:
 
@@ -393,4 +415,29 @@ onyo history accounting/Bingo\ Bob
 **Get the filename, make, model, and purchase data of all laptops assigned to the accounting department; sort first by make, then model, then purchase date**:
 ```
 onyo get --filter type=laptop -s make -s model -s purchase_date filename,make,model,purchase_date accounting/
+```
+
+## Example templates
+
+This section describes some of the templates provided with `onyo init` in the
+directory `.onyo/templates/`.
+
+`onyo new <dir>` (equivalent to `onyo new --template standard <dir>`) as defined
+by `.onyo/templates/standard` is a plain YAML file:
+
+```
+---
+```
+
+This template passes the YAML syntax check when onyo is called while the editor
+is suppressed with `onyo new --non-interactive <directory>`.
+
+`onyo new --template laptop <dir>` as defined by `.onyo/templates/laptop`
+contains a simple example for a laptop asset which already contains some fields,
+which are relevant for all assets of that device type.
+
+```
+---
+RAM:
+Size:
 ```

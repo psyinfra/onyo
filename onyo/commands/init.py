@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+import glob
 
 from onyo.utils import (
     build_git_add_cmd,
@@ -39,11 +40,11 @@ def build_onyo_init_cmd(directory):
     elif os.path.isdir(os.path.join(directory + "/.onyo")):
         logger.error(directory + " has already an onyo configuration directory.")
         sys.exit(1)
-    return "mkdir \"" + os.path.join(directory + "/.onyo") + "\" \"" + os.path.join(directory + "/.onyo/temp") + "\""
+    return "mkdir \"" + os.path.join(directory + "/.onyo") + "\" \"" + os.path.join(directory + "/.onyo/temp") + "\" \"" + os.path.join(directory, ".onyo/templates/") + "\""
 
 
 def create_file_cmd(directory):
-    return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/temp/.anchor") + "\""
+    return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/temp/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/templates/.anchor") + "\""
 
 
 def prepare_arguments(directory, onyo_root):
@@ -64,6 +65,7 @@ def init(args, onyo_root):
     create_file_command = create_file_cmd(directory)
     git_add_command = build_git_add_cmd(directory, ".onyo/")
     [commit_cmd, commit_msg] = build_commit_cmd(directory)
+    template_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../templates/")
 
     # run commands
     if git_init_command is not None:
@@ -73,6 +75,8 @@ def init(args, onyo_root):
     os.chdir(directory)
     os.system("onyo config history.interactive \\\"tig --follow\\\"")
     os.system("onyo config history.non-interactive \\\"git --no-pager log --follow\\\"")
+    os.system("onyo config template.default standard")
+    run_cmd("cp -R " + " ".join(glob.glob(os.path.join(template_path, "*"), recursive=True)) + " " + os.path.join(onyo_root, ".onyo/templates/"))
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
     logger.info(commit_msg + ": " + get_git_root(directory))
