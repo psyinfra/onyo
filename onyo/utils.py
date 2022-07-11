@@ -5,6 +5,7 @@ import sys
 import shlex
 import glob
 import yaml
+from ruamel.yaml import YAML
 
 from git import Repo, exc
 
@@ -100,6 +101,80 @@ def get_editor():
     return editor
 
 
+def validate_rule_for_file(file, rule, path_of_rule, original_file):
+    asset = ""
+    current_error = ""
+    yaml = YAML(typ='safe')
+    with open(file, "r") as stream:
+        try:
+            asset = yaml.load(stream)
+        except yaml.YAMLError as e:
+            print(e)
+    for value_field in rule:
+        for field in rule[value_field]:
+            # value == e.g. RAM
+            # field1 == e.g. Type
+            # field2 == e.g. str
+            field1 = list(field)[0]
+            field2 = field[field1]
+            if asset and value_field in asset:
+                if field1 == "Type":
+                    if field2 == "str":
+                        if not check_str(asset[value_field]):
+                            current_error = current_error + "\"" + path_of_rule + "\": values for \"" + value_field + "\" must be str, but is \"" + str(asset[value_field]) + "\"\n"
+                    if field2 == "int":
+                        if not check_int(asset[value_field]):
+                            current_error = current_error + "\"" + path_of_rule + "\": values for \"" + value_field + "\" must be int, but is \"" + str(asset[value_field]) + "\"\n"
+    return current_error
+
+
+def validate_file(file, original_file, onyo_root):
+    yaml = YAML(typ='safe')
+    error_str = ""
+    with open(".onyo/validation/validation.yaml", "r") as stream:
+        try:
+            rules_file = yaml.load(stream)
+        except yaml.YAMLError as e:
+            print(e)
+    for path_of_rule in rules_file:
+        paths = glob.glob(os.path.join(onyo_root, path_of_rule), recursive=True)
+        for elem in paths:
+            if error_str != "":
+                logger.error("\n" + error_str)
+                return error_str
+            # when a rule applies to original_file:
+            if original_file in elem:
+                for rule in rules_file[path_of_rule]:
+                    error_str = error_str + validate_rule_for_file(file[0], rule, path_of_rule, original_file)
+    # give error
+    if error_str != "":
+        logger.error("\n" + error_str)
+        return error_str
+    return True
+
+
+# check for a value from a yaml file, if it is a str or can be formatted to it
+def check_str(value):
+    try:
+        if isinstance(value, str):
+            return True
+        elif isinstance(str(value), str):
+            return True
+    except Exception:
+        return False
+
+
+# check for a value from a yaml file, if it is a int or can be formatted to it
+def check_int(value):
+    try:
+        if isinstance(value, int):
+            return True
+        elif isinstance(int(value), int):
+            return True
+    except Exception:
+        return False
+
+
 def edit_file(file, onyo_root):
     if not os.path.isfile(file):
         logger.error(file + " does not exist.")
@@ -125,7 +200,11 @@ def edit_file(file, onyo_root):
         with open(temp_file, "r") as stream:
             try:
                 yaml.safe_load(stream)
-                run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
+                if validate_file([temp_file], file, onyo_root):
+                    run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
+                else:
+                    # TODO: better exception needed
+                    raise yaml.YAMLError(file + " is not valid for onyo")
                 return
             except yaml.YAMLError:
                 logger.error(file + " is no legal yaml syntax.")
