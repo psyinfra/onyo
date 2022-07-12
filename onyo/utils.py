@@ -101,11 +101,11 @@ def get_editor():
     return editor
 
 
-def validate_rule_for_file(file, rule, path_of_rule, original_file):
+def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
     asset = ""
     current_error = ""
     yaml = YAML(typ='safe')
-    with open(file, "r") as stream:
+    with open(os.path.join(onyo_root, file), "r") as stream:
         try:
             asset = yaml.load(stream)
         except yaml.YAMLError as e:
@@ -121,17 +121,24 @@ def validate_rule_for_file(file, rule, path_of_rule, original_file):
                 if field1 == "Type":
                     if field2 == "str":
                         if not check_str(asset[value_field]):
-                            current_error = current_error + "\"" + path_of_rule + "\": values for \"" + value_field + "\" must be str, but is \"" + str(asset[value_field]) + "\"\n"
-                    if field2 == "int":
+                            current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): values for \"" + value_field + "\" must be str, but is \"" + str(asset[value_field]) + "\"\n"
+                    elif field2 == "int":
                         if not check_int(asset[value_field]):
-                            current_error = current_error + "\"" + path_of_rule + "\": values for \"" + value_field + "\" must be int, but is \"" + str(asset[value_field]) + "\"\n"
+                            current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): values for \"" + value_field + "\" must be int, but is \"" + str(asset[value_field]) + "\"\n"
+                    elif field2 == "float":
+                        if not check_float(asset[value_field]):
+                            current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): values for \"" + value_field + "\" must be float, but is \"" + str(asset[value_field]) + "\"\n"
+                    else:
+                        current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): Type \"" + field2 + "\" is not known.\n"
+
+    # return all errors
     return current_error
 
 
 def validate_file(file, original_file, onyo_root):
     yaml = YAML(typ='safe')
     error_str = ""
-    with open(".onyo/validation/validation.yaml", "r") as stream:
+    with open(os.path.join(onyo_root, ".onyo/validation/validation.yaml"), "r") as stream:
         try:
             rules_file = yaml.load(stream)
         except yaml.YAMLError as e:
@@ -140,17 +147,13 @@ def validate_file(file, original_file, onyo_root):
         paths = glob.glob(os.path.join(onyo_root, path_of_rule), recursive=True)
         for elem in paths:
             if error_str != "":
-                logger.error("\n" + error_str)
                 return error_str
             # when a rule applies to original_file:
             if original_file in elem:
                 for rule in rules_file[path_of_rule]:
-                    error_str = error_str + validate_rule_for_file(file[0], rule, path_of_rule, original_file)
-    # give error
-    if error_str != "":
-        logger.error("\n" + error_str)
-        return error_str
-    return True
+                    error_str = error_str + validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root)
+    # give error back for outside handling:
+    return error_str
 
 
 # check for a value from a yaml file, if it is a str or can be formatted to it
@@ -169,7 +172,20 @@ def check_int(value):
     try:
         if isinstance(value, int):
             return True
-        elif isinstance(int(value), int):
+        # this happens in other functions, but should be blocked in check_int,
+        # since otherwise all floats will be successfully cast to integer.
+        # elif isinstance(int(value), int):
+        #    return True
+    except Exception:
+        return False
+
+
+# check for a value from a yaml file, if it is a float or can be formatted to it
+def check_float(value):
+    try:
+        if isinstance(value, float):
+            return True
+        elif isinstance(float(value), float):
             return True
     except Exception:
         return False
@@ -200,16 +216,16 @@ def edit_file(file, onyo_root):
         with open(temp_file, "r") as stream:
             try:
                 yaml.safe_load(stream)
-                if validate_file([temp_file], file, onyo_root):
+                problem_str = validate_file(temp_file, file, onyo_root)
+                if problem_str == "":
                     run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
                 else:
                     # TODO: better exception needed
-                    raise yaml.YAMLError(file + " is not valid for onyo")
+                    raise yaml.YAMLError("\nOnyo Validation failed for:\n" + problem_str)
                 return
-            except yaml.YAMLError:
-                logger.error(file + " is no legal yaml syntax.")
+            except yaml.YAMLError as e:
                 while True:
-                    further_editing = str(input("Continue editing? (y/n)"))
+                    further_editing = str(input(str(e) + "Continue editing? (y/n)"))
                     if further_editing == 'y':
                         break
                     elif further_editing == 'n':
