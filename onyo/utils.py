@@ -6,6 +6,7 @@ import shlex
 import glob
 import yaml
 from ruamel.yaml import YAML
+from fnmatch import fnmatch
 
 from git import Repo, exc
 
@@ -136,22 +137,20 @@ def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
 
 
 def validate_file(file, original_file, onyo_root):
-    yaml = YAML(typ='safe')
+    ru_yaml = YAML(typ='safe')
     error_str = ""
     with open(os.path.join(onyo_root, ".onyo/validation/validation.yaml"), "r") as stream:
         try:
-            rules_file = yaml.load(stream)
+            rules_file = ru_yaml.load(stream)
         except yaml.YAMLError as e:
             print(e)
     for path_of_rule in rules_file:
-        paths = glob.glob(os.path.join(onyo_root, path_of_rule), recursive=True)
-        for elem in paths:
-            if error_str != "":
-                return error_str
-            # when a rule applies to original_file:
-            if original_file in elem:
-                for rule in rules_file[path_of_rule]:
-                    error_str = error_str + validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root)
+        if error_str != "":
+            return error_str
+        # when a rule applies to original_file:
+        if fnmatch(original_file, path_of_rule):
+            for rule in rules_file[path_of_rule]:
+                error_str = error_str + validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root)
     # give error back for outside handling:
     return error_str
 
