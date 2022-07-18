@@ -190,7 +190,7 @@ def check_float(value):
         return False
 
 
-def edit_file(file, onyo_root):
+def edit_file(file, onyo_root, onyo_new=False):
     if not os.path.isfile(file):
         logger.error(file + " does not exist.")
         sys.exit(1)
@@ -228,8 +228,14 @@ def edit_file(file, onyo_root):
                     if further_editing == 'y':
                         break
                     elif further_editing == 'n':
+                        output_str = "No changes made."
+                        # onyo new should neither create a new file nor a
+                        # temp-file, and have a special info message
+                        if (onyo_new):
+                            run_cmd("rm \"" + file + "\"")
+                            output_str = "No new asset \"" + os.path.relpath(file, onyo_root) + "\" created."
                         run_cmd("rm \"" + temp_file + "\"")
-                        logger.info("No changes made.")
+                        logger.info(output_str)
                         sys.exit(1)
     return
 
