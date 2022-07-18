@@ -122,15 +122,15 @@ def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
                 if field1 == "Type":
                     if field2 == "str":
                         if not check_str(asset[value_field]):
-                            current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): values for \"" + value_field + "\" must be str, but is \"" + str(asset[value_field]) + "\"\n"
+                            current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): values for \"" + value_field + "\" must be str, but is \"" + str(asset[value_field]) + "\"\n"
                     elif field2 == "int":
                         if not check_int(asset[value_field]):
-                            current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): values for \"" + value_field + "\" must be int, but is \"" + str(asset[value_field]) + "\"\n"
+                            current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): values for \"" + value_field + "\" must be int, but is \"" + str(asset[value_field]) + "\"\n"
                     elif field2 == "float":
                         if not check_float(asset[value_field]):
-                            current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): values for \"" + value_field + "\" must be float, but is \"" + str(asset[value_field]) + "\"\n"
+                            current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): values for \"" + value_field + "\" must be float, but is \"" + str(asset[value_field]) + "\"\n"
                     else:
-                        current_error = current_error + "\t" + original_file + " (" + path_of_rule + "): Type \"" + field2 + "\" is not known.\n"
+                        current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): Type \"" + field2 + "\" is not known.\n"
 
     # return all errors
     return current_error
