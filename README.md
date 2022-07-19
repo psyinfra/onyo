@@ -78,20 +78,11 @@ the combination of type, make, model, and serial is sufficient to avoid all
 
 ### Reserved Characters
 
-A list of reserved characters can be defined for each field in every template
-under `.onyo/templates/` (see "Template Files").
-
-For the default template, the `type`, `make`, or `model` fields reserve the `_`
+The `type`, `make`, or `model` fields reserve the `_`
 and `.` characters. The `serial` field has no restrictions.
 
-### Field Validation
-
-Values for the `type`, `make`, and `model` fields are checked against a
-field-specific list of reserved characters in the file
-`.onyo/validation/validation` (see "Config Files").
-
-Additional templates with customized name schemes and reserved characters can be
-defined in that folder.
+Values for the `type`, `make`, and `model` name fields are checked against a
+list of reserved characters.
 
 ## File Contents
 
@@ -116,8 +107,9 @@ repository.
 - `.onyo/templates/` contains:
   - the templates for the `onyo new --template <template>` command (see
     "Template Files")
-- `.onyo/validation/`
-  - Files describing rules for asset files and their fields
+- `.onyo/validation/validation.yaml`
+  - File describing rules for asset files and their fields (see "Field
+    Validation")
 
 ## Template Files
 
@@ -132,6 +124,28 @@ The default template that gets used when `onyo new` is called is
 `onyo config template.default standard`.
 
 For examples, see the section "example templates" at the end of the README.
+
+## Field Validation
+
+To keep meta data fields consistent between different assets, rules for fields
+in assets can be defined in `.onyo/validation/validation.yaml` in an onyo
+repository. The validation file will be read from the top down, and the first
+path that fits a file will be used to validate it's contents.
+
+The structure for rules is:
+```
+<directory>/*:
+- <Key>:
+    - Type: <type>
+```
+
+The options that are currently supported are:
+- Type:
+    - can be int/float/str
+
+A file will be automatically validated every time after creation with
+`onyo new`, and after changing it with `onyo edit`, `onyo set` and `onyo mv`.
+`onyo fsck` will validate all fields in all assets in an onyo repository.
 
 ## Commands
 
@@ -167,7 +181,8 @@ For examples, see the section "example templates" at the end of the README.
 - `onyo mv [--force, -f] [--rename, -r] source... destination`:
 
   Move `source`(s) to the `destination` directory, or rename `source` directory
-  to `destination`.
+  to `destination`. Onyo will validate the contents of moved assets to make sure
+  that they still follow to specified rules. See "Field Validation".
 
   - `--force`: Silently overwrite the destination file if it already exists.
   - `--rename`: Allow a `source` file to be renamed to a different (valid)
@@ -201,9 +216,11 @@ For examples, see the section "example templates" at the end of the README.
   When multiple asset files are given, Onyo will open them in sequence.
   - `--non-interactive`: Suppress opening of editor
 
-  After editing an `asset`, `onyo` will check the validity of the YAML syntax,
-  and if problems are found it gives the choice to either correct them or
-  discard the changes to make sure that the repository stays in a valid state.
+  After editing an `asset`, `onyo` will check the validity of the YAML syntax
+  and check if the changed file still follows the rules specified in
+  `.onyo/validation/validation.yaml`, and if problems are found it gives the
+  choice to either correct them or discard the changes to make sure that the
+  repository stays in a valid state.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
@@ -303,7 +320,7 @@ For examples, see the section "example templates" at the end of the README.
   the field names defined by the asset name scheme, and after creation opens the
   new `asset` file with the editor.
   After the editing is done, the new file will be checked for the validity of
-  it's YAML syntax.
+  it's YAML syntax and based on the rules in `.onyo/validation/validation.yaml`.
   - `--template template`: specifies the template copied by the command. If not
     specified, it uses the standard template.
   - `--non-interactive` : Suppress opening of editor after file creation.
@@ -333,6 +350,7 @@ For examples, see the section "example templates" at the end of the README.
     whole onyo repository and it's contents, and lists all problems encountered:
     - all asset names are unique
     - all files are valid YAML
+    - all files follow the rules specified in `.onyo/validation/validation.yaml`
     - the git working tree is clean (no untracked or changed files)
     - all directories and sub-directories have a .anchor file
 
