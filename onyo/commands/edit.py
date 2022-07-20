@@ -11,7 +11,6 @@ from onyo.utils import (
     run_cmd,
     edit_file
 )
-from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -45,8 +44,10 @@ def prepare_arguments(sources, onyo_root):
 
 
 def edit(args, onyo_root):
-    # run onyo fsck
-    fsck(args, onyo_root, quiet=True)
+    # do not run onyo fsck! Onyo should allow to correct problems with onyo
+    # edit, and after editing onyo checks the syntax and validates the updated
+    # file anyways, so new problems can't be introduced, but old ones can be
+    # corrected.
     # check and set paths
     list_of_sources = prepare_arguments(args.file, onyo_root)
     # iterate over file list, edit them, add changes
