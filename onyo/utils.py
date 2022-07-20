@@ -6,7 +6,6 @@ import shlex
 import glob
 import yaml
 from ruamel.yaml import YAML
-from fnmatch import fnmatch
 
 from git import Repo, exc
 
@@ -148,7 +147,7 @@ def validate_file(file, original_file, onyo_root):
         if error_str != "":
             return error_str
         # when a rule applies to original_file:
-        if fnmatch(original_file, path_of_rule):
+        if os.path.join(onyo_root, original_file) in glob.glob(os.path.join(onyo_root, path_of_rule), recursive=True):
             for rule in rules_file[path_of_rule]:
                 error_str = error_str + validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root)
     # give error back for outside handling:
