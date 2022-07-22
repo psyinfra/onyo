@@ -40,11 +40,11 @@ def build_onyo_init_cmd(directory):
     elif os.path.isdir(os.path.join(directory + "/.onyo")):
         logger.error(directory + " has already an onyo configuration directory.")
         sys.exit(1)
-    return "mkdir \"" + os.path.join(directory + "/.onyo") + "\" \"" + os.path.join(directory + "/.onyo/temp") + "\" \"" + os.path.join(directory, ".onyo/templates/") + "\""
+    return "mkdir \"" + os.path.join(directory + "/.onyo") + "\" \"" + os.path.join(directory + "/.onyo/temp") + "\" \"" + os.path.join(directory, ".onyo/templates/") + "\" \"" + os.path.join(directory, ".onyo/validation/") + "\""
 
 
 def create_file_cmd(directory):
-    return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/temp/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/templates/.anchor") + "\""
+    return "touch \"" + os.path.join(directory + "/.onyo/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/temp/.anchor") + "\" \"" + os.path.join(directory + "/.onyo/templates/.anchor") + "\" \"" + os.path.join(directory, ".onyo/validation/.anchor") + "\""
 
 
 def prepare_arguments(directory, onyo_root):
@@ -66,7 +66,7 @@ def init(args, onyo_root):
     git_add_command = build_git_add_cmd(directory, ".onyo/")
     [commit_cmd, commit_msg] = build_commit_cmd(directory)
     template_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../templates/")
-
+    validation_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../validation/")
     # run commands
     if git_init_command is not None:
         run_cmd(git_init_command)
@@ -77,6 +77,7 @@ def init(args, onyo_root):
     os.system("onyo config history.non-interactive \\\"git --no-pager log --follow\\\"")
     os.system("onyo config template.default standard")
     run_cmd("cp -R " + " ".join(glob.glob(os.path.join(template_path, "*"), recursive=True)) + " " + os.path.join(onyo_root, ".onyo/templates/"))
+    run_cmd("cp -R " + " ".join(glob.glob(os.path.join(validation_path, "*"), recursive=True)) + " " + os.path.join(onyo_root, ".onyo/validation/"))
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
     logger.info(commit_msg + ": " + get_git_root(directory))

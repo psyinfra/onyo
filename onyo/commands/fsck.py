@@ -10,7 +10,8 @@ from git import Repo, exc
 
 from onyo.utils import (
     run_cmd,
-    get_list_of_assets
+    get_list_of_assets,
+    validate_file
 )
 
 logging.basicConfig()
@@ -107,6 +108,17 @@ def verify_filenames(repo_path):
         return ""
 
 
+# validate the asset contents based on .onyo/validation/
+def validate_assets(repo_path):
+    problem_str = ""
+    assets = get_list_of_assets(repo_path)
+    for asset_file in assets:
+        problem_str += validate_file(asset_file[0], asset_file[1], repo_path)
+    if problem_str != "":
+        return "\nSome files have invalid contents:\n" + problem_str
+    return problem_str
+
+
 def read_only_fsck(args, onyo_root, quiet=False):
     # set variables
     repo = ""
@@ -144,6 +156,9 @@ def fsck(args, onyo_root, quiet=False):
     problem_str = problem_str + verify_yaml(repo_path)
     # check uniqueness of asset filenames
     problem_str = problem_str + verify_filenames(repo_path)
+    # validate contents of all files with the validation-file
+    problem_str = problem_str + validate_assets(repo_path)
+
     # end block, display problems or state repo is clean.
     if problem_str:
         problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str

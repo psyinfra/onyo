@@ -49,7 +49,7 @@ def run_onyo_new(directory, template, non_interactive, onyo_root):
         run_cmd(create_asset_file_cmd(directory, filename))
     # open new file?
     if not non_interactive:
-        edit_file(os.path.join(directory, filename), onyo_root)
+        edit_file(os.path.join(directory, filename), onyo_root, onyo_new=True)
     # add file to git
     git_add_cmd = build_git_add_cmd(directory, filename)
     run_cmd(git_add_cmd)

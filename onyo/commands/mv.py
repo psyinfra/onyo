@@ -6,7 +6,8 @@ import sys
 
 from onyo.utils import (
     get_list_of_assets,
-    run_cmd
+    run_cmd,
+    validate_file
 )
 from onyo.commands.fsck import fsck
 
@@ -34,6 +35,7 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
     problem_str = ""
     list_of_commands = []
     list_of_destinations = []
+    source_destination_pairs = []
     assets = get_list_of_assets(onyo_root)
     for source in sources:
         # set all paths
@@ -45,7 +47,9 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
             destination_filename = os.path.join(destination_filename, os.path.basename(source_filename))
         destination_filename = os.path.relpath(destination_filename, onyo_root)
         source_filename = os.path.relpath(source_filename, onyo_root)
-        # build commands
+        # build commands and remember the source/destination combinations for
+        # checking validation afterwards.
+        source_destination_pairs.append([source_filename, destination_filename])
         current_cmd = build_mv_cmd(onyo_root, source_filename, destination_filename, force, rename)
         # when trying to rename a file to a name that is used by another asset:
         if os.path.basename(destination_filename) != os.path.basename(source_filename):
@@ -61,6 +65,12 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
             list_of_commands.append(current_cmd)
         else:
             problem_str = problem_str + "\n" + current_cmd
+    # go trough all pairs of source/destination before moving, and check if they
+    # will be valid in the destination location.
+    for pair in source_destination_pairs:
+        validation_error = validate_file(pair[0], pair[1], onyo_root)
+        if validation_error != "":
+            problem_str = problem_str + "\n" + validation_error
     if problem_str != "":
         logger.error(problem_str + "\nNo folders or assets moved.")
         sys.exit(1)

@@ -13,7 +13,8 @@ setup(
     install_requires=[
         'GitPython',
         'pytest',
-        'pyyaml'
+        'pyyaml',
+        'ruamel.yaml'
     ],
     python_requires=">=3.5",
     entry_points={

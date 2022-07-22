@@ -1,0 +1,11 @@
+"shelf/*":
+- RAM:
+    - Type: int
+- Size:
+    - Type: int
+"*/*":
+- RAM:
+    - Type: int
+- Size:
+    - Type: int
+
