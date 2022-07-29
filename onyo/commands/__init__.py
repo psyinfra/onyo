@@ -10,7 +10,9 @@ from .config import config
 from .mkdir import mkdir
 from .rm import rm
 from .fsck import fsck
+from .set import set
 
 __all__ = [
-    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'history', 'git', 'config', 'mkdir', 'rm', 'fsck'
+    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'history', 'git', 'config',
+    'mkdir', 'rm', 'fsck', 'set'
 ]
