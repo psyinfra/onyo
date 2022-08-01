@@ -130,7 +130,8 @@ For examples, see the section "example templates" at the end of the README.
 To keep meta data fields consistent between different assets, rules for fields
 in assets can be defined in `.onyo/validation/validation.yaml` in an onyo
 repository. The validation file will be read from the top down, and the first
-path that fits a file will be used to validate it's contents.
+path in the validation file that fits a asset file will be used to validate
+it's contents.
 
 The structure for rules is:
 ```
@@ -521,15 +522,24 @@ defined before applies to an asset file.
     - Type: float
 ```
 
-When assets directly in `shelf/` have a key `RAM`, it must be integers.
-Additionally, when these assets have a key `Size`, they must also be integers,
-since the second rule `shelf/**` also applies to assets directly in `shelf/`.
+When assets directly in `shelf/` have a key `RAM`, it must be integer. Because
+onyo uses just the first set of rules where the asset matches the path
+defined in validation.yaml, the later rules under `shelf/**` do not apply to
+assets directly in `shelf/`.
+
+When assets are in a subfolder of `shelf/`, the rule for RAM does not apply,
+instead the separate set of rules under `shelf/**` will be used to validate
+these assets.
+
 Asset files in sub-directories of shelf, e.g. `shelf/left/top_row/` have no
 rules regarding the `RAM` key, just the rule for `Size` does apply.
 
-The rule `*/**` enforces for all assets outside of `shelf` that keys for RAM and
-Size must be at least float (e.g. "RAM: 12GB" as string are invalid for all
+The rule `*/**` enforces for all assets outside of `shelf/` that keys for RAM
+and Size must be at least float (e.g. "RAM: 12GB" as string are invalid for all
 assets anywhere in the onyo repository).
+The rules for `*/**` do not apply to assets in `shelf/`, because onyo uses just
+the first set of rules where a path matches, and `shelf/` has a separate set of
+rules already defined above.
 
 **Example 3: Using pointer to define a set of rules for multiple Directories**
 
