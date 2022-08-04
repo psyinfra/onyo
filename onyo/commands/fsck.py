@@ -10,7 +10,8 @@ from git import Repo, exc
 
 from onyo.utils import (
     run_cmd,
-    get_list_of_assets
+    get_list_of_assets,
+    validate_file
 )
 
 logging.basicConfig()
@@ -52,45 +53,45 @@ def verify_onyo_working_tree(repo):
     return problem_str
 
 
-def verify_anchors(repo_path):
+def verify_anchors(onyo_root):
     anchor_str = ""
-    for elem in glob.iglob(repo_path + '**/**', recursive=True):
+    for elem in glob.iglob(onyo_root + '**/**', recursive=True):
         if os.path.isdir(elem):
             # the .git does not need a .anchor
             if ".git" in elem:
                 continue
             # the onyo root folder has no .anchor
-            if os.path.samefile(elem, repo_path):
+            if os.path.samefile(elem, onyo_root):
                 continue
-            if run_cmd("git -C " + repo_path + " check-ignore --no-index \"" + elem + "\""):
+            if run_cmd("git -C " + onyo_root + " check-ignore --no-index \"" + elem + "\""):
                 continue
             if not os.path.isfile(os.path.join(elem, ".anchor")):
-                anchor_str = anchor_str + "\n\t" + os.path.relpath(os.path.join(elem, ".anchor"), repo_path)
+                anchor_str = anchor_str + "\n\t" + os.path.relpath(os.path.join(elem, ".anchor"), onyo_root)
     if anchor_str:
         return "\n\n.anchor is missing:" + anchor_str + "\nYou can create them with\ntouch <path/to/.anchor>\nor .gitignore the directories.\n"
     return ""
 
 
-def verify_yaml(repo_path):
+def verify_yaml(onyo_root):
     yaml_str = ""
-    for elem in glob.iglob(repo_path + '**/**', recursive=True):
+    for elem in glob.iglob(onyo_root + '**/**', recursive=True):
         if os.path.isfile(elem):
-            if run_cmd("git -C " + repo_path + " check-ignore --no-index \"" + elem + "\""):
+            if run_cmd("git -C " + onyo_root + " check-ignore --no-index \"" + elem + "\""):
                 continue
             # "assets" saves all names/paths, to later check if they are unique
             with open(elem, "r") as stream:
                 try:
                     yaml.safe_load(stream)
                 except yaml.YAMLError:
-                    yaml_str = yaml_str + "\t" + os.path.relpath(elem, repo_path) + "\n"
+                    yaml_str = yaml_str + "\t" + os.path.relpath(elem, onyo_root) + "\n"
     if yaml_str:
         return "\n\nyaml files with incorrect syntax:\n" + yaml_str + "Please correct the syntax of these files and add the changes to git, or .gitignore them."
     return ""
 
 
-def verify_filenames(repo_path):
+def verify_filenames(onyo_root):
     problem_str = ""
-    assets = get_list_of_assets(repo_path)
+    assets = get_list_of_assets(onyo_root)
     double_elements = []
     for elem in [i[1] for i in assets]:
         elements = [string for string in [i[0] for i in assets] if elem == os.path.basename(string)]
@@ -107,6 +108,17 @@ def verify_filenames(repo_path):
         return ""
 
 
+# validate the asset contents based on .onyo/validation/
+def validate_assets(onyo_root):
+    problem_str = ""
+    assets = get_list_of_assets(onyo_root)
+    for asset_file in assets:
+        problem_str += validate_file(asset_file[0], os.path.relpath(asset_file[0], onyo_root), onyo_root)
+    if problem_str != "":
+        return "\nSome files have invalid contents:\n" + problem_str
+    return problem_str
+
+
 def read_only_fsck(args, onyo_root, quiet=False):
     # set variables
     repo = ""
@@ -116,14 +128,14 @@ def read_only_fsck(args, onyo_root, quiet=False):
     # check if is git, and .git and .onyo exist, identify top-level of onyo directory
     [repo, repo_path, info_str] = verify_onyo_existence(onyo_root)
     # check if it is possible to load yaml file for syntax check
-    problem_str = problem_str + verify_yaml(repo_path)
+    problem_str = problem_str + verify_yaml(onyo_root)
     # end block, display problems or state repo is clean.
     if problem_str:
         logger.error(problem_str)
         sys.exit(1)
     else:
         problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str
-        info_str = info_str + "\n" + repo_path + " is clean."
+        info_str = info_str + "\n" + onyo_root + " is clean."
         if not quiet:
             print(info_str)
 
@@ -144,6 +156,9 @@ def fsck(args, onyo_root, quiet=False):
     problem_str = problem_str + verify_yaml(repo_path)
     # check uniqueness of asset filenames
     problem_str = problem_str + verify_filenames(repo_path)
+    # validate contents of all files with the validation-file
+    problem_str = problem_str + validate_assets(repo_path)
+
     # end block, display problems or state repo is clean.
     if problem_str:
         problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str

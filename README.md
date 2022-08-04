@@ -78,20 +78,11 @@ the combination of type, make, model, and serial is sufficient to avoid all
 
 ### Reserved Characters
 
-A list of reserved characters can be defined for each field in every template
-under `.onyo/templates/` (see "Template Files").
-
-For the default template, the `type`, `make`, or `model` fields reserve the `_`
+The `type`, `make`, or `model` fields reserve the `_`
 and `.` characters. The `serial` field has no restrictions.
 
-### Field Validation
-
-Values for the `type`, `make`, and `model` fields are checked against a
-field-specific list of reserved characters in the file
-`.onyo/validation/validation` (see "Config Files").
-
-Additional templates with customized name schemes and reserved characters can be
-defined in that folder.
+Values for the `type`, `make`, and `model` name fields are checked against a
+list of reserved characters.
 
 ## File Contents
 
@@ -116,8 +107,9 @@ repository.
 - `.onyo/templates/` contains:
   - the templates for the `onyo new --template <template>` command (see
     "Template Files")
-- `.onyo/validation/`
-  - Files describing rules for asset files and their fields
+- `.onyo/validation/validation.yaml`
+  - File describing rules for asset files and their fields (see "Field
+    Validation")
 
 ## Template Files
 
@@ -132,6 +124,36 @@ The default template that gets used when `onyo new` is called is
 `onyo config template.default standard`.
 
 For examples, see the section "example templates" at the end of the README.
+
+## Field Validation
+
+To keep meta data fields consistent between different assets, rules for fields
+in assets can be defined in `.onyo/validation/validation.yaml` in an onyo
+repository. The validation file will be read from the top down, and the first
+path in the validation file that fits a asset file will be used to validate
+it's contents.
+
+The structure for rules is:
+```
+<directory>/*:
+- <Key>:
+    - Type: <type>
+```
+
+The options that are currently supported are:
+- Type:
+    - can be int/float/str
+
+A file will be automatically validated every time after creation with
+`onyo new`, and after changing it with `onyo edit`, `onyo set` and `onyo mv`.
+`onyo fsck` will validate all fields in all assets in an onyo repository.
+
+Onyo differentiates between `<directory>/*` (files directly in `<directory>`)
+and `<directory>/**` (all assets in `<directory>` and all its
+sub-directories). YAML pointers can be used to define a set of rules once and
+apply it to multiple sub-directories.
+
+For further help, see "Example Validation".
 
 ## Commands
 
@@ -167,7 +189,8 @@ For examples, see the section "example templates" at the end of the README.
 - `onyo mv [--force, -f] [--rename, -r] source... destination`:
 
   Move `source`(s) to the `destination` directory, or rename `source` directory
-  to `destination`.
+  to `destination`. Onyo will validate the contents of moved assets to make sure
+  that they still follow to specified rules. See "Field Validation".
 
   - `--force`: Silently overwrite the destination file if it already exists.
   - `--rename`: Allow a `source` file to be renamed to a different (valid)
@@ -201,9 +224,11 @@ For examples, see the section "example templates" at the end of the README.
   When multiple asset files are given, Onyo will open them in sequence.
   - `--non-interactive`: Suppress opening of editor
 
-  After editing an `asset`, `onyo` will check the validity of the YAML syntax,
-  and if problems are found it gives the choice to either correct them or
-  discard the changes to make sure that the repository stays in a valid state.
+  After editing an `asset`, `onyo` will check the validity of the YAML syntax
+  and check if the changed file still follows the rules specified in
+  `.onyo/validation/validation.yaml`, and if problems are found it gives the
+  choice to either correct them or discard the changes to make sure that the
+  repository stays in a valid state.
 - `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
 
   Print the requested `key`(s) in tabular form for matching assets.
@@ -303,7 +328,7 @@ For examples, see the section "example templates" at the end of the README.
   the field names defined by the asset name scheme, and after creation opens the
   new `asset` file with the editor.
   After the editing is done, the new file will be checked for the validity of
-  it's YAML syntax.
+  it's YAML syntax and based on the rules in `.onyo/validation/validation.yaml`.
   - `--template template`: specifies the template copied by the command. If not
     specified, it uses the standard template.
   - `--non-interactive` : Suppress opening of editor after file creation.
@@ -333,6 +358,7 @@ For examples, see the section "example templates" at the end of the README.
     whole onyo repository and it's contents, and lists all problems encountered:
     - all asset names are unique
     - all files are valid YAML
+    - all files follow the rules specified in `.onyo/validation/validation.yaml`
     - the git working tree is clean (no untracked or changed files)
     - all directories and sub-directories have a .anchor file
 
@@ -417,7 +443,7 @@ onyo history accounting/Bingo\ Bob
 onyo get --filter type=laptop -s make -s model -s purchase_date filename,make,model,purchase_date accounting/
 ```
 
-## Example templates
+## Example Templates
 
 This section describes some of the templates provided with `onyo init` in the
 directory `.onyo/templates/`.
@@ -441,3 +467,98 @@ which are relevant for all assets of that device type.
 RAM:
 Size:
 ```
+
+## Example Validation
+
+The following sections give examples how one can use the `validation.yaml` to
+keep assets and their metadata consistent in an onyo repository. Onyo reads the
+`validation.yaml` file from top to bottom and will apply the first rule,
+describing a key when the name scheme fits an asset.
+
+**Example 1: Rules for different files and directories**
+
+For each directory/path, a separate set of rules can be specified (e.g.
+`shelf/*` and `user1/*`). The user can also define rules, that just apply to
+files, that match certain asset names (`shelf/*laptop*` in the example).
+
+```
+"shelf/*laptop*":
+- RAM:
+    - Type: int
+"shelf/*":
+- RAM:
+    - Type: float
+"user1/*":
+- Size:
+    - Type: int
+- number_USB:
+    - Type: int
+```
+
+For the assets in `shelf` with "laptop" in their file name, the value RAM must
+have the type int. All other assets in `shelf` can have a float as RAM value.
+For assets under the directory `user1/*` the rules for the RAM key do not apply,
+instead it has a different set of rules for the keys `Size` and `number_USB`.
+
+**Example 2: Directories, Sub-Directories and onyo-wide Rules**
+
+Onyo differentiates between `shelf/*` (to define rules for assets directly under
+`shelf/`) and `shelf/**` (for all assets in shelf and all it's subdirectories).
+The user can also use `"*/**":` at the end of `validation.yaml` to specify a set of
+rules that will be applied to all assets anywhere in onyo, if no other rule
+defined before applies to an asset file.
+
+```
+"shelf/*":
+- RAM:
+    - Type: int
+"shelf/**":
+- Size:
+    - Type: int
+"*/**":
+- RAM:
+    - Type: float
+- Size:
+    - Type: float
+```
+
+When assets directly in `shelf/` have a key `RAM`, it must be integer. Because
+onyo uses just the first set of rules where the asset matches the path
+defined in validation.yaml, the later rules under `shelf/**` do not apply to
+assets directly in `shelf/`.
+
+When assets are in a subfolder of `shelf/`, the rule for RAM does not apply,
+instead the separate set of rules under `shelf/**` will be used to validate
+these assets.
+
+Asset files in sub-directories of shelf, e.g. `shelf/left/top_row/` have no
+rules regarding the `RAM` key, just the rule for `Size` does apply.
+
+The rule `*/**` enforces for all assets outside of `shelf/` that keys for RAM
+and Size must be at least float (e.g. "RAM: 12GB" as string are invalid for all
+assets anywhere in the onyo repository).
+The rules for `*/**` do not apply to assets in `shelf/`, because onyo uses just
+the first set of rules where a path matches, and `shelf/` has a separate set of
+rules already defined above.
+
+**Example 3: Using pointer to define a set of rules for multiple Directories**
+
+To define a single set of rules, that is applied to multiple other directories
+(users in the example), YAML pointers can be used.
+
+```
+"generic_rules_for_users/**": &pointer_user
+- RAM:
+    - Type: int
+- Size:
+    - Type: int
+"user1/**":
+    *pointer_user
+"user2/**":
+    *pointer_user
+```
+
+A generic set of rules can be defined and marked with `&pointer_user`, to enable
+the usage of the set of rules for other directories. With `*pointer_user` the
+rules for `RAM` and `Size` will be a applied for the directories `user1/**`
+and `user2/**`.

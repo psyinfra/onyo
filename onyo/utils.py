@@ -5,6 +5,7 @@ import sys
 import shlex
 import glob
 import yaml
+from ruamel.yaml import YAML
 
 from git import Repo, exc
 
@@ -100,7 +101,96 @@ def get_editor():
     return editor
 
 
-def edit_file(file, onyo_root):
+def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
+    asset = ""
+    current_error = ""
+    yaml = YAML(typ='safe')
+    with open(os.path.join(onyo_root, file), "r") as stream:
+        try:
+            asset = yaml.load(stream)
+        except yaml.YAMLError as e:
+            print(e)
+    for value_field in rule:
+        for field in rule[value_field]:
+            # value == e.g. RAM
+            # field1 == e.g. Type
+            # field2 == e.g. str
+            field1 = list(field)[0]
+            field2 = field[field1]
+            if asset and value_field in asset:
+                if field1 == "Type":
+                    if field2 == "str":
+                        if not check_str(asset[value_field]):
+                            current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): values for \"" + value_field + "\" must be str, but is \"" + str(asset[value_field]) + "\"\n"
+                    elif field2 == "int":
+                        if not check_int(asset[value_field]):
+                            current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): values for \"" + value_field + "\" must be int, but is \"" + str(asset[value_field]) + "\"\n"
+                    elif field2 == "float":
+                        if not check_float(asset[value_field]):
+                            current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): values for \"" + value_field + "\" must be float, but is \"" + str(asset[value_field]) + "\"\n"
+                    else:
+                        current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): Type \"" + field2 + "\" is not known.\n"
+
+    # return all errors
+    return current_error
+
+
+def validate_file(file, original_file, onyo_root):
+    ru_yaml = YAML(typ='safe')
+    error_str = ""
+    with open(os.path.join(onyo_root, ".onyo/validation/validation.yaml"), "r") as stream:
+        try:
+            rules_file = ru_yaml.load(stream)
+        except yaml.YAMLError as e:
+            print(e)
+    for path_of_rule in rules_file:
+        if error_str != "":
+            return error_str
+        # when a rule applies to original_file:
+        if os.path.join(onyo_root, original_file) in glob.glob(os.path.join(onyo_root, path_of_rule), recursive=True):
+            for rule in rules_file[path_of_rule]:
+                error_str = error_str + validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root)
+            return error_str
+    # give error back for outside handling:
+    return error_str
+
+
+# check for a value from a yaml file, if it is a str or can be formatted to it
+def check_str(value):
+    try:
+        if isinstance(value, str):
+            return True
+        elif isinstance(str(value), str):
+            return True
+    except Exception:
+        return False
+
+
+# check for a value from a yaml file, if it is a int or can be formatted to it
+def check_int(value):
+    try:
+        if isinstance(value, int):
+            return True
+        # this happens in other functions, but should be blocked in check_int,
+        # since otherwise all floats will be successfully cast to integer.
+        # elif isinstance(int(value), int):
+        #    return True
+    except Exception:
+        return False
+
+
+# check for a value from a yaml file, if it is a float or can be formatted to it
+def check_float(value):
+    try:
+        if isinstance(value, float):
+            return True
+        elif isinstance(float(value), float):
+            return True
+    except Exception:
+        return False
+
+
+def edit_file(file, onyo_root, onyo_new=False):
     if not os.path.isfile(file):
         logger.error(file + " does not exist.")
         sys.exit(1)
@@ -125,17 +215,27 @@ def edit_file(file, onyo_root):
         with open(temp_file, "r") as stream:
             try:
                 yaml.safe_load(stream)
-                run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
+                problem_str = validate_file(temp_file, file, onyo_root)
+                if problem_str == "":
+                    run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
+                else:
+                    # TODO: better exception needed
+                    raise yaml.YAMLError("\nOnyo Validation failed for:\n" + problem_str)
                 return
-            except yaml.YAMLError:
-                logger.error(file + " is no legal yaml syntax.")
+            except yaml.YAMLError as e:
                 while True:
-                    further_editing = str(input("Continue editing? (y/n)"))
+                    further_editing = str(input(str(e) + "Continue editing? (y/n)"))
                     if further_editing == 'y':
                         break
                     elif further_editing == 'n':
+                        output_str = "No changes made."
+                        # onyo new should neither create a new file nor a
+                        # temp-file, and have a special info message
+                        if (onyo_new):
+                            run_cmd("rm \"" + file + "\"")
+                            output_str = "No new asset \"" + os.path.relpath(file, onyo_root) + "\" created."
                         run_cmd("rm \"" + temp_file + "\"")
-                        logger.info("No changes made.")
+                        logger.info(output_str)
                         sys.exit(1)
     return
 
