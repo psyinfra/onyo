@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import configparser
+import uuid
 
 from onyo.utils import (
     build_git_add_cmd,
@@ -56,11 +57,21 @@ def run_onyo_new(directory, template, non_interactive, onyo_root):
     return os.path.join(directory, filename)
 
 
+def create_faux(onyo_root, list_of_assets, faux_length=8):
+    faux = "faux" + str(uuid.uuid1())[:faux_length]
+    for asset in list_of_assets:
+        if faux in asset[1]:
+            return create_faux(onyo_root, list_of_assets, faux_length)
+    return faux
+
+
 def create_filename(onyo_root, template):
     words = []
     # build new name, read these words
     for field in ["type", "make", "model", "serial"]:
         word = read_new_word('<' + field + '>*:')
+        if field == "serial" and word == "faux":
+            word = create_faux(onyo_root, get_list_of_assets(onyo_root))
         words.append(word)
     filename = words[0] + "_" + words[1] + "_" + words[2] + "." + words[3]
     # check if the new filename is actually unique in onyo repository
