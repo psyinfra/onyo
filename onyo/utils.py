@@ -130,7 +130,6 @@ def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
                             current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): values for \"" + value_field + "\" must be float, but is \"" + str(asset[value_field]) + "\"\n"
                     else:
                         current_error = current_error + "\t" + os.path.relpath(original_file, onyo_root) + " (" + path_of_rule + "): Type \"" + field2 + "\" is not known.\n"
-
     # return all errors
     return current_error
 
@@ -141,6 +140,8 @@ def validate_file(file, original_file, onyo_root):
     with open(os.path.join(onyo_root, ".onyo/validation/validation.yaml"), "r") as stream:
         try:
             rules_file = ru_yaml.load(stream)
+            if not rules_file:
+                rules_file = []
         except yaml.YAMLError as e:
             print(e)
     for path_of_rule in rules_file:
