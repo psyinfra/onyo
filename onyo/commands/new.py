@@ -29,7 +29,7 @@ def read_new_word(word_description):
     word = str(input(word_description))
     # if word contains reserved character, inform and read new word
     for char in reserved_characters:
-        if char in word:
+        if word_description != "<serial>*:" and char in word:
             logger.info(char + " is in list of reserved characters: " + ", ".join(reserved_characters))
             return read_new_word(word_description)
     # if enter pressed without input, read new word
