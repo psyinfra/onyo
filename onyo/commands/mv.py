@@ -51,11 +51,12 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
         # checking validation afterwards.
         source_destination_pairs.append([source_filename, destination_filename])
         current_cmd = build_mv_cmd(onyo_root, source_filename, destination_filename, force, rename)
-        # when trying to rename a file to a name that is used by another asset:
+        # when trying to rename a file to a name that is used by another asset,
+        # but does not overwrite the existing asset with the same name:
         if os.path.basename(destination_filename) != os.path.basename(source_filename):
             for asset in assets:
-                if os.path.basename(destination_filename) == asset[1] and force and rename:
-                    continue
+                if destination_filename == asset[0] and force and rename:
+                    break
                 if os.path.basename(destination_filename) == asset[1]:
                     problem_str = problem_str + "\nAsset names must be unique. Can't rename " + source_filename + " to " + destination_filename + " because of " + asset[0]
         if destination_filename in list_of_destinations:
