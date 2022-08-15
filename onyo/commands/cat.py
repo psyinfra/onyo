@@ -18,6 +18,8 @@ def build_cat_cmd(files, onyo_root):
             list_of_cat_commands.append("cat \"" + os.path.join(onyo_root, file) + "\"")
         elif os.path.isfile(file):
             list_of_cat_commands.append("cat \"" + file + "\"")
+        elif os.path.isdir(os.path.join(onyo_root, file)) or os.path.isdir(file):
+            problem_str = problem_str + "\nOnyo cat expects file(s), but \"" + file + "\" is a folder."
         else:
             problem_str = problem_str + "\n" + file + " does not exist."
     if problem_str != "":

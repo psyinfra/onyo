@@ -21,8 +21,7 @@ adaptable to alternate layouts and workflows beyond what was imagined when
 designing it.
 
 Every asset is a file, and there is only one asset per file. Folders denote
-assignment: *where* something is or *who* has it. A folder can also be used to
-bundle multiple assets together into a larger asset (see "Advanced").
+assignment: *where* something is or *who* has it.
 
 
 ## Inventory Concepts
@@ -116,14 +115,14 @@ repository.
 Templates can be used with the command `onyo new --template <template>
 <directory>` and are stored in the folder `.onyo/templates/`.
 Templates will be copied as a basis for a new asset file, and can then be
-edited. After saving the newly created asset will be checked for valid YAML
-syntax.
+edited. After saving the newly created asset, the file will be checked for
+valid YAML syntax.
 
 The default template that gets used when `onyo new` is called is
 `.onyo/templates/standard`. It can be updated with
 `onyo config template.default standard`.
 
-For examples, see the section "example templates" at the end of the README.
+For examples, see the section "Example Templates" at the end of the README.
 
 ## Field Validation
 
@@ -169,20 +168,6 @@ For further help, see "Example Validation".
 
   Running `onyo init` on an existing repository is safe. It will not overwrite
   anything; it will exit with an error.
-- `onyo ls [asset | directory]...`:
-
-  List the names of files and directories contained within a directory. If the
-  argument is a file, the filename will be listed. The results are listed
-  alphabetically.
-
-  Arguments are relative to `ONYO_REPOSITORY_DIR` (if set); otherwise, arguments
-  are relative to the current working directory.
-
-  If no arguments are given, the contents of `ONYO_REPOSITORY_DIR` (if set) are
-  listed; otherwise the current working directory is listed.
-
-  If `ONYO_REPOSITORY_DIR` is not set and the current working directory is not
-  in an Onyo repository, Onyo will throw an error.
 - `onyo tree directory...`:
 
   List the assets and directories in `directory` using the `tree` program.
@@ -200,12 +185,15 @@ For further help, see "Example Validation".
   Create `directory`(s). Intermediate directories will be created as needed
   (i.e. parent and child directories to be created in one call).
 
+  Onyo creates a `.anchor` file in every folder to track directories with git
+  even when they are empty.
+
   If the directory already exists, Onyo will throw an error. When multiple
   directories are passed to Onyo, all will be checked before attempting to
   create them.
 - `onyo cat asset...`:
 
-  Print the contents of `asset` to the terminal without parsing or validating
+  Print the contents of `asset`(s) to the terminal without parsing or validating
   the contents.
 - `onyo rm [--quiet, -q] [--yes, -y] asset | directory...`:
 
@@ -216,7 +204,7 @@ For further help, see "Example Validation".
 
   - `--quiet`: Silence the output (requires the `--yes` flag)
   - `--yes`: Respond "yes" to the prompt and run non-interactively
-- `onyo edit asset...`:
+- `onyo edit [--non-interactive, -I] asset...`:
 
   Open the `asset` file(s) using the default text editor specified by the
   environment variable `EDITOR` (`nano` and then `vi` are used as fallbacks).
@@ -229,68 +217,16 @@ For further help, see "Example Validation".
   `.onyo/validation/validation.yaml`, and if problems are found it gives the
   choice to either correct them or discard the changes to make sure that the
   repository stays in a valid state.
-- `onyo get [--depth num, -d] [--filter key=value[,key=value...], -f] [--machine-readable, -m] [--sort-ascending key, -s | --sort-descending key, -S] key[,key...] [asset | directory]...`:
-
-  Print the requested `key`(s) in tabular form for matching assets.
-
-  If no `asset` or `directory` is specified, the current working directory is
-  used. If Onyo is invoked from outside of the Onyo repository, the root of the
-  repository is used.
-
-  Key names can be any valid YAML key name. Dictionary keys can be addressed
-  using a `.` (e.g. `parent.child`). Multiple pseudo-keys (that do not appear in
-  the actual asset file) are available for queries (see "File Contents").
-
-  Multiple `key`s can be queried by joining them with a `,`.
-
-  `value`s that are a dictionary or list are output literally as "[dict]" or
-  "[list]"; the contents are not listed. Dictionary keys can be addressed using
-  a `.` (e.g. `parent.child`).
-
-  If the key does not exist, it is output literally as "[unset]".
-
-  - `--depth num`: Limit the maximum number of levels of directories to search
-    beneath `directory`. `--depth 1` limits to files that are direct children of
-    `directory`.
-  - `--filter key=value`: Only apply changes to assets that have `key` and it
-    matches `value`. Multiple restrictions can be declared by joining with a `,`
-    --- which acts as a logical AND operator. There is no "OR" equivalent.
-
-    `value` can be a string or a Python regular expression. Onyo's string
-    representation of types can also be used for queries, such as "[list]",
-    "[dict]", or "[unset]" (for keys that don't exist).
-  - `--machine-readable`: Display output in a form more easily parsed by
-    scripts. Headers are omitted, and fields are separated by a single tab.
-  - `--sort-ascending`: Sort the results in ascending order according to the
-    value of `key`.
-
-    Multiple invocation of `--sort-ascending` and/or `--sort-descending` are
-    evaluated from left to right in decreasing order of importance.
-  - `--sort-descending`: The same as `--sort-ascending`, but sort by `key` in
-    descending order.
-
-  Errors reading or parsing files print to STDERR, but do not halt Onyo.
-- `onyo set [--depth num, -d] [--dry-run, -n ] [--filter key=value[,key=value...], -f] [--quiet, -q] [--rename, -r] [--yes, -y] key=value[,key=value...] [asset | directory]...`:
+- `onyo set [--recursive, -R] [--depth num, -d] [--dry-run, -n ] [--quiet, -q] [--yes, -y] key=value[,key=value...] [asset | directory]...`:
 
   Set the `value` of `key` for matching assets. If the key does not exist, it is
   added and set appropriately.
 
-  Key names can be any valid YAML key name. Dictionary keys can be addressed
-  using a `.` (e.g. `parent.child`).
+  Key names can be any valid YAML key name.
 
   Multiple `key=value` pairs can be declared by joining with a `,`. Quotes can
   be used around `value`, which is necessary when it contains a comma,
   whitespace, etc.
-
-  Key values can be initialized as a dictionary or list --- but only as empty.
-  - lists: `key=[list]` or `key=[]`
-  - dictionaries: `key=[dict]` or `key={}`
-
-  The `type`, `make`, `model`, and `serial` pseudo-keys (see "File Contents")
-  can be set when the `--rename` flag is used. It will result in the file(s)
-  being renamed.
-
-  See `onyo unset` to remove keys.
 
   If no `asset` or `directory` is specified, the current working directory is
   used. If Onyo is invoked from outside of the Onyo repository, the root of the
@@ -298,19 +234,11 @@ For further help, see "Example Validation".
 
   Changes are printed to the terminal in the style of `diff`.
 
+  - `--recursive`: Update assets in directories recursively.
   - `--depth num`: Limit the maximum number of levels of directories to search
     beneath `directory`. `--depth 1` limits to files that are direct children of
     `directory`.
   - `--dry-run`: Perform a non-interactive trial run with no changes made.
-  - `--filter key=value`: Only apply changes to assets that have `key` and it
-    matches `value`. Multiple restrictions can be declared by joining with a `,`
-    --- which acts as a logical AND operator. There is no "OR" equivalent.
-
-    `value` can be a string or a Python regular expression. Onyo's string
-    representation of types can also be used for queries, such as "[list]",
-    "[dict]", or "[unset]" (for keys that don't exist).
-  - `--rename`: Permit assigning values to pseudo-keys that would result in the
-    file(s) being renamed.
   - `--quiet`: Silence the diff-like output of key-value changes.
   - `--yes`: Respond "yes" to all prompts and run non-interactively.
 
@@ -408,25 +336,12 @@ onyo set RAM=16GB accounting/Bingo\ Bob/laptop_lenovo_T490s
 or
 ```
 onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s
-<spawns $EDITOR; user edits ram field>
+<spawns $EDITOR; user edits RAM field>
 ```
 
 **List all assets on the shelf**:
 ```
-onyo ls shelf
-```
-or
-```
 onyo tree shelf
-```
-
-**List all headsets on the shelf**:
-```
-onyo ls shelf/headset_*
-```
-or
-```
-onyo get filename --filter type=headset shelf
 ```
 
 **List the history of an asset**:
@@ -437,10 +352,6 @@ onyo history accounting/Bingo\ Bob/laptop_lenovo_T490s
 **List the history of all assets of a user**:
 ```
 onyo history accounting/Bingo\ Bob
-```
-**Get the filename, make, model, and purchase data of all laptops assigned to the accounting department; sort first by make, then model, then purchase date**:
-```
-onyo get --filter type=laptop -s make -s model -s purchase_date filename,make,model,purchase_date accounting/
 ```
 
 ## Example Templates
@@ -458,22 +369,24 @@ by `.onyo/templates/standard` is a plain YAML file:
 This template passes the YAML syntax check when onyo is called while the editor
 is suppressed with `onyo new --non-interactive <directory>`.
 
-`onyo new --template laptop <dir>` as defined by `.onyo/templates/laptop`
-contains a simple example for a laptop asset which already contains some fields,
-which are relevant for all assets of that device type.
+`onyo new --template laptop.example <dir>` as defined by
+`.onyo/templates/laptop.example` contains a simple example for a laptop asset
+which already contains some fields, which are relevant for all assets of that
+device type.
 
 ```
 ---
 RAM:
 Size:
+USB:
 ```
 
 ## Example Validation
 
 The following sections give examples how one can use the `validation.yaml` to
 keep assets and their metadata consistent in an onyo repository. Onyo reads the
-`validation.yaml` file from top to bottom and will apply the first rule,
-describing a key when the name scheme fits an asset.
+`validation.yaml` file from top to bottom and will apply the first rule for
+which the name scheme fits an asset.
 
 **Example 1: Rules for different files and directories**
 
@@ -491,20 +404,20 @@ files, that match certain asset names (`shelf/*laptop*` in the example).
 "user1/*":
 - Size:
     - Type: int
-- number_USB:
+- USB:
     - Type: int
 ```
 
 For the assets in `shelf` with "laptop" in their file name, the value RAM must
 have the type int. All other assets in `shelf` can have a float as RAM value.
 For assets under the directory `user1/*` the rules for the RAM key do not apply,
-instead it has a different set of rules for the keys `Size` and `number_USB`.
+instead it has a different set of rules for the keys `Size` and `USB`.
 
 **Example 2: Directories, Sub-Directories and onyo-wide Rules**
 
 Onyo differentiates between `shelf/*` (to define rules for assets directly under
-`shelf/`) and `shelf/**` (for all assets in shelf and all it's subdirectories).
-The user can also use `"*/**":` at the end of `validation.yaml` to specify a set of
+`shelf/`) and `shelf/**` (for all assets in shelf and all it's sub-directories).
+The user can also use `"**":` at the end of `validation.yaml` to specify a set of
 rules that will be applied to all assets anywhere in onyo, if no other rule
 defined before applies to an asset file.
 
@@ -515,7 +428,7 @@ defined before applies to an asset file.
 "shelf/**":
 - Size:
     - Type: int
-"*/**":
+"**":
 - RAM:
     - Type: float
 - Size:
@@ -527,17 +440,17 @@ onyo uses just the first set of rules where the asset matches the path
 defined in validation.yaml, the later rules under `shelf/**` do not apply to
 assets directly in `shelf/`.
 
-When assets are in a subfolder of `shelf/`, the rule for RAM does not apply,
+When assets are in a sub-folder of `shelf/`, the rule for RAM does not apply,
 instead the separate set of rules under `shelf/**` will be used to validate
 these assets.
 
 Asset files in sub-directories of shelf, e.g. `shelf/left/top_row/` have no
 rules regarding the `RAM` key, just the rule for `Size` does apply.
 
-The rule `*/**` enforces for all assets outside of `shelf/` that keys for RAM
+The rule `**` enforces for all assets outside of `shelf/` that keys for RAM
 and Size must be at least float (e.g. "RAM: 12GB" as string are invalid for all
 assets anywhere in the onyo repository).
-The rules for `*/**` do not apply to assets in `shelf/`, because onyo uses just
+The rules for `**` do not apply to assets in `shelf/`, because onyo uses just
 the first set of rules where a path matches, and `shelf/` has a separate set of
 rules already defined above.
 

@@ -1,11 +1,31 @@
-"shelf/*":
-- RAM:
-    - Type: int
-- Size:
-    - Type: int
-"*/*":
-- RAM:
-    - Type: int
-- Size:
-    - Type: int
+# create a set of rules that can be used for other directories with help of a
+# pointer. This helps to use the same set of validation rules for all user
+# directories:
+# "generic_rules_for_users/**": &pointer_user
+# - RAM:
+#   - Type: int
+# - USB:
+#   - Type: int
 
+# use the pointer created above to use the same rules for all user directories:
+# "user1/**":
+#   *pointer_user
+# "user2/**":
+#   *pointer_user
+
+# define additional rules for all files with "laptop" in name that are in folder
+# shelf:
+# "shelf/*laptop*":
+# - RAM:
+#   - Type: int
+
+# all assets, that don't have laptop in name, but are in shelf or it's
+# sub-directories:
+# "shelf/**":
+# - RAM:
+#   - Type: float
+
+# for all directories that are not specified above, create a fallback rule:
+# "**":
+# - CPU:
+#   - Type: int
