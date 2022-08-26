@@ -6,7 +6,8 @@ import sys
 import configparser
 
 from onyo.utils import (
-    run_cmd
+    run_cmd,
+    get_git_root
 )
 from onyo.commands.fsck import read_only_fsck
 
@@ -18,7 +19,7 @@ def prepare_arguments(source, onyo_root):
     problem_str = ""
     # find log/history tools:
     config = configparser.ConfigParser()
-    config.read(os.path.join(onyo_root, ".onyo/config"))
+    config.read(os.path.join(get_git_root(onyo_root), ".onyo/config"))
     interactive_tool = ""
     non_interactive_tool = ""
     try:

@@ -5,6 +5,7 @@ import os
 
 from onyo.utils import (
     run_cmd,
+    get_git_root,
     build_git_add_cmd
 )
 from onyo.commands.fsck import read_only_fsck
@@ -31,9 +32,9 @@ def config(args, onyo_root):
     # run onyo fsck
     read_only_fsck(args, onyo_root, quiet=True)
     # build command
-    command = build_command(args.command, onyo_root)
-    git_add_cmd = build_git_add_cmd(onyo_root, ".onyo/config")
-    [commit_cmd, commit_msg] = build_commit_cmd(command, onyo_root)
+    command = build_command(args.command, get_git_root(onyo_root))
+    git_add_cmd = build_git_add_cmd(get_git_root(onyo_root), ".onyo/config")
+    [commit_cmd, commit_msg] = build_commit_cmd(command, get_git_root(onyo_root))
     # run command
     run_cmd(command)
     run_cmd(git_add_cmd)

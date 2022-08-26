@@ -11,6 +11,7 @@ from git import Repo, exc
 from onyo.utils import (
     run_cmd,
     get_list_of_assets,
+    get_git_root,
     validate_file
 )
 
@@ -63,7 +64,7 @@ def verify_anchors(onyo_root):
             # the onyo root folder has no .anchor
             if os.path.samefile(elem, onyo_root):
                 continue
-            if run_cmd("git -C " + onyo_root + " check-ignore --no-index \"" + elem + "\""):
+            if run_cmd("git -C \"" + onyo_root + "\" check-ignore --no-index \"" + elem + "\""):
                 continue
             if not os.path.isfile(os.path.join(elem, ".anchor")):
                 anchor_str = anchor_str + "\n\t" + os.path.relpath(os.path.join(elem, ".anchor"), onyo_root)
@@ -76,7 +77,7 @@ def verify_yaml(onyo_root):
     yaml_str = ""
     for elem in glob.iglob(onyo_root + '**/**', recursive=True):
         if os.path.isfile(elem):
-            if run_cmd("git -C " + onyo_root + " check-ignore --no-index \"" + elem + "\""):
+            if run_cmd("git -C \"" + onyo_root + "\" check-ignore --no-index \"" + elem + "\""):
                 continue
             # "assets" saves all names/paths, to later check if they are unique
             with open(elem, "r") as stream:
@@ -126,7 +127,7 @@ def read_only_fsck(args, onyo_root, quiet=False):
     problem_str = ""
     info_str = ""
     # check if is git, and .git and .onyo exist, identify top-level of onyo directory
-    [repo, repo_path, info_str] = verify_onyo_existence(onyo_root)
+    [repo, repo_path, info_str] = verify_onyo_existence(get_git_root(onyo_root))
     # check if it is possible to load yaml file for syntax check
     problem_str = problem_str + verify_yaml(onyo_root)
     # end block, display problems or state repo is clean.
@@ -147,7 +148,7 @@ def fsck(args, onyo_root, quiet=False):
     problem_str = ""
     info_str = ""
     # check if is git, and .git and .onyo exist, identify top-level of onyo directory
-    [repo, repo_path, info_str] = verify_onyo_existence(onyo_root)
+    [repo, repo_path, info_str] = verify_onyo_existence(get_git_root(onyo_root))
     # check if git status is clean
     problem_str = problem_str + verify_onyo_working_tree(repo)
     # onyo anchor check for all folders

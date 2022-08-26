@@ -15,7 +15,7 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(sources, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "deleted asset(s).\n\n" + "\n".join(sources)]
+    return ["git -C \"" + onyo_root + "\" commit -m", "deleted asset(s).\n\n" + "\n".join(sources)]
 
 
 def run_rm(onyo_root, source):

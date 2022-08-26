@@ -124,7 +124,7 @@ def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
 def validate_file(file, original_file, onyo_root):
     ru_yaml = YAML(typ='safe')
     error_str = ""
-    with open(os.path.join(onyo_root, ".onyo/validation/validation.yaml"), "r") as stream:
+    with open(os.path.join(get_git_root(onyo_root), ".onyo/validation/validation.yaml"), "r") as stream:
         try:
             rules_file = ru_yaml.load(stream)
             if not rules_file:
@@ -183,7 +183,7 @@ def edit_file(file, onyo_root, onyo_new=False):
         logger.error(file + " does not exist.")
         sys.exit(1)
     # create and edit a temporary file, and if that is valid replace original
-    temp_file = os.path.join(onyo_root, os.path.join(".onyo/temp/", os.path.basename(file)))
+    temp_file = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/temp/", os.path.basename(file)))
     if not os.path.isfile(temp_file):
         run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
     # When temp-file exists, ask if to use it

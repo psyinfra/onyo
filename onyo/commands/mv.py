@@ -21,14 +21,14 @@ def build_mv_cmd(onyo_root, source, destination, force, rename):
         return (os.path.basename(source) + " -> " + os.path.basename(destination) + " Assets can't be renamed without --rename.")
     if os.path.isfile(os.path.join(onyo_root, destination)):
         if force:
-            return "git -C " + onyo_root + " mv -f \"" + source + "\" \"" + destination + "\""
+            return "git -C \"" + onyo_root + "\" mv -f \"" + source + "\" \"" + destination + "\""
         else:
             return (os.path.join(onyo_root, destination) + " already exists.")
-    return "git -C " + onyo_root + " mv \"" + source + "\" \"" + destination + "\""
+    return "git -C \"" + onyo_root + "\" mv \"" + source + "\" \"" + destination + "\""
 
 
 def build_commit_cmd(list_of_commands, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "move asset(s).\n\n" + "\n".join(list_of_commands)]
+    return ["git -C \"" + onyo_root + "\" commit -m", "move asset(s).\n\n" + "\n".join(list_of_commands)]
 
 
 def prepare_arguments(sources, destination, force, rename, onyo_root):
