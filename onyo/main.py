@@ -109,7 +109,13 @@ def parse_args():
         action='store_true',
         help='Enable debug logging'
     )
-
+    parser.add_argument(
+        '-C',
+        '--onyopath',
+        required=False,
+        default=os.getcwd(),
+        help='Run onyo commands from -C <dir>'
+    )
     # subcommands
     subcommands = parser.add_subparsers(
         title="onyo commands",
@@ -379,12 +385,8 @@ def main():
     parser = parse_args()
     args = parser.parse_args()
 
-    # if ONYO_REPOSITORY_DIR as environmental variable is set, uses it as
-    # default onyo dir, otherwise it uses the current working directory as
-    # default, but this can always be overwritten by terminal.
-    onyo_root = os.environ.get('ONYO_REPOSITORY_DIR')
-    if onyo_root is None:
-        onyo_root = os.getcwd()
+    if args.onyopath:
+        onyo_root = args.onyopath
 
     # TODO: Do onyo fsck here, test if .onyo exists, is git repo, other checks
 

@@ -49,7 +49,7 @@ def prepare_arguments(sources, onyo_root):
 
 def tree(args, onyo_root):
     # run onyo fsck for read only commands
-    read_only_fsck(args, onyo_root, quiet=True)
+    read_only_fsck(args, os.path.join(os.getcwd(), onyo_root), quiet=True)
     # check sources
     list_of_sources = prepare_arguments(args.directory, onyo_root)
     # build and run commands
