@@ -10,6 +10,7 @@ from onyo.utils import (
     build_git_add_cmd,
     run_cmd,
     get_list_of_assets,
+    get_git_root,
     edit_file
 )
 from onyo.commands.fsck import fsck
@@ -21,7 +22,7 @@ reserved_characters = ['_', '.']
 
 
 def build_commit_cmd(file, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "new asset.\n\n" + file]
+    return ["git -C \"" + onyo_root + "\" commit -m", "new asset.\n\n" + file]
 
 
 def read_new_word(word_description):
@@ -91,16 +92,16 @@ def prepare_arguments(directory, template, onyo_root):
     directory = os.path.join(onyo_root, directory)
     # find the template to use:
     config = configparser.ConfigParser()
-    config.read(os.path.join(onyo_root, ".onyo/config"))
+    config.read(os.path.join(get_git_root(onyo_root), ".onyo/config"))
     if not template:
         try:
             template = config['template']['default']
         except KeyError:
             pass
-    template = os.path.join(onyo_root, os.path.join(".onyo/templates", template))
+    template = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/templates", template))
     problem_str = ""
     if not os.path.isfile(template):
-        problem_str = problem_str + "\nTemplate file " + os.path.join(".onyo/templates", template) + " does not exist."
+        problem_str = problem_str + "\nTemplate file " + os.path.join(get_git_root(onyo_root), os.path.join(".onyo/templates", template)) + " does not exist."
     if not os.path.isdir(directory):
         problem_str = problem_str + "\n" + directory + " is not a directory."
     if problem_str != "":
@@ -116,7 +117,7 @@ def new(args, onyo_root):
     [directory, template] = prepare_arguments(args.directory, args.template, onyo_root)
     # create file for asset, fill in fields
     created_file = run_onyo_new(directory, template, args.non_interactive, onyo_root)
-    git_filepath = os.path.relpath(created_file, onyo_root)
+    git_filepath = os.path.relpath(created_file, get_git_root(onyo_root))
     # build commit command
     [commit_cmd, commit_msg] = build_commit_cmd(git_filepath, onyo_root)
     # run commands

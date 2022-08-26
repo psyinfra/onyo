@@ -388,7 +388,7 @@ def main():
     if args.onyopath:
         onyo_root = args.onyopath
 
-    # TODO: Do onyo fsck here, test if .onyo exists, is git repo, other checks
+    # TODO: Do onyo fsck here, test if onyo_root exists, .onyo exists, is git repo, other checks
 
     if args.debug:
         logger.setLevel(logging.DEBUG)

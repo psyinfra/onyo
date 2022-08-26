@@ -12,6 +12,7 @@ from git import Repo
 from onyo.utils import (
     run_cmd,
     build_git_add_cmd,
+    get_git_root,
     validate_rule_for_file
 )
 
@@ -20,7 +21,7 @@ logger = logging.getLogger('onyo')
 
 
 def build_commit_cmd(files_to_change, onyo_root):
-    return ["git -C " + onyo_root + " commit -m", "set values.\n\n" +
+    return ["git -C \"" + onyo_root + "\" commit -m", "set values.\n\n" +
             "\n".join(files_to_change)]
 
 
@@ -94,13 +95,13 @@ def diff_changes(file_list, keys, onyo_root):
             # display new value:
             asset_changed = asset_changed + "\n+\t" + key + ": " + str(keys[key])
         if asset_changed:
-            output_str = output_str + "\n" + os.path.relpath(file, onyo_root) + asset_changed
+            output_str = output_str + "\n" + os.path.relpath(file, get_git_root(onyo_root)) + asset_changed
     return output_str
 
 
 def simulate_validation_after_change(file, rules_file, keys, onyo_root):
     problem_str = ""
-    temp_file = os.path.join(onyo_root, os.path.join(".onyo/temp/", os.path.basename(file)))
+    temp_file = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/temp/", os.path.basename(file)))
     run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
     problem_str = problem_str + set_value(temp_file, temp_file, keys, onyo_root)
     for path_of_rule in rules_file:
@@ -123,7 +124,7 @@ def prepare_arguments(source, keys, quiet, yes, recursive, depth, onyo_root):
     if not depth == -1 and not depth > 0:
         problem_str = problem_str + "\n--depth must be an integer bigger than 0."
     # just open/validate the rules-file once
-    with open(os.path.join(onyo_root, ".onyo/validation/validation.yaml"), "r") as stream:
+    with open(os.path.join(get_git_root(onyo_root), ".onyo/validation/validation.yaml"), "r") as stream:
         try:
             rules_file = ru_yaml.load(stream)
             if not rules_file:
