@@ -163,8 +163,7 @@ For further help, see "Example Validation".
   (containing default config files, templates, etc), and everything committed.
 
   The current working directory will be initialized if neither `directory` nor
-  the `ONYO_REPOSITORY_DIR` environment variable are specified. If both are set,
-  Onyo will throw an error.
+  the `onyo -C <dir>` option are specified.
 
   Running `onyo init` on an existing repository is safe. It will not overwrite
   anything; it will exit with an error.
@@ -248,8 +247,7 @@ For further help, see "Example Validation".
 - `onyo git git-command-args...`:
 
   Pass `git-command-args` as arguments to `git`, using the Onyo repository as
-  the git repository. This is most valuable when used in conjunction with
-  `ONYO_REPOSITORY_DIR`.
+  the git repository.
 - `onyo new [--template template, -t template] [--non-interactive, -I] directory`:
 
   Creates a new `asset` in `directory`. The command opens a dialog that asks for
@@ -296,10 +294,6 @@ For further help, see "Example Validation".
 
 ## Environment Variables
 
-- `ONYO_REPOSITORY_DIR`:
-
-   Location of an Onyo repository. This can be used to invoke `onyo` from
-   anywhere on the filesystem.
 - `EDITOR`:
    The text editor spawned by Onyo.
 

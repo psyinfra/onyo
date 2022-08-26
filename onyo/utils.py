@@ -49,22 +49,9 @@ def get_git_root(path):
         git_root = git_repo.git.rev_parse("--show-toplevel")
         if os.path.isdir(os.path.join(git_root, ".onyo")):
             return git_root
-        else:
-            raise exc.InvalidGitRepositoryError
-    # otherwise checks if given file relative to $ONYO_REPOSITORY_DIR is in a
-    # git repository
     except (exc.NoSuchPathError, exc.InvalidGitRepositoryError):
-        onyo_path = os.environ.get('ONYO_REPOSITORY_DIR')
-        if onyo_path is None:
-            logger.error(path + " is no onyo repository.")
-            sys.exit(1)
-        elif not is_git_dir(onyo_path):
-            logger.error(path + " is no onyo repository.")
-            sys.exit(1)
-
-        git_repo = Repo(os.path.join(path, onyo_path),
-                        search_parent_directories=True)
-        git_root = git_repo.git.rev_parse("--show-toplevel")
+        logger.error(path + " is no onyo repository.")
+        sys.exit(1)
         return git_root
 
 
@@ -259,8 +246,6 @@ def get_list_of_assets(repo_path):
 def prepare_directory(directory):
     if os.path.isdir(os.path.join(os.getcwd(), directory)):
         location = os.path.join(os.getcwd(), directory)
-    elif os.environ.get('ONYO_REPOSITORY_DIR') is not None and os.path.isdir(os.path.join(os.environ.get('ONYO_REPOSITORY_DIR'), directory)) and os.path.isdir(os.path.join(get_git_root(directory), directory)):
-        location = os.path.join(get_git_root(directory), directory)
     else:
         logger.error(directory + " does not exist.")
         sys.exit(1)
