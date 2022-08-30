@@ -84,6 +84,8 @@ class TestClass:
         ("onyo rm -q -y delete_me/", "", test_output, "empty_file.txt"),
         ("onyo set --recursive RAM=10", "y", test_output, "set_recursive.txt"),
         ("onyo set RAM=20,CPU=vier,USB='None',var='str ing' trash\ bin/this_device_is\ very.good", "y", test_output, "set_device_good.txt"),
+        ("onyo set RAM=50,USB=3 shelf/laptop_apple_macbookpro.1", "y", test_output, "set_shelf_laptop.txt"),
+        ("onyo cat trash\ bin/this_device_is\ very.good shelf/laptop_apple_macbookpro.1", "", test_output, "cat_output.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
     ]
 

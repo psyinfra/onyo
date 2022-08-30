@@ -166,6 +166,7 @@ def prepare_arguments(source, keys, quiet, yes, recursive, depth, onyo_root):
     if problem_str != "":
         logger.error(problem_str)
         sys.exit(1)
+    asset_list.sort()
     return asset_list
 
 
