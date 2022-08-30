@@ -95,14 +95,21 @@ def diff_changes(file_list, keys, onyo_root):
             # display new value:
             asset_changed = asset_changed + "\n+\t" + key + ": " + str(keys[key])
         if asset_changed:
-            output_str = output_str + "\n" + os.path.relpath(file, get_git_root(onyo_root)) + asset_changed
+            if onyo_root in file:
+                output_str = output_str + "\n" + os.path.relpath(file, get_git_root(onyo_root)) + asset_changed
+            else:
+                output_str = output_str + "\n" + file + asset_changed
     return output_str
 
 
 def simulate_validation_after_change(file, rules_file, keys, onyo_root):
     problem_str = ""
     temp_file = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/temp/", os.path.basename(file)))
-    run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+    # either it exists relative from cwd, or else should use the absolute path
+    if os.path.isdir(file):
+        run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+    else:
+        run_cmd("cp \"" + os.path.join(onyo_root, file) + "\" \"" + temp_file + "\"")
     problem_str = problem_str + set_value(temp_file, temp_file, keys, onyo_root)
     for path_of_rule in rules_file:
         if os.path.join(onyo_root, file) in glob.glob(os.path.join(onyo_root, path_of_rule), recursive=True):
