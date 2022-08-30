@@ -82,6 +82,8 @@ class TestClass:
         ("onyo mv shelf/laptop_apple_macbookpro.6 user/", "", test_output, "empty_file.txt"),
         ("onyo mv --rename user\ 2 no\ user", "", test_output, "empty_file.txt"),
         ("onyo rm -q -y delete_me/", "", test_output, "empty_file.txt"),
+        ("onyo set --recursive RAM=10", "y", test_output, "set_recursive.txt"),
+        ("onyo set RAM=20,CPU=vier,USB='None',var='str ing' trash\ bin/this_device_is\ very.good", "y", test_output, "set_device_good.txt"),
         ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
     ]
 
