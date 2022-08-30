@@ -97,9 +97,21 @@ class StoreDictKeyPair(argparse.Action):
         setattr(namespace, self.dest, my_dict)
 
 
+# Custom help formatter to strip the first line (metavar) for subcommands from
+# help output.
+# credit: https://stackoverflow.com/a/13429281
+class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    def _format_action(self, action):
+        parts = super(argparse.RawDescriptionHelpFormatter, self)._format_action(action)
+        if action.nargs == argparse.PARSER:
+            parts = "\n".join(parts.split("\n")[1:])
+        return parts
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='A text-based inventory system backed by git.'
+        description='A text-based inventory system backed by git.',
+        formatter_class=SubcommandHelpFormatter
     )
     parser.add_argument(
         '-d',
@@ -120,6 +132,7 @@ def parse_args():
     subcommands = parser.add_subparsers(
         title="commands"
     )
+    subcommands.metavar = '<command>'
     # subcommand "init"
     cmd_init = subcommands.add_parser(
         'init',
