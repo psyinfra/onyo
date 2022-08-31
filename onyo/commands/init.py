@@ -52,6 +52,9 @@ def prepare_arguments(directory, onyo_root):
         directory = onyo_root
     else:
         directory = os.path.join(onyo_root, directory)
+    if not os.path.isdir(directory):
+        logger.error("\"" + directory + "\" is no existing directory.")
+        sys.exit(1)
     return directory
 
 
