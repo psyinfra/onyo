@@ -24,9 +24,6 @@ def build_command(command, onyo_root):
 def git(args, onyo_root):
     # run onyo fsck
     fsck(args, onyo_root, quiet=True)
-    # if "onyo git -C <dir>" is called
-    if args.directory is not None:
-        onyo_root = args.directory
     # build command
     command = build_command(args.command, onyo_root)
     # run commands
