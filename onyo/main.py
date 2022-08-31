@@ -114,6 +114,13 @@ def parse_args():
         formatter_class=SubcommandHelpFormatter
     )
     parser.add_argument(
+        '-C',
+        '--onyopath',
+        required=False,
+        default=os.getcwd(),
+        help='run as if onyo was started in <path>'
+    )
+    parser.add_argument(
         '-d',
         '--debug',
         required=False,
@@ -121,18 +128,96 @@ def parse_args():
         action='store_true',
         help='enable debug logging'
     )
-    parser.add_argument(
-        '-C',
-        '--onyopath',
-        required=False,
-        default=os.getcwd(),
-        help='run as if onyo was started in <path>'
-    )
     # subcommands
     subcommands = parser.add_subparsers(
         title="commands"
     )
     subcommands.metavar = '<command>'
+    # subcommand cat
+    cmd_cat = subcommands.add_parser(
+        'cat',
+        help='print the contents of an asset'
+    )
+    cmd_cat.set_defaults(run=commands.cat)
+    cmd_cat.add_argument(
+        'file',
+        metavar='file',
+        nargs='+',
+        help='asset(s) to print'
+    )
+    # subcommand "config"
+    cmd_config = subcommands.add_parser(
+        'config',
+        help='set onyo options in the repository'
+    )
+    cmd_config.set_defaults(run=commands.config)
+    cmd_config.add_argument(
+        'command',
+        metavar='command',
+        nargs=argparse.REMAINDER,
+        help='configuration key to set in .onyo/config'
+    )
+    # subcommand "edit"
+    cmd_edit = subcommands.add_parser(
+        'edit',
+        help='edit an asset'
+    )
+    cmd_edit.set_defaults(run=commands.edit)
+    cmd_edit.add_argument(
+        '-I', '--non-interactive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='do not prompt or open the editor'
+    )
+    cmd_edit.add_argument(
+        'file',
+        metavar='file',
+        nargs='+',
+        help='filename of asset(s) to edit'
+    )
+    # subcommand "fsck"
+    cmd_fsck = subcommands.add_parser(
+        'fsck',
+        help='check the onyo repository for sanity, and run YAML and onyo validation on all assets'
+    )
+    cmd_fsck.set_defaults(run=commands.fsck)
+    # subcommand "git"
+    cmd_git = subcommands.add_parser(
+        'git',
+        help='run git commands in the onyo repository'
+    )
+    cmd_git.set_defaults(run=commands.git)
+    cmd_git.add_argument(
+        '-C', '--directory',
+        metavar='directory',
+        help='directory to run git in'
+    )
+    cmd_git.add_argument(
+        'command',
+        metavar='<command>',
+        nargs=argparse.REMAINDER,
+        help='git command to run'
+    )
+    # subcommand "history"
+    cmd_history = subcommands.add_parser(
+        'history',
+        help='show the history of an asset or directory'
+    )
+    cmd_history.set_defaults(run=commands.history)
+    cmd_history.add_argument(
+        'source',
+        metavar='source',
+        nargs='?',
+        help='asset or directory to show the history of'
+    )
+    cmd_history.add_argument(
+        '-I', '--non-interactive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='print the git log instead of opening an interactive tig session'
+    )
     # subcommand "init"
     cmd_init = subcommands.add_parser(
         'init',
@@ -144,6 +229,18 @@ def parse_args():
         metavar='directory',
         nargs='?',
         help='initialize <directory> as an onyo repository'
+    )
+    # subcommand "mkdir"
+    cmd_mkdir = subcommands.add_parser(
+        'mkdir',
+        help='create a directory (and anchor for git)'
+    )
+    cmd_mkdir.set_defaults(run=commands.mkdir)
+    cmd_mkdir.add_argument(
+        'directory',
+        metavar='directory',
+        nargs='+',
+        help='directory to create'
     )
     # subcommand "mv"
     cmd_mv = subcommands.add_parser(
@@ -200,36 +297,60 @@ def parse_args():
         metavar='directory',
         help='add a new asset to <directory>'
     )
-    # subcommand "edit"
-    cmd_edit = subcommands.add_parser(
-        'edit',
-        help='edit an asset'
+    # subcommand "set"
+    cmd_set = subcommands.add_parser(
+        'set',
+        help='set values in assets'
     )
-    cmd_edit.set_defaults(run=commands.edit)
-    cmd_edit.add_argument(
-        '-I', '--non-interactive',
+    cmd_set.set_defaults(run=commands.set)
+    cmd_set.add_argument(
+        '-d', '--depth',
+        metavar='depth',
+        type=int,
+        required=False,
+        default=-1,
+        help='descend at most "n" levels of directories below the starting-point; used only with --recursive'
+    )
+    cmd_set.add_argument(
+        '-n', "--dry-run",
         required=False,
         default=False,
         action='store_true',
-        help='do not prompt or open the editor'
+        help='perform a non-interactive trial-run without making any changes'
     )
-    cmd_edit.add_argument(
-        'file',
-        metavar='file',
-        nargs='+',
-        help='filename of asset(s) to edit'
+    cmd_set.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence output (requires the --yes flag)'
     )
-    # subcommand cat
-    cmd_cat = subcommands.add_parser(
-        'cat',
-        help='print the contents of an asset'
+    cmd_set.add_argument(
+        '-R', '--recursive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='set values recursively for all assets in a directory'
     )
-    cmd_cat.set_defaults(run=commands.cat)
-    cmd_cat.add_argument(
-        'file',
-        metavar='file',
-        nargs='+',
-        help='asset(s) to print'
+    cmd_set.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_set.add_argument(
+        'keys',
+        action=StoreDictKeyPair,
+        metavar="keys",
+        help='key-value pairs to set in asset files; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
+    )
+    cmd_set.add_argument(
+        'source',
+        metavar='source',
+        default='.',
+        nargs='*',
+        help='assets/directories for which to set values'
     )
     # subcommand "tree"
     cmd_tree = subcommands.add_parser(
@@ -242,66 +363,6 @@ def parse_args():
         metavar='directory',
         nargs='*',
         help='directories to print'
-    )
-    # subcommand "history"
-    cmd_history = subcommands.add_parser(
-        'history',
-        help='show the history of an asset or directory'
-    )
-    cmd_history.set_defaults(run=commands.history)
-    cmd_history.add_argument(
-        'source',
-        metavar='source',
-        nargs='?',
-        help='asset or directory to show the history of'
-    )
-    cmd_history.add_argument(
-        '-I', '--non-interactive',
-        required=False,
-        default=False,
-        action='store_true',
-        help='print the git log instead of opening an interactive tig session'
-    )
-    # subcommand "git"
-    cmd_git = subcommands.add_parser(
-        'git',
-        help='run git commands in the onyo repository'
-    )
-    cmd_git.set_defaults(run=commands.git)
-    cmd_git.add_argument(
-        '-C', '--directory',
-        metavar='directory',
-        help='directory to run git in'
-    )
-    cmd_git.add_argument(
-        'command',
-        metavar='<command>',
-        nargs=argparse.REMAINDER,
-        help='git command to run'
-    )
-    # subcommand "config"
-    cmd_config = subcommands.add_parser(
-        'config',
-        help='set onyo options in the repository'
-    )
-    cmd_config.set_defaults(run=commands.config)
-    cmd_config.add_argument(
-        'command',
-        metavar='command',
-        nargs=argparse.REMAINDER,
-        help='configuration key to set in .onyo/config'
-    )
-    # subcommand "mkdir"
-    cmd_mkdir = subcommands.add_parser(
-        'mkdir',
-        help='create a directory (and anchor for git)'
-    )
-    cmd_mkdir.set_defaults(run=commands.mkdir)
-    cmd_mkdir.add_argument(
-        'directory',
-        metavar='directory',
-        nargs='+',
-        help='directory to create'
     )
     # subcommand "rm"
     cmd_rm = subcommands.add_parser(
@@ -328,67 +389,6 @@ def parse_args():
         metavar='source',
         nargs='+',
         help='asset(s) to delete'
-    )
-    # subcommand "fsck"
-    cmd_fsck = subcommands.add_parser(
-        'fsck',
-        help='check the onyo repository for sanity, and run YAML and onyo validation on all assets'
-    )
-    cmd_fsck.set_defaults(run=commands.fsck)
-    # subcommand "set"
-    cmd_set = subcommands.add_parser(
-        'set',
-        help='set values in assets'
-    )
-    cmd_set.set_defaults(run=commands.set)
-    cmd_set.add_argument(
-        '-n', "--dry-run",
-        required=False,
-        default=False,
-        action='store_true',
-        help='perform a non-interactive trial-run without making any changes'
-    )
-    cmd_set.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='silence output (requires the --yes flag)'
-    )
-    cmd_set.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='respond "yes" to any prompts'
-    )
-    cmd_set.add_argument(
-        '-R', '--recursive',
-        required=False,
-        default=False,
-        action='store_true',
-        help='set values recursively for all assets in a directory'
-    )
-    cmd_set.add_argument(
-        '-d', '--depth',
-        metavar='depth',
-        type=int,
-        required=False,
-        default=-1,
-        help='descend at most "n" levels of directories below the starting-point; used only with --recursive'
-    )
-    cmd_set.add_argument(
-        'keys',
-        action=StoreDictKeyPair,
-        metavar="keys",
-        help='key-value pairs to set in asset files; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
-    )
-    cmd_set.add_argument(
-        'source',
-        metavar='source',
-        default='.',
-        nargs='*',
-        help='assets/directories for which to set values'
     )
     return parser
 
