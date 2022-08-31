@@ -138,3 +138,13 @@ class TestClass:
         test_tree_cmd = "onyo -C \"test 2/\" tree"
         os.chdir(self.test_dir)
         check_output_with_file(test_tree_cmd, "", test_tree_output, self.test_dir)
+
+    # test just `onyo init <dir>`
+    def test_init_with_relative_dir(self):
+        # build variables
+        test_init_output = os.path.join(self.test_output, "test 3/test_init_output.txt")
+        test_init_cmd = "onyo init \"test 3\""
+        # run commands
+        run_test_cmd("mkdir \"" + os.path.join(self.test_dir, "test 3") + "\"")
+        os.chdir(self.test_dir)
+        check_output_with_file(test_init_cmd, "", test_init_output, self.test_dir + "/test 3")
