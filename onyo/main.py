@@ -199,11 +199,6 @@ def parse_args():
     )
     cmd_git.set_defaults(run=commands.git)
     cmd_git.add_argument(
-        '-C', '--directory',
-        metavar='directory',
-        help='directory to run git in'
-    )
-    cmd_git.add_argument(
         'command',
         metavar='<command>',
         nargs=argparse.REMAINDER,
