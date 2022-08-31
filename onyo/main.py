@@ -133,7 +133,9 @@ def parse_args():
         title="commands"
     )
     subcommands.metavar = '<command>'
+    #
     # subcommand cat
+    #
     cmd_cat = subcommands.add_parser(
         'cat',
         help='print the contents of an asset'
@@ -145,7 +147,9 @@ def parse_args():
         nargs='+',
         help='asset(s) to print'
     )
+    #
     # subcommand "config"
+    #
     cmd_config = subcommands.add_parser(
         'config',
         help='set onyo options in the repository'
@@ -157,7 +161,9 @@ def parse_args():
         nargs=argparse.REMAINDER,
         help='configuration key to set in .onyo/config'
     )
+    #
     # subcommand "edit"
+    #
     cmd_edit = subcommands.add_parser(
         'edit',
         help='edit an asset'
@@ -176,13 +182,17 @@ def parse_args():
         nargs='+',
         help='filename of asset(s) to edit'
     )
+    #
     # subcommand "fsck"
+    #
     cmd_fsck = subcommands.add_parser(
         'fsck',
         help='check the onyo repository for sanity, and run YAML and onyo validation on all assets'
     )
     cmd_fsck.set_defaults(run=commands.fsck)
+    #
     # subcommand "git"
+    #
     cmd_git = subcommands.add_parser(
         'git',
         help='run git commands in the onyo repository'
@@ -199,7 +209,9 @@ def parse_args():
         nargs=argparse.REMAINDER,
         help='git command to run'
     )
+    #
     # subcommand "history"
+    #
     cmd_history = subcommands.add_parser(
         'history',
         help='show the history of an asset or directory'
@@ -218,7 +230,9 @@ def parse_args():
         action='store_true',
         help='print the git log instead of opening an interactive tig session'
     )
+    #
     # subcommand "init"
+    #
     cmd_init = subcommands.add_parser(
         'init',
         help='initialize an onyo repository'
@@ -230,7 +244,9 @@ def parse_args():
         nargs='?',
         help='initialize <directory> as an onyo repository'
     )
+    #
     # subcommand "mkdir"
+    #
     cmd_mkdir = subcommands.add_parser(
         'mkdir',
         help='create a directory (and anchor for git)'
@@ -242,7 +258,9 @@ def parse_args():
         nargs='+',
         help='directory to create'
     )
+    #
     # subcommand "mv"
+    #
     cmd_mv = subcommands.add_parser(
         'mv',
         help='move an asset'
@@ -273,7 +291,9 @@ def parse_args():
         metavar='destination',
         help='destination'
     )
+    #
     # subcommand "new"
+    #
     cmd_new = subcommands.add_parser(
         'new',
         help='create a new asset'
@@ -297,7 +317,9 @@ def parse_args():
         metavar='directory',
         help='add a new asset to <directory>'
     )
+    #
     # subcommand "set"
+    #
     cmd_set = subcommands.add_parser(
         'set',
         help='set values in assets'
@@ -352,7 +374,9 @@ def parse_args():
         nargs='*',
         help='assets/directories for which to set values'
     )
+    #
     # subcommand "tree"
+    #
     cmd_tree = subcommands.add_parser(
         'tree',
         help='print the contents of a directory in a tree-like format'
@@ -364,7 +388,9 @@ def parse_args():
         nargs='*',
         help='directories to print'
     )
+    #
     # subcommand "rm"
+    #
     cmd_rm = subcommands.add_parser(
         'rm',
         help='delete asset(s)'
