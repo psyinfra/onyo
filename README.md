@@ -130,7 +130,7 @@ To keep meta data fields consistent between different assets, rules for fields
 in assets can be defined in `.onyo/validation/validation.yaml` in an onyo
 repository. The validation file will be read from the top down, and the first
 path in the validation file that fits a asset file will be used to validate
-it's contents.
+its contents.
 
 The structure for rules is:
 ```
@@ -254,7 +254,7 @@ For further help, see "Example Validation".
   the field names defined by the asset name scheme, and after creation opens the
   new `asset` file with the editor.
   After the editing is done, the new file will be checked for the validity of
-  it's YAML syntax and based on the rules in `.onyo/validation/validation.yaml`.
+  its YAML syntax and based on the rules in `.onyo/validation/validation.yaml`.
   - `--template template`: specifies the template copied by the command. If not
     specified, it uses the standard template.
   - `--non-interactive` : Suppress opening of editor after file creation.
@@ -277,11 +277,11 @@ For further help, see "Example Validation".
 - `onyo fsck`:
 
   Runs a comprehensive suite of checks to verify the integrity and validity of
-  an onyo repository and it's contents:
+  an onyo repository and its contents:
   - Checks first if an `onyo repository` is given (a valid git repository, which
     contains an `.onyo` folder), otherwise it errors out and does no further
     checks. If the directory is valid, `onyo fsck` runs these checks for the
-    whole onyo repository and it's contents, and lists all problems encountered:
+    whole onyo repository and its contents, and lists all problems encountered:
     - all asset names are unique
     - all files are valid YAML
     - all files follow the rules specified in `.onyo/validation/validation.yaml`
@@ -421,7 +421,7 @@ instead it has a different set of rules for the keys `Size` and `USB`.
 **Example 2: Directories, Sub-Directories and onyo-wide Rules**
 
 Onyo differentiates between `shelf/*` (to define rules for assets directly under
-`shelf/`) and `shelf/**` (for all assets in shelf and all it's sub-directories).
+`shelf/`) and `shelf/**` (for all assets in shelf and all its sub-directories).
 The user can also use `"**":` at the end of `validation.yaml` to specify a set of
 rules that will be applied to all assets anywhere in onyo, if no other rule
 defined before applies to an asset file.
