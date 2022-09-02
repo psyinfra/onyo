@@ -290,7 +290,18 @@ For further help, see "Example Validation".
 
   Files and directories that should not be checked for their validity can be
   added to .gitignore.
+- `onyo shell-completion`:
 
+  Print a shell script for onyo shell completion.
+
+  The output of this command should be "sourced" by bash or zsh to enable shell
+  completion for onyo.
+
+  Example:
+  ```
+  $ source <(onyo shell-completion)
+  $ onyo --<press TAB to display available options>
+  ```
 
 ## Environment Variables
 

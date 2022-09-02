@@ -1,18 +1,31 @@
-from .init import init
-from .new import new
-from .mv import mv
-from .edit import edit
-from .tree import tree
-from .history import history
 from .cat import cat
-from .git import git
 from .config import config
-from .mkdir import mkdir
-from .rm import rm
+from .edit import edit
 from .fsck import fsck
+from .git import git
+from .history import history
+from .init import init
+from .mkdir import mkdir
+from .mv import mv
+from .new import new
+from .rm import rm
 from .set import set
+from .shell_completion import shell_completion
+from .tree import tree
 
 __all__ = [
-    'init', 'new', 'mv', 'edit', 'cat', 'tree', 'history', 'git', 'config',
-    'mkdir', 'rm', 'fsck', 'set'
+    'cat',
+    'config',
+    'edit',
+    'fsck',
+    'git',
+    'history',
+    'init',
+    'mkdir',
+    'mv',
+    'new',
+    'rm',
+    'set',
+    'shell_completion',
+    'tree',
 ]

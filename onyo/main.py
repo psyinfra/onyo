@@ -370,6 +370,14 @@ def parse_args():
         help='assets/directories for which to set values'
     )
     #
+    # subcommand shell-completion
+    #
+    cmd_shell_completion = subcommands.add_parser(
+        'shell-completion',
+        help='print a script for shell completion for onyo, suitable for use with "source"'
+    )
+    cmd_shell_completion.set_defaults(run=commands.shell_completion)
+    #
     # subcommand "tree"
     #
     cmd_tree = subcommands.add_parser(
