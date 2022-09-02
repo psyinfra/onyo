@@ -1,0 +1,17 @@
+onyo wants to update the following assets:
+
+no user/laptop_apple_macbookpro.8
++	RAM: 10
+no user/laptop_apple_macbookpro.9
++	RAM: 10
+shelf/laptop_apple_macbookpro.1
++	RAM: 10
+trash bin/this_device_is very.good
++	RAM: 10
+user/laptop_apple_macbookpro.4
++	RAM: 10
+user/laptop_apple_macbookpro.5
++	RAM: 10
+user/laptop_apple_macbookpro.6
++	RAM: 10
+Update assets? (y/n)

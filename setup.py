@@ -16,7 +16,7 @@ setup(
         'pyyaml',
         'ruamel.yaml'
     ],
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     entry_points={
         'console_scripts': [
             'onyo=onyo.main:main'

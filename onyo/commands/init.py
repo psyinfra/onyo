@@ -52,13 +52,15 @@ def prepare_arguments(directory, onyo_root):
         directory = onyo_root
     else:
         directory = os.path.join(onyo_root, directory)
+    if not os.path.isdir(directory):
+        logger.error("\"" + directory + "\" is no existing directory.")
+        sys.exit(1)
     return directory
 
 
 def init(args, onyo_root):
     # set and check path
     directory = prepare_arguments(args.directory, onyo_root)
-
     # build commands
     git_init_command = build_git_init_cmd(directory)
     onyo_init_command = build_onyo_init_cmd(directory)
@@ -76,8 +78,8 @@ def init(args, onyo_root):
     os.system("onyo config history.interactive \\\"tig --follow\\\"")
     os.system("onyo config history.non-interactive \\\"git --no-pager log --follow\\\"")
     os.system("onyo config template.default standard")
-    run_cmd("cp -R " + " ".join(glob.glob(os.path.join(template_path, "*"), recursive=True)) + " " + os.path.join(onyo_root, ".onyo/templates/"))
-    run_cmd("cp -R " + " ".join(glob.glob(os.path.join(validation_path, "*"), recursive=True)) + " " + os.path.join(onyo_root, ".onyo/validation/"))
+    run_cmd("cp -R \"" + "\" \"".join(glob.glob(os.path.join(template_path, "*"), recursive=True)) + "\" \"" + os.path.join(directory, ".onyo/templates/") + "\"")
+    run_cmd("cp -R \"" + "\" \"".join(glob.glob(os.path.join(validation_path, "*"), recursive=True)) + "\" \"" + os.path.join(directory, ".onyo/validation/") + "\"")
     run_cmd(git_add_command)
     run_cmd(commit_cmd, commit_msg)
     logger.info(commit_msg + ": " + get_git_root(directory))

@@ -1,0 +1,9 @@
+onyo wants to update the following assets:
+
+trash bin/this_device_is very.good
+-	RAM: 10
++	RAM: 20
++	CPU: vier
++	USB: None
++	var: str ing
+Update assets? (y/n)
