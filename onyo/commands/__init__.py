@@ -10,6 +10,7 @@ from .mv import mv
 from .new import new
 from .rm import rm
 from .set import set
+from .shell_completion import shell_completion
 from .tree import tree
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     'new',
     'rm',
     'set',
+    'shell_completion',
     'tree',
 ]
