@@ -254,6 +254,93 @@ def prepare_directory(directory):
     return location
 
 
+class Path(object):
+    """Determine if a string is a valid path.
+
+    Keyword Arguments:
+        - checkparent -- Check the parent (when present) rather than the final
+          level in a path. For example" "one/two/three" will check only
+          "one/two/". Essential for commands such a "mkdir".
+    """
+    def __init__(self, checkparent=False):
+        self._checkparent = checkparent
+
+    def __call__(self, prospective_path):
+        parent_dir = os.path.dirname(os.path.abspath(prospective_path))
+
+        if self._checkparent:
+            if self._is_readable_dir(parent_dir):
+                return prospective_path
+        else:
+            return self._is_readable_path(prospective_path)
+
+    def __repr__(self):
+        kwargs = [('checkparent', self._checkparent)]
+        args_str = ', '.join(['%s=%r' % (kw, arg) for kw, arg in kwargs
+                              if arg is not None])
+        return '%s(%s)' % (type(self).__name__, args_str)
+
+    def _is_readable_dir(self, prospective_dir):
+        if not os.path.isdir(prospective_dir):
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
+        if os.access(prospective_dir, os.R_OK):
+            return prospective_dir
+        else:
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
+
+    def _is_readable_file(self, prospective_file):
+        if not os.path.isfile(prospective_file):
+            raise argparse.ArgumentTypeError("readable_file:{0} is not a valid path".format(prospective_file))
+        if os.access(prospective_file, os.R_OK):
+            return prospective_file
+        else:
+            raise argparse.ArgumentTypeError("readable_file:{0} is not a readable file".format(prospective_file))
+
+    def _is_readable_path(self, prospective_path):
+        if not os.path.exists(prospective_path):
+            raise argparse.ArgumentTypeError("readable_path:{0} is not a valid path".format(prospective_path))
+        if os.access(prospective_path, os.R_OK):
+            return prospective_path
+        else:
+            raise argparse.ArgumentTypeError("readable_path:{0} is not a readable path".format(prospective_path))
+
+
+class File(Path):
+    """Determine if a string is a valid file.
+
+    Keyword Arguments:
+        - checkparent -- Check the parent (when present) rather than the final
+          level in a path. For example" "one/two/three" will check only
+          "one/two/". Essential for commands such a "mkdir".
+    """
+    def __call__(self, prospective_file):
+        parent_dir = os.path.dirname(os.path.abspath(prospective_file))
+
+        if self._checkparent:
+            if self._is_readable_dir(parent_dir):
+                return prospective_file
+        else:
+            return self._is_readable_file(prospective_file)
+
+
+class Directory(Path):
+    """Determine if a string is a valid directory.
+
+    Keyword Arguments:
+        - checkparent -- Check the parent (when present) rather than the final
+          level in a path. For example" "one/two/three" will check only
+          "one/two/". Essential for commands such a "mkdir".
+    """
+    def __call__(self, prospective_dir):
+        parent_dir = os.path.dirname(os.path.abspath(prospective_dir))
+
+        if self._checkparent:
+            if self._is_readable_dir(parent_dir):
+                return prospective_dir
+        else:
+            return self._is_readable_dir(prospective_dir)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
@@ -546,9 +633,17 @@ def parse_args():
         'shell-completion',
         description=textwrap.dedent(commands.shell_completion.__doc__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='a shell completion for onyo, suitable for use with "source"'
+        help='shell completion for Onyo, suitable for use with "source"'
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion)
+    cmd_shell_completion.add_argument(
+        '-s', '--shell',
+        metavar='SHELL',
+        required=False,
+        default='zsh',
+        choices=['zsh'],
+        help='shell to generate tab completion for'
+    )
     #
     # subcommand "tree"
     #
