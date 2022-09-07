@@ -288,8 +288,8 @@ def parse_args():
     )
     cmd_cat.set_defaults(run=commands.cat)
     cmd_cat.add_argument(
-        'file',
-        metavar='file',
+        'asset',
+        metavar='ASSET',
         nargs='+',
         help='asset(s) to print'
     )
