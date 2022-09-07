@@ -261,9 +261,10 @@ def parse_args():
     parser.add_argument(
         '-C',
         '--onyopath',
+        metavar='DIR',
         required=False,
         default=os.getcwd(),
-        help='run as if onyo was started in <path>'
+        help='run as if onyo was started in DIR'
     )
     parser.add_argument(
         '-d',
@@ -325,7 +326,7 @@ def parse_args():
         'file',
         metavar='file',
         nargs='+',
-        help='filename of asset(s) to edit'
+        help='asset(s) to edit'
     )
     #
     # subcommand "fsck"
@@ -380,21 +381,21 @@ def parse_args():
     cmd_init.set_defaults(run=commands.init)
     cmd_init.add_argument(
         'directory',
-        metavar='directory',
+        metavar='DIR',
         nargs='?',
-        help='initialize <directory> as an onyo repository'
+        help='initialize DIR as an onyo repository'
     )
     #
     # subcommand "mkdir"
     #
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
-        help='create a directory (and anchor for git)'
+        help='create a directory (with git anchor)'
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
     cmd_mkdir.add_argument(
         'directory',
-        metavar='directory',
+        metavar='DIR',
         nargs='+',
         help='directory to create'
     )
@@ -422,13 +423,13 @@ def parse_args():
     )
     cmd_mv.add_argument(
         'source',
-        metavar='source',
+        metavar='SOURCE',
         nargs='+',
         help='source ...'
     )
     cmd_mv.add_argument(
         'destination',
-        metavar='destination',
+        metavar='DEST',
         help='destination'
     )
     #
@@ -448,14 +449,15 @@ def parse_args():
     )
     cmd_new.add_argument(
         '-t', '--template',
+        metavar='TEMPLATE',
         required=False,
         default='',
         help='the template to use to seed a new asset'
     )
     cmd_new.add_argument(
         'directory',
-        metavar='directory',
-        help='add a new asset to <directory>'
+        metavar='DIR',
+        help='add a new asset to DIR'
     )
     #
     # subcommand "set"
@@ -467,11 +469,11 @@ def parse_args():
     cmd_set.set_defaults(run=commands.set)
     cmd_set.add_argument(
         '-d', '--depth',
-        metavar='depth',
+        metavar='N',
         type=int,
         required=False,
         default=-1,
-        help='descend at most "n" levels of directories below the starting-point; used only with --recursive'
+        help='descend at most "N" levels of directories below the starting-point; used only with --recursive'
     )
     cmd_set.add_argument(
         '-n', "--dry-run",
@@ -504,22 +506,22 @@ def parse_args():
     cmd_set.add_argument(
         'keys',
         action=StoreDictKeyPair,
-        metavar="keys",
-        help='key-value pairs to set in asset files; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
+        metavar="KEYS",
+        help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
     cmd_set.add_argument(
         'source',
         metavar='source',
         default='.',
         nargs='*',
-        help='assets/directories for which to set values'
+        help='assets or directories for which to set values'
     )
     #
     # subcommand shell-completion
     #
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
-        help='print a script for shell completion for onyo, suitable for use with "source"'
+        help='a shell completion for onyo, suitable for use with "source"'
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion)
     #
@@ -532,7 +534,7 @@ def parse_args():
     cmd_tree.set_defaults(run=commands.tree)
     cmd_tree.add_argument(
         'directory',
-        metavar='directory',
+        metavar='DIR',
         nargs='*',
         help='directories to print'
     )
@@ -541,7 +543,7 @@ def parse_args():
     #
     cmd_rm = subcmds.add_parser(
         'rm',
-        help='delete asset(s)'
+        help='delete asset(s) and directories'
     )
     cmd_rm.set_defaults(run=commands.rm)
     cmd_rm.add_argument(
@@ -562,7 +564,7 @@ def parse_args():
         'source',
         metavar='source',
         nargs='+',
-        help='asset(s) to delete'
+        help='assets or directories to delete'
     )
     return parser
 
