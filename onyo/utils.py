@@ -323,8 +323,8 @@ def parse_args():
         help='do not prompt or open the editor'
     )
     cmd_edit.add_argument(
-        'file',
-        metavar='file',
+        'asset',
+        metavar='ASSET',
         nargs='+',
         help='asset(s) to edit'
     )
