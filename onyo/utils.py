@@ -359,17 +359,17 @@ def parse_args():
     )
     cmd_history.set_defaults(run=commands.history)
     cmd_history.add_argument(
-        'source',
-        metavar='source',
-        nargs='?',
-        help='asset or directory to show the history of'
-    )
-    cmd_history.add_argument(
         '-I', '--non-interactive',
         required=False,
         default=False,
         action='store_true',
         help='print the git log instead of opening an interactive tig session'
+    )
+    cmd_history.add_argument(
+        'path',
+        metavar='PATH',
+        nargs='?',
+        help='asset or directory to show the history of'
     )
     #
     # subcommand "init"
