@@ -510,8 +510,8 @@ def parse_args():
         help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
     cmd_set.add_argument(
-        'source',
-        metavar='source',
+        'path',
+        metavar='PATH',
         default='.',
         nargs='*',
         help='assets or directories for which to set values'
