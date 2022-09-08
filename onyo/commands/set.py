@@ -122,7 +122,7 @@ def simulate_validation_after_change(file, rules_file, keys, onyo_root):
     return problem_str
 
 
-def prepare_arguments(source, keys, quiet, yes, recursive, depth, onyo_root):
+def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
     problem_str = ""
     asset_list = []
     ru_yaml = YAML(typ='safe')
@@ -138,7 +138,7 @@ def prepare_arguments(source, keys, quiet, yes, recursive, depth, onyo_root):
                 rules_file = []
         except yaml.YAMLError as e:
             print(e)
-    for file in source:
+    for file in path:
         asset = os.path.join(onyo_root, file)
         # if "onyo set RAM=10 *" is called, directories should not throw an
         # error, but also not be added to the asset list.
@@ -174,7 +174,7 @@ def set(args, onyo_root):
     # don't run onyo fsck, so values can be set for correcting assets.
     # fsck(args, onyo_root, quiet=True)
     # get all files in which the values should be set/changed
-    files_to_change = prepare_arguments(args.source, args.keys, args.quiet, args.yes, args.recursive, args.depth, onyo_root)
+    files_to_change = prepare_arguments(args.path, args.keys, args.quiet, args.yes, args.recursive, args.depth, onyo_root)
     if not args.quiet:
         diff_output = diff_changes(files_to_change, args.keys, onyo_root)
         if diff_output:

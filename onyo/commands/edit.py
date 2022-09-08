@@ -49,7 +49,7 @@ def edit(args, onyo_root):
     # file anyways, so new problems can't be introduced, but old ones can be
     # corrected.
     # check and set paths
-    list_of_sources = prepare_arguments(args.file, onyo_root)
+    list_of_sources = prepare_arguments(args.asset, onyo_root)
     # iterate over file list, edit them, add changes
     for source in list_of_sources:
         git_filepath = os.path.relpath(source, onyo_root)
