@@ -561,8 +561,8 @@ def parse_args():
         help='respond "yes" to any prompts'
     )
     cmd_rm.add_argument(
-        'source',
-        metavar='source',
+        'path',
+        metavar='PATH',
         nargs='+',
         help='assets or directories to delete'
     )
