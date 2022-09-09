@@ -22,6 +22,11 @@ def build_command(command, onyo_root):
 
 
 def git(args, onyo_root):
+    """
+    Pass ``git-command-args`` as arguments to ``git``, using the Onyo repository
+    as the git repository.
+    """
+
     # run onyo fsck
     fsck(args, onyo_root, quiet=True)
     # build command

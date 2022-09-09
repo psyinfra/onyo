@@ -48,6 +48,16 @@ def prepare_arguments(sources, quiet, yes, onyo_root):
 
 
 def rm(args, onyo_root):
+    """
+    Delete the ``asset``\(s) and ``directory``\(s).
+
+    Onyo will present a complete list of all files and folders to delete, and
+    prompt the user for confirmation.
+
+    - ``--quiet``: Silence the output (requires the ``--yes`` flag)
+    - ``--yes``: Respond "yes" to the prompt and run non-interactively
+    """
+
     # run onyo fsck
     fsck(args, onyo_root, quiet=True)
     # needs to check onyo root or rel path, also if in git

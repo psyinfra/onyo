@@ -6,7 +6,8 @@ logger = logging.getLogger('onyo')
 
 
 def shell_completion(args, onyo_root):
-    """ Print a shell script for onyo shell completion.
+    """
+    Print a shell script for onyo shell completion.
 
     The output of this command should be "sourced" by bash or zsh to enable
     shell completion for onyo.
@@ -14,6 +15,7 @@ def shell_completion(args, onyo_root):
     Example:
 
         $ source <(onyo shell-completion)
+
         $ onyo --<PRESS TAB to display available option>
     """
 

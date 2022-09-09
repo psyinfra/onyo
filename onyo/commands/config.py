@@ -29,6 +29,12 @@ def build_command(command, onyo_root):
 
 
 def config(args, onyo_root):
+    """
+    Set a ``variable`` to ``value`` in the ``.onyo/config`` file. This command
+    can for example change the default tool for the interactive mode of ``onyo
+    history`` with ``onyo config history.interactive "git log --follow"``.
+    """
+
     # run onyo fsck
     read_only_fsck(args, onyo_root, quiet=True)
     # build command

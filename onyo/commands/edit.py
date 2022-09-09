@@ -44,6 +44,22 @@ def prepare_arguments(sources, onyo_root):
 
 
 def edit(args, onyo_root):
+    """
+    Open the ``asset`` file(s) using the default text editor specified by the
+    environment variable ``EDITOR`` (``nano`` and then ``vi`` are used as
+    fallbacks).
+
+    When multiple asset files are given, Onyo will open them in sequence.
+
+    - ``--non-interactive``: Suppress opening of editor
+
+    After editing an ``asset``, ``onyo`` will check the validity of the YAML
+    syntax and check if the changed file still follows the rules specified in
+    ``.onyo/validation/validation.yaml``, and if problems are found it gives the
+    choice to either correct them or discard the changes to make sure that the
+    repository stays in a valid state.
+    """
+
     # do not run onyo fsck! Onyo should allow to correct problems with onyo
     # edit, and after editing onyo checks the syntax and validates the updated
     # file anyways, so new problems can't be introduced, but old ones can be

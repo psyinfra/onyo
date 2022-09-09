@@ -48,6 +48,11 @@ def prepare_arguments(sources, onyo_root):
 
 
 def tree(args, onyo_root):
+    """
+    List the assets and directories in ``directory`` using the ``tree``
+    program.
+    """
+
     # run onyo fsck for read only commands
     read_only_fsck(args, os.path.join(os.getcwd(), onyo_root), quiet=True)
     # check sources

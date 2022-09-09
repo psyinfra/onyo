@@ -79,6 +79,17 @@ def prepare_arguments(sources, destination, force, rename, onyo_root):
 
 
 def mv(args, onyo_root):
+    """
+    Move ``source``\(s) to the ``destination`` directory, or rename ``source``
+    directory to ``destination``. Onyo will validate the contents of moved
+    assets to make sure that they still follow to specified rules. See "Field
+    Validation".
+
+    - ``--force``: Silently overwrite the destination file if it already exists.
+    - ``--rename``: Allow a ``source`` file to be renamed to a different (valid)
+      file name.
+    """
+
     # run onyo fsck
     fsck(args, onyo_root, quiet=True)
     # check and set paths
