@@ -31,9 +31,7 @@ language = 'en'
 # directories to ignore when looking for source files.
 exclude_patterns = []
 
-#release = ''
-
-
+# release = ''
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
