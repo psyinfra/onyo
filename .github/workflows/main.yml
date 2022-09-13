@@ -24,6 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install ".[tests]"
+        sudo apt-get install -y zsh
     - name: flake8 linting
       run: |
         flake8 $(find . -type f -name "*.py")
