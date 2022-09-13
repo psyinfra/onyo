@@ -12,10 +12,12 @@ setup(
     license='ISC',
     install_requires=[
         'GitPython',
-        'pytest',
         'pyyaml',
         'ruamel.yaml'
     ],
+    extras_require={
+        'tests': ['pytest', 'flake8'],
+        'docs': ['sphinx', 'sphinx-argparse', 'sphinx-rtd-theme']},
     python_requires=">=3.7",
     entry_points={
         'console_scripts': [

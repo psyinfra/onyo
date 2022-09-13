@@ -66,6 +66,18 @@ def prepare_arguments(directories, onyo_root):
 
 
 def mkdir(args, onyo_root):
+    """
+    Create ``directory``\(s). Intermediate directories will be created as needed
+    (i.e. parent and child directories to be created in one call).
+
+    Onyo creates a ``.anchor`` file in every folder to track directories with
+    git even when they are empty.
+
+    If the directory already exists, Onyo will throw an error. When multiple
+    directories are passed to Onyo, all will be checked before attempting to
+    create them.
+    """
+
     # run onyo fsck
     fsck(args, onyo_root, quiet=True)
     # check and set paths

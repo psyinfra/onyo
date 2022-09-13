@@ -171,6 +171,35 @@ def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
 
 
 def set(args, onyo_root):
+    """
+    Set the ``value`` of ``key`` for matching assets. If the key does not exist,
+    it is added and set appropriately.
+
+    Key names can be any valid YAML key name.
+
+    Multiple ``key=value`` pairs can be declared by joining with a ``,``. Quotes
+    can be used around ``value``, which is necessary when it contains a comma,
+    whitespace, etc.
+
+    If no ``asset`` or ``directory`` is specified, the current working directory
+    is used. If Onyo is invoked from outside of the Onyo repository, the root of
+    the repository is used.
+
+    Changes are printed to the terminal in the style of ``diff``.
+
+    - ``--recursive``: Update assets in directories recursively.
+    - ``--depth num``: Limit the maximum number of levels of directories to
+      search beneath ``directory``. ``--depth 1`` limits to files that are
+      direct children of ``directory``.
+    - ``--dry-run``: Perform a non-interactive trial run with no changes made.
+    - ``--quiet``: Silence the diff-like output of key-value changes.
+    - ``--yes``: Respond "yes" to all prompts and run non-interactively.
+
+    Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
+    error encountered while writing a file will cause Onyo to error and exit
+    immediately.
+    """
+
     # don't run onyo fsck, so values can be set for correcting assets.
     # fsck(args, onyo_root, quiet=True)
     # get all files in which the values should be set/changed

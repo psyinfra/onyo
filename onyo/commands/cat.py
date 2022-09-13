@@ -28,6 +28,10 @@ def build_cat_cmd(assets, onyo_root):
 
 
 def cat(args, onyo_root):
+    """
+    Print the contents of ``asset``\(s) to the terminal without parsing or
+    validating the contents.
+    """
 
     # run onyo fsck for read only commands
     read_only_fsck(args, onyo_root, quiet=True)

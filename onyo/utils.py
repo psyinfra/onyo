@@ -284,6 +284,7 @@ def parse_args():
     #
     cmd_cat = subcmds.add_parser(
         'cat',
+        description=commands.cat.__doc__,
         help='print the contents of an asset'
     )
     cmd_cat.set_defaults(run=commands.cat)
@@ -298,6 +299,7 @@ def parse_args():
     #
     cmd_config = subcmds.add_parser(
         'config',
+        description=commands.config.__doc__,
         help='set onyo options in the repository'
     )
     cmd_config.set_defaults(run=commands.config)
@@ -312,6 +314,7 @@ def parse_args():
     #
     cmd_edit = subcmds.add_parser(
         'edit',
+        description=commands.edit.__doc__,
         help='edit an asset'
     )
     cmd_edit.set_defaults(run=commands.edit)
@@ -333,6 +336,7 @@ def parse_args():
     #
     cmd_fsck = subcmds.add_parser(
         'fsck',
+        description=commands.fsck.__doc__,
         help='check the onyo repository for sanity, and run YAML and onyo validation on all assets'
     )
     cmd_fsck.set_defaults(run=commands.fsck)
@@ -341,6 +345,7 @@ def parse_args():
     #
     cmd_git = subcmds.add_parser(
         'git',
+        description=commands.git.__doc__,
         help='run git commands in the onyo repository'
     )
     cmd_git.set_defaults(run=commands.git)
@@ -355,6 +360,7 @@ def parse_args():
     #
     cmd_history = subcmds.add_parser(
         'history',
+        description=commands.history.__doc__,
         help='show the history of an asset or directory'
     )
     cmd_history.set_defaults(run=commands.history)
@@ -376,6 +382,7 @@ def parse_args():
     #
     cmd_init = subcmds.add_parser(
         'init',
+        description=commands.init.__doc__,
         help='initialize an onyo repository'
     )
     cmd_init.set_defaults(run=commands.init)
@@ -390,6 +397,7 @@ def parse_args():
     #
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
+        description=commands.mkdir.__doc__,
         help='create a directory (with git anchor)'
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
@@ -404,6 +412,7 @@ def parse_args():
     #
     cmd_mv = subcmds.add_parser(
         'mv',
+        description=commands.mv.__doc__,
         help='move an asset'
     )
     cmd_mv.set_defaults(run=commands.mv)
@@ -437,6 +446,7 @@ def parse_args():
     #
     cmd_new = subcmds.add_parser(
         'new',
+        description=commands.new.__doc__,
         help='create a new asset'
     )
     cmd_new.set_defaults(run=commands.new)
@@ -464,6 +474,7 @@ def parse_args():
     #
     cmd_set = subcmds.add_parser(
         'set',
+        description=commands.set.__doc__,
         help='set values in assets'
     )
     cmd_set.set_defaults(run=commands.set)
@@ -521,6 +532,7 @@ def parse_args():
     #
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
+        description=commands.shell_completion.__doc__,
         help='a shell completion for onyo, suitable for use with "source"'
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion)
@@ -529,6 +541,7 @@ def parse_args():
     #
     cmd_tree = subcmds.add_parser(
         'tree',
+        description=commands.tree.__doc__,
         help='print the contents of a directory in a tree-like format'
     )
     cmd_tree.set_defaults(run=commands.tree)
@@ -543,6 +556,7 @@ def parse_args():
     #
     cmd_rm = subcmds.add_parser(
         'rm',
+        description=commands.rm.__doc__,
         help='delete asset(s) and directories'
     )
     cmd_rm.set_defaults(run=commands.rm)

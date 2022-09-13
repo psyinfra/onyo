@@ -22,8 +22,8 @@ jobs:
         git config --global user.name "Your Name"
     - name: Install dependencies
       run: |
-        pip install .
-        pip install flake8
+        python -m pip install --upgrade pip
+        pip install ".[tests]"
     - name: flake8 linting
       run: |
         flake8 $(find . -type f -name "*.py")

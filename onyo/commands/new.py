@@ -111,6 +111,19 @@ def prepare_arguments(directory, template, onyo_root):
 
 
 def new(args, onyo_root):
+    """
+    Creates a new ``asset`` in ``directory``. The command opens a dialog that
+    asks for the field names defined by the asset name scheme, and after
+    creation opens the new ``asset`` file with the editor.
+
+    After the editing is done, the new file will be checked for the validity of
+    its YAML syntax and based on the rules in ``.onyo/validation/validation.yaml``.
+
+    - ``--template template``: specifies the template copied by the command. If
+      not specified, it uses the standard template.
+    - ``--non-interactive`` : Suppress opening of editor after file creation.
+    """
+
     # run onyo fsck
     fsck(args, onyo_root, quiet=True)
     # set and check paths

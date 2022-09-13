@@ -142,6 +142,27 @@ def read_only_fsck(args, onyo_root, quiet=False):
 
 
 def fsck(args, onyo_root, quiet=False):
+    """
+    Runs a comprehensive suite of checks to verify the integrity and validity of
+    an onyo repository and its contents:
+
+    - Checks first if an ``onyo repository`` is given (a valid git repository,
+      which contains an ``.onyo`` folder), otherwise it errors out and does no
+      further checks. If the directory is valid, ``onyo fsck`` runs these checks
+      for the whole onyo repository and its contents, and lists all problems
+      encountered:
+
+        - all asset names are unique
+        - all files are valid YAML
+        - all files follow the rules specified in
+          ``.onyo/validation/validation.yaml``
+        - the git working tree is clean (no untracked or changed files)
+        - all directories and sub-directories have a .anchor file
+
+    Files and directories that should not be checked for their validity can be
+    added to ``.gitignore``.
+    """
+
     # set variables
     repo = ""
     repo_path = ""

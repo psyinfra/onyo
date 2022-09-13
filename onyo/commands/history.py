@@ -56,6 +56,18 @@ def prepare_arguments(path, onyo_root):
 
 
 def history(args, onyo_root):
+    """
+    Show the history of a ``directory`` or ``asset`` file. By default, to show
+    the history in interactive mode, the command uses ``tig --follow asset |
+    directory``, and for the non-interactive mode it calls ``git --no-pager log
+    --follow asset | directory``. The default tools can be changed with ``onyo
+    config``.
+
+    - ``--non-interactive`` : Force usage of the non-interactive tool to show
+      the history of a ``asset`` or ``directory``, and do not detect whether the
+      TTY is interactive.
+    """
+
     # run onyo fsck for read only commands
     read_only_fsck(args, onyo_root, quiet=True)
     # check path, set variables
