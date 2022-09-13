@@ -91,7 +91,7 @@ def argparse_to_dict(parser):
               "args": {
                 "shape": {
                   "nargs": *,
-                  "type": 'Directory',
+                  "type": 'directory',
                   "choices": []
                 }
               }
@@ -231,9 +231,9 @@ def zsh_build_arg(arg, arg_tree):
     """
     output = ''
     type_to_action = {
-        'Directory': '_path_files -/',
-        'File': '_files',
-        'Path': '_files',
+        'directory': '_path_files -/',
+        'file': '_files',
+        'path': '_files',
     }
 
     # can an unbound number of arguments can be accepted.

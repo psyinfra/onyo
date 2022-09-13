@@ -254,91 +254,25 @@ def prepare_directory(directory):
     return location
 
 
-class Path(object):
-    """Determine if a string is a valid path.
-
-    Keyword Arguments:
-        - checkparent -- Check the parent (when present) rather than the final
-          level in a path. For example" "one/two/three" will check only
-          "one/two/". Essential for commands such a "mkdir".
+def directory(string):
     """
-    def __init__(self, checkparent=False):
-        self._checkparent = checkparent
-
-    def __call__(self, prospective_path):
-        parent_dir = os.path.dirname(os.path.abspath(prospective_path))
-
-        if self._checkparent:
-            if self._is_readable_dir(parent_dir):
-                return prospective_path
-        else:
-            return self._is_readable_path(prospective_path)
-
-    def __repr__(self):
-        kwargs = [('checkparent', self._checkparent)]
-        args_str = ', '.join(['%s=%r' % (kw, arg) for kw, arg in kwargs
-                              if arg is not None])
-        return '%s(%s)' % (type(self).__name__, args_str)
-
-    def _is_readable_dir(self, prospective_dir):
-        if not os.path.isdir(prospective_dir):
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
-        if os.access(prospective_dir, os.R_OK):
-            return prospective_dir
-        else:
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
-
-    def _is_readable_file(self, prospective_file):
-        if not os.path.isfile(prospective_file):
-            raise argparse.ArgumentTypeError("readable_file:{0} is not a valid path".format(prospective_file))
-        if os.access(prospective_file, os.R_OK):
-            return prospective_file
-        else:
-            raise argparse.ArgumentTypeError("readable_file:{0} is not a readable file".format(prospective_file))
-
-    def _is_readable_path(self, prospective_path):
-        if not os.path.exists(prospective_path):
-            raise argparse.ArgumentTypeError("readable_path:{0} is not a valid path".format(prospective_path))
-        if os.access(prospective_path, os.R_OK):
-            return prospective_path
-        else:
-            raise argparse.ArgumentTypeError("readable_path:{0} is not a readable path".format(prospective_path))
-
-
-class File(Path):
-    """Determine if a string is a valid file.
-
-    Keyword Arguments:
-        - checkparent -- Check the parent (when present) rather than the final
-          level in a path. For example" "one/two/three" will check only
-          "one/two/". Essential for commands such a "mkdir".
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
-    def __call__(self, prospective_file):
-        parent_dir = os.path.dirname(os.path.abspath(prospective_file))
-
-        if self._checkparent:
-            if self._is_readable_dir(parent_dir):
-                return prospective_file
-        else:
-            return self._is_readable_file(prospective_file)
+    return string
 
 
-class Directory(Path):
-    """Determine if a string is a valid directory.
-
-    Keyword Arguments:
-        - checkparent -- Check the parent (when present) rather than the final
-          level in a path. For example" "one/two/three" will check only
-          "one/two/". Essential for commands such a "mkdir".
+def file(string):
     """
-    def __call__(self, prospective_dir):
-        parent_dir = os.path.dirname(os.path.abspath(prospective_dir))
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
 
-        if self._checkparent:
-            if self._is_readable_dir(parent_dir):
-                return prospective_dir
-        else:
-            return self._is_readable_dir(prospective_dir)
+
+def path(string):
+    """
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
 
 
 def parse_args():
@@ -352,7 +286,7 @@ def parse_args():
         metavar='DIR',
         required=False,
         default=os.getcwd(),
-        type=Directory(),
+        type=directory,
         help='run as if onyo was started in DIR'
     )
     parser.add_argument(
@@ -382,7 +316,7 @@ def parse_args():
         'asset',
         metavar='ASSET',
         nargs='+',
-        type=File(),
+        type=file,
         help='asset(s) to print'
     )
     #
@@ -422,7 +356,7 @@ def parse_args():
         'asset',
         metavar='ASSET',
         nargs='+',
-        type=File(),
+        type=file,
         help='asset(s) to edit'
     )
     #
@@ -472,7 +406,7 @@ def parse_args():
         'path',
         metavar='PATH',
         nargs='?',
-        type=Path(),
+        type=path,
         help='asset or directory to show the history of'
     )
     #
@@ -489,7 +423,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='?',
-        type=Directory(),
+        type=directory,
         help='initialize DIR as an onyo repository'
     )
     #
@@ -506,7 +440,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='+',
-        type=Directory(checkparent=True),
+        type=directory,
         help='directory to create'
     )
     #
@@ -537,13 +471,13 @@ def parse_args():
         'source',
         metavar='SOURCE',
         nargs='+',
-        type=Path(),
+        type=path,
         help='source ...'
     )
     cmd_mv.add_argument(
         'destination',
         metavar='DEST',
-        type=Path(checkparent=True),
+        type=path,
         help='destination'
     )
     #
@@ -573,7 +507,7 @@ def parse_args():
     cmd_new.add_argument(
         'directory',
         metavar='DIR',
-        type=Directory(),
+        type=directory,
         help='add a new asset to DIR'
     )
     #
@@ -633,7 +567,7 @@ def parse_args():
         metavar='PATH',
         default='.',
         nargs='*',
-        type=Path(),
+        type=path,
         help='assets or directories for which to set values'
     )
     #
@@ -668,7 +602,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='*',
-        type=Directory(),
+        type=directory,
         help='directories to print'
     )
     #
@@ -699,7 +633,7 @@ def parse_args():
         'path',
         metavar='PATH',
         nargs='+',
-        type=Path(),
+        type=path,
         help='assets or directories to delete'
     )
     return parser
