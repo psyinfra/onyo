@@ -190,8 +190,8 @@ def edit_file(file, onyo_root, onyo_new=False):
     # When temp-file exists, ask if to use it
     elif os.path.isfile(temp_file):
         while True:
-            edit_temp = str(input("Temporary changes for " + file + " exist. Continue editing? (y/n)"))
-            if edit_temp == 'y':
+            edit_temp = str(input("Temporary changes for " + file + " exist. Continue editing? (y/N) "))
+            if edit_temp in ['y', 'Y', 'yes']:
                 break
             elif edit_temp == 'n':
                 run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
@@ -213,8 +213,8 @@ def edit_file(file, onyo_root, onyo_new=False):
                 return
             except yaml.YAMLError as e:
                 while True:
-                    further_editing = str(input(str(e) + "Continue editing? (y/n)"))
-                    if further_editing == 'y':
+                    further_editing = str(input(str(e) + "Continue editing? (y/N) "))
+                    if further_editing in ['y', 'Y', 'yes']:
                         break
                     elif further_editing == 'n':
                         output_str = "No changes made."

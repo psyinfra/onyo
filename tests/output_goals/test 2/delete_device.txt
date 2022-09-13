@@ -1,4 +1,4 @@
 onyo wants to delete:
 <test_dir>
-Delete assets? (y/n)
+Delete assets? (y/N) 
 

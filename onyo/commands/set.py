@@ -217,8 +217,8 @@ def set(args, onyo_root):
     if args.dry_run:
         sys.exit(0)
     if not args.yes:
-        update_input = str(input("Update assets? (y/n)"))
-        if not update_input == "y":
+        update_input = str(input("Update assets? (y/N) "))
+        if update_input not in ['y', 'Y', 'yes']:
             logger.info("No assets updated.")
             sys.exit(0)
 

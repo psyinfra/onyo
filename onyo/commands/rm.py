@@ -67,8 +67,8 @@ def rm(args, onyo_root):
         print("onyo wants to delete:")
         print("\n".join(list_of_sources))
     if not args.yes:
-        delete_input = str(input("Delete assets? (y/n)"))
-        if not delete_input == "y":
+        delete_input = str(input("Delete assets? (y/N) "))
+        if delete_input not in ['y', 'Y', 'yes']:
             logger.info("Nothing deleted.")
             sys.exit(0)
 
