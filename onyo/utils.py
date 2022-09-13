@@ -352,6 +352,7 @@ def parse_args():
         metavar='DIR',
         required=False,
         default=os.getcwd(),
+        type=Directory(),
         help='run as if onyo was started in DIR'
     )
     parser.add_argument(
@@ -381,6 +382,7 @@ def parse_args():
         'asset',
         metavar='ASSET',
         nargs='+',
+        type=File(),
         help='asset(s) to print'
     )
     #
@@ -420,6 +422,7 @@ def parse_args():
         'asset',
         metavar='ASSET',
         nargs='+',
+        type=File(),
         help='asset(s) to edit'
     )
     #
@@ -469,6 +472,7 @@ def parse_args():
         'path',
         metavar='PATH',
         nargs='?',
+        type=Path(),
         help='asset or directory to show the history of'
     )
     #
@@ -485,6 +489,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='?',
+        type=Directory(),
         help='initialize DIR as an onyo repository'
     )
     #
@@ -501,6 +506,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='+',
+        type=Directory(checkparent=True),
         help='directory to create'
     )
     #
@@ -531,11 +537,13 @@ def parse_args():
         'source',
         metavar='SOURCE',
         nargs='+',
+        type=Path(),
         help='source ...'
     )
     cmd_mv.add_argument(
         'destination',
         metavar='DEST',
+        type=Path(checkparent=True),
         help='destination'
     )
     #
@@ -565,6 +573,7 @@ def parse_args():
     cmd_new.add_argument(
         'directory',
         metavar='DIR',
+        type=Directory(),
         help='add a new asset to DIR'
     )
     #
@@ -624,6 +633,7 @@ def parse_args():
         metavar='PATH',
         default='.',
         nargs='*',
+        type=Path(),
         help='assets or directories for which to set values'
     )
     #
@@ -658,6 +668,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='*',
+        type=Directory(),
         help='directories to print'
     )
     #
@@ -688,6 +699,7 @@ def parse_args():
         'path',
         metavar='PATH',
         nargs='+',
+        type=Path(),
         help='assets or directories to delete'
     )
     return parser
