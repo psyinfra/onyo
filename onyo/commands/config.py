@@ -18,9 +18,9 @@ def build_commit_cmd(command, onyo_root):
     return ["git -C \"" + onyo_root + "\" commit -m", "update .onyo/config\n\n" + command]
 
 
-def build_command(command, onyo_root):
+def build_command(key, onyo_root):
     cmd_str = ""
-    for arg in command:
+    for arg in key:
         if " " in arg:
             cmd_str += " \"" + arg + "\""
         else:
@@ -38,7 +38,7 @@ def config(args, onyo_root):
     # run onyo fsck
     read_only_fsck(args, onyo_root, quiet=True)
     # build command
-    command = build_command(args.command, get_git_root(onyo_root))
+    command = build_command(args.key, get_git_root(onyo_root))
     git_add_cmd = build_git_add_cmd(get_git_root(onyo_root), ".onyo/config")
     [commit_cmd, commit_msg] = build_commit_cmd(command, get_git_root(onyo_root))
     # run command

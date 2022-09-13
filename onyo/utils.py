@@ -304,8 +304,8 @@ def parse_args():
     )
     cmd_config.set_defaults(run=commands.config)
     cmd_config.add_argument(
-        'command',
-        metavar='command',
+        'key',
+        metavar='KEY',
         nargs=argparse.REMAINDER,
         help='configuration key to set in .onyo/config'
     )
