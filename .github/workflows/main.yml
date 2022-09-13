@@ -30,4 +30,4 @@ jobs:
         flake8 $(find . -type f -name "*.py")
     - name: Test with pytest
       run: |
-        pytest tests/
+        pytest -vv tests/
