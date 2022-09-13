@@ -16,6 +16,8 @@ setup(
         'pyyaml',
         'ruamel.yaml'
     ],
+    extras_require={
+        'docs': ['sphinx', 'sphinx-argparse', 'sphinx-rtd-theme']},
     python_requires=">=3.7",
     entry_points={
         'console_scripts': [
