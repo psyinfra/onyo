@@ -43,7 +43,7 @@ def read_file(file, test_dir):
 
 
 def check_output_with_file(command, input_str, file, test_dir):
-    assert read_file(file, test_dir) == run_test_cmd(command, input_str=input_str).rstrip("\n")
+    assert run_test_cmd(command, input_str=input_str).rstrip("\n") == read_file(file, test_dir)
 
 
 class TestClass:

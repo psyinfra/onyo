@@ -6,4 +6,4 @@ trash bin/this_device_is very.good
 +	CPU: vier
 +	USB: None
 +	var: str ing
-Update assets? (y/n)
+Update assets? (y/N) 

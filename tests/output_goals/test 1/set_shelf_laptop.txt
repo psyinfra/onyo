@@ -4,4 +4,4 @@ shelf/laptop_apple_macbookpro.1
 -	RAM: 10
 +	RAM: 50
 +	USB: 3
-Update assets? (y/n)
+Update assets? (y/N) 

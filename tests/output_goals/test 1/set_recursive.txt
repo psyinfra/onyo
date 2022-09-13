@@ -14,4 +14,4 @@ user/laptop_apple_macbookpro.5
 +	RAM: 10
 user/laptop_apple_macbookpro.6
 +	RAM: 10
-Update assets? (y/n)
+Update assets? (y/N) 
