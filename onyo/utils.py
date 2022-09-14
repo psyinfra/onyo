@@ -254,6 +254,27 @@ def prepare_directory(directory):
     return location
 
 
+def directory(string):
+    """
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
+
+
+def file(string):
+    """
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
+
+
+def path(string):
+    """
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
@@ -265,6 +286,7 @@ def parse_args():
         metavar='DIR',
         required=False,
         default=os.getcwd(),
+        type=directory,
         help='run as if onyo was started in DIR'
     )
     parser.add_argument(
@@ -294,6 +316,7 @@ def parse_args():
         'asset',
         metavar='ASSET',
         nargs='+',
+        type=file,
         help='asset(s) to print'
     )
     #
@@ -333,6 +356,7 @@ def parse_args():
         'asset',
         metavar='ASSET',
         nargs='+',
+        type=file,
         help='asset(s) to edit'
     )
     #
@@ -382,6 +406,7 @@ def parse_args():
         'path',
         metavar='PATH',
         nargs='?',
+        type=path,
         help='asset or directory to show the history of'
     )
     #
@@ -398,6 +423,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='?',
+        type=directory,
         help='initialize DIR as an onyo repository'
     )
     #
@@ -414,6 +440,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='+',
+        type=directory,
         help='directory to create'
     )
     #
@@ -444,11 +471,13 @@ def parse_args():
         'source',
         metavar='SOURCE',
         nargs='+',
+        type=path,
         help='source ...'
     )
     cmd_mv.add_argument(
         'destination',
         metavar='DEST',
+        type=path,
         help='destination'
     )
     #
@@ -478,6 +507,7 @@ def parse_args():
     cmd_new.add_argument(
         'directory',
         metavar='DIR',
+        type=directory,
         help='add a new asset to DIR'
     )
     #
@@ -537,6 +567,7 @@ def parse_args():
         metavar='PATH',
         default='.',
         nargs='*',
+        type=path,
         help='assets or directories for which to set values'
     )
     #
@@ -546,9 +577,17 @@ def parse_args():
         'shell-completion',
         description=textwrap.dedent(commands.shell_completion.__doc__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='a shell completion for onyo, suitable for use with "source"'
+        help='shell completion for Onyo, suitable for use with "source"'
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion)
+    cmd_shell_completion.add_argument(
+        '-s', '--shell',
+        metavar='SHELL',
+        required=False,
+        default='zsh',
+        choices=['zsh'],
+        help='shell to generate tab completion for'
+    )
     #
     # subcommand "tree"
     #
@@ -563,6 +602,7 @@ def parse_args():
         'directory',
         metavar='DIR',
         nargs='*',
+        type=directory,
         help='directories to print'
     )
     #
@@ -593,6 +633,7 @@ def parse_args():
         'path',
         metavar='PATH',
         nargs='+',
+        type=path,
         help='assets or directories to delete'
     )
     return parser
