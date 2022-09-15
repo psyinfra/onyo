@@ -1,6 +1,7 @@
 from os.path import join as opj
 from pathlib import Path
 import logging
+from onyo._version import __version__
 
 
 class Configuration:
