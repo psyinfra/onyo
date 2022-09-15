@@ -26,7 +26,7 @@ def build_commit_cmd(files_to_change, onyo_root):
 
 
 def read_asset(file, onyo_root):
-    yaml = YAML(typ='safe')
+    yaml = YAML(typ='rt')
     asset = {}
     with open(os.path.join(onyo_root, file), "r") as stream:
         try:
@@ -39,6 +39,7 @@ def read_asset(file, onyo_root):
 
 
 def write_asset(data, file, onyo_root):
+    yaml = YAML(typ='rt')
     with open(os.path.join(onyo_root, file), "w") as stream:
         yaml.dump(data, stream)
 
