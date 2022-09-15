@@ -18,8 +18,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: git config
       run: |
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
+        git config --global user.email "onyo@example.com"
+        git config --global user.name "Yoko Onyo"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
