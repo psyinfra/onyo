@@ -502,13 +502,44 @@ def parse_args():
         metavar='TEMPLATE',
         required=False,
         default='',
-        help='the template to use to seed a new asset'
+        help='the template to seed the new asset'
     )
     cmd_new.add_argument(
         'directory',
         metavar='DIR',
         type=directory,
         help='add a new asset to DIR'
+    )
+    #
+    # subcommand "rm"
+    #
+    cmd_rm = subcmds.add_parser(
+        'rm',
+        description=textwrap.dedent(commands.rm.__doc__),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help='delete asset(s) and directories'
+    )
+    cmd_rm.set_defaults(run=commands.rm)
+    cmd_rm.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence output (requires the --yes flag)'
+    )
+    cmd_rm.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_rm.add_argument(
+        'path',
+        metavar='PATH',
+        nargs='+',
+        type=path,
+        help='assets or directories to delete'
     )
     #
     # subcommand "set"
@@ -604,37 +635,6 @@ def parse_args():
         nargs='*',
         type=directory,
         help='directories to print'
-    )
-    #
-    # subcommand "rm"
-    #
-    cmd_rm = subcmds.add_parser(
-        'rm',
-        description=textwrap.dedent(commands.rm.__doc__),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='delete asset(s) and directories'
-    )
-    cmd_rm.set_defaults(run=commands.rm)
-    cmd_rm.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='silence output (requires the --yes flag)'
-    )
-    cmd_rm.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='respond "yes" to any prompts'
-    )
-    cmd_rm.add_argument(
-        'path',
-        metavar='PATH',
-        nargs='+',
-        type=path,
-        help='assets or directories to delete'
     )
     return parser
 
