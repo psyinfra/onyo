@@ -118,10 +118,6 @@ def new(args, onyo_root):
 
     After the editing is done, the new file will be checked for the validity of
     its YAML syntax and based on the rules in ``.onyo/validation/validation.yaml``.
-
-    - ``--template template``: specifies the template copied by the command. If
-      not specified, it uses the standard template.
-    - ``--non-interactive`` : Suppress opening of editor after file creation.
     """
 
     # run onyo fsck

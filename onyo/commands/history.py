@@ -62,10 +62,6 @@ def history(args, onyo_root):
     directory``, and for the non-interactive mode it calls ``git --no-pager log
     --follow asset | directory``. The default tools can be changed with ``onyo
     config``.
-
-    - ``--non-interactive`` : Force usage of the non-interactive tool to show
-      the history of a ``asset`` or ``directory``, and do not detect whether the
-      TTY is interactive.
     """
 
     # run onyo fsck for read only commands

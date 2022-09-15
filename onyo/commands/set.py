@@ -188,14 +188,6 @@ def set(args, onyo_root):
 
     Changes are printed to the terminal in the style of ``diff``.
 
-    - ``--recursive``: Update assets in directories recursively.
-    - ``--depth num``: Limit the maximum number of levels of directories to
-      search beneath ``directory``. ``--depth 1`` limits to files that are
-      direct children of ``directory``.
-    - ``--dry-run``: Perform a non-interactive trial run with no changes made.
-    - ``--quiet``: Silence the diff-like output of key-value changes.
-    - ``--yes``: Respond "yes" to all prompts and run non-interactively.
-
     Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
     error encountered while writing a file will cause Onyo to error and exit
     immediately.
