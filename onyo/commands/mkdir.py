@@ -3,66 +3,69 @@
 import logging
 import os
 import sys
-
-from onyo.utils import (
-    build_git_add_cmd,
-    run_cmd
-)
+from pathlib import Path
+from git import Repo
 from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
-anchor_name = ".anchor"
+
+def run_mkdir(onyo_root, new_dir, repo):
+    """
+    Recursively create a directory containing an .anchor file. Stage (but do not
+    commit) the .anchor file.
+
+    Returns True on success.
+    """
+    full_dir = os.path.join(onyo_root, new_dir)
+
+    # make the full path
+    Path(full_dir).mkdir(parents=True, exist_ok=True)
+
+    # create the anchor files and add to git
+    loop_dir = onyo_root
+    for d in new_dir.split(os.path.sep):
+        loop_dir = os.path.join(loop_dir, d)
+        anchor_file = os.path.join(loop_dir, '.anchor')
+
+        Path(anchor_file).touch(exist_ok=True)
+        repo.git.add(anchor_file)
+
+    return True
 
 
-def build_commit_cmd(folders, onyo_root):
-    return ["git -C \"" + onyo_root + "\" commit -m", "new folder(s).\n\n" + "\n".join(folders)]
+def sanitize_dirs(directories, onyo_root):
+    """
+    Check and normalize a list of directories. If any exist, print and error.
 
+    Returns a list of normed directories on success.
+    """
+    dirs_to_create = []
+    dirs_exist = []
 
-def run_mkdir(onyo_root, new_directory):
-    filename = anchor_name
-    full_directory = os.path.join(onyo_root, new_directory)
-    if os.path.isdir(full_directory):
-        logger.error(full_directory + " exists already.")
-        sys.exit(1)
-    # run the actual commands, for creating a folder, anchor it, add it to git
-    current_directory = onyo_root
-    for folder in os.path.normpath(new_directory).split(os.path.sep):
-        current_directory = os.path.join(current_directory, folder)
-        if os.path.isdir(current_directory):
+    for d in directories:
+        # TODO: ideally, this would return a list of normed paths, relative to
+        # the root of the onyo repository (not to be confused with onyo_root).
+        # This would allow commit messages that are consistent regardless of
+        # where onyo is invoked from.
+        norm_dir = os.path.normpath(d)
+        full_dir = os.path.join(onyo_root, norm_dir)
+
+        # check if it exists
+        if os.path.isdir(full_dir):
+            dirs_exist.append(d)
             continue
-        run_cmd("mkdir \"" + current_directory + "\"")
-        run_cmd("touch \"" + os.path.join(current_directory, filename) + "\"")
-        git_add_cmd = build_git_add_cmd(onyo_root, os.path.join(current_directory, filename))
-        run_cmd(git_add_cmd)
-    return full_directory
 
+        dirs_to_create.append(norm_dir)
 
-def get_existing_subpath(directory, onyo_root):
-    existing_path = onyo_root
-    missing_path = ""
-    for folder in os.path.normpath(directory).split(os.path.sep):
-        if os.path.isdir(os.path.join(existing_path, folder)):
-            existing_path = os.path.join(existing_path, folder)
-        else:
-            missing_path = os.path.join(missing_path, folder)
-    return [existing_path, missing_path]
-
-
-def prepare_arguments(directories, onyo_root):
-    problem_str = ""
-    list_of_folders = []
-    for folder in directories:
-        [existing_path, missing_path] = get_existing_subpath(folder, onyo_root)
-        if missing_path == "":
-            problem_str = problem_str + "\n" + existing_path + " already exists."
-        else:
-            list_of_folders.append(folder)
-    if problem_str != "":
-        logger.error(problem_str + "\nNo folders created.")
+    # exit
+    if dirs_exist:
+        logger.error("No directories created. The following already exist:")
+        logger.error('\n'.join(dirs_exist))
         sys.exit(1)
-    return list(dict.fromkeys(list_of_folders))
+
+    return dirs_to_create
 
 
 def mkdir(args, onyo_root):
@@ -70,22 +73,18 @@ def mkdir(args, onyo_root):
     Create ``directory``\(s). Intermediate directories will be created as needed
     (i.e. parent and child directories can be created in one call).
 
-    Onyo creates an empty ``.anchor`` file in directories, to force git into
-    tracking directories even when they are empty.
+    Onyo creates an empty ``.anchor`` file in directories, to force git to track
+    directories even when they are empty.
 
     If the directory already exists, Onyo will throw an error. When multiple
     directories are passed to Onyo, all will be checked before attempting to
     create them.
     """
-
-    # run onyo fsck
+    repo = Repo(onyo_root)
     fsck(args, onyo_root, quiet=True)
-    # check and set paths
-    list_of_folders = prepare_arguments(args.directory, onyo_root)
-    # loop over folders and create them with an anchor file
-    for folder in list_of_folders:
-        run_mkdir(onyo_root, folder)
-    # build commit command
-    [commit_cmd, commit_msg] = build_commit_cmd(list_of_folders, onyo_root)
-    # run commands
-    run_cmd(commit_cmd, commit_msg)
+
+    dir_list = sanitize_dirs(args.directory, onyo_root)
+    for d in dir_list:
+        run_mkdir(onyo_root, d, repo)
+
+    repo.git.commit(m='new directory(s): ' + ', '.join(dir_list))
