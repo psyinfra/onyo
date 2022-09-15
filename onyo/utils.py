@@ -511,6 +511,37 @@ def parse_args():
         help='add a new asset to DIR'
     )
     #
+    # subcommand "rm"
+    #
+    cmd_rm = subcmds.add_parser(
+        'rm',
+        description=textwrap.dedent(commands.rm.__doc__),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help='delete asset(s) and directories'
+    )
+    cmd_rm.set_defaults(run=commands.rm)
+    cmd_rm.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence output (requires the --yes flag)'
+    )
+    cmd_rm.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_rm.add_argument(
+        'path',
+        metavar='PATH',
+        nargs='+',
+        type=path,
+        help='assets or directories to delete'
+    )
+    #
     # subcommand "set"
     #
     cmd_set = subcmds.add_parser(
@@ -604,37 +635,6 @@ def parse_args():
         nargs='*',
         type=directory,
         help='directories to print'
-    )
-    #
-    # subcommand "rm"
-    #
-    cmd_rm = subcmds.add_parser(
-        'rm',
-        description=textwrap.dedent(commands.rm.__doc__),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='delete asset(s) and directories'
-    )
-    cmd_rm.set_defaults(run=commands.rm)
-    cmd_rm.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='silence output (requires the --yes flag)'
-    )
-    cmd_rm.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='respond "yes" to any prompts'
-    )
-    cmd_rm.add_argument(
-        'path',
-        metavar='PATH',
-        nargs='+',
-        type=path,
-        help='assets or directories to delete'
     )
     return parser
 
