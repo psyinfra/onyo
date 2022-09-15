@@ -61,7 +61,7 @@ def prepare_arguments(directory, onyo_root):
 def init(args, onyo_root):
     """
     Initialize an Onyo repository. The directory will be initialized as a git
-    repository (if it is not one already), the .onyo/ directory created
+    repository (if it is not one already), the ``.onyo/`` directory created
     (containing default config files, templates, etc), and everything committed.
 
     The current working directory will be initialized if neither ``directory``

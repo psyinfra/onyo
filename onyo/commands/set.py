@@ -153,7 +153,7 @@ def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
                 logger.info("Can't set values for folder \"" + file + "\" without --recursive flag.\n")
             continue
         if not os.path.isfile(asset):
-            problem_str = problem_str + "\nAsset File " + file + " does not exist."
+            problem_str = problem_str + "\nAsset file " + file + " does not exist."
             continue
         asset_list.append(file)
     # try validating:
@@ -205,7 +205,7 @@ def set(args, onyo_root):
         # The else happens, if valid assets are selected, but no values are to
         # be updated (e.g. `onyo set RAM=10`, but assets have already RAM: 10)
         else:
-            logger.warning("The values are already set. No Assets updated.")
+            logger.warning("The values are already set. No assets updated.")
             sys.exit(0)
     if args.dry_run:
         sys.exit(0)

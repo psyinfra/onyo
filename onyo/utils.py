@@ -502,7 +502,7 @@ def parse_args():
         metavar='TEMPLATE',
         required=False,
         default='',
-        help='the template to use to seed a new asset'
+        help='the template to seed the new asset'
     )
     cmd_new.add_argument(
         'directory',
