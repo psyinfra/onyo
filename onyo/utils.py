@@ -349,16 +349,9 @@ def parse_args():
         'edit',
         description=textwrap.dedent(commands.edit.__doc__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='edit an asset'
+        help='open asset with a text editor'
     )
     cmd_edit.set_defaults(run=commands.edit)
-    cmd_edit.add_argument(
-        '-I', '--non-interactive',
-        required=False,
-        default=False,
-        action='store_true',
-        help='do not prompt or open the editor'
-    )
     cmd_edit.add_argument(
         'asset',
         metavar='ASSET',

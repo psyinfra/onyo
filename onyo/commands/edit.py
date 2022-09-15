@@ -51,8 +51,6 @@ def edit(args, onyo_root):
 
     When multiple asset files are given, Onyo will open them in sequence.
 
-    - ``--non-interactive``: Suppress opening of editor
-
     After editing an ``asset``, ``onyo`` will check the validity of the YAML
     syntax and check if the changed file still follows the rules specified in
     ``.onyo/validation/validation.yaml``, and if problems are found it gives the
@@ -70,8 +68,7 @@ def edit(args, onyo_root):
     for source in list_of_sources:
         git_filepath = os.path.relpath(source, onyo_root)
         # change file
-        if not args.non_interactive:
-            edit_file(source, onyo_root)
+        edit_file(source, onyo_root)
         # check if changes happened and add them
         repo = Repo(onyo_root)
         changed_files = [item.a_path for item in repo.index.diff(None)]
