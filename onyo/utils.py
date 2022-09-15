@@ -10,6 +10,7 @@ from ruamel.yaml import YAML
 from onyo import commands
 from git import Repo, exc
 import textwrap
+from onyo._version import __version__
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -296,6 +297,12 @@ def parse_args():
         default=False,
         action='store_true',
         help='enable debug logging'
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='%(prog)s {version}'.format(version=__version__),
+        help='print the onyo version and exit'
     )
     # subcommands
     subcmds = parser.add_subparsers(
