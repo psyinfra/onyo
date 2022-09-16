@@ -1,5 +1,7 @@
 # Onyo
 
+[![Documentation Status](https://readthedocs.org/projects/onyo/badge/?version=latest)](https://onyo.readthedocs.io/en/latest/?badge=latest)
+
 ## --- UNDER DEVELOPMENT ---
 
 *This repository is undergoing continuous development. It is not yet complete.*
