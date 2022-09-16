@@ -14,7 +14,7 @@ Overview
 .. toctree::
    :maxdepth: 1
 
-   introduction
+   installation
    concepts
    command_line_reference
    examples
