@@ -4,6 +4,7 @@ import glob
 import logging
 import pytest
 import shlex
+from pathlib import Path
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -47,10 +48,8 @@ def check_output_with_file(command, input_str, file, test_dir):
 
 
 class TestClass:
-
-    test_dir = os.path.join(os.getcwd(), "onyo_tests")
-    if not os.path.isdir(test_dir):
-        run_test_cmd("mkdir \"" + test_dir + "\"")
+    test_dir = os.path.join(os.getcwd(), "tests/", "sandbox")
+    Path(test_dir).mkdir(parents=True, exist_ok=True)
 
     # the folder for the wished output lies relative to this script:<
     test_output = os.path.join(os.path.dirname(os.path.realpath(__file__)), "output_goals/")
