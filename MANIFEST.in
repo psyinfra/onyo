@@ -1,2 +1,1 @@
-include onyo/templates/*
-include onyo/validation/*
+recursive-include onyo/skel *
