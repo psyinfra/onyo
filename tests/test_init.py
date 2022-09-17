@@ -12,22 +12,22 @@ def change_test_dir(request, monkeypatch):
     monkeypatch.chdir(test_dir)
 
 
-# TODO: adjust this to return False on failure
 def fully_populated_dot_onyo(directory=''):
     """
     Assert whether a .onyo dir is fully populated.
     """
     dot_onyo = os.path.join(directory, '.onyo')
 
-    assert os.path.isdir(dot_onyo)
-    assert os.path.isdir(dot_onyo + "/temp")
-    assert os.path.isdir(dot_onyo + "/templates")
-    assert os.path.isdir(dot_onyo + "/validation")
-    assert os.path.isfile(dot_onyo + "/config")
-    assert os.path.isfile(dot_onyo + "/.anchor")
-    assert os.path.isfile(dot_onyo + "/temp/.anchor")
-    assert os.path.isfile(dot_onyo + "/templates/.anchor")
-    assert os.path.isfile(dot_onyo + "/validation/.anchor")
+    if not os.path.isdir(dot_onyo) or \
+       not os.path.isdir(dot_onyo + "/temp") or \
+       not os.path.isdir(dot_onyo + "/templates") or \
+       not os.path.isdir(dot_onyo + "/validation") or \
+       not os.path.isfile(dot_onyo + "/config") or \
+       not os.path.isfile(dot_onyo + "/.anchor") or \
+       not os.path.isfile(dot_onyo + "/temp/.anchor") or \
+       not os.path.isfile(dot_onyo + "/templates/.anchor") or \
+       not os.path.isfile(dot_onyo + "/validation/.anchor"):
+           return False  # noqa: E111, E117
     # TODO: assert that no unstaged or untracked under .onyo/
 
     return True
@@ -85,7 +85,7 @@ def test_fail_reinit_child():
 def test_fail_missing_parent_dir():
     ret = subprocess.run(["onyo", "init", 'missing/parent/dir'])
     assert ret.returncode == 1
-    assert not os.path.isdir('missing/parent/dir/.onyo')
+    assert not fully_populated_dot_onyo('missing/parent/dir')
 
 
 # target dir that's already a git repo
