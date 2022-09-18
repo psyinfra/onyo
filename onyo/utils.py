@@ -525,7 +525,7 @@ def parse_args():
         required=False,
         default=False,
         action='store_true',
-        help='silence output (requires the --yes flag)'
+        help='silence messages to stdout (requires the --yes flag)'
     )
     cmd_rm.add_argument(
         '-y', '--yes',

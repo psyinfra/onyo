@@ -3,81 +3,87 @@
 import logging
 import os
 import sys
-
-from onyo.utils import (
-    build_git_add_cmd,
-    run_cmd
-)
+from git import Repo
 from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def build_commit_cmd(sources, onyo_root):
-    return ["git -C \"" + onyo_root + "\" commit -m", "deleted asset(s).\n\n" + "\n".join(sources)]
+def sanitize_paths(paths, onyo_root):
+    """
+    Check and normalize a list of paths. If any do not exist, or are protected
+    paths (.anchor, .git, .onyo), then they will be printed and exit with error.
 
+    Returns a list of normed paths on success.
+    """
+    paths_to_rm = []
+    error_path_absent = []
+    error_path_protected = []
 
-def run_rm(onyo_root, source):
-    full_path = os.path.join(onyo_root, source)
-    # run the rm commands
-    run_cmd("rm -rdf \"" + full_path + "\"")
-    # git add
-    git_add_cmd = build_git_add_cmd(onyo_root, source)
-    run_cmd(git_add_cmd)
-    return full_path
+    for p in paths:
+        # TODO: ideally, this would return a list of normed paths, relative to
+        # the root of the onyo repository (not to be confused with onyo_root).
+        # This would allow commit messages that are consistent regardless of
+        # where onyo is invoked from.
+        norm_path = os.path.normpath(p)
+        full_path = os.path.join(onyo_root, norm_path)
 
+        # paths must exist
+        if not os.path.exists(full_path):
+            error_path_absent.append(p)
+            continue
 
-def prepare_arguments(sources, quiet, yes, onyo_root):
-    problem_str = ""
-    list_of_sources = []
-    # check flags
-    if quiet and not yes:
-        problem_str = problem_str + "\nonyo rm --quiet can't be run without --yes flag."
-    # check sources
-    for source in sources:
-        current_source = os.path.join(onyo_root, source)
-        if not os.path.exists(current_source):
-            problem_str = problem_str + "\n" + current_source + " does not exist."
-        else:
-            list_of_sources.append(current_source)
-    if problem_str != "":
-        logger.error(problem_str + "\nNo folders or assets deleted.")
+        # protected paths
+        if os.path.basename(full_path) in ['.anchor', '.git', '.onyo']:
+            error_path_protected.append(p)
+            continue
+
+        paths_to_rm.append(norm_path)
+
+    if error_path_absent:
+        logger.error("The following target paths do not exist:")
+        logger.error('\n'.join(error_path_absent))
+        logger.error("\nExiting. Nothing was deleted.")
         sys.exit(1)
-    return list(dict.fromkeys(list_of_sources))
+
+    if error_path_protected:
+        logger.error("The following target paths are protected, and will not be deleted by onyo:")
+        logger.error('\n'.join(error_path_protected))
+        logger.error("\nExiting. Nothing was deleted.")
+        sys.exit(1)
+
+    return paths_to_rm
 
 
 def rm(args, onyo_root):
     """
-    Delete the ``asset``\(s) and ``directory``\(s).
+    Delete ``asset``\(s) and ``directory``\(s).
 
-    Onyo will present a complete list of all files and folders to delete, and
-    prompt the user for confirmation.
+    A complete list of all files and directories to delete will be presented
+    first, and the user prompted for confirmation.
     """
+    # check flags
+    if args.quiet and not args.yes:
+        logger.error("The --quiet flag requires --yes.")
+        sys.exit(1)
 
-    # run onyo fsck
+    repo = Repo(onyo_root)
     fsck(args, onyo_root, quiet=True)
-    # needs to check onyo root or rel path, also if in git
-    list_of_sources = prepare_arguments(args.path, args.quiet, args.yes, onyo_root)
+
+    paths_to_rm = sanitize_paths(args.path, onyo_root)
 
     if not args.quiet:
-        print("onyo wants to delete:")
-        print("\n".join(list_of_sources))
-    if not args.yes:
-        delete_input = str(input("Delete assets? (y/N) "))
-        if delete_input not in ['y', 'Y', 'yes']:
-            logger.info("Nothing deleted.")
-            sys.exit(0)
+        print("The following assets and directories will be deleted:")
+        print("\n".join(paths_to_rm))
 
-    # build commit command and message
-    [commit_cmd, commit_msg] = build_commit_cmd(list_of_sources, onyo_root)
+        if not args.yes:
+            response = input("Delete assets? (y/N) ")
+            if response not in ['y', 'Y', 'yes']:
+                logger.info("Nothing was deleted.")
+                sys.exit(0)
 
-    for source in list_of_sources:
-        # if stopped existing since prepare_arguments(), it was deleted
-        # with the loop before
-        if not os.path.exists(source):
-            continue
-        # set paths
-        run_rm(onyo_root, source)
-    # run commit command
-    run_cmd(commit_cmd, commit_msg)
+    # rm and commit
+    repo.git.rm('-r', paths_to_rm)
+    # TODO: can this commit message be made more helpful?
+    repo.git.commit(m='deleted asset(s)\n\n' + '\n'.join(paths_to_rm))
