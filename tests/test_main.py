@@ -101,7 +101,7 @@ class TestClass:
         command = command.replace("user/*", " ".join(glob.glob("user/*")))
         # run actual test
         if "onyo rm" in command:
-            check_output_with_file(command, input_str, test_folder + "/test 1/" + file, os.path.join(current_test_dir, command.replace("onyo rm ", "")))
+            check_output_with_file(command, input_str, test_folder + "/test 1/" + file, command.replace("onyo rm ", ""))
         else:
             check_output_with_file(command, input_str, test_folder + "/test 1/" + file, current_test_dir)
 
@@ -127,7 +127,7 @@ class TestClass:
         command = command.replace("onyo ", "onyo -C \"" + current_test_dir + "\" ")
         # run actual test
         if "onyo -C \"" + current_test_dir + "\" rm" in command:
-            check_output_with_file(command, input_str, os.path.join(test_folder, "test 2/" + file), os.path.join(current_test_dir, command.replace("onyo -C \"" + current_test_dir + "\" rm ", "")))
+            check_output_with_file(command, input_str, os.path.join(test_folder, "test 2/" + file), command.replace("onyo -C \"" + current_test_dir + "\" rm ", ""))
         else:
             check_output_with_file(command, input_str, os.path.join(test_folder, "test 2/" + file), current_test_dir)
 

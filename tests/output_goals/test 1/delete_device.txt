@@ -1,4 +1,4 @@
-onyo wants to delete:
+The following assets and directories will be deleted:
 <test_dir>
 Delete assets? (y/N) 
 
