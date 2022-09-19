@@ -3,6 +3,11 @@ Changelog
 
 Next
 ****
+
+--------------------------------------------------------------------------------
+
+0.1.0 (2022.09.19)
+******************
 Onyo still isn't ready for production use yet, but it has gained a lot of
 features, fixes, documentation, and tests since the last release.
 
