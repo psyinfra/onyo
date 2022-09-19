@@ -23,11 +23,15 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ".[tests]"
+        pip install -e ".[tests]"
         sudo apt-get install -y zsh
     - name: flake8 linting
       run: |
         flake8 $(find . -type f -name "*.py")
-    - name: Test with pytest
+    - name: Test with pytest and collect coverage
       run: |
-        pytest -vv tests/
+        export REPO_ROOT="${PWD}"
+        export COVERAGE_PROCESS_START=${REPO_ROOT}/.coveragerc
+        pytest -vv --cov .
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3

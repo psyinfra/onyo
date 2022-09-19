@@ -1,6 +1,8 @@
 # Onyo
 
+![Build Status](https://github.com/psyinfra/onyo/actions/workflows/main.yml/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/onyo/badge/?version=latest)](https://onyo.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/psyinfra/onyo/branch/main/graph/badge.svg?token=Z0VGYCHHAR)](https://codecov.io/gh/psyinfra/onyo)
 
 ## --- UNDER DEVELOPMENT ---
 
@@ -31,4 +33,16 @@ Run the following from your command line:
 git clone https://github.com/psyinfra/onyo.git
 cd onyo
 pip install -e .
+```
+
+### Tests
+
+Tests are run from the top-level of the repository:
+```
+rm -Rvf tests/sandbox ; pytest -vv .
+```
+
+Coverage requires some small gymnastics:
+```
+rm -Rvf tests/sandbox ; REPO_ROOT="${PWD}" COVERAGE_PROCESS_START=${REPO_ROOT}/.coveragerc pytest -vv --cov .
 ```

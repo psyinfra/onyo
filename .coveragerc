@@ -1,0 +1,15 @@
+[run]
+parallel = True
+branch = True
+data_file = ${REPO_ROOT-.}/.coverage
+source = ${REPO_ROOT-.}/
+
+[report]
+exclude_lines =
+    if self.debug:
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+ignore_errors = True
+omit =
+    ${REPO_ROOT-.}/tests/*
