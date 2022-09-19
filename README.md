@@ -1,5 +1,6 @@
 # Onyo
 
+![Build Status](https://github.com/psyinfra/onyo/actions/workflows/main.yml/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/onyo/badge/?version=latest)](https://onyo.readthedocs.io/en/latest/?badge=latest)
 
 ## --- UNDER DEVELOPMENT ---
