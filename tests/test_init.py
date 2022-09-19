@@ -81,6 +81,12 @@ def test_fail_reinit_child():
     assert fully_populated_dot_onyo('reinit_child')
 
 
+def test_fail_init_file():
+    Path('file').touch()
+    ret = subprocess.run(["onyo", "init", 'file'])
+    assert ret.returncode == 1
+
+
 # target dir that is too deep
 def test_fail_missing_parent_dir():
     ret = subprocess.run(["onyo", "init", 'missing/parent/dir'])
