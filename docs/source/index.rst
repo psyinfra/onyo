@@ -18,6 +18,7 @@ Overview
    concepts
    command_line_reference
    examples
+   changelog
 
 Indices and tables
 ==================

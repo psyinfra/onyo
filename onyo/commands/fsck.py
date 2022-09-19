@@ -160,7 +160,7 @@ def fsck(args, onyo_root, quiet=False):
     - the git working tree is clean (no untracked or changed files)
     - all directories and sub-directories have a .anchor file
 
-    Files and directories matching rules in ``.gitignore` will not be checked
+    Files and directories matching rules in ``.gitignore`` will not be checked
     for validity.
     """
 

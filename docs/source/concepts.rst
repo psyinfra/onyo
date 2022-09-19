@@ -110,6 +110,8 @@ repository.
   - File describing rules for asset files and their fields (see "Field
     Validation")
 
+ .. _templates:
+
 Template Files
 **************
 
@@ -124,6 +126,8 @@ The default template that gets used when ``onyo new`` is called is
 ``onyo config template.default standard``.
 
 For examples, see the section "Templates" in :doc:`examples`.
+
+.. _validation:
 
 Field Validation
 ****************
