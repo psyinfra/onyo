@@ -39,10 +39,10 @@ pip install -e .
 
 Tests are run from the top-level of the repository:
 ```
-rm -Rvf tests/sandbox ; pytest -vv .
+pytest -vv
 ```
 
 Coverage requires some small gymnastics:
 ```
-rm -Rvf tests/sandbox ; REPO_ROOT="${PWD}" COVERAGE_PROCESS_START=${REPO_ROOT}/.coveragerc pytest -vv --cov .
+REPO_ROOT=$PWD COVERAGE_PROCESS_START=${REPO_ROOT}/.coveragerc pytest -vv --cov
 ```
