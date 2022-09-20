@@ -9,3 +9,6 @@ build:
   jobs:
     post_install:
       - pip install ".[docs]"
+
+sphinx:
+  fail_on_warning: true
