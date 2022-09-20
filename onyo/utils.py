@@ -698,7 +698,7 @@ class StoreDictKeyPair(argparse.Action):
 # credit: https://stackoverflow.com/a/13429281
 class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
     def _format_action(self, action):
-        parts = super(argparse.RawDescriptionHelpFormatter, self)._format_action(action)
+        parts = super()._format_action(action)
 
         # strip the first line (metavar) of the subcommands section
         if action.nargs == argparse.PARSER:
