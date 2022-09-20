@@ -167,7 +167,7 @@ class Zsh(TabCompletion):
 
     def _zsh_completion(self, cmd_tree):
         """
-        Return a complete script for ZSH tab completion, suitable for use with the
+        Return a script for ZSH tab completion, suitable for use with the
         "source" command.
         """
         # This does not attempt to implement the full spec for _arguments or optspec.
@@ -257,8 +257,8 @@ compdef _onyo onyo
         Build and return a string containing the ZSH completion rule for an
         argument.
 
-        NOTE: Standalone arguments should be one line each. Arguments to a flag
-        (aka option) should be concatenated.
+        NOTE: As per the spec, standalone arguments are one per line, whereas
+        arguments to a flag are concatenated on a single line.
 
         NOTE: Omitted support:
         - :::
@@ -293,8 +293,8 @@ compdef _onyo onyo
 
     def _zsh_build_flag(self, flag, flag_tree):
         """
-        Build and return a string containing the ZSH completion rule for a flag (aka
-        option).
+        Build and return a string containing the ZSH completion rule for a flag
+        and its arguments.
 
         NOTE: Omitted support:
         - Exclusion
@@ -363,7 +363,7 @@ compdef _onyo onyo
     def _zsh_build_subcommands(self, cmd_tree):
         """
         Return a string (for use in a ZSH list) containing subcommands and their
-        help text in the format of
+        help text in the format of:
             'subcommand1:help text'
             'subcommand2:help text'
             '...'
