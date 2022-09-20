@@ -4,15 +4,31 @@ import argparse
 from onyo.utils import parse_args
 
 
-class Zsh:
+class TabCompletion:
+    """
+    A superclass for tab-completion classes. It accepts an ArgumentParser
+    object, and returns a completion script via the `completion_script`
+    property.
+
+    Subclasses must implement the _completion() method to return the full
+    completion script.
+    """
     def __init__(self, parser):
-        self.cmd_tree = self._argparse_to_dict(parser)
+        self._cmd_tree = self._argparse_to_dict(parser)
+        self._completion_script = None
+
+    @property
+    def completion_script(self):
+        if not self._completion_script:
+            self._completion_script = self._completion(self._cmd_tree)
+
+        return self._completion_script
 
     def _argparse_to_dict(self, parser):
         """Convert an ArgumentParser object to a dict-tree.
-        ArgumentParser was clearly not intended to allow the information registered
-        in it to be queried by anything other than itself. Extracting information is
-        possible, just awkward.
+        ArgumentParser was clearly not intended to allow the information
+        registered in it to be queried by anything other than itself. Extracting
+        information is possible, just awkward.
 
         This function returns a dict-tree, that is intended to be consistent and
         thus easier to traverse.
@@ -98,27 +114,13 @@ class Zsh:
         arg = {
             "choices": sp.choices,
             "help": sp.help,
-            "nargs": self.get_nargs(sp),
-            "required": self.get_arg_required(sp),
-            "type": self.get_type(sp)
+            "nargs": self._get_nargs(sp),
+            "required": self._get_arg_required(sp),
+            "type": self._get_type(sp)
         }
         return arg
 
-    def get_nargs(self, sp):
-        """Return an nargs string.
-        This returns the nargs string in nargs format. The problem is that argparse
-        often does not require that nargs is set, and assumes a value (1) for the
-        unset field.
-
-        See Python's argparse docs for more information:
-        https://docs.python.org/3/library/argparse.html#nargs
-        """
-        if sp.nargs is None:
-            return 1
-
-        return sp.nargs
-
-    def get_arg_required(self, sp):
+    def _get_arg_required(self, sp):
         """
         Return whether an argument is required.
         """
@@ -131,9 +133,23 @@ class Zsh:
         else:
             return True
 
-    def get_type(self, sp):
+    def _get_nargs(self, sp):
+        """Return an nargs string.
+        This returns the nargs string in nargs format. The problem is that
+        argparse often does not require that nargs is set, and assumes a value
+        (1) for the unset field.
+
+        See Python's argparse docs for more information:
+        https://docs.python.org/3/library/argparse.html#nargs
         """
-        Return the stringified name of an argument's type.
+        if sp.nargs is None:
+            return 1
+
+        return sp.nargs
+
+    def _get_type(self, sp):
+        """
+        Return the name of an argument's type.
         """
         if sp.type is None:
             return None
@@ -145,14 +161,17 @@ class Zsh:
                 return sp.type.__class__.__name__
 
 
-    def zsh_completion(self):
+class Zsh(TabCompletion):
+    def _completion(self, cmd_tree):
+        return self._zsh_completion(cmd_tree)
+
+    def _zsh_completion(self, cmd_tree):
         """
         Return a complete script for ZSH tab completion, suitable for use with the
         "source" command.
         """
         # This does not attempt to implement the full spec for _arguments or optspec.
         # It should, however, cover a significant enough portion as to be useful.
-        cmd_tree = self.cmd_tree
         toplevel_flags = self._zsh_build_args_and_flags(cmd_tree)
         subcommands = self._zsh_build_subcommands(cmd_tree)
         subcommands_case_statement = self._zsh_build_subcommands_case_statement(cmd_tree)
@@ -391,7 +410,7 @@ def shell_completion(args, onyo_root):
 
     if args.shell == 'zsh':
         tc = Zsh(parser)
-        content = tc.zsh_completion()
+        content = tc.completion_script
     else:
         content = ''
 
