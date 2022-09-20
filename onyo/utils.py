@@ -36,15 +36,6 @@ def run_cmd(cmd, comment=""):
     return run_output
 
 
-# checks if a given path is git-directory (needs to be main-level)
-def is_git_dir(directory):
-    try:
-        Repo(directory).git_dir
-        return True
-    except exc.InvalidGitRepositoryError:
-        return False
-
-
 def get_git_root(path):
     # first checks if file is in git from current position
     try:
@@ -56,17 +47,6 @@ def get_git_root(path):
         logger.error(path + " is no onyo repository.")
         sys.exit(1)
         return git_root
-
-
-def get_full_filepath(git_directory, file):
-    full_filepath = os.path.join(git_directory, file)
-    if not os.path.exists(full_filepath):
-        full_filepath = os.path.join(git_directory, os.getcwd())
-        full_filepath = os.path.join(full_filepath, file)
-    if not os.path.exists(full_filepath):
-        logger.error(file + " not found.")
-        sys.exit(1)
-    return full_filepath
 
 
 def get_editor():
@@ -244,15 +224,6 @@ def get_list_of_assets(repo_path):
                 continue
             assets.append([os.path.relpath(elem, repo_path), os.path.basename(elem)])
     return assets
-
-
-def prepare_directory(directory):
-    if os.path.isdir(os.path.join(os.getcwd(), directory)):
-        location = os.path.join(os.getcwd(), directory)
-    else:
-        logger.error(directory + " does not exist.")
-        sys.exit(1)
-    return location
 
 
 def directory(string):
