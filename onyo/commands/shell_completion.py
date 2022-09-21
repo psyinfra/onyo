@@ -439,26 +439,29 @@ def shell_completion(args, onyo_root):
 
     if args.shell == 'zsh':
         type_to_action_map = {
-            'directory': '_path_files -/',
-            'file': '_files',
-            'path': '_files',
+            'directory': '_path_files -W $(_onyo_dir) -/',
+            'file': '_files -W $(_onyo_dir)',
+            'path': '_files -W $(_onyo_dir)',
             'template': '_path_files -W $(_template_dir) -g "*(.)"'
         }
         epilogue = """
-        _template_dir() {
+        _onyo_dir() {
           LINE=$BUFFER
-          DIR=$PWD
 
           # -C or --onyopath is used
           [ -z "${LINE%%* -C *}" ] && BACK=${LINE#* -C }
           [ -z "${LINE%%* --onyopath *}" ] && BACK=${LINE#* --onyopath }
           if [ -n "$BACK" ]; then
-              REPO=${BACK%% *}
-              printf "${REPO}/.onyo/templates"
-              return
+            REPO=${BACK%% *}
+            printf "$REPO"
+          else
+            printf "$PWD"
           fi
+        }
 
-          # CWD
+        _template_dir() {
+          DIR=$(_onyo_dir)
+
           while [ "$DIR" != '/' ]; do
             TEMPLATE_DIR="${DIR}/.onyo/templates"
             if [ -d "$TEMPLATE_DIR" ] ; then
