@@ -12,9 +12,31 @@ class TabCompletion:
 
     Subclasses must implement the _completion() method to return the full
     completion script.
+
+    Parameters
+    ----------
+    parser : ArgumentParser
+        The populated ArgumentParser object to generate tab completion for.
+    type_to_action_map : dict, optional
+        A dictionary map of types to shell actions. Shells often have default
+        actions (such as "_files" in ZSH). Alternatively, a function can be
+        called.
+
+        Example:
+            type_to_action_map = {
+                'directory': '_path_files -/',
+                'file': '_files',
+                'path': '_files'
+            }
+
+    Properties
+    ----------
+    completion_script
+        Returns the completion script.
     """
-    def __init__(self, parser):
+    def __init__(self, parser, *, type_to_action_map={}):
         self._cmd_tree = self._argparse_to_dict(parser)
+        self._type_to_action_map = type_to_action_map
         self._completion_script = None
 
     @property
@@ -264,11 +286,6 @@ compdef _onyo onyo
         - :::
         """
         output = ''
-        type_to_action = {
-            'directory': '_path_files -/',
-            'file': '_files',
-            'path': '_files',
-        }
 
         # can an unbound number of arguments can be accepted.
         if arg_tree['nargs'] in ['*', '+']:  # '*' >= 0 ; '+' >= 1
@@ -282,12 +299,13 @@ compdef _onyo onyo
 
         if arg_tree['choices']:  # a list of choices
             output += "{}:({})".format(arg, ' '.join(arg_tree['choices']))
-        elif arg_tree['type'] in type_to_action:  # known action for this type
-            output += "{}:{}".format(arg, type_to_action[arg_tree['type']])
-        else:  # unknown
-            # A single unquoted space indicates that an argument is required,
-            # but that it is not possible to suggest matches for it.
-            output += "{}:{}".format(arg, ' ')
+        else:
+            try:
+                output += "{}:{}".format(arg, self._type_to_action_map[arg_tree['type']])
+            except KeyError:  # no specified action for this type
+                # A single unquoted space indicates that an argument is required,
+                # but that it is not possible to suggest matches for it.
+                output += "{}:{}".format(arg, ' ')
 
         return output
 
@@ -409,7 +427,12 @@ def shell_completion(args, onyo_root):
     parser = parse_args()
 
     if args.shell == 'zsh':
-        tc = Zsh(parser)
+        type_to_action_map = {
+            'directory': '_path_files -/',
+            'file': '_files',
+            'path': '_files',
+        }
+        tc = Zsh(parser, type_to_action_map=type_to_action_map)
         content = tc.completion_script
     else:
         content = ''
