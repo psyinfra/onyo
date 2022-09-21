@@ -26,18 +26,27 @@ class TabCompletion:
             type_to_action_map = {
                 'directory': '_path_files -/',
                 'file': '_files',
-                'path': '_files'
+                'path': '_files',
+                'template': '_path_files -W $(_template_dir) -g "*(.)"'
             }
+    epilogue : string, optional
+        A string to include at the end of the shell completion script. This is
+        useful when including a custom function to be invoked as an action for a
+        custom type (see type_to_action_map).
+
+        Example:
+            epilogue = '_template_dir() { printf "/a/template/directory" }'
 
     Properties
     ----------
     completion_script
         Returns the completion script.
     """
-    def __init__(self, parser, *, type_to_action_map={}):
+    def __init__(self, parser, *, type_to_action_map={}, epilogue=''):
         self._cmd_tree = self._argparse_to_dict(parser)
         self._type_to_action_map = type_to_action_map
         self._completion_script = None
+        self._epilogue = epilogue
 
     @property
     def completion_script(self):
@@ -238,6 +247,8 @@ _onyo() {{
           _arguments -s -S $args && ret=0
     ;;
   esac
+
+  {self._epilogue}
 
   return ret
 }}
