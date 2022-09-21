@@ -118,11 +118,11 @@ class TabCompletion:
 
                 # loop over _choices_actions to extract the help text
                 for ca in sp._choices_actions:
-                    cmd_tree['subcmds'][ca.metavar]['help'] = ca.help
+                    cmd_tree['subcmds'][ca.metavar]['help'] = ca.help.replace("'", "'\\''")
             elif sp.option_strings:  # option flag
                 flag_string = ','.join(sp.option_strings)
                 cmd_tree['flags'][flag_string] = {
-                    "help": sp.help,
+                    "help": sp.help.replace("'", "'\\''"),
                     "required": sp.required
                 }
 
@@ -144,7 +144,7 @@ class TabCompletion:
         """
         arg = {
             "choices": sp.choices,
-            "help": sp.help,
+            "help": sp.help.replace("'", "'\\''"),
             "nargs": self._get_nargs(sp),
             "required": self._get_arg_required(sp),
             "type": self._get_type(sp)

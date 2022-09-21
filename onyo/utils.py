@@ -280,7 +280,7 @@ def parse_args():
         '--version',
         action='version',
         version='%(prog)s {version}'.format(version=__version__),
-        help='print the onyo version and exit'
+        help="print onyo's version and exit"
     )
     # subcommands
     subcmds = parser.add_subparsers(
