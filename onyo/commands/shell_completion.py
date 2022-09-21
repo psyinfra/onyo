@@ -442,8 +442,37 @@ def shell_completion(args, onyo_root):
             'directory': '_path_files -/',
             'file': '_files',
             'path': '_files',
+            'template': '_path_files -W $(_template_dir) -g "*(.)"'
         }
-        tc = Zsh(parser, type_to_action_map=type_to_action_map)
+        epilogue = """
+        _template_dir() {
+          LINE=$BUFFER
+          DIR=$PWD
+
+          # -C or --onyopath is used
+          [ -z "${LINE%%* -C *}" ] && BACK=${LINE#* -C }
+          [ -z "${LINE%%* --onyopath *}" ] && BACK=${LINE#* --onyopath }
+          if [ -n "$BACK" ]; then
+              REPO=${BACK%% *}
+              printf "${REPO}/.onyo/templates"
+              return
+          fi
+
+          # CWD
+          while [ "$DIR" != '/' ]; do
+            TEMPLATE_DIR="${DIR}/.onyo/templates"
+            if [ -d "$TEMPLATE_DIR" ] ; then
+              printf "$TEMPLATE_DIR"
+              return
+            else
+              DIR=$(dirname "$DIR")
+            fi
+          done
+        }
+        """
+        tc = Zsh(parser,
+                 type_to_action_map=type_to_action_map,
+                 epilogue=epilogue)
         content = tc.completion_script
     else:
         content = ''

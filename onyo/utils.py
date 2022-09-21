@@ -247,6 +247,13 @@ def path(string):
     return string
 
 
+def template(string):
+    """
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
@@ -472,7 +479,8 @@ def parse_args():
         '-t', '--template',
         metavar='TEMPLATE',
         required=False,
-        default='',
+        default=None,
+        type=template,
         help='the template to seed the new asset'
     )
     cmd_new.add_argument(
