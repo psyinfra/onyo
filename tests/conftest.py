@@ -9,4 +9,7 @@ def clean_sandbox(request):
     previous runs.
     """
     sandbox_dir = 'tests/sandbox/'
-    shutil.rmtree(sandbox_dir)
+    try:
+        shutil.rmtree(sandbox_dir)
+    except FileNotFoundError:
+        pass
