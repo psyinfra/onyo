@@ -51,17 +51,16 @@ def edit(args, onyo_root):
 
     When multiple asset files are given, Onyo will open them in sequence.
 
-    After editing an ``asset``, ``onyo`` will check the validity of the YAML
-    syntax and check if the changed file still follows the rules specified in
-    ``.onyo/validation/validation.yaml``, and if problems are found it gives the
-    choice to either correct them or discard the changes to make sure that the
-    repository stays in a valid state.
+    After editing an ``asset``, the contents will be checked for valid YAML and
+    also against any matching rules in ``.onyo/validation/validation.yaml``. If
+    problems are found, the choice will be offered to reopen the editor to fix
+    them, or abort and return to the original state.
     """
+    # "onyo fsck" is intentionally not run here.
+    # This is so "onyo edit" can be used to fix an existing problem. This has
+    # benefits over just simply using `vim`, etc directly, as "onyo edit" will
+    # validate the contents of the file before saving and committing.
 
-    # do not run onyo fsck! Onyo should allow to correct problems with onyo
-    # edit, and after editing onyo checks the syntax and validates the updated
-    # file anyways, so new problems can't be introduced, but old ones can be
-    # corrected.
     # check and set paths
     list_of_sources = prepare_arguments(args.asset, onyo_root)
     # iterate over file list, edit them, add changes
