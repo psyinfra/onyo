@@ -56,7 +56,7 @@ pytest -vv
 
 Generating code coverage reports requires some small gymnastics due to Onyo's tests running in different working directories.
 ```
-REPO_ROOT=$PWD COVERAGE_PROCESS_START=${REPO_ROOT}/.coveragerc pytest -vv --cov
+REPO_ROOT=$PWD pytest -vv --cov
 ```
 
 ### Documentation

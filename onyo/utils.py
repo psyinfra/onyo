@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import shlex
+import shutil
 import glob
 import yaml
 import argparse
@@ -49,25 +50,26 @@ def get_git_root(path):
         return git_root
 
 
-def get_editor():
-    editor = os.environ.get('EDITOR')
+def get_editor(onyo_root):
+    """
+    Returns the editor, progressing through git, onyo, $EDITOR, and finally
+    fallback to "nano".
+    """
+    editor = None
+
+    # onyo config and git config
+    editor = get_config_value('onyo.core.editor', onyo_root)
+
+    # $EDITOR environment variable
     if not editor:
-        logger.info("$EDITOR is not set.")
-    elif editor and run_cmd("which " + editor).rstrip("\n") == "":
-        logger.warning(editor + " could not be found.")
-    else:
-        return editor
-    # try using vi/nano as editor
-    if run_cmd("which nano").rstrip("\n") != "":
-        logger.info("nano is used as editor.")
+        logger.info("onyo.core.editor is not set.")
+        editor = os.environ.get('EDITOR')
+
+    # fallback to nano
+    if not editor:
+        logger.info("$EDITOR is also not set.")
         editor = 'nano'
-    elif run_cmd("which vi").rstrip("\n") != "":
-        logger.info("vi is used as editor.")
-        editor = 'vi'
-    # if no editor is set, and nano/vi both are not found.
-    else:
-        logger.error("No editor found.")
-        sys.exit(1)
+
     return editor
 
 
@@ -162,6 +164,12 @@ def check_float(value):
 
 
 def edit_file(file, onyo_root, onyo_new=False):
+    editor = get_editor(onyo_root)
+    # verify that the editor exists
+    if not shutil.which(editor):
+        logger.error(f"The editor '{editor}' was not found. Exiting.")
+        sys.exit(1)
+
     if not os.path.isfile(file):
         logger.error(file + " does not exist.")
         sys.exit(1)
@@ -181,7 +189,7 @@ def edit_file(file, onyo_root, onyo_new=False):
     further_editing = 'y'
     while further_editing == 'y':
         # do actual editing:
-        os.system(get_editor() + " \"" + temp_file + "\"")
+        os.system(editor + " \"" + temp_file + "\"")
         # check syntax
         with open(temp_file, "r") as stream:
             try:
@@ -213,6 +221,38 @@ def edit_file(file, onyo_root, onyo_new=False):
 
 def build_git_add_cmd(directory, file):
     return "git -C \"" + directory + "\" add \"" + file + "\""
+
+
+def get_config_value(name, onyo_root):
+    """
+    Get the value for a configuration option specified by `name`. git-config is
+    checked first, as it is machine-local. The default order of git-config
+    checks is retained. If that is empty, then the .onyo/config file is checked.
+
+    Returns a string with the config value on success. None otherwise.
+    """
+    value = None
+    repo = Repo(onyo_root)
+
+    # git-config (with its full stack of locations to check)
+    try:
+        value = repo.git.config('--get', name)
+    except exc.GitCommandError:
+        pass
+
+    # .onyo/config
+    if not value:
+        dot_onyo_config = os.path.join(repo.git.rev_parse('--show-toplevel'), '.onyo/config')
+        try:
+            value = repo.git.config('--get', name, f=dot_onyo_config)
+        except exc.GitCommandError:
+            pass
+
+    # reset to None if empty
+    if not value:
+        value = None
+
+    return value
 
 
 def get_list_of_assets(repo_path):
@@ -311,14 +351,14 @@ def parse_args():
         'config',
         description=textwrap.dedent(commands.config.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='set onyo options in the repository'
+        help='set, query, and unset Onyo repository configuration options'
     )
     cmd_config.set_defaults(run=commands.config)
     cmd_config.add_argument(
-        'key',
-        metavar='KEY',
-        nargs=argparse.REMAINDER,
-        help='configuration key to set in .onyo/config'
+        'git_config_args',
+        metavar='ARGS',
+        nargs='+',
+        help='arguments to set config options in .onyo/config'
     )
     #
     # subcommand "edit"

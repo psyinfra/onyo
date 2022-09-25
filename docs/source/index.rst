@@ -15,6 +15,7 @@ Overview
    :maxdepth: 1
 
    installation
+   configuration
    concepts
    command_line_reference
    examples
