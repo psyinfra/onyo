@@ -13,3 +13,21 @@ def clean_sandbox(request):
         shutil.rmtree(sandbox_dir)
     except FileNotFoundError:
         pass
+
+
+@pytest.fixture
+def helpers():
+    return Helpers
+
+
+class Helpers:
+    @staticmethod
+    def string_in_file(string, file):
+        """
+        Test whether a string is in a file.
+        """
+        with open(file) as f:
+            if string in f.read():
+                return True
+
+        return False
