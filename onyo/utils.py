@@ -311,14 +311,14 @@ def parse_args():
         'config',
         description=textwrap.dedent(commands.config.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='set onyo options in the repository'
+        help='set, query, and unset Onyo repository configuration options'
     )
     cmd_config.set_defaults(run=commands.config)
     cmd_config.add_argument(
-        'key',
-        metavar='KEY',
-        nargs=argparse.REMAINDER,
-        help='configuration key to set in .onyo/config'
+        'git_config_args',
+        metavar='ARGS',
+        nargs='+',
+        help='arguments to set config options in .onyo/config'
     )
     #
     # subcommand "edit"

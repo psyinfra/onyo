@@ -13,6 +13,19 @@ logger.setLevel(logging.INFO)
 
 def main():
     parser = parse_args()
+
+    # NOTE: this unfortunately located hack is so "onyo config" args will pass
+    # through uninterpreted. Otherwise, anything starting with - or -- errors as
+    # an unknown option flag.
+    # nargs=argparse.REMAINDER is in theory the correct solution, but is
+    # deprecated as of Python 3.8 (due to being buggy) and did not work for me
+    # in 3.10.
+    # For more information, see https://docs.python.org/3.10/library/argparse.html#arguments-containing
+    if 'config' in sys.argv:
+        if not any(x in sys.argv for x in ['-h', '--help']):
+            index = sys.argv.index('config')
+            sys.argv.insert(index + 1, '--')
+
     args = parser.parse_args()
 
     if args.onyopath:
