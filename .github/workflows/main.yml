@@ -31,7 +31,6 @@ jobs:
     - name: Test with pytest and collect coverage
       run: |
         export REPO_ROOT=$PWD
-        export COVERAGE_PROCESS_START=${REPO_ROOT}/.coveragerc
         pytest -vv --cov
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
