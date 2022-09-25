@@ -23,11 +23,11 @@ def prepare_arguments(path, onyo_root):
     interactive_tool = ""
     non_interactive_tool = ""
     try:
-        interactive_tool = config['history']['interactive']
+        interactive_tool = config['onyo']['history']['interactive']
     except KeyError:
         pass
     try:
-        non_interactive_tool = config['history']['non-interactive']
+        non_interactive_tool = config['onyo']['history']['non-interactive']
     except KeyError:
         pass
     if not interactive_tool:

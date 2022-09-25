@@ -95,7 +95,7 @@ def prepare_arguments(directory, template, onyo_root):
     config.read(os.path.join(get_git_root(onyo_root), ".onyo/config"))
     if not template:
         try:
-            template = config['template']['default']
+            template = config['onyo']['new']['template']
         except KeyError:
             pass
     template = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/templates", template))
