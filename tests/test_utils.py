@@ -27,8 +27,7 @@ def test_get_config_value_git(helpers):
     assert helpers.string_in_file('= get-git-test', '.git/config')
 
     onyo_root = './'
-    value = utils.get_config_value('onyo.test.get-git', onyo_root)
-    assert value == 'get-git-test'
+    assert utils.get_config_value('onyo.test.get-git', onyo_root) == 'get-git-test'
 
 
 def test_get_config_value_onyo(helpers):
@@ -39,8 +38,7 @@ def test_get_config_value_onyo(helpers):
     assert helpers.string_in_file('= get-onyo-test', '.onyo/config')
 
     onyo_root = './'
-    value = utils.get_config_value('onyo.test.get-onyo', onyo_root)
-    assert value == 'get-onyo-test'
+    assert utils.get_config_value('onyo.test.get-onyo', onyo_root) == 'get-onyo-test'
 
 
 def test_get_editor_git():
