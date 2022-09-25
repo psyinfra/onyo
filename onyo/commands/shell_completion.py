@@ -342,6 +342,10 @@ compdef _onyo onyo
         # e.g.: '(- : *)'{{-h,--help}}'[display usage information]'
         # TODO
 
+        # always exclude for -h/--help
+        if flag == '-h,--help':
+            chunks['exclude'] = "(- : *)"
+
         #
         # build flag
         #

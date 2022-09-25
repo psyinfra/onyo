@@ -113,6 +113,17 @@ def test_config_help():
         assert not ret.stderr
 
 
+def test_config_forbidden_flags():
+    """
+    Flags that change the source of values are not allowed.
+    """
+    for flag in ['--system', '--global', '--local', '--worktree', '--file', '--blob']:
+        ret = subprocess.run(["onyo", "config", flag],
+                             capture_output=True, text=True)
+        assert ret.returncode == 1
+        assert flag in ret.stderr
+
+
 def test_config_bubble_retcode(helpers):
     """
     Bubble up git-config's retcodes.
