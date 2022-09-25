@@ -3,11 +3,10 @@
 import logging
 import os
 import sys
-import configparser
 
 from onyo.utils import (
     run_cmd,
-    get_git_root
+    get_config_value
 )
 from onyo.commands.fsck import read_only_fsck
 
@@ -17,19 +16,11 @@ logger = logging.getLogger('onyo')
 
 def prepare_arguments(path, onyo_root):
     problem_str = ""
-    # find log/history tools:
-    config = configparser.ConfigParser()
-    config.read(os.path.join(get_git_root(onyo_root), ".onyo/config"))
-    interactive_tool = ""
-    non_interactive_tool = ""
-    try:
-        interactive_tool = config['onyo']['history']['interactive']
-    except KeyError:
-        pass
-    try:
-        non_interactive_tool = config['onyo']['history']['non-interactive']
-    except KeyError:
-        pass
+
+    # get log/history tools:
+    interactive_tool = get_config_value('onyo.history.interactive', onyo_root)
+    non_interactive_tool = get_config_value('onyo.history.non-interactive', onyo_root)
+
     if not interactive_tool:
         problem_str = problem_str + "\n" + "No interactive logging tool is set. Set with e.g:\n\tonyo config history.interactive \"tig --follow\""
     elif run_cmd("which " + interactive_tool.split()[0].rstrip("\n")) == "":
