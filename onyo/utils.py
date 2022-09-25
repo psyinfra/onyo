@@ -215,6 +215,38 @@ def build_git_add_cmd(directory, file):
     return "git -C \"" + directory + "\" add \"" + file + "\""
 
 
+def get_config_value(name, onyo_root):
+    """
+    Get the value for a configuration option specified by `name`. git-config is
+    checked first, as it is machine-local. The default order of git-config
+    checks is retained. If that is empty, then the .onyo/config file is checked.
+
+    Returns a string with the config value on success. None otherwise.
+    """
+    value = None
+    repo = Repo(onyo_root)
+
+    # git-config (with its full stack of locations to check)
+    try:
+        value = repo.git.config('--get', name)
+    except exc.GitCommandError:
+        pass
+
+    # .onyo/config
+    if not value:
+        dot_onyo_config = os.path.join(repo.git.rev_parse('--show-toplevel'), '.onyo/config')
+        try:
+            value = repo.git.config('--get', name, f=dot_onyo_config)
+        except exc.GitCommandError:
+            pass
+
+    # reset to None if empty
+    if not value:
+        value = None
+
+    return value
+
+
 def get_list_of_assets(repo_path):
     assets = []
     for elem in glob.iglob(repo_path + '**/**', recursive=True):
