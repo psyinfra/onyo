@@ -2,29 +2,54 @@
 
 import logging
 import os
+import sys
 
-from onyo.utils import run_cmd
 from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def build_cat_cmd(assets, onyo_root):
-    list_of_cat_commands = []
-    problem_str = ""
-    for asset in assets:
-        if os.path.isfile(os.path.join(onyo_root, asset)):
-            list_of_cat_commands.append("cat \"" + os.path.join(onyo_root, asset) + "\"")
-        elif os.path.isfile(asset):
-            list_of_cat_commands.append("cat \"" + asset + "\"")
-        elif os.path.isdir(os.path.join(onyo_root, asset)) or os.path.isdir(asset):
-            problem_str = problem_str + "\nonyo cat expects file(s), but \"" + asset + "\" is a folder."
-        else:
-            problem_str = problem_str + "\n" + asset + " does not exist."
-    if problem_str != "":
-        logger.warning(problem_str)
-    return list_of_cat_commands
+def sanitize_paths(paths, onyo_root):
+    """
+    Check and normalize a list of paths. If paths do not exist or are not files,
+    print paths and exit with error.
+    """
+    paths_to_cat = []
+    error_path_absent = []
+    error_path_not_file = []
+
+    for p in paths:
+        # Returns a set of normalized paths relative to onyo_root
+        norm_path = os.path.normpath(p)
+        # TODO: This is wrong when an absolute path is provided
+        full_path = os.path.join(onyo_root, norm_path)
+
+        # path must exist
+        if not os.path.exists(full_path):
+            error_path_absent.append(p)
+            continue
+
+        # path must be a file
+        if not os.path.isfile(full_path):
+            error_path_not_file.append(p)
+            continue
+
+        paths_to_cat.append(full_path)
+
+    if error_path_absent:
+        logger.error("The following paths do not exist:")
+        logger.error("\n".join(error_path_absent))
+        logger.error("\n Exiting.")
+        sys.exit(1)
+
+    if error_path_not_file:
+        logger.error("The following paths are not files:")
+        logger.error("\n".join(error_path_not_file))
+        logger.error("\n Exiting.")
+        sys.exit(1)
+
+    return paths_to_cat
 
 
 def cat(args, onyo_root):
@@ -32,13 +57,12 @@ def cat(args, onyo_root):
     Print the contents of ``asset``\(s) to the terminal without parsing or
     validating the contents.
     """
-
     # run onyo fsck for read only commands
     read_only_fsck(args, onyo_root, quiet=True)
 
-    # check paths and build commands
-    list_of_cat_commands = build_cat_cmd(args.asset, onyo_root)
-    for command in list_of_cat_commands:
-        # run commands
-        output = run_cmd(command)
-        print(output.strip())
+    paths_to_cat = sanitize_paths(args.asset, onyo_root)
+
+    # open file and print to stdout
+    for path in paths_to_cat:
+        with open(path, 'r') as fin:
+            print(fin.read(), end="")
