@@ -3,12 +3,12 @@
 import logging
 import os
 import sys
-import configparser
 import uuid
 
 from onyo.utils import (
     build_git_add_cmd,
     run_cmd,
+    get_config_value,
     get_list_of_assets,
     get_git_root,
     edit_file
@@ -90,15 +90,11 @@ def create_asset_file_cmd(directory, filename):
 
 def prepare_arguments(directory, template, onyo_root):
     directory = os.path.join(onyo_root, directory)
-    # find the template to use:
-    config = configparser.ConfigParser()
-    config.read(os.path.join(get_git_root(onyo_root), ".onyo/config"))
     if not template:
-        try:
-            template = config['onyo']['new']['template']
-        except KeyError:
-            pass
+        template = get_config_value('onyo.new.template', onyo_root)
+
     template = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/templates", template))
+
     problem_str = ""
     if not os.path.isfile(template):
         problem_str = problem_str + "\nTemplate file " + os.path.join(get_git_root(onyo_root), os.path.join(".onyo/templates", template)) + " does not exist."
