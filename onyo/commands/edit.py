@@ -45,9 +45,8 @@ def prepare_arguments(sources, onyo_root):
 
 def edit(args, onyo_root):
     """
-    Open the ``asset`` file(s) using the default text editor specified by the
-    environment variable ``EDITOR`` (``nano`` and then ``vi`` are used as
-    fallbacks).
+    Open the ``asset`` file(s) using the editor specified by "onyo.core.editor",
+    the environment variable ``EDITOR``, or ``nano`` (as a final fallback).
 
     When multiple asset files are given, Onyo will open them in sequence.
 

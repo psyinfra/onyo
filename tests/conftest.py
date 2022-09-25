@@ -1,5 +1,17 @@
+import os
 import shutil
 import pytest
+
+
+@pytest.fixture(scope="function", autouse=True)
+def clean_editor(request):
+    """
+    Ensure that $EDITOR is not inherited from the environment or other tests.
+    """
+    try:
+        del os.environ['EDITOR']
+    except KeyError:
+        pass
 
 
 @pytest.fixture(scope="session", autouse=True)
