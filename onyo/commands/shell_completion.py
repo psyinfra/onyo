@@ -218,8 +218,13 @@ _onyo() {{
   local curcontext="$curcontext" ret=1
   local -a state state_descr line
   local -A opt_args
-  local -a args subcommands
 
+  # $words is modified as it is passed down through the script. This keeps an
+  # unmodified copy of the expanded command.
+  local -a fullwords
+  fullwords=("${{words[@]}}")
+
+  local -a args subcommands
   args=( )
   toplevel_flags=( {toplevel_flags} )
 
@@ -443,24 +448,28 @@ def shell_completion(args, onyo_root):
 
     if args.shell == 'zsh':
         type_to_action_map = {
+            'git_config': '_git-config',
             'directory': '_path_files -W $(_onyo_dir) -/',
             'file': '_files -W $(_onyo_dir)',
             'path': '_files -W $(_onyo_dir)',
             'template': '_path_files -W $(_template_dir) -g "*(.)"'
         }
         epilogue = """
-        _onyo_dir() {
-          LINE=$BUFFER
+        # load _git, so that _git-config is available for onyo config completion
+        whence -v _git-config > /dev/null || _git
 
-          # -C or --onyopath is used
-          [ -z "${LINE%%* -C *}" ] && BACK=${LINE#* -C }
-          [ -z "${LINE%%* --onyopath *}" ] && BACK=${LINE#* --onyopath }
-          if [ -n "$BACK" ]; then
-            REPO=${BACK%% *}
-            printf "$REPO"
-          else
-            printf "$PWD"
-          fi
+        _onyo_dir() {
+          local REPO=$PWD
+
+          # check if -C or --onyopath is used
+          for i in {1..$#fullwords}; do
+            if [ "$fullwords[$i]" = "-C" ] || [ "$fullwords[$i]" = "--onyopath" ] ; then
+              REPO=$fullwords[$i+1]
+              break
+            fi
+          done
+
+          printf "$REPO"
         }
 
         _template_dir() {

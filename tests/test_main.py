@@ -56,12 +56,12 @@ class TestClass:
 
     test_commands = [
         ("onyo init", "", test_output, "init_test.txt"),
-        ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("git status", "", test_output, "git_status_working_tree_clean.txt"),
         ("onyo mkdir user/", "", test_output, "empty_file.txt"),
         ("onyo mkdir user\ 2/", "", test_output, "empty_file.txt"),
         ("onyo mkdir shelf/", "", test_output, "empty_file.txt"),
         ("onyo mkdir trash\ bin/ delete_me", "", test_output, "empty_file.txt"),
-        ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("git status", "", test_output, "git_status_working_tree_clean.txt"),
         ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n1", test_output, "onyo_new_works.txt"),
         ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n2", test_output, "onyo_new_works.txt"),
         ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n3", test_output, "onyo_new_works.txt"),
@@ -70,12 +70,12 @@ class TestClass:
         ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n6", test_output, "onyo_new_works.txt"),
         ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n7", test_output, "onyo_new_works.txt"),
         ("onyo new --non-interactive trash\ bin/", "this\ndevice\nis very\ngood", test_output, "onyo_new_works.txt"),
-        ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("git status", "", test_output, "git_status_working_tree_clean.txt"),
         ("onyo rm shelf/laptop_apple_macbookpro.7", "y", test_output, "delete_device.txt"),
         ("onyo mv --rename shelf/laptop_apple_macbookpro.2 user/laptop_apple_macbookpro.8", "", test_output, "empty_file.txt"),
         ("onyo mv --rename --force shelf/laptop_apple_macbookpro.3 user/laptop_apple_macbookpro.9", "", test_output, "empty_file.txt"),
         ("onyo mv " + "user/*" + " user\ 2/", "", test_output, "empty_file.txt"),
-        ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("git status", "", test_output, "git_status_working_tree_clean.txt"),
         ("onyo mv shelf/laptop_apple_macbookpro.4 user/", "", test_output, "empty_file.txt"),
         ("onyo mv shelf/laptop_apple_macbookpro.5 user/", "", test_output, "empty_file.txt"),
         ("onyo mv shelf/laptop_apple_macbookpro.6 user/", "", test_output, "empty_file.txt"),
@@ -85,7 +85,7 @@ class TestClass:
         ("onyo set RAM=20,CPU=vier,USB='None',var='str ing' trash\ bin/this_device_is\ very.good", "y", test_output, "set_device_good.txt"),
         ("onyo set RAM=50,USB=3 shelf/laptop_apple_macbookpro.1", "y", test_output, "set_shelf_laptop.txt"),
         ("onyo cat trash\ bin/this_device_is\ very.good shelf/laptop_apple_macbookpro.1", "", test_output, "cat_output.txt"),
-        ("onyo git status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("git status", "", test_output, "git_status_working_tree_clean.txt"),
     ]
 
     # run commands from onyo_root (top level of onyo repository)
@@ -125,6 +125,7 @@ class TestClass:
         command = command.replace("user/*", "\"" + "\" \"".join(glob.glob(os.path.join(current_test_dir, "user/*"))) + "\"")
         # instead from testdir, run commands with -C
         command = command.replace("onyo ", "onyo -C \"" + current_test_dir + "\" ")
+        command = command.replace("git ", "git -C \"" + current_test_dir + "\" ")
         # run actual test
         if "onyo -C \"" + current_test_dir + "\" rm" in command:
             check_output_with_file(command, input_str, os.path.join(test_folder, "test 2/" + file), command.replace("onyo -C \"" + current_test_dir + "\" rm ", ""))

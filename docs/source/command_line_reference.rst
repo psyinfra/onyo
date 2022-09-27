@@ -9,13 +9,12 @@ Command Line Reference
    cmd_config
    cmd_edit
    cmd_fsck
-   cmd_git
    cmd_history
    cmd_init
    cmd_mkdir
    cmd_mv
    cmd_new
+   cmd_rm
    cmd_set
    cmd_shell-completion
    cmd_tree
-   cmd_rm
