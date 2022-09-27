@@ -62,12 +62,12 @@ def get_editor(onyo_root):
 
     # $EDITOR environment variable
     if not editor:
-        logger.info("onyo.core.editor is not set.")
+        logger.debug("onyo.core.editor is not set.")
         editor = os.environ.get('EDITOR')
 
     # fallback to nano
     if not editor:
-        logger.info("$EDITOR is also not set.")
+        logger.debug("$EDITOR is also not set.")
         editor = 'nano'
 
     return editor
