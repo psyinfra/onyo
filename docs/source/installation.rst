@@ -48,5 +48,12 @@ Or for multiple repos:
    alias onyo-home='onyo -C path/to/home.repo'
    alias onyo-corp='onyo -C path/to/corp.repo'
 
+The same technique can be used to invoke ``git`` on an Onyo repo from anywhere
+on the system:
+
+.. code::
+
+   alias onyo-git='git -C path/to/repo'
+
 Add aliases to your shell's config file (e.g. ``~/.bashrc`` or ``~/.zshrc``) to
 make them persistent.
