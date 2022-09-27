@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 import pytest
 
 
@@ -20,11 +21,11 @@ def clean_sandbox(request):
     Ensure that 'tests/sandbox' is clean, and doesn't have remnants from
     previous runs.
     """
-    sandbox_dir = 'tests/sandbox/'
-    try:
-        shutil.rmtree(sandbox_dir)
-    except FileNotFoundError:
-        pass
+    for s in sorted(Path('tests/').glob('**/sandbox')):
+        try:
+            shutil.rmtree(s)
+        except FileNotFoundError:
+            pass
 
 
 @pytest.fixture
