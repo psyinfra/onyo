@@ -1,15 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
-import pytest
 from git import Repo
-
-
-@pytest.fixture(scope='function', autouse=True)
-def change_test_dir(request, monkeypatch):
-    test_dir = os.path.join(request.fspath.dirname, 'sandbox/', 'test_rm/')
-    Path(test_dir).mkdir(parents=True, exist_ok=True)
-    monkeypatch.chdir(test_dir)
 
 
 def populate_test_repo(path):

@@ -10,13 +10,6 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-@pytest.fixture(scope="function", autouse=True)
-def change_test_dir(request, monkeypatch):
-    test_dir = os.path.join(request.fspath.dirname, "sandbox/", "test_main/")
-    Path(test_dir).mkdir(parents=True, exist_ok=True)
-    monkeypatch.chdir(test_dir)
-
-
 def run_test_cmd(cmd, comment="", input_str=""):
     if comment != "":
         run_process = subprocess.Popen(shlex.split(cmd) + [comment],

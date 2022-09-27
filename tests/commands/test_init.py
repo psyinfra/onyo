@@ -1,15 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
-import pytest
 import git
-
-
-@pytest.fixture(scope="function", autouse=True)
-def change_test_dir(request, monkeypatch):
-    test_dir = os.path.join(request.fspath.dirname, "sandbox/", "test_init/")
-    Path(test_dir).mkdir(parents=True, exist_ok=True)
-    monkeypatch.chdir(test_dir)
 
 
 def fully_populated_dot_onyo(directory=''):
