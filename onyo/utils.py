@@ -266,6 +266,13 @@ def get_list_of_assets(repo_path):
     return assets
 
 
+def git_config(string):
+    """
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
+
+
 def directory(string):
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
@@ -358,6 +365,7 @@ def parse_args():
         'git_config_args',
         metavar='ARGS',
         nargs='+',
+        type=git_config,
         help='arguments to set config options in .onyo/config'
     )
     #

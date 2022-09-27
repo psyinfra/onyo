@@ -448,12 +448,16 @@ def shell_completion(args, onyo_root):
 
     if args.shell == 'zsh':
         type_to_action_map = {
+            'git_config': '_git-config',
             'directory': '_path_files -W $(_onyo_dir) -/',
             'file': '_files -W $(_onyo_dir)',
             'path': '_files -W $(_onyo_dir)',
             'template': '_path_files -W $(_template_dir) -g "*(.)"'
         }
         epilogue = """
+        # load _git, so that _git-config is available for onyo config completion
+        whence -v _git-config > /dev/null || _git
+
         _onyo_dir() {
           local REPO=$PWD
 
