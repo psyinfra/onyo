@@ -1,4 +1,3 @@
-import os
 import subprocess
 from pathlib import Path
 
@@ -8,9 +7,8 @@ def anchored_dir(directory):
     Returns True if a directory exists and contains an .anchor file.
     Otherwise it returns False.
     """
-    if os.path.isdir(directory) and \
-       os.path.isfile(directory + '/.anchor'):
-           return True  # noqa: E111, E117
+    if Path(directory).is_dir() and Path(directory, '.anchor').is_file():
+        return True
 
     return False
 
@@ -86,21 +84,21 @@ def test_dir_with_spaces():
     assert ret.returncode == 0
     assert anchored_dir('s p a c e s')
     for d in ['s', 'p', 'a', 'c', 'e', 's']:
-        assert not os.path.exists(d)
+        assert not Path(d).exists()
 
     ret = subprocess.run(["onyo", "mkdir", "s p a/c e s"])
     assert ret.returncode == 0
     assert anchored_dir('s p a')
     assert anchored_dir('s p a/c e s')
     for d in ['s', 'p', 'a', 'c', 'e', 's']:
-        assert not os.path.exists(d)
+        assert not Path(d).exists()
 
 
 def test_dir_relative():
     ret = subprocess.run(["onyo", "mkdir", "simple/../relative"])
     assert ret.returncode == 0
     assert anchored_dir('relative')
-    assert not os.path.exists("simple/\.\./relative")
+    assert not Path('simple/\.\./relative').exists()
 
 
 def test_multiple_dirs():

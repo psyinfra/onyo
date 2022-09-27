@@ -1,4 +1,3 @@
-import os
 import subprocess
 from pathlib import Path
 import git
@@ -8,17 +7,17 @@ def fully_populated_dot_onyo(directory=''):
     """
     Assert whether a .onyo dir is fully populated.
     """
-    dot_onyo = os.path.join(directory, '.onyo')
+    dot_onyo = Path(directory, '.onyo')
 
-    if not os.path.isdir(dot_onyo) or \
-       not os.path.isdir(dot_onyo + "/temp") or \
-       not os.path.isdir(dot_onyo + "/templates") or \
-       not os.path.isdir(dot_onyo + "/validation") or \
-       not os.path.isfile(dot_onyo + "/config") or \
-       not os.path.isfile(dot_onyo + "/.anchor") or \
-       not os.path.isfile(dot_onyo + "/temp/.anchor") or \
-       not os.path.isfile(dot_onyo + "/templates/.anchor") or \
-       not os.path.isfile(dot_onyo + "/validation/.anchor"):
+    if not Path(dot_onyo).is_dir() or \
+       not Path(dot_onyo, "temp").is_dir() or \
+       not Path(dot_onyo, "templates").is_dir() or \
+       not Path(dot_onyo, "validation").is_dir() or \
+       not Path(dot_onyo, "config").is_file() or \
+       not Path(dot_onyo, ".anchor").is_file() or \
+       not Path(dot_onyo, "temp/.anchor").is_file() or \
+       not Path(dot_onyo, "templates/.anchor").is_file() or \
+       not Path(dot_onyo, "validation/.anchor").is_file():
            return False  # noqa: E111, E117
     # TODO: assert that no unstaged or untracked under .onyo/
 

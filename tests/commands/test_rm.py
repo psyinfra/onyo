@@ -22,7 +22,7 @@ def populate_test_repo(path):
     assert ret.returncode == 0
 
     # enter repo
-    original_cwd = os.getcwd()
+    original_cwd = Path.cwd()
     os.chdir(path)
 
     # create dirs
@@ -59,7 +59,7 @@ def test_rm_flags():
     # --quiet (requires --yes)
     ret = subprocess.run(['onyo', 'rm', '--quiet', 'a'], capture_output=True, text=True)
     assert ret.returncode == 1
-    assert os.path.isfile('a')
+    assert Path('a').is_file()
     assert not ret.stdout
     assert ret.stderr
 
@@ -68,7 +68,7 @@ def test_rm_flags():
     assert ret.returncode == 0
     assert not ret.stdout
     assert not ret.stderr
-    assert not os.path.isfile('b')
+    assert not Path('b').is_file()
 
     # --quiet with --yes failure
     ret = subprocess.run(['onyo', 'rm', '--quiet', '--yes', 'does', 'not', 'exist'], capture_output=True, text=True)
@@ -81,7 +81,7 @@ def test_rm_flags():
     assert ret.returncode == 0
     assert ret.stdout
     assert not ret.stderr
-    assert not os.path.isfile('c')
+    assert not Path('c').is_file()
 
 
 def test_rm_cwd():
@@ -91,12 +91,12 @@ def test_rm_cwd():
     # file
     ret = subprocess.run(['onyo', 'rm', '--yes', 'a'])
     assert ret.returncode == 0
-    assert not os.path.isfile('a')
+    assert not Path('a').is_file()
 
     # directory
     ret = subprocess.run(['onyo', 'rm', '--yes', 'simple'])
     assert ret.returncode == 0
-    assert not os.path.isdir('simple')
+    assert not Path('simple').is_dir()
 
 
 def test_rm_cwd_multiple():
@@ -106,16 +106,16 @@ def test_rm_cwd_multiple():
     # files
     ret = subprocess.run(['onyo', 'rm', '--yes', 'a', 'b', 'c'])
     assert ret.returncode == 0
-    assert not os.path.isfile('a')
-    assert not os.path.isfile('b')
-    assert not os.path.isfile('c')
+    assert not Path('a').is_file()
+    assert not Path('b').is_file()
+    assert not Path('c').is_file()
 
     # directories
     ret = subprocess.run(['onyo', 'rm', '--yes', 'one', 'two', 'three'])
     assert ret.returncode == 0
-    assert not os.path.isdir('one')
-    assert not os.path.isdir('two')
-    assert not os.path.isdir('three')
+    assert not Path('one').is_dir()
+    assert not Path('two').is_dir()
+    assert not Path('three').is_dir()
 
 
 def test_rm_nested():
@@ -125,16 +125,16 @@ def test_rm_nested():
     # files
     ret = subprocess.run(['onyo', 'rm', '--yes', 'one/d', 'two/e'])
     assert ret.returncode == 0
-    assert not os.path.isfile('one/d')
-    assert not os.path.isfile('two/e')
-    assert os.path.isdir('one')
-    assert os.path.isdir('two')
+    assert not Path('one/d').is_file()
+    assert not Path('two/e').is_file()
+    assert Path('one').is_dir()
+    assert Path('two').is_dir()
 
     # directories
     ret = subprocess.run(['onyo', 'rm', '--yes', 'r/e/c/u/r'])
     assert ret.returncode == 0
-    assert not os.path.isdir('r/e/c/u/r')
-    assert os.path.isdir('r/e/c/u')
+    assert not Path('r/e/c/u/r').is_dir()
+    assert Path('r/e/c/u').is_dir()
 
 
 def test_rm_spaces():
@@ -144,16 +144,16 @@ def test_rm_spaces():
     # files
     ret = subprocess.run(['onyo', 'rm', '--yes', 's p a/c e s/1 2', 's p a/c e s/3 4'])
     assert ret.returncode == 0
-    assert not os.path.isfile('s p a/c e s/1 2')
-    assert not os.path.isfile('s p a/c e s/3 4')
-    assert os.path.isfile('s p a/c e s/5 6')
-    assert os.path.isdir('s p a/c e s/')
+    assert not Path('s p a/c e s/1 2').is_file()
+    assert not Path('s p a/c e s/3 4').is_file()
+    assert Path('s p a/c e s/5 6').is_file()
+    assert Path('s p a/c e s/').is_dir()
 
     # directories
     ret = subprocess.run(['onyo', 'rm', '--yes', 's p a c e s', 's p a'])
     assert ret.returncode == 0
-    assert not os.path.isdir('s p a c e s')
-    assert not os.path.isdir('s p a')
+    assert not Path('s p a c e s').is_dir()
+    assert not Path('s p a').is_dir()
 
 
 def test_rm_same_target():
@@ -163,12 +163,12 @@ def test_rm_same_target():
     # files
     ret = subprocess.run(['onyo', 'rm', '--yes', 'a', 'a', 'a'])
     assert ret.returncode == 0
-    assert not os.path.isfile('a')
+    assert not Path('a').is_file()
 
     # directories
     ret = subprocess.run(['onyo', 'rm', '--yes', 'simple', 'simple'])
     assert ret.returncode == 0
-    assert not os.path.isdir('simple')
+    assert not Path('simple').is_dir()
 
 
 def test_rm_overlap():
@@ -177,7 +177,7 @@ def test_rm_overlap():
 
     ret = subprocess.run(['onyo', 'rm', '--yes', 'overlap/one', 'overlap', 'overlap/two'])
     assert ret.returncode == 0
-    assert not os.path.isdir('overlap')
+    assert not Path('overlap').is_dir()
 
 
 def test_rm_protected():
@@ -186,12 +186,12 @@ def test_rm_protected():
 
     ret = subprocess.run(['onyo', 'rm', '--yes', '.onyo'])
     assert ret.returncode == 1
-    assert os.path.isdir('.onyo')
+    assert Path('.onyo').is_dir()
 
     ret = subprocess.run(['onyo', 'rm', '--yes', '.git'])
     assert ret.returncode == 1
-    assert os.path.isdir('.git')
+    assert Path('.git').is_dir()
 
     ret = subprocess.run(['onyo', 'rm', '--yes', 'simple/.anchor'])
     assert ret.returncode == 1
-    assert os.path.isfile('simple/.anchor')
+    assert Path('simple/.anchor').is_file()
