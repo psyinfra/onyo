@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
-import os
 import sys
-from pathlib import Path
+from pathlib import Path, PurePath
 from git import Repo
 from onyo.commands.fsck import fsck
 
@@ -18,19 +17,17 @@ def run_mkdir(onyo_root, new_dir, repo):
 
     Returns True on success.
     """
-    full_dir = os.path.join(onyo_root, new_dir)
-
-    # make the full path
-    Path(full_dir).mkdir(parents=True, exist_ok=True)
+    # create the full path tree
+    Path(onyo_root, new_dir).mkdir(parents=True, exist_ok=True)
 
     # create the anchor files and add to git
     loop_dir = onyo_root
-    for d in new_dir.split(os.path.sep):
-        loop_dir = os.path.join(loop_dir, d)
-        anchor_file = os.path.join(loop_dir, '.anchor')
+    for d in PurePath(new_dir).parts:
+        loop_dir = Path(loop_dir, d)
+        anchor_file = Path(loop_dir, '.anchor')
 
-        Path(anchor_file).touch(exist_ok=True)
-        repo.git.add(anchor_file)
+        anchor_file.touch(exist_ok=True)
+        repo.git.add(anchor_file.resolve())
 
     return True
 
@@ -42,27 +39,27 @@ def sanitize_dirs(directories, onyo_root):
     Returns a list of normed directories on success.
     """
     dirs_to_create = []
-    dirs_exist = []
+    error_exist = []
 
     for d in directories:
+        full_dir = Path(onyo_root, d).resolve()
+
+        # check if it exists
+        if full_dir.exists():
+            error_exist.append(d)
+            continue
+
         # TODO: ideally, this would return a list of normed paths, relative to
         # the root of the onyo repository (not to be confused with onyo_root).
         # This would allow commit messages that are consistent regardless of
         # where onyo is invoked from.
-        norm_dir = os.path.normpath(d)
-        full_dir = os.path.join(onyo_root, norm_dir)
-
-        # check if it exists
-        if os.path.isdir(full_dir):
-            dirs_exist.append(d)
-            continue
-
+        norm_dir = str(full_dir.relative_to(onyo_root))
         dirs_to_create.append(norm_dir)
 
     # exit
-    if dirs_exist:
+    if error_exist:
         logger.error("No directories created. The following already exist:")
-        logger.error('\n'.join(dirs_exist))
+        logger.error('\n'.join(error_exist))
         sys.exit(1)
 
     return dirs_to_create
