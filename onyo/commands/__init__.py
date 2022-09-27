@@ -2,7 +2,6 @@ from .cat import cat
 from .config import config
 from .edit import edit
 from .fsck import fsck
-from .git import git
 from .history import history
 from .init import init
 from .mkdir import mkdir
@@ -18,7 +17,6 @@ __all__ = [
     'config',
     'edit',
     'fsck',
-    'git',
     'history',
     'init',
     'mkdir',

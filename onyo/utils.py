@@ -388,22 +388,6 @@ def parse_args():
     )
     cmd_fsck.set_defaults(run=commands.fsck)
     #
-    # subcommand "git"
-    #
-    cmd_git = subcmds.add_parser(
-        'git',
-        description=textwrap.dedent(commands.git.__doc__),
-        formatter_class=SubcommandHelpFormatter,
-        help='run git commands in the onyo repository'
-    )
-    cmd_git.set_defaults(run=commands.git)
-    cmd_git.add_argument(
-        'command',
-        metavar='<command>',
-        nargs=argparse.REMAINDER,
-        help='git command to run'
-    )
-    #
     # subcommand "history"
     #
     cmd_history = subcmds.add_parser(
