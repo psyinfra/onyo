@@ -218,8 +218,13 @@ _onyo() {{
   local curcontext="$curcontext" ret=1
   local -a state state_descr line
   local -A opt_args
-  local -a args subcommands
 
+  # $words is modified as it is passed down through the script. This keeps an
+  # unmodified copy of the expanded command.
+  local -a fullwords
+  fullwords=("${{words[@]}}")
+
+  local -a args subcommands
   args=( )
   toplevel_flags=( {toplevel_flags} )
 
@@ -450,17 +455,17 @@ def shell_completion(args, onyo_root):
         }
         epilogue = """
         _onyo_dir() {
-          LINE=$BUFFER
+          local REPO=$PWD
 
-          # -C or --onyopath is used
-          [ -z "${LINE%%* -C *}" ] && BACK=${LINE#* -C }
-          [ -z "${LINE%%* --onyopath *}" ] && BACK=${LINE#* --onyopath }
-          if [ -n "$BACK" ]; then
-            REPO=${BACK%% *}
-            printf "$REPO"
-          else
-            printf "$PWD"
-          fi
+          # check if -C or --onyopath is used
+          for i in {1..$#fullwords}; do
+            if [ "$fullwords[$i]" = "-C" ] || [ "$fullwords[$i]" = "--onyopath" ] ; then
+              REPO=$fullwords[$i+1]
+              break
+            fi
+          done
+
+          printf "$REPO"
         }
 
         _template_dir() {
