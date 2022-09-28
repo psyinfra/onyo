@@ -1,6 +1,5 @@
 import os
 import subprocess
-import glob
 import logging
 import pytest
 from pathlib import Path
@@ -83,9 +82,6 @@ class TestClass:
         current_test_dir = Path("test 1").resolve()
         current_test_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(current_test_dir)
-        # Test-specific changes:
-        # onyo mv user/* needs to expand
-        command = command.replace("user/*", " ".join(glob.glob("user/*")))
         # run actual test
         if "onyo rm" in command:
             check_output_with_file(command, input_str, test_folder.joinpath('test 1/', file), command.replace("onyo rm ", ""))
@@ -104,9 +100,13 @@ class TestClass:
         current_test_dir = Path("test 2").resolve()
         current_test_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(current_test_dir.parent)
-        # Test-specific changes:
-        # onyo mv user/* needs to expand
-        command = command.replace("user/*", "\"" + "\" \"".join(glob.glob(os.path.join(current_test_dir, "user/*"))) + "\"")
+
+        # Globbing is done by the shell, and thus fails when using -C.
+        # This is expected and the right behavior. However, we'll expand the
+        # glob here in python, so that the assets are in the correct location
+        # for subsequent tests, and not deviate from other test runs.
+        command = command.replace("user/*", ' '.join(f"'{x}'" for x in current_test_dir.glob('user/[!.]*')))
+
         # instead from testdir, run commands with -C
         command = command.replace("onyo ", "onyo -C '" + str(current_test_dir) + "' ")
         command = command.replace("git ", "git -C '" + str(current_test_dir) + "' ")
