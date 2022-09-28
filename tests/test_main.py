@@ -77,41 +77,40 @@ class TestClass:
     ]
 
     @pytest.mark.parametrize("command, input_str, ref_file", test_commands)
-    def test_from_inside_dir(self, command, input_str, ref_file):
+    def test_root_of_repo(self, command, input_str, ref_file):
         """
         Test from the root of the onyo repository.
         """
-        current_test_dir = Path("test 1").resolve()
-        current_test_dir.mkdir(parents=True, exist_ok=True)
-        os.chdir(current_test_dir)
+        test_dir = Path("root_of_repo").resolve()
+        test_dir.mkdir(parents=True, exist_ok=True)
+        os.chdir(test_dir)
 
         # run the tests
         if "onyo rm" in command:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('test 1/', ref_file), command.replace("onyo rm ", ""))
+            check_output_with_file(command, input_str, self.ref_dir.joinpath('root_of_repo/', ref_file), command.replace("onyo rm ", ""))
         else:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('test 1/', ref_file), current_test_dir)
+            check_output_with_file(command, input_str, self.ref_dir.joinpath('root_of_repo/', ref_file), test_dir)
 
     @pytest.mark.parametrize("command, input_str, ref_file", test_commands)
-    def test_from_outside_dir(self, command, input_str, ref_file):
+    def test_C_absolute(self, command, input_str, ref_file):
         """
         Test from outside the repository using: onyo -C </absolute/path/to/repo>
         """
-        current_test_dir = Path("test 2").resolve()
-        current_test_dir.mkdir(parents=True, exist_ok=True)
-        os.chdir(current_test_dir.parent)
+        test_dir = Path("C_absolute").resolve()
+        test_dir.mkdir(parents=True, exist_ok=True)
 
         # inject -C into the commands
-        command = command.replace("onyo ", f"onyo -C '{current_test_dir}' ")
-        command = command.replace("git ", f"git -C '{current_test_dir}' ")
+        command = command.replace("onyo ", f"onyo -C '{test_dir}' ")
+        command = command.replace("git ", f"git -C '{test_dir}' ")
 
         # Globbing is done by the shell, and thus fails when using -C.
         # This is expected and the right behavior. However, we'll expand the
         # glob here in python, so that the assets are in the correct location
         # for subsequent tests, and not deviate from other test runs.
-        command = command.replace("user/*", ' '.join(f"'{x}'" for x in current_test_dir.glob('user/[!.]*')))
+        command = command.replace("user/*", ' '.join(f"'{x}'" for x in test_dir.glob('user/[!.]*')))
 
         # run the tests
-        if f"onyo -C '{current_test_dir}' rm" in command:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('test 2/', ref_file), command.replace(f"onyo -C '{current_test_dir}' rm ", ""))
+        if f"onyo -C '{test_dir}' rm" in command:
+            check_output_with_file(command, input_str, self.ref_dir.joinpath('C_absolute/', ref_file), command.replace(f"onyo -C '{test_dir}' rm ", ""))
         else:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('test 2/', ref_file), current_test_dir)
+            check_output_with_file(command, input_str, self.ref_dir.joinpath('C_absolute/', ref_file), test_dir)
