@@ -1,4 +1,4 @@
 The following assets and directories will be deleted:
-<test_dir>
+<replace>
 Delete assets? (y/N) 
 

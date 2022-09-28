@@ -1,1 +1,1 @@
-Initialized Onyo repository in <test_dir>/.onyo
+Initialized Onyo repository in <replace>/.onyo

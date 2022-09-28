@@ -8,7 +8,7 @@ logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def run_test_cmd(cmd, input_str=None):
+def run_cmd(cmd, input_str=None):
     ret = subprocess.run(cmd,
                          capture_output=True,
                          input=input_str,
@@ -18,20 +18,23 @@ def run_test_cmd(cmd, input_str=None):
     # if it errored, return it
     if ret.stderr:
         logger.info(f"{cmd} {ret.stderr}")
-        return ret.stderr
+        return ret.stderr.rstrip("\n")
 
     logger.info(f"{cmd} {ret.stdout}")
-    return ret.stdout
+    return ret.stdout.rstrip("\n")
 
 
-def read_file(ref_file, test_dir):
+def read_reference(ref_file, replace_str=''):
+    """
+    Return the contents of the reference file, with trailing newlines stripped,
+    and any replacement text applied
+
+    Accepts the reference file and (optionally) text to swap with the <replace>
+    placeholder.
+    """
     contents = Path(ref_file).read_text().rstrip("\n")
-    contents = contents.replace("<test_dir>", str(test_dir))
+    contents = contents.replace("<replace>", replace_str)
     return contents
-
-
-def check_output_with_file(command, input_str, ref_file, test_dir):
-    assert run_test_cmd(command, input_str=input_str).rstrip("\n") == read_file(ref_file, test_dir)
 
 
 class TestClass:
@@ -61,7 +64,7 @@ class TestClass:
         ("onyo rm shelf/laptop_apple_macbookpro.7", "y", "delete_device.txt"),
         ("onyo mv --rename shelf/laptop_apple_macbookpro.2 user/laptop_apple_macbookpro.8", "", "empty_file.txt"),
         ("onyo mv --rename --force shelf/laptop_apple_macbookpro.3 user/laptop_apple_macbookpro.9", "", "empty_file.txt"),
-        ("onyo mv " + "user/*" + " 'user 2/'", "", "empty_file.txt"),
+        ("onyo mv user/* 'user 2/'", "", "empty_file.txt"),
         ("git status", "", "git_status_working_tree_clean.txt"),
         ("onyo mv shelf/laptop_apple_macbookpro.4 user/", "", "empty_file.txt"),
         ("onyo mv shelf/laptop_apple_macbookpro.5 user/", "", "empty_file.txt"),
@@ -81,21 +84,26 @@ class TestClass:
         """
         Test from the root of the onyo repository.
         """
+        ref_file = self.ref_dir.joinpath('root_of_repo/', ref_file)
         test_dir = Path("root_of_repo").resolve()
         test_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(test_dir)
 
-        # run the tests
+        # rm tests use a different replacement text
         if "onyo rm" in command:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('root_of_repo/', ref_file), command.replace("onyo rm ", ""))
+            replace_str = command.replace("onyo rm ", "")
         else:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('root_of_repo/', ref_file), test_dir)
+            replace_str = str(test_dir)
+
+        # run the tests
+        assert run_cmd(command, input_str) == read_reference(ref_file, replace_str)
 
     @pytest.mark.parametrize("command, input_str, ref_file", test_commands)
     def test_C_absolute(self, command, input_str, ref_file):
         """
         Test from outside the repository using: onyo -C </absolute/path/to/repo>
         """
+        ref_file = self.ref_dir.joinpath('C_absolute/', ref_file)
         test_dir = Path("C_absolute").resolve()
         test_dir.mkdir(parents=True, exist_ok=True)
 
@@ -109,8 +117,11 @@ class TestClass:
         # for subsequent tests, and not deviate from other test runs.
         command = command.replace("user/*", ' '.join(f"'{x}'" for x in test_dir.glob('user/[!.]*')))
 
-        # run the tests
+        # rm tests use a different replacement text
         if f"onyo -C '{test_dir}' rm" in command:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('C_absolute/', ref_file), command.replace(f"onyo -C '{test_dir}' rm ", ""))
+            replace_str = command.replace(f"onyo -C '{test_dir}' rm ", "")
         else:
-            check_output_with_file(command, input_str, self.ref_dir.joinpath('C_absolute/', ref_file), test_dir)
+            replace_str = str(test_dir)
+
+        # run the tests
+        assert run_cmd(command, input_str) == read_reference(ref_file, replace_str)
