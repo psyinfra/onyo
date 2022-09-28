@@ -30,6 +30,8 @@ To install Onyo, run the following from your command line:
    pip install git+https://github.com/psyinfra/onyo.git
 
 
+.. _aliases:
+
 Aliases
 *******
 

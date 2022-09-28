@@ -6,6 +6,49 @@ Next
 
 Changes listed have been merged into Onyo and will be part of the next release.
 
+The highlights are:
+
+Command Changes
+---------------
+- ``onyo cat``: error codes are now reliably reported and bugs related to
+  roundtrip-ing were fixed
+- ``onyo config``: now calls ``git config`` and thus inherits all of its
+  functionality (with a few intentional exceptions).
+- ``onyo shell-completion``: now supports completion for ``onyo -C``,
+  ``onyo config``, ``onyo new --templates``, and when Onyo is invoked through an
+  alias.
+
+Retired
+-------
+- ``onyo git``: retired in favor of aliasing ``onyo-git`` (see :ref:`aliases`).
+
+Configuration
+-------------
+Configuration was completed overhauled:
+- options can be set in either ``git config`` or ``onyo config``
+- all options are moved into an ``onyo`` namespace.
+- added ``onyo.core.editor`` to configure the preferred editor
+- documentation written (see :doc:`configuration`)
+
+Docs
+----
+- configuration is documented (see :doc:`configuration`)
+- help output is stripped of various rst-isms
+- documented using aliases with onyo, especially to operate on an onyo repo from
+  elsewhere on the system
+- improved documentation for building and testing
+
+Tests
+-----
+- enabled code coverage
+- many tests added, notably for ``onyo cat`` and ``onyo config``
+- significant refactoring and cleanup
+
+Authors
+-------
+-  Alex Waite (`@aqw <https://github.com/aqw>`__)
+-  Laura Waite (`@loj <https://github.com/loj>`__)
+
 --------------------------------------------------------------------------------
 
 0.1.0 (2022.09.19)
