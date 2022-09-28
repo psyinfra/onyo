@@ -28,7 +28,7 @@ def run_test_cmd(cmd, input_str=None):
 def read_file(file, test_dir):
     file_contents = open(file).readlines()
     file_contents = "".join(file_contents).rstrip("\n")
-    file_contents = file_contents.replace("<test_dir>", test_dir)
+    file_contents = file_contents.replace("<test_dir>", str(test_dir))
     return file_contents
 
 
@@ -37,11 +37,11 @@ def check_output_with_file(command, input_str, file, test_dir):
 
 
 class TestClass:
-    test_dir = os.path.join(os.getcwd(), "tests/", "sandbox")
-    Path(test_dir).mkdir(parents=True, exist_ok=True)
+    test_dir = Path("tests", "sandbox").resolve()
+    test_dir.mkdir(parents=True, exist_ok=True)
 
-    # the folder for the wished output lies relative to this script:<
-    test_output = os.path.join(os.path.dirname(os.path.realpath(__file__)), "output_goals/")
+    # the folder for the wished output lies relative to this script:
+    test_output = Path(Path(__file__).parent, 'output_goals/').resolve()
 
     test_commands = [
         ("onyo init", "", test_output, "init_test.txt"),
@@ -80,50 +80,44 @@ class TestClass:
     # run commands from onyo_root (top level of onyo repository)
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
     def test_from_inside_dir(self, command, input_str, test_folder, file):
-        current_test_dir = os.path.join(self.test_dir, "test 1")
-        # create the test folder and go into it
-        if not os.path.isdir(current_test_dir):
-            run_test_cmd("mkdir \"" + current_test_dir + "\"")
+        current_test_dir = Path("test 1").resolve()
+        current_test_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(current_test_dir)
         # Test-specific changes:
         # onyo mv user/* needs to expand
         command = command.replace("user/*", " ".join(glob.glob("user/*")))
         # run actual test
         if "onyo rm" in command:
-            check_output_with_file(command, input_str, test_folder + "/test 1/" + file, command.replace("onyo rm ", ""))
+            check_output_with_file(command, input_str, test_folder.joinpath('test 1/', file), command.replace("onyo rm ", ""))
         else:
-            check_output_with_file(command, input_str, test_folder + "/test 1/" + file, current_test_dir)
+            check_output_with_file(command, input_str, test_folder.joinpath('test 1/', file), current_test_dir)
 
     # test the folders for test_1 with onyo tree
     def test_onyo_tree_test_1(self):
-        test_tree_output = os.path.join(self.test_output, "test 1/test_tree_output.txt")
-        test_tree_cmd = "onyo -C \"test 1/\" tree"
-        os.chdir(self.test_dir)
+        test_tree_output = Path(self.test_output, "test 1/test_tree_output.txt")
+        test_tree_cmd = "onyo -C 'test 1/' tree"
         check_output_with_file(test_tree_cmd, "", test_tree_output, self.test_dir)
 
     # run commands from outside onyo_root with "onyo -C <test_dir> "
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
     def test_from_outside_dir(self, command, input_str, test_folder, file):
-        current_test_dir = os.path.join(self.test_dir, "test 2")
-        # create the test folder and go into it
-        if not os.path.isdir(current_test_dir):
-            run_test_cmd("mkdir \"" + current_test_dir + "\"")
-        os.chdir(os.path.join(current_test_dir, ".."))
+        current_test_dir = Path("test 2").resolve()
+        current_test_dir.mkdir(parents=True, exist_ok=True)
+        os.chdir(current_test_dir.parent)
         # Test-specific changes:
         # onyo mv user/* needs to expand
         command = command.replace("user/*", "\"" + "\" \"".join(glob.glob(os.path.join(current_test_dir, "user/*"))) + "\"")
         # instead from testdir, run commands with -C
-        command = command.replace("onyo ", "onyo -C \"" + current_test_dir + "\" ")
-        command = command.replace("git ", "git -C \"" + current_test_dir + "\" ")
+        command = command.replace("onyo ", "onyo -C '" + str(current_test_dir) + "' ")
+        command = command.replace("git ", "git -C '" + str(current_test_dir) + "' ")
         # run actual test
-        if "onyo -C \"" + current_test_dir + "\" rm" in command:
-            check_output_with_file(command, input_str, os.path.join(test_folder, "test 2/" + file), command.replace("onyo -C \"" + current_test_dir + "\" rm ", ""))
+        if "onyo -C '" + str(current_test_dir) + "' rm" in command:
+            check_output_with_file(command, input_str, test_folder.joinpath('test 2/', file), command.replace("onyo -C '" + str(current_test_dir) + "' rm ", ""))
         else:
-            check_output_with_file(command, input_str, os.path.join(test_folder, "test 2/" + file), current_test_dir)
+            check_output_with_file(command, input_str, test_folder.joinpath('test 2/', file), current_test_dir)
 
     # tests the complete directory, all test-folders, for there structure
     def test_onyo_tree_test_2(self):
-        test_tree_output = os.path.join(self.test_output, "test 2/test_tree_output.txt")
-        test_tree_cmd = "onyo -C \"test 2/\" tree"
-        os.chdir(self.test_dir)
+        test_tree_output = Path(self.test_output, "test 2/test_tree_output.txt")
+        test_tree_cmd = "onyo -C 'test 2/' tree"
         check_output_with_file(test_tree_cmd, "", test_tree_output, self.test_dir)
