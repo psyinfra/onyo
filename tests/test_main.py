@@ -74,6 +74,7 @@ class TestClass:
         ("onyo set RAM=50,USB=3 shelf/laptop_apple_macbookpro.1", "y", test_output, "set_shelf_laptop.txt"),
         ("onyo cat 'trash bin/this_device_is very.good' shelf/laptop_apple_macbookpro.1", "", test_output, "cat_output.txt"),
         ("git status", "", test_output, "git_status_working_tree_clean.txt"),
+        ("onyo tree", "", test_output, "test_tree_output.txt"),
     ]
 
     # run commands from onyo_root (top level of onyo repository)
@@ -87,12 +88,6 @@ class TestClass:
             check_output_with_file(command, input_str, test_folder.joinpath('test 1/', file), command.replace("onyo rm ", ""))
         else:
             check_output_with_file(command, input_str, test_folder.joinpath('test 1/', file), current_test_dir)
-
-    # test the folders for test_1 with onyo tree
-    def test_onyo_tree_test_1(self):
-        test_tree_output = Path(self.test_output, "test 1/test_tree_output.txt")
-        test_tree_cmd = "onyo -C 'test 1/' tree"
-        check_output_with_file(test_tree_cmd, "", test_tree_output, self.test_dir)
 
     # run commands from outside onyo_root with "onyo -C <test_dir> "
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
@@ -115,9 +110,3 @@ class TestClass:
             check_output_with_file(command, input_str, test_folder.joinpath('test 2/', file), command.replace("onyo -C '" + str(current_test_dir) + "' rm ", ""))
         else:
             check_output_with_file(command, input_str, test_folder.joinpath('test 2/', file), current_test_dir)
-
-    # tests the complete directory, all test-folders, for there structure
-    def test_onyo_tree_test_2(self):
-        test_tree_output = Path(self.test_output, "test 2/test_tree_output.txt")
-        test_tree_cmd = "onyo -C 'test 2/' tree"
-        check_output_with_file(test_tree_cmd, "", test_tree_output, self.test_dir)
