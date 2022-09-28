@@ -25,10 +25,9 @@ def run_test_cmd(cmd, input_str=None):
 
 
 def read_file(file, test_dir):
-    file_contents = open(file).readlines()
-    file_contents = "".join(file_contents).rstrip("\n")
-    file_contents = file_contents.replace("<test_dir>", str(test_dir))
-    return file_contents
+    contents = Path(file).read_text().rstrip("\n")
+    contents = contents.replace("<test_dir>", str(test_dir))
+    return contents
 
 
 def check_output_with_file(command, input_str, file, test_dir):
@@ -77,24 +76,33 @@ class TestClass:
         ("onyo tree", "", test_output, "test_tree_output.txt"),
     ]
 
-    # run commands from onyo_root (top level of onyo repository)
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
     def test_from_inside_dir(self, command, input_str, test_folder, file):
+        """
+        Test from the root of the onyo repository.
+        """
         current_test_dir = Path("test 1").resolve()
         current_test_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(current_test_dir)
-        # run actual test
+
+        # run the tests
         if "onyo rm" in command:
             check_output_with_file(command, input_str, test_folder.joinpath('test 1/', file), command.replace("onyo rm ", ""))
         else:
             check_output_with_file(command, input_str, test_folder.joinpath('test 1/', file), current_test_dir)
 
-    # run commands from outside onyo_root with "onyo -C <test_dir> "
     @pytest.mark.parametrize("command, input_str, test_folder, file", test_commands)
     def test_from_outside_dir(self, command, input_str, test_folder, file):
+        """
+        Test from outside the repository using: onyo -C </absolute/path/to/repo>
+        """
         current_test_dir = Path("test 2").resolve()
         current_test_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(current_test_dir.parent)
+
+        # inject -C into the commands
+        command = command.replace("onyo ", f"onyo -C '{current_test_dir}' ")
+        command = command.replace("git ", f"git -C '{current_test_dir}' ")
 
         # Globbing is done by the shell, and thus fails when using -C.
         # This is expected and the right behavior. However, we'll expand the
@@ -102,11 +110,8 @@ class TestClass:
         # for subsequent tests, and not deviate from other test runs.
         command = command.replace("user/*", ' '.join(f"'{x}'" for x in current_test_dir.glob('user/[!.]*')))
 
-        # instead from testdir, run commands with -C
-        command = command.replace("onyo ", "onyo -C '" + str(current_test_dir) + "' ")
-        command = command.replace("git ", "git -C '" + str(current_test_dir) + "' ")
-        # run actual test
-        if "onyo -C '" + str(current_test_dir) + "' rm" in command:
-            check_output_with_file(command, input_str, test_folder.joinpath('test 2/', file), command.replace("onyo -C '" + str(current_test_dir) + "' rm ", ""))
+        # run the tests
+        if f"onyo -C '{current_test_dir}' rm" in command:
+            check_output_with_file(command, input_str, test_folder.joinpath('test 2/', file), command.replace(f"onyo -C '{current_test_dir}' rm ", ""))
         else:
             check_output_with_file(command, input_str, test_folder.joinpath('test 2/', file), current_test_dir)
