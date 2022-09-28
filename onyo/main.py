@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from onyo import commands  # noqa: F401
-from onyo.utils import parse_args
+from onyo.utils import parse_args, get_git_root
 
 import logging
 import sys
@@ -30,6 +30,8 @@ def main():
 
     if args.onyopath:
         onyo_root = args.onyopath
+        if 'init' not in sys.argv:
+            onyo_root = get_git_root(onyo_root)
 
     # TODO: Do onyo fsck here, test if onyo_root exists, .onyo exists, is git repo, other checks
 
