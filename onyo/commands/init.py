@@ -87,4 +87,4 @@ def init(args, onyo_root):
 
     # print success
     abs_dot_onyo = str(os.path.abspath(dot_onyo))
-    logger.info(f'Initialized Onyo repository in {abs_dot_onyo}')
+    print(f'Initialized Onyo repository in {abs_dot_onyo}')
