@@ -6,6 +6,12 @@ Next
 
 Changes listed have been merged into Onyo and will be part of the next release.
 
+--------------------------------------------------------------------------------
+
+0.2.0 (2022.09.28)
+******************
+This release primarily focused on configuration, refactoring, and tests.
+
 The highlights are:
 
 Command Changes
