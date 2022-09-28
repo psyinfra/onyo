@@ -1,1 +1,0 @@
-Initialized Onyo repository in <test_dir>/.onyo
