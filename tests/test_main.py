@@ -3,37 +3,26 @@ import subprocess
 import glob
 import logging
 import pytest
-import shlex
 from pathlib import Path
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
 
 
-def run_test_cmd(cmd, comment="", input_str=""):
-    if comment != "":
-        run_process = subprocess.Popen(shlex.split(cmd) + [comment],
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       universal_newlines=True)
-    else:
-        run_process = subprocess.Popen(shlex.split(cmd),
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       universal_newlines=True)
-    if input_str == "":
-        run_output, run_error = run_process.communicate()
-    else:
-        run_output, run_error = run_process.communicate(input_str)
-    # return either the output, or the error to test if it is the right one
-    if (run_error != ""):
-        logger.info(cmd + " " + run_error)
-        return run_error
-    else:
-        logger.info(cmd + " " + run_output)
-    return run_output
+def run_test_cmd(cmd, input_str=None):
+    ret = subprocess.run(cmd,
+                         capture_output=True,
+                         input=input_str,
+                         shell=True,
+                         text=True)
+
+    # if it errored, return it
+    if ret.stderr:
+        logger.info(f"{cmd} {ret.stderr}")
+        return ret.stderr
+
+    logger.info(f"{cmd} {ret.stdout}")
+    return ret.stdout
 
 
 def read_file(file, test_dir):
