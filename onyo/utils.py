@@ -407,9 +407,10 @@ def parse_args():
     cmd_history.set_defaults(run=commands.history)
     cmd_history.add_argument(
         '-I', '--non-interactive',
+        dest='interactive',
         required=False,
-        default=False,
-        action='store_true',
+        default=True,
+        action='store_false',
         help='print the git log instead of opening an interactive tig session'
     )
     cmd_history.add_argument(
