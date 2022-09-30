@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import logging
-import os
 import subprocess
 import sys
+from pathlib import Path
 from git import Repo
 from onyo.commands.fsck import read_only_fsck
 
@@ -97,6 +97,6 @@ def config(args, onyo_root):
 
     # commit, if there's anything to commit
     if repo.is_dirty():
-        dot_onyo_config = os.path.join(repo_root, '.onyo/config')
+        dot_onyo_config = Path(repo_root, '.onyo/config')
         repo.git.add(dot_onyo_config)
         repo.git.commit(m='onyo config: modify shared repository config')
