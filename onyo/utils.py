@@ -237,7 +237,9 @@ def get_config_value(name, onyo_root):
     # git-config (with its full stack of locations to check)
     try:
         value = repo.git.config('--get', name)
+        logger.debug(f"git config acquired '{name}': '{value}'")
     except exc.GitCommandError:
+        logger.debug(f"git config missed '{name}'")
         pass
 
     # .onyo/config
@@ -245,7 +247,9 @@ def get_config_value(name, onyo_root):
         dot_onyo_config = os.path.join(repo.git.rev_parse('--show-toplevel'), '.onyo/config')
         try:
             value = repo.git.config('--get', name, f=dot_onyo_config)
+            logger.debug(f"onyo config acquired '{name}': '{value}'")
         except exc.GitCommandError:
+            logger.debug(f"onyo config missed '{name}'")
             pass
 
     # reset to None if empty
