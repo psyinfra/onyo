@@ -80,7 +80,16 @@ def history(args, onyo_root):
     path = sanitize_path(args.path, onyo_root)
 
     # run it
-    status = os.system(f"{history_cmd} '{path}'")
+    orig_cwd = os.getcwd()
+    try:
+        os.chdir(onyo_root)
+        status = os.system(f"{history_cmd} '{path}'")
+    except:  # noqa: E722
+        pass
+    finally:
+        os.chdir(orig_cwd)
+
+    # covert the return status into a return code
     try:
         returncode = os.waitstatus_to_exitcode(status)
     except AttributeError:  # python <3.9
