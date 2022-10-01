@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
-import os
 import sys
+from pathlib import Path
 
 from onyo.commands.fsck import read_only_fsck
 
@@ -20,18 +20,16 @@ def sanitize_paths(paths, onyo_root):
     error_path_not_file = []
 
     for p in paths:
-        # Returns a set of normalized paths relative to onyo_root
-        norm_path = os.path.normpath(p)
         # TODO: This is wrong when an absolute path is provided
-        full_path = os.path.join(onyo_root, norm_path)
+        full_path = Path(onyo_root, p).resolve()
 
         # path must exist
-        if not os.path.exists(full_path):
+        if not full_path.exists():
             error_path_absent.append(p)
             continue
 
         # path must be a file
-        if not os.path.isfile(full_path):
+        if not full_path.is_file():
             error_path_not_file.append(p)
             continue
 
@@ -57,12 +55,10 @@ def cat(args, onyo_root):
     Print the contents of ``asset``\(s) to the terminal without parsing or
     validating the contents.
     """
-    # run onyo fsck for read only commands
     read_only_fsck(args, onyo_root, quiet=True)
 
     paths_to_cat = sanitize_paths(args.asset, onyo_root)
 
     # open file and print to stdout
     for path in paths_to_cat:
-        with open(path, 'r') as fin:
-            print(fin.read(), end="")
+        print(path.read_text(), end='')

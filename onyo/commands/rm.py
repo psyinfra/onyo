@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
-import os
 import sys
+from pathlib import Path
 from git import Repo
 from onyo.commands.fsck import fsck
 
@@ -22,23 +22,23 @@ def sanitize_paths(paths, onyo_root):
     error_path_protected = []
 
     for p in paths:
-        # TODO: ideally, this would return a list of normed paths, relative to
-        # the root of the onyo repository (not to be confused with onyo_root).
-        # This would allow commit messages that are consistent regardless of
-        # where onyo is invoked from.
-        norm_path = os.path.normpath(p)
-        full_path = os.path.join(onyo_root, norm_path)
+        full_path = Path(onyo_root, p).resolve()
 
         # paths must exist
-        if not os.path.exists(full_path):
+        if not full_path.exists():
             error_path_absent.append(p)
             continue
 
         # protected paths
-        if os.path.basename(full_path) in ['.anchor', '.git', '.onyo']:
+        if full_path.name in ['.anchor', '.git', '.onyo']:
             error_path_protected.append(p)
             continue
 
+        # TODO: ideally, this would return a list of normed paths, relative to
+        # the root of the onyo repository (not to be confused with onyo_root).
+        # This would allow commit messages that are consistent regardless of
+        # where onyo is invoked from.
+        norm_path = str(full_path.relative_to(onyo_root))
         paths_to_rm.append(norm_path)
 
     if error_path_absent:
