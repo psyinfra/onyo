@@ -469,18 +469,18 @@ def parse_args():
     )
     cmd_mv.set_defaults(run=commands.mv)
     cmd_mv.add_argument(
-        '-f', '--force',
+        '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='overwrite the target if it already exists; never prompt'
+        help='silence messages to stdout (requires the --yes flag)'
     )
     cmd_mv.add_argument(
-        '-r', '--rename',
+        '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='allow an asset to be renamed (i.e. modify the pseudo keys)'
+        help='respond "yes" to any prompts'
     )
     cmd_mv.add_argument(
         'source',
