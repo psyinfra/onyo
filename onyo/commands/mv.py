@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from git import Repo
 from onyo.commands.fsck import fsck
+from onyo.utils import is_protected_path
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -90,8 +91,7 @@ def sanity_check_destination(destination, sources, onyo_root):
     Common checks
     """
     # protected paths
-    # TODO:this is too narrow
-    if dest_path.name in ['.anchor', '.git', '.onyo']:
+    if is_protected_path(dest_path):
         logger.error(f"The destination '{destination}' is protected by onyo.")
         logger.error("\nExiting. Nothing was moved.")
         sys.exit(1)
@@ -142,7 +142,7 @@ def sanitize_sources(sources, onyo_root):
             continue
 
         # protected paths
-        if src_path.name in ['.anchor', '.git', '.onyo']:
+        if is_protected_path(src_path):
             error_path_protected.append(s)
             continue
 

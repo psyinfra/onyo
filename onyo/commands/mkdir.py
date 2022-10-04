@@ -5,6 +5,7 @@ import sys
 from pathlib import Path, PurePath
 from git import Repo
 from onyo.commands.fsck import fsck
+from onyo.utils import is_protected_path
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -40,6 +41,7 @@ def sanitize_dirs(directories, onyo_root):
     """
     dirs_to_create = []
     error_exist = []
+    error_path_protected = []
 
     for d in directories:
         full_dir = Path(onyo_root, d).resolve()
@@ -47,6 +49,11 @@ def sanitize_dirs(directories, onyo_root):
         # check if it exists
         if full_dir.exists():
             error_exist.append(d)
+            continue
+
+        # protected paths
+        if is_protected_path(full_dir):
+            error_path_protected.append(d)
             continue
 
         # TODO: ideally, this would return a list of normed paths, relative to
@@ -60,6 +67,12 @@ def sanitize_dirs(directories, onyo_root):
     if error_exist:
         logger.error("No directories created. The following already exist:")
         logger.error('\n'.join(error_exist))
+        sys.exit(1)
+
+    if error_path_protected:
+        logger.error("The following paths are protected by onyo:")
+        logger.error('\n'.join(error_path_protected))
+        logger.error("\nExiting. No directories were created.")
         sys.exit(1)
 
     return dirs_to_create
