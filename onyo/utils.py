@@ -165,46 +165,59 @@ def check_float(value):
 
 
 def edit_file(file, onyo_root, onyo_new=False):
+    """
+    Check if the selected editor exists. Check if a file exists, create a copy
+    of it in .onyo/temp/ to change with the editor, and check the temp file
+    after editing for correct yaml syntax and validity specified by the onyo
+    validation file.
+    If the asset is not valid, open a dialog to enable to correct the asset, or
+    remove the changes.
+
+    Returns True on success.
+    """
     editor = get_editor(onyo_root)
     # verify that the editor exists
     if not shutil.which(editor):
         logger.error(f"The editor '{editor}' was not found. Exiting.")
         sys.exit(1)
 
-    if not os.path.isfile(file):
-        logger.error(file + " does not exist.")
+    # verify existence of file to edit
+    file = Path(file)
+    if not file.is_file():
+        logger.error(f"{file} does not exist.")
         sys.exit(1)
+
     # create and edit a temporary file, and if that is valid replace original
-    temp_file = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/temp/", os.path.basename(file)))
-    if not os.path.isfile(temp_file):
-        run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+    temp_file = Path(get_git_root(onyo_root), ".onyo/temp/", file.name)
+    if not temp_file.is_file():
+        shutil.copyfile(file, temp_file)
     # When temp-file exists, ask if to use it
-    elif os.path.isfile(temp_file):
+    elif temp_file.is_file():
         while True:
-            edit_temp = str(input("Temporary changes for " + file + " exist. Continue editing? (y/N) "))
+            edit_temp = str(input(f"Temporary changes for {file} exist. Continue editing? (y/N) "))
             if edit_temp in ['y', 'Y', 'yes']:
                 break
             elif edit_temp == 'n':
-                run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+                shutil.copyfile(file, temp_file)
                 break
     further_editing = 'y'
     while further_editing == 'y':
         # do actual editing:
-        os.system(editor + " \"" + temp_file + "\"")
+        os.system(f'{editor} "{temp_file}"')
         # check syntax
         with open(temp_file, "r") as stream:
             try:
                 yaml.safe_load(stream)
                 problem_str = validate_file(temp_file, file, onyo_root)
                 if problem_str == "":
-                    run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
+                    shutil.move(temp_file, file)
                 else:
                     # TODO: better exception needed
-                    raise yaml.YAMLError("\nOnyo Validation failed for:\n" + problem_str)
+                    raise yaml.YAMLError(f"\nOnyo Validation failed for:\n{problem_str}")
                 return
             except yaml.YAMLError as e:
                 while True:
-                    further_editing = str(input(str(e) + "Continue editing? (y/N) "))
+                    further_editing = input(f"{e}Continue editing? (y/N) ")
                     if further_editing in ['y', 'Y', 'yes']:
                         break
                     elif further_editing == 'n':
@@ -212,12 +225,12 @@ def edit_file(file, onyo_root, onyo_new=False):
                         # onyo new should neither create a new file nor a
                         # temp-file, and have a special info message
                         if (onyo_new):
-                            run_cmd("rm \"" + file + "\"")
-                            output_str = "No new asset \"" + os.path.relpath(file, onyo_root) + "\" created."
-                        run_cmd("rm \"" + temp_file + "\"")
+                            Path.unlink(file)
+                            output_str = f'No new asset "{file.relative_to(onyo_root)}" created.'
+                        Path.unlink(temp_file)
                         logger.info(output_str)
                         sys.exit(1)
-    return
+    return True
 
 
 def build_git_add_cmd(directory, file):
