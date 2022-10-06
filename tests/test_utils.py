@@ -131,3 +131,28 @@ def test_get_editor_precedence():
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert utils.get_editor(onyo_root) == 'third'
+
+
+def test_is_protected_path():
+    # simple
+    assert utils.is_protected_path('.anchor')
+    assert utils.is_protected_path('.git')
+    assert utils.is_protected_path('.onyo')
+
+    # beginning
+    assert utils.is_protected_path('.git/config')
+    assert utils.is_protected_path('.onyo/templates')
+
+    # middle
+    assert utils.is_protected_path('subdir/.git/config')
+    assert utils.is_protected_path('subdir/.onyo/templates')
+
+    # end
+    assert utils.is_protected_path('subdir/.anchor')
+    assert utils.is_protected_path('subdir/.git')
+    assert utils.is_protected_path('subdir/.onyo')
+
+    # unprotected paths
+    assert not utils.is_protected_path('anchor')
+    assert not utils.is_protected_path('git')
+    assert not utils.is_protected_path('onyo')

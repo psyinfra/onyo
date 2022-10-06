@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from git import Repo
 from onyo.commands.fsck import fsck
+from onyo.utils import is_protected_path
 
 logging.basicConfig()
 logger = logging.getLogger('onyo')
@@ -30,7 +31,7 @@ def sanitize_paths(paths, onyo_root):
             continue
 
         # protected paths
-        if full_path.name in ['.anchor', '.git', '.onyo']:
+        if is_protected_path(full_path):
             error_path_protected.append(p)
             continue
 
@@ -42,13 +43,13 @@ def sanitize_paths(paths, onyo_root):
         paths_to_rm.append(norm_path)
 
     if error_path_absent:
-        logger.error("The following target paths do not exist:")
+        logger.error("The following paths do not exist:")
         logger.error('\n'.join(error_path_absent))
         logger.error("\nExiting. Nothing was deleted.")
         sys.exit(1)
 
     if error_path_protected:
-        logger.error("The following target paths are protected, and will not be deleted by onyo:")
+        logger.error("The following paths are protected by onyo:")
         logger.error('\n'.join(error_path_protected))
         logger.error("\nExiting. Nothing was deleted.")
         sys.exit(1)

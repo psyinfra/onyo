@@ -35,6 +35,36 @@ def test_dir_exists_as_file():
     assert ret.returncode == 1
 
 
+def test_dir_protected():
+    # dir named .anchor
+    ret = subprocess.run(["onyo", "mkdir", ".anchor"], capture_output=True, text=True)
+    assert ret.returncode == 1
+    assert not ret.stdout
+    assert 'protected by onyo' in ret.stderr
+    assert not Path('.anchor').exists()
+
+    # dir named .git
+    ret = subprocess.run(["onyo", "mkdir", "simple/.git"], capture_output=True, text=True)
+    assert ret.returncode == 1
+    assert not ret.stdout
+    assert 'protected by onyo' in ret.stderr
+    assert not Path('simple/.git').exists()
+
+    # dir named .onyo
+    ret = subprocess.run(["onyo", "mkdir", "simple/.onyo"], capture_output=True, text=True)
+    assert ret.returncode == 1
+    assert not ret.stdout
+    assert 'protected by onyo' in ret.stderr
+    assert not Path('simple/.onyo').exists()
+
+    # dir inside of .onyo
+    ret = subprocess.run(["onyo", "mkdir", ".onyo/nope"], capture_output=True, text=True)
+    assert ret.returncode == 1
+    assert not ret.stdout
+    assert 'protected by onyo' in ret.stderr
+    assert not Path('.onyo/nope').exists()
+
+
 def test_recursive_dirs():
     ret = subprocess.run(["onyo", "mkdir", "r/e/c/u/r/s/i/v/e"])
     assert ret.returncode == 0

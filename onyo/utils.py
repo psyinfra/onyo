@@ -7,6 +7,7 @@ import shutil
 import glob
 import yaml
 import argparse
+from pathlib import Path
 from ruamel.yaml import YAML
 from onyo import commands
 from git import Repo, exc
@@ -270,11 +271,19 @@ def get_list_of_assets(repo_path):
     return assets
 
 
-def git_config(string):
+def is_protected_path(path):
     """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    Checks whether a path contains protected elements (.anchor, .git, .onyo).
+    Returns True if it contains protected elements. Otherwise False.
     """
-    return string
+    full_path = Path(path).resolve()
+
+    # protected paths
+    for p in full_path.parts:
+        if p in ['.anchor', '.git', '.onyo']:
+            return True
+
+    return False
 
 
 def directory(string):
@@ -285,6 +294,13 @@ def directory(string):
 
 
 def file(string):
+    """
+    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
+    """
+    return string
+
+
+def git_config(string):
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
@@ -469,18 +485,18 @@ def parse_args():
     )
     cmd_mv.set_defaults(run=commands.mv)
     cmd_mv.add_argument(
-        '-f', '--force',
+        '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='overwrite the target if it already exists; never prompt'
+        help='silence messages to stdout (requires the --yes flag)'
     )
     cmd_mv.add_argument(
-        '-r', '--rename',
+        '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='allow an asset to be renamed (i.e. modify the pseudo keys)'
+        help='respond "yes" to any prompts'
     )
     cmd_mv.add_argument(
         'source',
