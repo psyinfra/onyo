@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from onyo import commands  # noqa: F401
-from onyo.utils import parse_args
+from onyo.utils import setup_parser
 
 import logging
 import sys
@@ -12,7 +12,7 @@ logger.setLevel(logging.INFO)
 
 
 def main():
-    parser = parse_args()
+    parser = setup_parser()
 
     # NOTE: this unfortunately located hack is so "onyo config" args will pass
     # through uninterpreted. Otherwise, anything starting with - or -- errors as

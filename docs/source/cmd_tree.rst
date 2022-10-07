@@ -3,7 +3,7 @@ onyo tree
 
 .. argparse::
    :module: onyo.main
-   :func: parse_args
+   :func: setup_parser
    :prog: onyo
    :path: tree
 
