@@ -1,5 +1,7 @@
 import os
 import shutil
+from collections.abc import Iterable
+from itertools import chain, combinations
 from pathlib import Path
 import pytest
 
@@ -54,6 +56,26 @@ def helpers():
 
 
 class Helpers:
+    @staticmethod
+    def flatten(xs):
+        for x in xs:
+            if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+                yield from Helpers.flatten(x)
+            else:
+                yield x
+
+    @staticmethod
+    def onyo_flags():
+        return [['-d', '--debug'],
+                [['-C', '/tmp'], ['--onyopath', '/tmp']],
+                ]
+
+    @staticmethod
+    def powerset(iterable):
+        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+        s = list(iterable)
+        return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
     @staticmethod
     def string_in_file(string, file):
         """

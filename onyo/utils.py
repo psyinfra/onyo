@@ -321,7 +321,7 @@ def template(string):
     return string
 
 
-def parse_args():
+def setup_parser():
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
         formatter_class=SubcommandHelpFormatter
