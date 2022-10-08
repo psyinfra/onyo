@@ -31,6 +31,7 @@ Retired
 Configuration
 -------------
 Configuration was completed overhauled:
+
 - options can be set in either ``git config`` or ``onyo config``
 - all options are moved into an ``onyo`` namespace.
 - added ``onyo.core.editor`` to configure the preferred editor
@@ -78,7 +79,8 @@ New Commands
 
 Command Changes
 ---------------
-- ``onto new``:
+- ``onyo new``:
+
   - a faux-serial number is generated when the serial field is left blank
   - spawns an editor after initial dialog
   - support for templates (see :ref:`templates`)
