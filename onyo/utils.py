@@ -300,14 +300,11 @@ def get_config_value(name, onyo_root):
 
 
 def get_list_of_assets(repo_path):
-    assets = []
-    for elem in glob.iglob(repo_path + '**/**', recursive=True):
-        if os.path.isfile(elem):
-            # when assets are in .gitignore, they should not be listed as such
-            if run_cmd("git -C \"" + repo_path + "\" check-ignore --no-index \"" + elem + "\""):
-                continue
-            assets.append([os.path.relpath(elem, repo_path), os.path.basename(elem)])
-    return assets
+    """
+    Return a list of all assets in an onyo repository.
+    """
+    return [[x[0][0], Path(x[0][0]).name] for x in Repo(repo_path).index.entries.items()
+            if not is_protected_path(x[0][0])]
 
 
 def is_protected_path(path):
