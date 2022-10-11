@@ -2,12 +2,12 @@
 
 import logging
 import sys
-import uuid
 import shutil
 from git import Repo
 from pathlib import Path
 
 from onyo.utils import (
+    generate_faux_serial,
     get_config_value,
     get_list_of_assets,
     get_git_root,
@@ -74,20 +74,6 @@ def run_onyo_new(directory, template, non_interactive, onyo_root, repo):
     return filename
 
 
-def create_faux(onyo_root, list_of_assets, faux_length=8):
-    """
-    Create a new faux serial number for the serial field of an asset name.
-    Check for uniqueness of the faux serial in the repository.
-
-    Returns on success a unique faux serial number.
-    """
-    faux = "faux" + str(uuid.uuid1())[:faux_length]
-    for asset in list_of_assets:
-        if faux in asset[1]:
-            return create_faux(onyo_root, list_of_assets, faux_length)
-    return faux
-
-
 def create_filename(onyo_root, template):
     """
     Read fields required for an asset name, check the validity of the fields and
@@ -100,7 +86,11 @@ def create_filename(onyo_root, template):
     for field in ["type", "make", "model", "serial"]:
         word = read_new_word('<' + field + '>*:')
         if field == "serial" and word == "faux":
-            word = create_faux(onyo_root, get_list_of_assets(onyo_root))
+            try:
+                word = generate_faux_serial(onyo_root)
+            except ValueError as e:
+                print(e)
+                sys.exit(1)
         words.append(word)
     filename = words[0] + "_" + words[1] + "_" + words[2] + "." + words[3]
 

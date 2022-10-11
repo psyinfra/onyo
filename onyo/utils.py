@@ -6,6 +6,8 @@ import shlex
 import shutil
 import glob
 import yaml
+import string
+import random
 import argparse
 from pathlib import Path
 from ruamel.yaml import YAML
@@ -72,6 +74,30 @@ def get_editor(onyo_root):
         editor = 'nano'
 
     return editor
+
+
+def generate_faux_serial(onyo_root, faux_length=8):
+    """
+    Generate a unique faux serial number and verify that it does not appear in
+    any other asset file name in any directory of the onyo repository.
+    The requested length of faux serial numbers is limited to the interval
+    between 1 and 37.
+
+    Returns on success a unique faux serial number which does not appear in any
+    other asset file name in any directory of the repository.
+    """
+    # check that the requested faux serial number has a valid length
+    if faux_length < 1 or faux_length > 37:
+        raise ValueError("Length of faux serial numbers must be between 1 and 37")
+
+    # generate a new faux serial number until a unique one (which is in no other
+    # asset name in the repository) is found, then return it.
+    alphanum = string.ascii_letters + string.digits
+    list_of_assets = get_list_of_assets(onyo_root)
+    faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
+    while True in [faux in asset[1] for asset in list_of_assets]:
+        faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
+    return faux
 
 
 def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
