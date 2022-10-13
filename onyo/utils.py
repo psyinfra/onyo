@@ -6,6 +6,8 @@ import shlex
 import shutil
 import glob
 import yaml
+import string
+import random
 import argparse
 from pathlib import Path
 from ruamel.yaml import YAML
@@ -72,6 +74,30 @@ def get_editor(onyo_root):
         editor = 'nano'
 
     return editor
+
+
+def generate_faux_serial(onyo_root, faux_length=8):
+    """
+    Generate a unique faux serial number and verify that it does not appear in
+    any other asset file name in any directory of the onyo repository.
+    The requested length of faux serial numbers is limited to the interval
+    between 1 and 37.
+
+    Returns on success a unique faux serial number which does not appear in any
+    other asset file name in any directory of the repository.
+    """
+    # check that the requested faux serial number has a valid length
+    if faux_length < 1 or faux_length > 37:
+        raise ValueError("Length of faux serial numbers must be between 1 and 37")
+
+    # generate a new faux serial number until a unique one (which is in no other
+    # asset name in the repository) is found, then return it.
+    alphanum = string.ascii_letters + string.digits
+    list_of_assets = get_list_of_assets(onyo_root)
+    faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
+    while True in [faux in asset[1] for asset in list_of_assets]:
+        faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
+    return faux
 
 
 def validate_rule_for_file(file, rule, path_of_rule, original_file, onyo_root):
@@ -165,46 +191,59 @@ def check_float(value):
 
 
 def edit_file(file, onyo_root, onyo_new=False):
+    """
+    Check if the selected editor exists. Check if a file exists, create a copy
+    of it in .onyo/temp/ to change with the editor, and check the temp file
+    after editing for correct yaml syntax and validity specified by the onyo
+    validation file.
+    If the asset is not valid, open a dialog to enable to correct the asset, or
+    remove the changes.
+
+    Returns True on success.
+    """
     editor = get_editor(onyo_root)
     # verify that the editor exists
     if not shutil.which(editor):
         logger.error(f"The editor '{editor}' was not found. Exiting.")
         sys.exit(1)
 
-    if not os.path.isfile(file):
-        logger.error(file + " does not exist.")
+    # verify existence of file to edit
+    file = Path(file)
+    if not file.is_file():
+        logger.error(f"{file} does not exist.")
         sys.exit(1)
+
     # create and edit a temporary file, and if that is valid replace original
-    temp_file = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/temp/", os.path.basename(file)))
-    if not os.path.isfile(temp_file):
-        run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+    temp_file = Path(get_git_root(onyo_root), ".onyo/temp/", file.name)
+    if not temp_file.is_file():
+        shutil.copyfile(file, temp_file)
     # When temp-file exists, ask if to use it
-    elif os.path.isfile(temp_file):
+    elif temp_file.is_file():
         while True:
-            edit_temp = str(input("Temporary changes for " + file + " exist. Continue editing? (y/N) "))
+            edit_temp = str(input(f"Temporary changes for {file} exist. Continue editing? (y/N) "))
             if edit_temp in ['y', 'Y', 'yes']:
                 break
             elif edit_temp == 'n':
-                run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
+                shutil.copyfile(file, temp_file)
                 break
     further_editing = 'y'
     while further_editing == 'y':
         # do actual editing:
-        os.system(editor + " \"" + temp_file + "\"")
+        os.system(f'{editor} "{temp_file}"')
         # check syntax
         with open(temp_file, "r") as stream:
             try:
                 yaml.safe_load(stream)
                 problem_str = validate_file(temp_file, file, onyo_root)
                 if problem_str == "":
-                    run_cmd("mv \"" + temp_file + "\" \"" + file + "\"")
+                    shutil.move(temp_file, file)
                 else:
                     # TODO: better exception needed
-                    raise yaml.YAMLError("\nOnyo Validation failed for:\n" + problem_str)
+                    raise yaml.YAMLError(f"\nOnyo Validation failed for:\n{problem_str}")
                 return
             except yaml.YAMLError as e:
                 while True:
-                    further_editing = str(input(str(e) + "Continue editing? (y/N) "))
+                    further_editing = input(f"{e}Continue editing? (y/N) ")
                     if further_editing in ['y', 'Y', 'yes']:
                         break
                     elif further_editing == 'n':
@@ -212,12 +251,12 @@ def edit_file(file, onyo_root, onyo_new=False):
                         # onyo new should neither create a new file nor a
                         # temp-file, and have a special info message
                         if (onyo_new):
-                            run_cmd("rm \"" + file + "\"")
-                            output_str = "No new asset \"" + os.path.relpath(file, onyo_root) + "\" created."
-                        run_cmd("rm \"" + temp_file + "\"")
+                            Path.unlink(file)
+                            output_str = f'No new asset "{file.relative_to(onyo_root)}" created.'
+                        Path.unlink(temp_file)
                         logger.info(output_str)
                         sys.exit(1)
-    return
+    return True
 
 
 def build_git_add_cmd(directory, file):
@@ -261,14 +300,11 @@ def get_config_value(name, onyo_root):
 
 
 def get_list_of_assets(repo_path):
-    assets = []
-    for elem in glob.iglob(repo_path + '**/**', recursive=True):
-        if os.path.isfile(elem):
-            # when assets are in .gitignore, they should not be listed as such
-            if run_cmd("git -C \"" + repo_path + "\" check-ignore --no-index \"" + elem + "\""):
-                continue
-            assets.append([os.path.relpath(elem, repo_path), os.path.basename(elem)])
-    return assets
+    """
+    Return a list of all assets in an onyo repository.
+    """
+    return [[x[0][0], Path(x[0][0]).name] for x in Repo(repo_path).index.entries.items()
+            if not is_protected_path(x[0][0])]
 
 
 def is_protected_path(path):
