@@ -559,9 +559,10 @@ def setup_parser():
     cmd_new.set_defaults(run=commands.new)
     cmd_new.add_argument(
         '-I', '--non-interactive',
+        dest='interactive',
         required=False,
-        default=False,
-        action='store_true',
+        default=True,
+        action='store_false',
         help='do not prompt or open the editor; values must be piped in (e.g. echo "<type>\\n<make>\\n<model>\\n<serial>" | onyo new -I shelf/)'
     )
     cmd_new.add_argument(

@@ -42,7 +42,7 @@ def read_new_word(word_description):
     return word
 
 
-def run_onyo_new(directory, template, non_interactive, onyo_root, repo):
+def run_onyo_new(directory, template, interactive, onyo_root, repo):
     """
     Read a new asset name, check it for uniqueness and validity, create the
     asset (from a template if one was given), edit the new asset (if not
@@ -64,7 +64,7 @@ def run_onyo_new(directory, template, non_interactive, onyo_root, repo):
         filename.touch()
 
     # open new file?
-    if not non_interactive:
+    if interactive:
         edit_file(filename, onyo_root, onyo_new=True)
 
     # add file to git
@@ -145,7 +145,7 @@ def new(args, onyo_root):
     [directory, template] = sanitize_paths(args.directory, args.template, onyo_root)
 
     # create file for asset, fill in fields
-    created_file = run_onyo_new(directory, template, args.non_interactive, onyo_root, repo)
+    created_file = run_onyo_new(directory, template, args.interactive, onyo_root, repo)
     git_filepath = created_file.relative_to(get_git_root(onyo_root))
 
     # commit new asset
