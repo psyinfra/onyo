@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 import shlex
-import shutil
 import glob
 import yaml
 import string
@@ -51,29 +50,6 @@ def get_git_root(path):
         log.error(path + " is no onyo repository.")
         sys.exit(1)
         return git_root
-
-
-def get_editor(onyo_root):
-    """
-    Returns the editor, progressing through git, onyo, $EDITOR, and finally
-    fallback to "nano".
-    """
-    editor = None
-
-    # onyo config and git config
-    editor = get_config_value('onyo.core.editor', onyo_root)
-
-    # $EDITOR environment variable
-    if not editor:
-        log.debug("onyo.core.editor is not set.")
-        editor = os.environ.get('EDITOR')
-
-    # fallback to nano
-    if not editor:
-        log.debug("$EDITOR is also not set.")
-        editor = 'nano'
-
-    return editor
 
 
 def generate_faux_serial(onyo_root, faux_length=8):
@@ -188,75 +164,6 @@ def check_float(value):
             return True
     except Exception:
         return False
-
-
-def edit_file(file, onyo_root, onyo_new=False):
-    """
-    Check if the selected editor exists. Check if a file exists, create a copy
-    of it in .onyo/temp/ to change with the editor, and check the temp file
-    after editing for correct yaml syntax and validity specified by the onyo
-    validation file.
-    If the asset is not valid, open a dialog to enable to correct the asset, or
-    remove the changes.
-
-    Returns True on success.
-    """
-    editor = get_editor(onyo_root)
-    # verify that the editor exists
-    if not shutil.which(editor):
-        log.error(f"The editor '{editor}' was not found. Exiting.")
-        sys.exit(1)
-
-    # verify existence of file to edit
-    file = Path(file)
-    if not file.is_file():
-        log.error(f"{file} does not exist.")
-        sys.exit(1)
-
-    # create and edit a temporary file, and if that is valid replace original
-    temp_file = Path(get_git_root(onyo_root), ".onyo/temp/", file.name)
-    if not temp_file.is_file():
-        shutil.copyfile(file, temp_file)
-    # When temp-file exists, ask if to use it
-    elif temp_file.is_file():
-        while True:
-            edit_temp = str(input(f"Temporary changes for {file} exist. Continue editing? (y/N) "))
-            if edit_temp in ['y', 'Y', 'yes']:
-                break
-            elif edit_temp == 'n':
-                shutil.copyfile(file, temp_file)
-                break
-    further_editing = 'y'
-    while further_editing == 'y':
-        # do actual editing:
-        os.system(f'{editor} "{temp_file}"')
-        # check syntax
-        with open(temp_file, "r") as stream:
-            try:
-                yaml.safe_load(stream)
-                problem_str = validate_file(temp_file, file, onyo_root)
-                if problem_str == "":
-                    shutil.move(temp_file, file)
-                else:
-                    # TODO: better exception needed
-                    raise yaml.YAMLError(f"\nOnyo Validation failed for:\n{problem_str}")
-                return
-            except yaml.YAMLError as e:
-                while True:
-                    further_editing = input(f"{e}Continue editing? (y/N) ")
-                    if further_editing in ['y', 'Y', 'yes']:
-                        break
-                    elif further_editing == 'n':
-                        output_str = "No changes made."
-                        # onyo new should neither create a new file nor a
-                        # temp-file, and have a special info message
-                        if (onyo_new):
-                            Path.unlink(file)
-                            output_str = f'No new asset "{file.relative_to(onyo_root)}" created.'
-                        Path.unlink(temp_file)
-                        log.info(output_str)
-                        sys.exit(1)
-    return True
 
 
 def build_git_add_cmd(directory, file):
