@@ -87,6 +87,7 @@ class Repo:
         """
         Return a set of all directories in the repository (except under .git).
         """
+        log.debug('Acquiring list of directories')
         dirs = {x.relative_to(self.root) for x in Path(self.root).glob('**/')
                 if '.git' not in x.parts and
                 not x.samefile(self.root)}
@@ -97,6 +98,7 @@ class Repo:
         """
         Return a set of all files in the repository (except under .git).
         """
+        log.debug('Acquiring list of files')
         files = {Path(x) for x in self._git(['ls-files']).split('\n') if x}
         return files
 
@@ -104,6 +106,7 @@ class Repo:
         """
         Return a set of all unstaged changes in the repository.
         """
+        log.debug('Acquiring list of changed files')
         changed = {Path(x) for x in self._git(['diff', '--name-only']).split('\n') if x}
         return changed
 
@@ -111,6 +114,7 @@ class Repo:
         """
         Return a set of all staged changes in the repository.
         """
+        log.debug('Acquiring list of staged files')
         staged = {Path(x) for x in self._git(['diff', '--name-only', '--staged']).split('\n') if x}
         return staged
 
@@ -118,6 +122,7 @@ class Repo:
         """
         Return a set of all untracked files in the repository.
         """
+        log.debug('Acquiring list of untracked files')
         untracked = {Path(x) for x in self._git(['ls-files', '--others', '--exclude-standard']).split('\n') if x}
         return untracked
 
@@ -137,6 +142,7 @@ class Repo:
 
         # TODO: check .onyo/config, etc
 
+        log.debug(f"Onyo repo found at '{root}'")
         return root
 
     #
@@ -148,6 +154,7 @@ class Repo:
         if cwd is None:
             cwd = self.root
 
+        log.debug(f"Running 'git {args}'")
         ret = subprocess.run(["git"] + args,
                              cwd=cwd, check=raise_error,
                              capture_output=True, text=True)
