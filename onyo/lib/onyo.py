@@ -53,6 +53,18 @@ class Repo:
         return self._files
 
     @property
+    def files_changed(self) -> set[Path]:
+        return self._get_files_changed()
+
+    @property
+    def files_staged(self) -> set[Path]:
+        return self._get_files_staged()
+
+    @property
+    def files_untracked(self) -> set[Path]:
+        return self._get_files_untracked()
+
+    @property
     def opdir(self) -> Path:
         return self._opdir
 
@@ -87,6 +99,27 @@ class Repo:
         """
         files = {Path(x) for x in self._git(['ls-files']).split('\n') if x}
         return files
+
+    def _get_files_changed(self) -> set[Path]:
+        """
+        Return a set of all unstaged changes in the repository.
+        """
+        changed = {Path(x) for x in self._git(['diff', '--name-only']).split('\n') if x}
+        return changed
+
+    def _get_files_staged(self) -> set[Path]:
+        """
+        Return a set of all staged changes in the repository.
+        """
+        staged = {Path(x) for x in self._git(['diff', '--name-only', '--staged']).split('\n') if x}
+        return staged
+
+    def _get_files_untracked(self) -> set[Path]:
+        """
+        Return a set of all untracked files in the repository.
+        """
+        untracked = {Path(x) for x in self._git(['ls-files', '--others', '--exclude-standard']).split('\n') if x}
+        return untracked
 
     def _get_root(self) -> Path:
         """
@@ -195,9 +228,9 @@ class Repo:
         """
         Check if the working tree for git is clean. Returns True or False.
         """
-        changed = [x for x in self._git(['diff', '--name-only']).split('\n') if x]
-        staged = [x for x in self._git(['diff', '--name-only', '--staged']).split('\n') if x]
-        untracked = [x for x in self._git(['ls-files', '--others', '--exclude-standard']).split('\n') if x]
+        changed = {str(x) for x in self.files_changed}
+        staged = {str(x) for x in self.files_staged}
+        untracked = {str(x) for x in self.files_untracked}
 
         if changed or staged or untracked:
             if not quiet:
