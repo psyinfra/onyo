@@ -1,65 +1,26 @@
 import sys
 
-
-def read_only_fsck(args, onyo_root, quiet=True):
-    tests = {
-        "asset-yaml": verify_yaml,
-    }
-    # basic sanity
-    if not is_onyo_repo(onyo_root, quiet):
-        sys.exit(1)
-
-    # RUN 'EM ALL DOWN!
-    for key in tests:
-        if not tests[key](onyo_root, quiet):
-            sys.exit(1)
+from onyo.lib import Repo, InvalidOnyoRepoError
 
 
-def fsck(args, onyo_root, quiet=False):
+def fsck(args, onyo_root):
     """
     Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
 
-    First, ``onyo fsck`` checks if it's a valid git repository and contains an
-    ``.onyo`` folder). If either of these fail, Onyo will error immediately and
-    exit.
+    By default, the following tests will be performed:
 
-    If the repository valid, the following checks are performed, and all
-    problems are listed:
-
-    - all asset names are unique
-    - all files are valid YAML
-    - all files follow the rules specified in
-      ``.onyo/validation/validation.yaml``
-    - the git working tree is clean (no untracked or changed files)
-    - all directories and sub-directories have a .anchor file
-
-    Files and directories matching rules in ``.gitignore`` will not be checked
-    for validity.
+    - "clean-tree": verifies that the git tree is clean ---that there are
+      no changed (staged or unstaged) nor untracked files.
+    - "anchors": verifies that all folders (outside of .onyo) have an
+      .anchor file
+    - "asset-unique": verifies that all asset names are unique
+    - "asset-yaml": loads each assets and checks if it's valid YAML
+    - "asset-validity": loads each asset and validates the contents against
+      the validation rulesets defined in ``.onyo/validation/validation.yaml``.
     """
-    tests = {
-        "clean-tree": is_clean_tree,
-        "anchors": verify_anchors,
-        "asset-unique": verify_unique_file_names,
-        "asset-yaml": verify_yaml,
-        "asset-validity": validate_assets,
-    }
-
-    # basic sanity
-    # TODO
-    if not is_onyo_repo(onyo_root, quiet):
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck()
+    except InvalidOnyoRepoError:
         sys.exit(1)
-
-    # RUN 'EM ALL DOWN!
-    for key in tests:
-        print(f'checking {key}')
-
-        if not tests[key](onyo_root, False):
-            sys.exit(1)
-
-    # define a list of checks vs functions/methods
-    #   ? git fsck?
-    # test order?
-    # --quiet?
-    # --add/remove tests? (--suite all, none, "readonly" (poor name)
-    # document in RTD
