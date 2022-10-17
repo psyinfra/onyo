@@ -2,4 +2,3 @@
 build/
 __pycache__
 *egg-info
-**/sandbox

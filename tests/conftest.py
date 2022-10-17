@@ -3,6 +3,7 @@ import shutil
 from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
+from tempfile import gettempdir
 import pytest
 
 
@@ -12,13 +13,16 @@ def change_cwd_to_sandbox(request, monkeypatch):
     Change the working directory to a "sandbox" that allows tests to run in
     isolation, and not conflict with other tests.
 
-    The directory is named "sandbox/<test-file-name>/".
-    For example: "sandbox/test_mkdir.py/"
+    This is located under /tmp in order to run isolated from the source git
+    repository (as the parent dirs are searched for a valid git repo).
+
+    The directory is named "/tmp/onyo-sandbox/<test-file-name>/".
+    For example: "/tmp/onyo-sandbox/test_mkdir.py/"
 
     If the directory does not exist, it will be created.
     """
-    parent = request.path.parent
-    sandbox_test_dir = parent.joinpath('sandbox', request.path.name)
+    tmp = gettempdir()
+    sandbox_test_dir = Path(tmp, 'onyo-sandbox', request.path.name)
 
     # create the dir
     sandbox_test_dir.mkdir(parents=True, exist_ok=True)
@@ -43,11 +47,12 @@ def clean_sandboxes(request):
     Ensure that 'tests/sandbox' is clean, and doesn't have remnants from
     previous runs.
     """
-    for s in sorted(Path('tests/').glob('**/sandbox')):
-        try:
-            shutil.rmtree(s)
-        except FileNotFoundError:
-            pass
+    tmp = gettempdir()
+    sandbox_test_dir = Path(tmp, 'onyo-sandbox')
+    try:
+        shutil.rmtree(sandbox_test_dir)
+    except FileNotFoundError:
+        pass
 
 
 @pytest.fixture

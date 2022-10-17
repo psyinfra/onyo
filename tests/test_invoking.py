@@ -42,9 +42,6 @@ class TestClass:
     Test a variety of Onyo functions. Each method invokes Onyo from a
     different context (onyo root, -C, etc).
     """
-    test_dir = Path("tests", "sandbox").resolve()
-    test_dir.mkdir(parents=True, exist_ok=True)
-
     # the folder for the wished output lies relative to this script:
     ref_dir = Path(Path(__file__).parent, 'reference_output/').resolve()
 
