@@ -18,7 +18,7 @@ setup(
     extras_require={
         'tests': ['flake8', 'pytest', 'pytest-cov'],
         'docs': ['sphinx', 'sphinx-argparse', 'sphinx-rtd-theme']},
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     entry_points={
         'console_scripts': [
             'onyo=onyo.main:main'

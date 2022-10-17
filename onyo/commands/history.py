@@ -90,10 +90,7 @@ def history(args, onyo_root):
         os.chdir(orig_cwd)
 
     # covert the return status into a return code
-    try:
-        returncode = os.waitstatus_to_exitcode(status)
-    except AttributeError:  # python <3.9
-        returncode = os.WEXITSTATUS(status)
+    returncode = os.waitstatus_to_exitcode(status)
 
     # bubble up error retval
     if returncode != 0:

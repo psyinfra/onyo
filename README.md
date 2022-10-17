@@ -23,7 +23,7 @@ For general feedback, bug reports, and comments, please [open an issue](https://
 
 #### Non-Python Dependencies:
 
-In addition to Python >= 3.7, Onyo depends on a few system utilities.
+In addition to Python >= 3.9, Onyo depends on a few system utilities.
 
 Debian/Ubuntu:
 ```
