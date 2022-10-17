@@ -1,15 +1,13 @@
 import logging
-import os
 import sys
-import glob
-import yaml
 
 from git import Repo, exc
+from pathlib import Path
+from ruamel.yaml import YAML, scanner
 
 from onyo.utils import (
-    run_cmd,
     get_list_of_assets,
-    get_git_root,
+    is_protected_path,
     validate_file
 )
 
@@ -17,132 +15,177 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def verify_onyo_existence(onyo_root):
-    info_str = ""
+def is_onyo_repo(onyo_root, quiet):
+    """
+    Checks if the repository is a valid Onyo repository. Returns True or False.
+    """
     try:
-        git_repo = Repo(onyo_root, search_parent_directories=True)
-        repo_path = git_repo.git.rev_parse("--show-toplevel")
-        repo = Repo(repo_path)
-        info_str = info_str + "onyo repo: " + repo_path
+        repo = Repo(onyo_root, search_parent_directories=True)
     except exc.InvalidGitRepositoryError:
-        log.error(onyo_root + " is not a valid git repository.")
-        sys.exit(1)
-    if not os.path.exists(os.path.join(repo_path, ".onyo")):
-        log.error(repo_path + " is not a valid onyo repository.")
-        sys.exit(1)
-    return [repo, repo_path, info_str]
-
-
-def verify_onyo_working_tree(repo):
-    # set variables
-    problem_str = ""
-    changed_files = [item.a_path for item in repo.index.diff(None)]
-    untracked_files = repo.untracked_files
-    staged_files = [item.a_path for item in repo.index.diff("HEAD")]
-    # list problems
-    if len(changed_files) != 0 or len(untracked_files) != 0 or len(staged_files) != 0:
-        problem_str = problem_str + "\nThe Onyo working tree is not clean."
-        if len(staged_files) != 0:
-            problem_str = problem_str + "\nChanges to be committed: \n\t " + "\n\t ".join(staged_files)
-        if len(changed_files) != 0:
-            problem_str = problem_str + "\nChanges not staged for commit: \n\t " + "\n\t ".join(changed_files)
-        if len(untracked_files) != 0:
-            problem_str = problem_str + "\nUntracked files: \n\t " + "\n\t ".join(untracked_files)
-        problem_str = problem_str + "\nPlease commit all changes or add new files to .gitignore"
-    return problem_str
-
-
-def verify_anchors(onyo_root):
-    anchor_str = ""
-    for elem in glob.iglob(onyo_root + '**/**', recursive=True):
-        if os.path.isdir(elem):
-            # the .git does not need a .anchor
-            if ".git" in elem:
-                continue
-            # the onyo root folder has no .anchor
-            if os.path.samefile(elem, onyo_root):
-                continue
-            if run_cmd("git -C \"" + onyo_root + "\" check-ignore --no-index \"" + elem + "\""):
-                continue
-            if not os.path.isfile(os.path.join(elem, ".anchor")):
-                anchor_str = anchor_str + "\n\t" + os.path.relpath(os.path.join(elem, ".anchor"), onyo_root)
-    if anchor_str:
-        return "\n\n.anchor is missing:" + anchor_str + "\nYou can create them with\ntouch <path/to/.anchor>\nor .gitignore the directories.\n"
-    return ""
-
-
-def verify_yaml(onyo_root):
-    yaml_str = ""
-    for elem in glob.iglob(onyo_root + '**/**', recursive=True):
-        if os.path.isfile(elem):
-            if run_cmd("git -C \"" + onyo_root + "\" check-ignore --no-index \"" + elem + "\""):
-                continue
-            # "assets" saves all names/paths, to later check if they are unique
-            with open(elem, "r") as stream:
-                try:
-                    yaml.safe_load(stream)
-                except yaml.YAMLError:
-                    yaml_str = yaml_str + "\t" + os.path.relpath(elem, onyo_root) + "\n"
-    if yaml_str:
-        return "\n\nyaml files with incorrect syntax:\n" + yaml_str + "Please correct the syntax of these files and add the changes to git, or .gitignore them."
-    return ""
-
-
-def verify_filenames(onyo_root):
-    problem_str = ""
-    assets = get_list_of_assets(onyo_root)
-    double_elements = []
-    for elem in [i[1] for i in assets]:
-        elements = [string for string in [i[0] for i in assets] if elem == os.path.basename(string)]
-        if len(elements) != 1:
-            double_elements.append(elements)
-    if double_elements:
-        double_elements = [list(tupl) for tupl in {tuple(item) for item in double_elements}]
-        problem_str = problem_str + "\n\nAsset files must be unique:\n"
-        for i in double_elements:
-            problem_str = problem_str + "\t" + i[0] + "\n\t\t" + i[1] + "\n"
-    if problem_str:
-        return problem_str + "Please change file names to unique and valid asset names and add them to git, or .gitignore them.\n"
-    else:
-        return ""
-
-
-# validate the asset contents based on .onyo/validation/
-def validate_assets(onyo_root):
-    problem_str = ""
-    assets = get_list_of_assets(onyo_root)
-    for asset_file in assets:
-        problem_str += validate_file(asset_file[0], os.path.relpath(asset_file[0], onyo_root), onyo_root)
-    if problem_str != "":
-        return "\nSome files have invalid contents:\n" + problem_str
-    return problem_str
-
-
-def read_only_fsck(args, onyo_root, quiet=False):
-    # set variables
-    repo = ""
-    repo_path = ""
-    problem_str = ""
-    info_str = ""
-    # check if is git, and .git and .onyo exist, identify top-level of onyo directory
-    [repo, repo_path, info_str] = verify_onyo_existence(get_git_root(onyo_root))
-    # check if it is possible to load yaml file for syntax check
-    problem_str = problem_str + verify_yaml(onyo_root)
-    # end block, display problems or state repo is clean.
-    if problem_str:
-        log.error(problem_str)
-        sys.exit(1)
-    else:
-        problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str
-        info_str = info_str + "\n" + onyo_root + " is clean."
         if not quiet:
-            print(info_str)
+            log.error(f"'{onyo_root}' is not a git repository.")
+
+        return False
+
+    repo_path = repo.git.rev_parse("--show-toplevel")
+    if not Path(repo_path, '.onyo').is_dir():
+        if not quiet:
+            log.error(f"'{repo_path}' is not an onyo repository.")
+
+        return False
+
+    # TODO: check .onyo/config, etc
+
+    return True
+
+
+def is_clean_tree(onyo_root, quiet):
+    """
+    Checks if the working tree for git is clean. Returns True or False.
+    """
+    repo = Repo(onyo_root)
+    changed = [i.a_path for i in repo.index.diff(None)]
+    staged = [i.a_path for i in repo.index.diff("HEAD")]
+    untracked = repo.untracked_files
+
+    if changed or staged or untracked:
+        if not quiet:
+            log.error("The working tree is not clean.")
+
+            if changed:
+                log.error("Changes not staged for commit:")
+                log.error('\n\t' + '\n\t'.join(changed))
+
+            if staged:
+                log.error("Changes to be committed:")
+                log.error('\n\t' + '\n\t'.join(staged))
+
+            if untracked:
+                log.error("Untracked files:")
+                log.error('\n\t' + '\n\t'.join(untracked))
+
+            log.error("Please commit all changes or add untracked files to .gitignore")
+
+        return False
+
+    return True
+
+
+def verify_anchors(onyo_root, quiet):
+    """
+    Checks if all dirs (except those in .onyo) contain an .anchor file.
+    Returns True or False.
+    """
+    # anchors in repo
+    anchors_exist = {x[0][0] for x in Repo(onyo_root).index.entries.items()
+                     if Path(x[0][0]).name == '.anchor' and
+                     '.onyo' not in Path(x[0][0]).parts}
+
+    # anchors that should exist
+    anchors_expected = {'{}/.anchor'.format(x.relative_to(onyo_root)) for x in Path(onyo_root).glob('**/')
+                        if not is_protected_path(x) and
+                        not x.samefile(onyo_root)}
+
+    # are any missing
+    difference = anchors_expected.difference(anchors_exist)
+
+    if difference:
+        if not quiet:
+            log.error('The following .anchor files are missing:')
+            log.error('\n'.join(difference))
+            log.error("Likely 'mkdir' was used to create the directory. Use 'onyo mkdir' instead.")
+            # TODO: Prompt the user if they want Onyo to fix it.
+
+        return False
+
+    return True
+
+
+def verify_yaml(onyo_root, quiet):
+    """
+    Checks if all assets have valid YAML. Returns True or False.
+    """
+    invalid_yaml = []
+
+    for asset in get_list_of_assets(onyo_root):
+        try:
+            YAML().load(Path(onyo_root, asset))
+        except scanner.ScannerError:
+            invalid_yaml.append(asset)
+
+    if invalid_yaml:
+        if not quiet:
+            log.error('The following files fail YAML validation:')
+            log.error('\n'.join(invalid_yaml))
+
+        return False
+
+    return True
+
+
+def verify_unique_file_names(onyo_root, quiet):
+    """
+    Checks if all files have unique names. Returns True or False.
+    """
+    # TODO: this checks all files. This should only check /assets/.
+    files = {x[0][0] for x in Repo(onyo_root).index.entries.items()
+             if not is_protected_path(x[0][0])}
+    filenames = {}
+    for f in files:
+        try:
+            filenames[Path(f).name].append(f)
+        except KeyError:
+            filenames[Path(f).name] = [f]
+
+    if len(files) != len(filenames):
+        if not quiet:
+            log.error('The following file names are not unique:')
+            log.error('\n'.join([x for x in filenames
+                                 if len(filenames[x] > 1)]))
+
+        return False
+
+    return True
+
+
+def validate_assets(onyo_root, quiet):
+    """
+    Checks if all assets pass validation. Returns True or False.
+    """
+    invalid = {}
+    for asset in get_list_of_assets(onyo_root):
+        msg = validate_file(asset, asset, onyo_root)
+        if msg:
+            invalid[asset] = msg
+
+    if invalid:
+        if not quiet:
+            log.error('The contents of the following files fail validation:')
+            log.error('\n'.join([f'{x}\n{invalid[x]}' for x in invalid]))
+
+        return False
+
+    return True
+
+
+def read_only_fsck(args, onyo_root, quiet=True):
+    tests = {
+        "asset-yaml": verify_yaml,
+    }
+    # basic sanity
+    if not is_onyo_repo(onyo_root, quiet):
+        sys.exit(1)
+
+    # RUN 'EM ALL DOWN!
+    for key in tests:
+        if not tests[key](onyo_root, quiet):
+            sys.exit(1)
 
 
 def fsck(args, onyo_root, quiet=False):
     """
-    Runs a comprehensive suite of checks to verify the integrity and validity of
-    an onyo repository and its contents:
+    Run a suite of checks to verify the integrity and validity of an Onyo
+    repository and its contents.
 
     First, ``onyo fsck`` checks if it's a valid git repository and contains an
     ``.onyo`` folder). If either of these fail, Onyo will error immediately and
@@ -161,31 +204,29 @@ def fsck(args, onyo_root, quiet=False):
     Files and directories matching rules in ``.gitignore`` will not be checked
     for validity.
     """
+    tests = {
+        "clean-tree": is_clean_tree,
+        "anchors": verify_anchors,
+        "asset-unique": verify_unique_file_names,
+        "asset-yaml": verify_yaml,
+        "asset-validity": validate_assets,
+    }
 
-    # set variables
-    repo = ""
-    repo_path = ""
-    problem_str = ""
-    info_str = ""
-    # check if is git, and .git and .onyo exist, identify top-level of onyo directory
-    [repo, repo_path, info_str] = verify_onyo_existence(get_git_root(onyo_root))
-    # check if git status is clean
-    problem_str = problem_str + verify_onyo_working_tree(repo)
-    # onyo anchor check for all folders
-    problem_str = problem_str + verify_anchors(repo_path)
-    # check if it is possible to load yaml file for syntax check
-    problem_str = problem_str + verify_yaml(repo_path)
-    # check uniqueness of asset filenames
-    problem_str = problem_str + verify_filenames(repo_path)
-    # validate contents of all files with the validation-file
-    problem_str = problem_str + validate_assets(repo_path)
-
-    # end block, display problems or state repo is clean.
-    if problem_str:
-        problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str
-        log.error(problem_str)
+    # basic sanity
+    # TODO
+    if not is_onyo_repo(onyo_root, quiet):
         sys.exit(1)
-    else:
-        info_str = info_str + "\n" + repo_path + " is clean."
-        if not quiet:
-            print(info_str)
+
+    # RUN 'EM ALL DOWN!
+    for key in tests:
+        print(f'checking {key}')
+
+        if not tests[key](onyo_root, False):
+            sys.exit(1)
+
+    # define a list of checks vs functions/methods
+    #   ? git fsck?
+    # test order?
+    # --quiet?
+    # --add/remove tests? (--suite all, none, "readonly" (poor name)
+    # document in RTD
