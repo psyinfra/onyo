@@ -1,11 +1,6 @@
 import subprocess
 import os
-import logging
 from pathlib import Path
-
-logging.basicConfig()
-logger = logging.getLogger('onyo')
-logger.setLevel(logging.INFO)
 
 test_dirs = ['simple',
              's p a c e s',
