@@ -2,8 +2,8 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from git import Repo
-from onyo.commands.fsck import read_only_fsck
+
+from onyo.lib import Repo, InvalidOnyoRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -70,18 +70,19 @@ def config(args, onyo_root):
 
         $ onyo config onyo.core.editor "vim"
     """
-    read_only_fsck(args, onyo_root, quiet=True)
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck(['asset-yaml'])
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     git_config_args = sanitize_args(args.git_config_args)
-    repo = Repo(onyo_root)
-    # TODO: because onyo_root is not actually the root of the onyo repo
-    repo_root = repo.git.rev_parse('--show-toplevel')
 
     # NOTE: streaming stdout and stderr directly to the terminal seems to be
     # non-trivial with "subprocess". Here we capture them separately. They
     # won't be interwoven, but will be output to the correct destinations.
     ret = subprocess.run(["git", 'config', '-f', '.onyo/config'] + git_config_args,
-                         cwd=repo_root, capture_output=True, text=True)
+                         cwd=repo.root, capture_output=True, text=True)
 
     # print any output gathered
     if ret.stdout:
@@ -94,7 +95,7 @@ def config(args, onyo_root):
         exit(ret.returncode)
 
     # commit, if there's anything to commit
-    if repo.is_dirty():
-        dot_onyo_config = Path(repo_root, '.onyo/config')
-        repo.git.add(dot_onyo_config)
-        repo.git.commit(m='onyo config: modify shared repository config')
+    if repo.files_changed:
+        dot_onyo_config = Path(repo.root, '.onyo/config')
+        repo._git(['add', dot_onyo_config])
+        repo._git(['commit', '-m', 'onyo config: modify shared repository config'])

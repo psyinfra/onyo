@@ -5,7 +5,7 @@ import sys
 from onyo.utils import (
     run_cmd
 )
-from onyo.commands.fsck import read_only_fsck
+from onyo.lib import Repo, InvalidOnyoRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -50,9 +50,12 @@ def tree(args, onyo_root):
     List the assets and directories in ``directory`` using the ``tree``
     program.
     """
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck(['asset-yaml'])
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
-    # run onyo fsck for read only commands
-    read_only_fsck(args, os.path.join(os.getcwd(), onyo_root), quiet=True)
     # check sources
     list_of_sources = prepare_arguments(args.directory, onyo_root)
     # build and run commands

@@ -1,8 +1,8 @@
 import logging
 import sys
 from pathlib import Path, PurePath
-from git import Repo
-from onyo.commands.fsck import fsck
+
+from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
@@ -26,7 +26,7 @@ def run_mkdir(onyo_root, new_dir, repo):
         anchor_file = Path(loop_dir, '.anchor')
 
         anchor_file.touch(exist_ok=True)
-        repo.git.add(anchor_file.resolve())
+        repo._git(['add', anchor_file.resolve()])
 
     return True
 
@@ -88,11 +88,14 @@ def mkdir(args, onyo_root):
     directories are passed to Onyo, all will be checked before attempting to
     create them.
     """
-    repo = Repo(onyo_root)
-    fsck(args, onyo_root, quiet=True)
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck()
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     dir_list = sanitize_dirs(args.directory, onyo_root)
     for d in dir_list:
         run_mkdir(onyo_root, d, repo)
 
-    repo.git.commit(m='new directory(s): ' + ', '.join(dir_list))
+    repo._git(['commit', '-m', 'new directory(s): ' + ', '.join(dir_list)])

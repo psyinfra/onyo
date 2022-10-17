@@ -157,7 +157,7 @@ class Repo:
     #
     # FSCK
     #
-    def fsck(self, tests: list = None, quiet: bool = True, quiet_tests: bool = False) -> bool:
+    def fsck(self, tests: Optional[list[str]] = None) -> None:
         """
         Run a suite of checks to verify the integrity and validity of an Onyo
         repository and its contents.
@@ -189,21 +189,16 @@ class Repo:
 
         # run the selected tests
         for key in tests:
-            if not quiet:
-                print(f"running '{key}' ... ", end='', flush=True)
+            # TODO: these should be INFO
+            log.debug(f"'{key}' starting")
 
-            if not all_tests[key](quiet_tests):
-                if not quiet:
-                    print("failed")
-
+            if not all_tests[key]():
+                log.debug(f"'{key}' failed")
                 raise InvalidOnyoRepoError(f"'{self._opdir}' failed fsck test '{key}'")
 
-            if not quiet:
-                print("succeeded")
+            log.debug(f"'{key}' succeeded")
 
-        return True
-
-    def _fsck_anchors(self, quiet: bool = False) -> bool:
+    def _fsck_anchors(self) -> bool:
         """
         Check if all dirs (except those in .onyo) contain an .anchor file.
         Returns True or False.
@@ -214,17 +209,16 @@ class Repo:
         difference = anchors_expected.difference(anchors_exist)
 
         if difference:
-            if not quiet:
-                log.error('The following .anchor files are missing:')
-                log.error('\n'.join(difference))
-                log.error("Likely 'mkdir' was used to create the directory. Use 'onyo mkdir' instead.")
-                # TODO: Prompt the user if they want Onyo to fix it.
+            log.warning('The following .anchor files are missing:\n' +
+                        '\n'.join({str(x) for x in difference}))
+            log.warning("Likely 'mkdir' was used to create the directory. Use 'onyo mkdir' instead.")
+            # TODO: Prompt the user if they want Onyo to fix it.
 
             return False
 
         return True
 
-    def _fsck_clean_tree(self, quiet: bool = False) -> bool:
+    def _fsck_clean_tree(self) -> bool:
         """
         Check if the working tree for git is clean. Returns True or False.
         """
@@ -233,28 +227,27 @@ class Repo:
         untracked = {str(x) for x in self.files_untracked}
 
         if changed or staged or untracked:
-            if not quiet:
-                log.error("The working tree is not clean.")
+            log.error('The working tree is not clean.')
 
-                if changed:
-                    log.error("Changes not staged for commit:")
-                    log.error('\n\t' + '\n\t'.join(changed))
+            if changed:
+                log.error('Changes not staged for commit:\n' +
+                          '\n'.join(changed))
 
-                if staged:
-                    log.error("Changes to be committed:")
-                    log.error('\n\t' + '\n\t'.join(staged))
+            if staged:
+                log.error('Changes to be committed:\n' +
+                          '\n'.join(staged))
 
-                if untracked:
-                    log.error("Untracked files:")
-                    log.error('\n\t' + '\n\t'.join(untracked))
+            if untracked:
+                log.error('Untracked files:\n' +
+                          '\n'.join(untracked))
 
-                log.error("Please commit all changes or add untracked files to .gitignore")
+            log.error('Please commit all changes or add untracked files to .gitignore')
 
             return False
 
         return True
 
-    def _fsck_unique_assets(self, quiet: bool = False) -> bool:
+    def _fsck_unique_assets(self) -> bool:
         """
         Check if all files have unique names. Returns True or False.
         """
@@ -266,16 +259,15 @@ class Repo:
                 names[f.name] = [f]
 
         if len(self.assets) != len(names):
-            if not quiet:
-                log.error('The following file names are not unique:')
-                log.error('\n'.join([str(x) for x in names
-                                     if len(names[x] > 1)]))
+            log.error('The following file names are not unique:\n' +
+                      '\n'.join([str(y) for x in names for y in names[x]
+                                 if len(names[x]) > 1]))
 
             return False
 
         return True
 
-    def _fsck_validation(self, quiet: bool = False) -> bool:
+    def _fsck_validation(self) -> bool:
         """
         Check if all assets pass validation. Returns True or False.
         """
@@ -287,15 +279,14 @@ class Repo:
                 invalid[asset] = msg
 
         if invalid:
-            if not quiet:
-                log.error('The contents of the following files fail validation:')
-                log.error('\n'.join([f'{x}\n{invalid[x]}' for x in invalid]))
+            log.error('The contents of the following files fail validation:\n' +
+                      '\n'.join([f'{x}\n{invalid[x]}' for x in invalid]))
 
             return False
 
         return True
 
-    def _fsck_yaml(self, quiet: bool = False) -> bool:
+    def _fsck_yaml(self) -> bool:
         """
         Check if all assets have valid YAML. Returns True or False.
         """
@@ -306,12 +297,11 @@ class Repo:
             try:
                 YAML().load(Path(self.root, asset))
             except scanner.ScannerError:
-                invalid_yaml.append(asset)
+                invalid_yaml.append(str(asset))
 
         if invalid_yaml:
-            if not quiet:
-                log.error('The following files fail YAML validation:')
-                log.error('\n'.join([str(x) for x in invalid_yaml]))
+            log.error('The following files fail YAML validation:\n' +
+                      '\n'.join(invalid_yaml))
 
             return False
 

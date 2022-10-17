@@ -1,8 +1,8 @@
 import logging
 import sys
 from pathlib import Path
-from git import Repo
-from onyo.commands.fsck import fsck
+
+from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
@@ -67,8 +67,11 @@ def rm(args, onyo_root):
         log.error("The --quiet flag requires --yes.")
         sys.exit(1)
 
-    repo = Repo(onyo_root)
-    fsck(args, onyo_root, quiet=True)
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck()
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     paths_to_rm = sanitize_paths(args.path, onyo_root)
 
@@ -83,6 +86,6 @@ def rm(args, onyo_root):
                 sys.exit(0)
 
     # rm and commit
-    repo.git.rm('-r', paths_to_rm)
+    repo._git(['rm', '-r'] + paths_to_rm)
     # TODO: can this commit message be made more helpful?
-    repo.git.commit(m='deleted asset(s)\n\n' + '\n'.join(paths_to_rm))
+    repo._git(['commit', '-m', 'deleted asset(s)\n\n' + '\n'.join(paths_to_rm)])

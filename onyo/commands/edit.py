@@ -2,20 +2,14 @@ import logging
 import os
 import sys
 
-from git import Repo
-
+from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import (
-    build_git_add_cmd,
     run_cmd,
     edit_file
 )
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
-
-
-def build_commit_cmd(files, onyo_root):
-    return ["git -C \"" + onyo_root + "\" commit -m", "edit asset(s).\n\n" + "\n".join(files)]
 
 
 def prepare_arguments(sources, onyo_root):
@@ -53,10 +47,14 @@ def edit(args, onyo_root):
     problems are found, the choice will be offered to reopen the editor to fix
     them, or abort and return to the original state.
     """
-    # "onyo fsck" is intentionally not run here.
-    # This is so "onyo edit" can be used to fix an existing problem. This has
-    # benefits over just simply using `vim`, etc directly, as "onyo edit" will
-    # validate the contents of the file before saving and committing.
+    try:
+        repo = Repo(onyo_root)
+        # "onyo fsck" is intentionally not run here.
+        # This is so "onyo edit" can be used to fix an existing problem. This has
+        # benefits over just simply using `vim`, etc directly, as "onyo edit" will
+        # validate the contents of the file before saving and committing.
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     # check and set paths
     list_of_sources = prepare_arguments(args.asset, onyo_root)
@@ -65,12 +63,10 @@ def edit(args, onyo_root):
         git_filepath = os.path.relpath(source, onyo_root)
         # change file
         edit_file(source, onyo_root)
-        # check if changes happened and add them
-        repo = Repo(onyo_root)
-        changed_files = [item.a_path for item in repo.index.diff(None)]
-        if len(changed_files) != 0:
-            git_add_cmd = build_git_add_cmd(onyo_root, git_filepath)
-            run_cmd(git_add_cmd)
+        # add any changes
+        repo._git(['add', git_filepath])
+
     # commit changes
-    [commit_cmd, commit_msg] = build_commit_cmd(changed_files, onyo_root)
-    run_cmd(commit_cmd, commit_msg)
+    files_staged = repo.files_staged
+    if files_staged:
+        repo._git(['commit', '-m', 'edit asset(s).\n\n' + '\n'.join(files_staged)])
