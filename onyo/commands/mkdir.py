@@ -6,7 +6,7 @@ from onyo.commands.fsck import fsck
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def run_mkdir(onyo_root, new_dir, repo):
@@ -63,14 +63,14 @@ def sanitize_dirs(directories, onyo_root):
 
     # exit
     if error_exist:
-        logger.error("No directories created. The following already exist:")
-        logger.error('\n'.join(error_exist))
+        log.error("No directories created. The following already exist:")
+        log.error('\n'.join(error_exist))
         sys.exit(1)
 
     if error_path_protected:
-        logger.error("The following paths are protected by onyo:")
-        logger.error('\n'.join(error_path_protected))
-        logger.error("\nExiting. No directories were created.")
+        log.error("The following paths are protected by onyo:")
+        log.error('\n'.join(error_path_protected))
+        log.error("\nExiting. No directories were created.")
         sys.exit(1)
 
     return dirs_to_create

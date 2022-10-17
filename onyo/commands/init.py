@@ -5,7 +5,7 @@ from pathlib import Path
 import git
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def get_skel_dir():
@@ -31,19 +31,19 @@ def sanitize_dir(directory, onyo_root):
     # already an .onyo repo
     dot_onyo = full_dir.joinpath('.onyo')
     if dot_onyo.is_dir():
-        logger.error(f"'{dot_onyo}' already exists. Exiting.")
+        log.error(f"'{dot_onyo}' already exists. Exiting.")
         sys.exit(1)
 
     # target is a file, etc
     if full_dir.exists() and not full_dir.is_dir():
-        logger.error(f"'{full_dir}' exists but is not a directory. Exiting.")
+        log.error(f"'{full_dir}' exists but is not a directory. Exiting.")
         sys.exit(1)
 
     # make sure parent exists
     if not full_dir.is_dir():
         parent_dir = full_dir.parent
         if not parent_dir.is_dir():
-            logger.error(f"'{parent_dir}' does not exist. Exiting.")
+            log.error(f"'{parent_dir}' does not exist. Exiting.")
             sys.exit(1)
 
     abs_dir = str(full_dir.resolve())
@@ -67,7 +67,7 @@ def init(args, onyo_root):
 
     try:
         repo = git.Repo(target_dir)
-        logger.info(target_dir + " has a git repository.")
+        log.info(target_dir + " has a git repository.")
     except git.exc.InvalidGitRepositoryError:
         repo = git.Repo.init(target_dir)
 

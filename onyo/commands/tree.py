@@ -8,12 +8,12 @@ from onyo.utils import (
 from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def build_tree_cmd(directory):
     if not os.path.isdir(directory):
-        logger.error(directory + " does not exist.")
+        log.error(directory + " does not exist.")
         sys.exit(1)
     return "tree \"" + directory + "\""
 
@@ -40,7 +40,7 @@ def prepare_arguments(sources, onyo_root):
         else:
             list_of_sources.append(current_source)
     if problem_str != "":
-        logger.error(problem_str)
+        log.error(problem_str)
         sys.exit(1)
     return list_of_sources
 

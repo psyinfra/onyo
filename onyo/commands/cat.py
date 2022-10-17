@@ -5,7 +5,7 @@ from pathlib import Path
 from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def sanitize_paths(paths, onyo_root):
@@ -34,15 +34,15 @@ def sanitize_paths(paths, onyo_root):
         paths_to_cat.append(full_path)
 
     if error_path_absent:
-        logger.error("The following paths do not exist:")
-        logger.error("\n".join(error_path_absent))
-        logger.error("\n Exiting.")
+        log.error("The following paths do not exist:")
+        log.error("\n".join(error_path_absent))
+        log.error("\n Exiting.")
         sys.exit(1)
 
     if error_path_not_file:
-        logger.error("The following paths are not files:")
-        logger.error("\n".join(error_path_not_file))
-        logger.error("\n Exiting.")
+        log.error("The following paths are not files:")
+        log.error("\n".join(error_path_not_file))
+        log.error("\n Exiting.")
         sys.exit(1)
 
     return paths_to_cat

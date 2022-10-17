@@ -8,7 +8,7 @@ from onyo.utils import get_config_value
 from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def sanitize_path(path, onyo_root):
@@ -25,8 +25,8 @@ def sanitize_path(path, onyo_root):
 
     # check if path exists
     if not full_path.exists():
-        logger.error(f"Cannot display the history of '{full_path}'. It does not exist.")
-        logger.error("Exiting.")
+        log.error(f"Cannot display the history of '{full_path}'. It does not exist.")
+        log.error("Exiting.")
         sys.exit(1)
 
     return full_path
@@ -48,14 +48,14 @@ def get_history_cmd(interactive, onyo_root):
 
     history_cmd = get_config_value(config_name, onyo_root)
     if not history_cmd:
-        logger.error(f"'{config_name}' is unset and is required to display history.")
-        logger.error("Please see 'onyo config --help' for information about how to set it. Exiting.")
+        log.error(f"'{config_name}' is unset and is required to display history.")
+        log.error("Please see 'onyo config --help' for information about how to set it. Exiting.")
         sys.exit(1)
 
     history_program = history_cmd.split(' ')[0]
     if not shutil.which(history_program):
-        logger.error(f"'{history_cmd}' acquired from '{config_name}'.")
-        logger.error(f"The program '{history_program}' was not found. Exiting.")
+        log.error(f"'{history_cmd}' acquired from '{config_name}'.")
+        log.error(f"The program '{history_program}' was not found. Exiting.")
         sys.exit(1)
 
     return history_cmd

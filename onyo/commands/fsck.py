@@ -14,7 +14,7 @@ from onyo.utils import (
 )
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def verify_onyo_existence(onyo_root):
@@ -25,10 +25,10 @@ def verify_onyo_existence(onyo_root):
         repo = Repo(repo_path)
         info_str = info_str + "onyo repo: " + repo_path
     except exc.InvalidGitRepositoryError:
-        logger.error(onyo_root + " is not a valid git repository.")
+        log.error(onyo_root + " is not a valid git repository.")
         sys.exit(1)
     if not os.path.exists(os.path.join(repo_path, ".onyo")):
-        logger.error(repo_path + " is not a valid onyo repository.")
+        log.error(repo_path + " is not a valid onyo repository.")
         sys.exit(1)
     return [repo, repo_path, info_str]
 
@@ -130,7 +130,7 @@ def read_only_fsck(args, onyo_root, quiet=False):
     problem_str = problem_str + verify_yaml(onyo_root)
     # end block, display problems or state repo is clean.
     if problem_str:
-        logger.error(problem_str)
+        log.error(problem_str)
         sys.exit(1)
     else:
         problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str
@@ -183,7 +183,7 @@ def fsck(args, onyo_root, quiet=False):
     # end block, display problems or state repo is clean.
     if problem_str:
         problem_str = "\nOnyo expects a clean onyo working tree before running commands. Please commit or .gitignore all changes and check the syntax of asset files.\n" + problem_str
-        logger.error(problem_str)
+        log.error(problem_str)
         sys.exit(1)
     else:
         info_str = info_str + "\n" + repo_path + " is clean."

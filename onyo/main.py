@@ -5,8 +5,8 @@ from onyo import commands  # noqa: F401
 from onyo.utils import setup_parser
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
-logger.setLevel(logging.INFO)
+log = logging.getLogger('onyo')
+log.setLevel(logging.INFO)
 
 
 def get_subcmd_index(arglist, start=1):
@@ -52,7 +52,7 @@ def main():
 
     # debugging
     if args.debug:
-        logger.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
 
     # run the subcommand
     if subcmd_index:

@@ -6,7 +6,7 @@ from git import Repo
 from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def sanitize_args(git_config_args):
@@ -31,9 +31,9 @@ def sanitize_args(git_config_args):
 
     for a in git_config_args:
         if a in forbidden_flags:
-            logger.error("The following options cannot be used with onyo config:")
-            logger.error('\n'.join(forbidden_flags))
-            logger.error("\nExiting. Nothing was set.")
+            log.error("The following options cannot be used with onyo config:")
+            log.error('\n'.join(forbidden_flags))
+            log.error("\nExiting. Nothing was set.")
             sys.exit(1)
 
     return git_config_args
