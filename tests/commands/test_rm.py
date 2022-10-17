@@ -1,7 +1,6 @@
 import os
 import subprocess
 from pathlib import Path
-from git import Repo
 
 
 def populate_test_repo(path):
@@ -44,9 +43,10 @@ def populate_test_repo(path):
     Path('s p a/c e s/5 6').touch()
 
     # add and commit
-    repo = Repo('.')
-    repo.git.add('.')
-    repo.git.commit(m='populated for tests')
+    ret = subprocess.run(['git', 'add', '.'])
+    assert ret.returncode == 0
+    ret = subprocess.run(['git', 'commit', '-m', 'populated for tests'])
+    assert ret.returncode == 0
 
     # return to home
     os.chdir(original_cwd)

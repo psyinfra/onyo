@@ -1,6 +1,5 @@
 import subprocess
 from pathlib import Path
-from git import Repo
 
 
 # NOTE: the output of `onyo history` is not tested for formatting or content, as
@@ -26,9 +25,10 @@ def test_onyo_init():
     Path('s p a/c e s/1 2').touch()
 
     # add and commit
-    repo = Repo('.')
-    repo.git.add('.')
-    repo.git.commit(m='populated for tests')
+    ret = subprocess.run(['git', 'add', '.'])
+    assert ret.returncode == 0
+    ret = subprocess.run(['git', 'commit', '-m', 'populated for tests'])
+    assert ret.returncode == 0
 
 
 def test_history_noninteractive(helpers):
