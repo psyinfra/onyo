@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import logging
 import os
 import sys
@@ -13,7 +11,7 @@ from onyo.utils import (
 )
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def build_commit_cmd(files, onyo_root):
@@ -38,7 +36,7 @@ def prepare_arguments(sources, onyo_root):
         else:
             list_of_sources.append(current_source)
     if problem_str != "":
-        logger.error(problem_str)
+        log.error(problem_str)
         sys.exit(1)
     return list(dict.fromkeys(list_of_sources))
 

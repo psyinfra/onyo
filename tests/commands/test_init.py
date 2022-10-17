@@ -1,6 +1,5 @@
 import subprocess
 from pathlib import Path
-import git
 
 
 def fully_populated_dot_onyo(directory=''):
@@ -87,8 +86,9 @@ def test_fail_missing_parent_dir():
 
 # target dir that's already a git repo
 def test_child_exist_with_git():
-    Path('child_exist_with_git').mkdir()
-    git.Repo.init('child_exist_with_git')
+    # create git repo
+    ret = subprocess.run(['git', 'init', 'child_exist_with_git'])
+    assert ret.returncode == 0
 
     ret = subprocess.run(["onyo", "init", 'child_exist_with_git'])
     assert ret.returncode == 0

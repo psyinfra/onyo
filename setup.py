@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 ''' setup file for installation of onyo '''
 from setuptools import setup, find_packages
 

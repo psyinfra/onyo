@@ -3,7 +3,7 @@ from onyo._version import __version__
 
 
 logging.basicConfig(level=logging.ERROR)  # external logging level
-logger = logging.getLogger('onyo')  # internal logging level
-logger.setLevel(level=logging.INFO)
+log = logging.getLogger('onyo')  # internal logging level
+log.setLevel(level=logging.INFO)
 
-__all__ = ['logger', '__version__']
+__all__ = ['log', '__version__']

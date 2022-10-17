@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import logging
 import sys
 import shutil
@@ -16,7 +14,7 @@ from onyo.utils import (
 from onyo.commands.fsck import fsck
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 reserved_characters = ['_', '.']
 
@@ -36,7 +34,7 @@ def read_new_word(word_description):
     # if word contains reserved character, inform and read new word
     for char in reserved_characters:
         if word_description != "<serial>*:" and char in word:
-            logger.info(f"'{char}' is in list of reserved characters: {reserved_characters}")
+            log.info(f"'{char}' is in list of reserved characters: {reserved_characters}")
             return read_new_word(word_description)
 
     # if enter pressed without input, read new word
@@ -59,7 +57,7 @@ def run_onyo_new(directory, template, non_interactive, onyo_root, repo):
     template = Path(template).resolve()
 
     if filename.exists():
-        logger.error(f"{filename}' asset already exists.")
+        log.error(f"{filename}' asset already exists.")
         sys.exit(1)
     if template.is_file():
         shutil.copyfile(template, filename)
@@ -98,7 +96,7 @@ def create_filename(onyo_root, template):
     assets = get_list_of_assets(onyo_root)
     for asset in assets:
         if filename == asset[1]:
-            logger.info(f"{filename} exists already in {asset[0]}\nCreate a new filename:")
+            log.info(f"{filename} exists already in {asset[0]}\nCreate a new filename:")
             return create_filename(onyo_root, template)
     return filename
 
@@ -123,7 +121,7 @@ def sanitize_paths(directory, template, onyo_root):
         problem_str += f"\n{directory} is not a directory."
 
     if problem_str:
-        logger.error(problem_str)
+        log.error(problem_str)
         sys.exit(1)
     return [directory, template]
 

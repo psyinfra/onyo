@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import logging
 import re
 import sys
@@ -9,7 +7,7 @@ from onyo.commands.fsck import fsck
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def move_mode(destination, sources, onyo_root):
@@ -54,22 +52,22 @@ def sanity_check_destination(destination, sources, onyo_root):
         """
         # target cannot already exist
         if dest_path.exists():
-            logger.error(f"The destination '{dest_path}' exists and would conflict.")
-            logger.error("\nExiting. Nothing was moved.")
+            log.error(f"The destination '{dest_path}' exists and would conflict.")
+            log.error("\nExiting. Nothing was moved.")
             sys.exit(1)
 
         # parent must exist
         if not dest_path.parent.exists():
-            logger.error(f"The destination '{dest_path.parent}' does not exist.")
-            logger.error("\nExiting. Nothing was moved.")
+            log.error(f"The destination '{dest_path.parent}' does not exist.")
+            log.error("\nExiting. Nothing was moved.")
             sys.exit(1)
 
         # renaming files is not allowed
         source = Path(sources[0])
         if source.is_file() and source.name != dest_path.name:
-            logger.error(f"Cannot rename asset '{source.name}' to '{dest_path.name}'.")
-            logger.error("Use 'onyo set' to rename assets.")
-            logger.error("\nExiting. Nothing was moved.")
+            log.error(f"Cannot rename asset '{source.name}' to '{dest_path.name}'.")
+            log.error("Use 'onyo set' to rename assets.")
+            log.error("\nExiting. Nothing was moved.")
             sys.exit(1)
     else:
         """
@@ -77,14 +75,14 @@ def sanity_check_destination(destination, sources, onyo_root):
         """
         # dest must exist
         if not dest_path.exists():
-            logger.error(f"The destination '{destination}' does not exist.")
-            logger.error("\nExiting. Nothing was moved.")
+            log.error(f"The destination '{destination}' does not exist.")
+            log.error("\nExiting. Nothing was moved.")
             sys.exit(1)
 
         # dest must be a directory
         if not dest_path.is_dir():
-            logger.error(f"The destination '{destination}' is not a directory.")
-            logger.error("\nExiting. Nothing was moved.")
+            log.error(f"The destination '{destination}' is not a directory.")
+            log.error("\nExiting. Nothing was moved.")
             sys.exit(1)
 
     """
@@ -92,8 +90,8 @@ def sanity_check_destination(destination, sources, onyo_root):
     """
     # protected paths
     if is_protected_path(dest_path):
-        logger.error(f"The destination '{destination}' is protected by onyo.")
-        logger.error("\nExiting. Nothing was moved.")
+        log.error(f"The destination '{destination}' is protected by onyo.")
+        log.error("\nExiting. Nothing was moved.")
         sys.exit(1)
 
     # check for conflicts and generic insanity
@@ -103,8 +101,8 @@ def sanity_check_destination(destination, sources, onyo_root):
 
         # cannot move into self
         if src_path in new_path.parents:
-            logger.error(f"Cannot move '{s}' into itself.")
-            logger.error("\nExiting. Nothing was moved.")
+            log.error(f"Cannot move '{s}' into itself.")
+            log.error("\nExiting. Nothing was moved.")
             sys.exit(1)
 
         # target paths cannot already exist
@@ -113,9 +111,9 @@ def sanity_check_destination(destination, sources, onyo_root):
             continue
 
     if error_path_conflict:
-        logger.error("The following destinations exist and would conflict:")
-        logger.error('\n'.join(error_path_conflict))
-        logger.error("\nExiting. Nothing was moved.")
+        log.error("The following destinations exist and would conflict:")
+        log.error('\n'.join(error_path_conflict))
+        log.error("\nExiting. Nothing was moved.")
         sys.exit(1)
 
     return True
@@ -154,15 +152,15 @@ def sanitize_sources(sources, onyo_root):
         paths_to_mv.append(norm_path)
 
     if error_path_absent:
-        logger.error("The following paths do not exist:")
-        logger.error('\n'.join(error_path_absent))
-        logger.error("\nExiting. Nothing was moved.")
+        log.error("The following paths do not exist:")
+        log.error('\n'.join(error_path_absent))
+        log.error("\nExiting. Nothing was moved.")
         sys.exit(1)
 
     if error_path_protected:
-        logger.error("The following paths are protected by onyo:")
-        logger.error('\n'.join(error_path_protected))
-        logger.error("\nExiting. Nothing was moved.")
+        log.error("The following paths are protected by onyo:")
+        log.error('\n'.join(error_path_protected))
+        log.error("\nExiting. Nothing was moved.")
         sys.exit(1)
 
     return paths_to_mv
@@ -177,7 +175,7 @@ def mv(args, onyo_root):
     """
     # check flags
     if args.quiet and not args.yes:
-        logger.error("The --quiet flag requires --yes.")
+        log.error("The --quiet flag requires --yes.")
         sys.exit(1)
 
     repo = Repo(onyo_root)
@@ -196,7 +194,7 @@ def mv(args, onyo_root):
         if not args.yes:
             response = input("Move assets? (y/N) ")
             if response not in ['y', 'Y', 'yes']:
-                logger.info("Nothing was moved.")
+                log.info("Nothing was moved.")
                 sys.exit(0)
 
     # mv and commit

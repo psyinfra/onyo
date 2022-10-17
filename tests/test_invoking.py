@@ -5,7 +5,7 @@ import pytest
 from pathlib import Path
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def run_cmd(cmd, input_str=None):
@@ -17,10 +17,10 @@ def run_cmd(cmd, input_str=None):
 
     # if it errored, return it
     if ret.stderr:
-        logger.info(f"{cmd} {ret.stderr}")
+        log.info(f"{cmd} {ret.stderr}")
         return ret.stderr.rstrip("\n")
 
-    logger.info(f"{cmd} {ret.stdout}")
+    log.info(f"{cmd} {ret.stdout}")
     return ret.stdout.rstrip("\n")
 
 

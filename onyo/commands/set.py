@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import logging
 import os
 import sys
@@ -17,7 +15,7 @@ from onyo.utils import (
 )
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def build_commit_cmd(files_to_change, onyo_root):
@@ -150,7 +148,7 @@ def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
                 else:
                     asset_list = add_assets_from_directory(file, asset_list, depth, onyo_root)
             else:
-                logger.info("Can't set values for folder \"" + file + "\" without --recursive flag.\n")
+                log.info("Can't set values for folder \"" + file + "\" without --recursive flag.\n")
             continue
         if not os.path.isfile(asset):
             problem_str = problem_str + "\nAsset file " + file + " does not exist."
@@ -165,7 +163,7 @@ def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
     if len(asset_list) == 0:
         problem_str = problem_str + "\nNo assets selected."
     if problem_str != "":
-        logger.error(problem_str)
+        log.error(problem_str)
         sys.exit(1)
     asset_list.sort()
     return asset_list
@@ -205,14 +203,14 @@ def set(args, onyo_root):
         # The else happens, if valid assets are selected, but no values are to
         # be updated (e.g. `onyo set RAM=10`, but assets have already RAM: 10)
         else:
-            logger.warning("The values are already set. No assets updated.")
+            log.warning("The values are already set. No assets updated.")
             sys.exit(0)
     if args.dry_run:
         sys.exit(0)
     if not args.yes:
         update_input = str(input("Update assets? (y/N) "))
         if update_input not in ['y', 'Y', 'yes']:
-            logger.info("No assets updated.")
+            log.info("No assets updated.")
             sys.exit(0)
 
     for file in files_to_change:

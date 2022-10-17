@@ -1,5 +1,4 @@
 import subprocess
-from git import Repo
 
 
 def create_file(name, content):
@@ -10,18 +9,20 @@ def create_file(name, content):
         f.write(content)
 
     # add and commit
-    repo = Repo('.')
-    repo.git.add(name)
-    repo.git.commit(m=f'add {name} for tests')
+    ret = subprocess.run(['git', 'add', name])
+    assert ret.returncode == 0
+    ret = subprocess.run(['git', 'commit', '-m', f'add {name} for tests'])
+    assert ret.returncode == 0
 
 
 def delete_file(name):
     """
     Git rm a file and commit.
     """
-    repo = Repo('.')
-    repo.git.rm(name)
-    repo.git.commit(m=f'remove {name} for tests')
+    ret = subprocess.run(['git', 'rm', name])
+    assert ret.returncode == 0
+    ret = subprocess.run(['git', 'commit', '-m', f'remove {name} for tests'])
+    assert ret.returncode == 0
 
 
 def test_onyo_init():

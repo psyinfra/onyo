@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import logging
 import sys
 from pathlib import Path
@@ -8,7 +6,7 @@ from onyo.commands.fsck import fsck
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def sanitize_paths(paths, onyo_root):
@@ -43,15 +41,15 @@ def sanitize_paths(paths, onyo_root):
         paths_to_rm.append(norm_path)
 
     if error_path_absent:
-        logger.error("The following paths do not exist:")
-        logger.error('\n'.join(error_path_absent))
-        logger.error("\nExiting. Nothing was deleted.")
+        log.error("The following paths do not exist:")
+        log.error('\n'.join(error_path_absent))
+        log.error("\nExiting. Nothing was deleted.")
         sys.exit(1)
 
     if error_path_protected:
-        logger.error("The following paths are protected by onyo:")
-        logger.error('\n'.join(error_path_protected))
-        logger.error("\nExiting. Nothing was deleted.")
+        log.error("The following paths are protected by onyo:")
+        log.error('\n'.join(error_path_protected))
+        log.error("\nExiting. Nothing was deleted.")
         sys.exit(1)
 
     return paths_to_rm
@@ -66,7 +64,7 @@ def rm(args, onyo_root):
     """
     # check flags
     if args.quiet and not args.yes:
-        logger.error("The --quiet flag requires --yes.")
+        log.error("The --quiet flag requires --yes.")
         sys.exit(1)
 
     repo = Repo(onyo_root)
@@ -81,7 +79,7 @@ def rm(args, onyo_root):
         if not args.yes:
             response = input("Delete assets? (y/N) ")
             if response not in ['y', 'Y', 'yes']:
-                logger.info("Nothing was deleted.")
+                log.info("Nothing was deleted.")
                 sys.exit(0)
 
     # rm and commit

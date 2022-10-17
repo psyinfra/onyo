@@ -17,7 +17,7 @@ import textwrap
 from onyo._version import __version__
 
 logging.basicConfig()
-logger = logging.getLogger('onyo')
+log = logging.getLogger('onyo')
 
 
 def run_cmd(cmd, comment=""):
@@ -33,10 +33,10 @@ def run_cmd(cmd, comment=""):
                                        universal_newlines=True)
     run_output, run_error = run_process.communicate()
     if (run_error != ""):
-        logger.error(run_error)
+        log.error(run_error)
         sys.exit(1)
     else:
-        logger.debug(cmd + " " + comment)
+        log.debug(cmd + " " + comment)
     return run_output
 
 
@@ -48,7 +48,7 @@ def get_git_root(path):
         if os.path.isdir(os.path.join(git_root, ".onyo")):
             return git_root
     except (exc.NoSuchPathError, exc.InvalidGitRepositoryError):
-        logger.error(path + " is no onyo repository.")
+        log.error(path + " is no onyo repository.")
         sys.exit(1)
         return git_root
 
@@ -65,12 +65,12 @@ def get_editor(onyo_root):
 
     # $EDITOR environment variable
     if not editor:
-        logger.debug("onyo.core.editor is not set.")
+        log.debug("onyo.core.editor is not set.")
         editor = os.environ.get('EDITOR')
 
     # fallback to nano
     if not editor:
-        logger.debug("$EDITOR is also not set.")
+        log.debug("$EDITOR is also not set.")
         editor = 'nano'
 
     return editor
@@ -204,13 +204,13 @@ def edit_file(file, onyo_root, onyo_new=False):
     editor = get_editor(onyo_root)
     # verify that the editor exists
     if not shutil.which(editor):
-        logger.error(f"The editor '{editor}' was not found. Exiting.")
+        log.error(f"The editor '{editor}' was not found. Exiting.")
         sys.exit(1)
 
     # verify existence of file to edit
     file = Path(file)
     if not file.is_file():
-        logger.error(f"{file} does not exist.")
+        log.error(f"{file} does not exist.")
         sys.exit(1)
 
     # create and edit a temporary file, and if that is valid replace original
@@ -254,7 +254,7 @@ def edit_file(file, onyo_root, onyo_new=False):
                             Path.unlink(file)
                             output_str = f'No new asset "{file.relative_to(onyo_root)}" created.'
                         Path.unlink(temp_file)
-                        logger.info(output_str)
+                        log.info(output_str)
                         sys.exit(1)
     return True
 
@@ -277,9 +277,9 @@ def get_config_value(name, onyo_root):
     # git-config (with its full stack of locations to check)
     try:
         value = repo.git.config('--get', name)
-        logger.debug(f"git config acquired '{name}': '{value}'")
+        log.debug(f"git config acquired '{name}': '{value}'")
     except exc.GitCommandError:
-        logger.debug(f"git config missed '{name}'")
+        log.debug(f"git config missed '{name}'")
         pass
 
     # .onyo/config
@@ -287,9 +287,9 @@ def get_config_value(name, onyo_root):
         dot_onyo_config = os.path.join(repo.git.rev_parse('--show-toplevel'), '.onyo/config')
         try:
             value = repo.git.config('--get', name, f=dot_onyo_config)
-            logger.debug(f"onyo config acquired '{name}': '{value}'")
+            log.debug(f"onyo config acquired '{name}': '{value}'")
         except exc.GitCommandError:
-            logger.debug(f"onyo config missed '{name}'")
+            log.debug(f"onyo config missed '{name}'")
             pass
 
     # reset to None if empty
@@ -718,7 +718,7 @@ def parse_key_values(values):
         next_equal = rest_str.find('=')
         # this happens when `onyo set a=5,b` is called and value is missing
         if next_equal == -1:
-            logger.error("No value after \"" + rest_str + "\". (Equal sign expected)")
+            log.error("No value after \"" + rest_str + "\". (Equal sign expected)")
             sys.exit(1)
         # find key:
         key = rest_str[0:next_equal]
