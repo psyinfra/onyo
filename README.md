@@ -58,8 +58,13 @@ tests running in different working directories.
 REPO_ROOT=$PWD pytest -vv --cov
 ```
 
-### Documentation
+Linting uses both flake8 and Pyre.
+```
+flake8 $(find . -type f -name "*.py")
+pyre --noninteractive check
+```
 
+### Documentation
 Build the docs.
 ```
 make -C docs clean html
