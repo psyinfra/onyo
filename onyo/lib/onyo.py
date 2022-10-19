@@ -3,7 +3,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 from onyo.utils import (
@@ -164,6 +164,49 @@ class Repo:
                              capture_output=True, text=True)
 
         return ret.stdout
+
+    #
+    # ADD
+    #
+    def add(self, targets: Union[Iterable[Union[Path, str]], Path, str]) -> None:
+        """
+        Perform ``git add`` to stage files.
+
+        Paths are relative to ``root.opdir``.
+        """
+        if isinstance(targets, (list, set)):
+            tgts = [str(x) for x in list(targets)]
+        else:
+            tgts = [str(targets)]
+
+        for t in tgts:
+            if not Path(self.opdir, t).exists():
+                log.error(f"'{t}' does not exist.")
+                raise FileNotFoundError(f"'{t}' does not exist.")
+
+        self._git(['add'] + tgts)
+
+    #
+    # COMMIT
+    #
+    def commit(self, *args) -> None:
+        """
+        Perform a ``git commit``. The first message argument is the title; each
+        argument after is a new paragraph. Messages are converted to strings.
+        Lists are printed one item per line, also converted to a string.
+        """
+        if not args:
+            raise ValueError('at least one commit message is required')
+
+        messages = []
+        for i in args:
+            messages.append('-m')
+            if isinstance(i, (list, set)):
+                messages.append('\n'.join([str(x) for x in i]))
+            else:
+                messages.append(str(i))
+
+        self._git(['commit'] + messages)
 
     #
     # FSCK
