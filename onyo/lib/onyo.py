@@ -360,3 +360,80 @@ class Repo:
             return False
 
         return True
+
+    #
+    # MKDIR
+    #
+    def mkdir(self, directories: Union[list[Union[Path, str]], Path, str]) -> None:
+        """
+        Create ``directory``\(s). Intermediate directories will be created as
+        needed (i.e. parent and child directories can be created in one call).
+
+        An empty ``.anchor`` file is added to each directory, to ensure that git
+        tracks it even when empty.
+
+        If a directory already exists, or the path is protected, an exception
+        will be raised. All checks are performed before creating directories.
+        """
+        if not isinstance(directories, list):
+            directories = [directories]
+
+        dirs = self._mkdir_sanitize(directories)
+        # make dirs
+        for d in dirs:
+            d.mkdir(parents=True)
+
+        # anchors
+        anchors = {Path(i, '.anchor') for d in dirs
+                   for i in [d] + list(d.parents)
+                   if i.is_relative_to(self.root) and
+                   not i.samefile(self.root)}
+        for a in anchors:
+            a.touch(exist_ok=True)
+
+        self.add(anchors)
+        # paths should be relative to root in commit messages
+        self.commit('mkdir: ' + ', '.join(["'{}'".format(x.relative_to(self.root)) for x in dirs]))
+
+    def _mkdir_sanitize(self, dirs: list) -> set[Path]:
+        """
+        Check and normalize a list of directories.
+
+        Returns a list of absolute Paths.
+        """
+        error_exist = []
+        error_path_protected = []
+        dirs_to_create = set()
+        # TODO: the set() neatly avoids creating the dame dir twice. Intentional?
+
+        for d in dirs:
+            full_dir = Path(self.opdir, d).resolve()
+
+            # check if it exists
+            if full_dir.exists():
+                error_exist.append(d)
+                continue
+
+            # protected paths
+            if is_protected_path(full_dir):
+                error_path_protected.append(d)
+                continue
+
+            dirs_to_create.add(full_dir)
+
+        # errors
+        if error_exist:
+            log.error('The following paths already exist:\n' +
+                      '\n'.join(error_exist) + '\n' +
+                      'No directories were created.')
+            raise FileExistsError('The following paths already exist:\n' +
+                                  '\n'.join(error_exist))
+
+        if error_path_protected:
+            log.error('The following paths are protected by onyo:\n' +
+                      '\n'.join(error_path_protected) + '\n' +
+                      '\nNo directories were created.')
+            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
+                                         '\n'.join(error_exist))
+
+        return dirs_to_create
