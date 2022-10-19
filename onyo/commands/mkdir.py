@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path, PurePath
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
@@ -91,7 +91,7 @@ def mkdir(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck()
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     dir_list = sanitize_dirs(args.directory, onyo_root)

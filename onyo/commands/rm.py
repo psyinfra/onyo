@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
@@ -70,7 +70,7 @@ def rm(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck()
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     paths_to_rm = sanitize_paths(args.path, onyo_root)

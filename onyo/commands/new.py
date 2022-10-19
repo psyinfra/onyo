@@ -3,7 +3,7 @@ import sys
 import shutil
 from pathlib import Path
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import (
     generate_faux_serial,
     get_config_value,
@@ -138,7 +138,7 @@ def new(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck()
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     # set and check paths, identify template

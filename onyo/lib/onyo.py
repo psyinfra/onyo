@@ -15,7 +15,7 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-class InvalidOnyoRepoError(Exception):
+class OnyoInvalidRepoError(Exception):
     """Thrown if the repository is invalid."""
 
 
@@ -133,12 +133,12 @@ class Repo:
             root = self._git(['rev-parse', '--show-toplevel'], cwd=self._opdir).strip()
         except subprocess.CalledProcessError:
             log.error(f"'{self._opdir}' is not a Git repository.")
-            raise InvalidOnyoRepoError(f"'{self._opdir}' is not a Git repository.")
+            raise OnyoInvalidRepoError(f"'{self._opdir}' is not a Git repository.")
 
         root = Path(root)
         if not Path(root, '.onyo').is_dir():
             log.error(f"'{root}' is not an Onyo repository.")
-            raise InvalidOnyoRepoError(f"'{self._opdir}' is not an Onyo repository.")
+            raise OnyoInvalidRepoError(f"'{self._opdir}' is not an Onyo repository.")
 
         # TODO: check .onyo/config, etc
 
@@ -201,7 +201,7 @@ class Repo:
 
             if not all_tests[key]():
                 log.debug(f"'{key}' failed")
-                raise InvalidOnyoRepoError(f"'{self._opdir}' failed fsck test '{key}'")
+                raise OnyoInvalidRepoError(f"'{self._opdir}' failed fsck test '{key}'")
 
             log.debug(f"'{key}' succeeded")
 

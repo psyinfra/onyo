@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 from onyo import commands  # noqa: F401
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 import pytest
 
 
@@ -86,7 +86,7 @@ def test_fsck_anchors_missing(caplog):
     repo._git(['commit', '-m', 'remove anchors'])
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['anchors'])
 
     # check log
@@ -149,7 +149,7 @@ def test_fsck_unique_assets_conflict(caplog):
     repo._git(['commit', '-m', 'add conflicts'])
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['asset-unique'])
 
     # check log
@@ -212,7 +212,7 @@ def test_fsck_yaml_invalid(caplog):
     repo._git(['commit', '-m', 'mangle files'])
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['asset-yaml'])
 
     # check log
@@ -271,7 +271,7 @@ def test_fsck_clean_tree_changed(caplog):
         Path(i).write_text('New contents')
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['clean-tree'])
 
     # check log
@@ -300,7 +300,7 @@ def test_fsck_clean_tree_staged(caplog):
     assert ret.returncode == 0
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['clean-tree'])
 
     # check log
@@ -326,7 +326,7 @@ def test_fsck_clean_tree_untracked(caplog):
         Path(i).touch()
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['clean-tree'])
 
     # check log

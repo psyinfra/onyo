@@ -4,7 +4,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import get_config_value
 
 logging.basicConfig()
@@ -74,7 +74,7 @@ def history(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck(['asset-yaml'])
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     # get the command and path

@@ -5,7 +5,7 @@ import sys
 from onyo.utils import (
     run_cmd
 )
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -53,7 +53,7 @@ def tree(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck(['asset-yaml'])
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     # check sources
