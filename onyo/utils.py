@@ -10,7 +10,7 @@ import string
 import random
 import argparse
 from pathlib import Path
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML  # pyre-ignore[21]
 from onyo import commands
 from git import Repo, exc
 import textwrap

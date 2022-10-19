@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Union
 
-from ruamel.yaml import YAML, scanner
+from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 from onyo.utils import (
     is_protected_path,
     validate_file
