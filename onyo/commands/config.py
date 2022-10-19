@@ -97,5 +97,5 @@ def config(args, onyo_root):
     # commit, if there's anything to commit
     if repo.files_changed:
         dot_onyo_config = Path(repo.root, '.onyo/config')
-        repo._git(['add', dot_onyo_config])
-        repo._git(['commit', '-m', 'onyo config: modify shared repository config'])
+        repo.add(dot_onyo_config)
+        repo.commit('config: modify repository config')

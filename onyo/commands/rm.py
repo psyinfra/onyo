@@ -88,4 +88,4 @@ def rm(args, onyo_root):
     # rm and commit
     repo._git(['rm', '-r'] + paths_to_rm)
     # TODO: can this commit message be made more helpful?
-    repo._git(['commit', '-m', 'deleted asset(s)\n\n' + '\n'.join(paths_to_rm)])
+    repo.commit('deleted asset(s)', paths_to_rm)

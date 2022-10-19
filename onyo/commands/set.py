@@ -213,8 +213,8 @@ def set(args, onyo_root):
     for file in files_to_change:
         set_value(os.path.join(onyo_root, file), file, args.keys, onyo_root)
         # add any changes
-        repo._git(['add', file])
+        repo.add(file)
 
     files_staged = [str(x) for x in repo.files_staged]
     if files_staged:
-        repo._git(['commit', '-m', 'set values.\n\n' + '\n'.join(files_staged)])
+        repo.commit('set values', files_staged)

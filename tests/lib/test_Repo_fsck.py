@@ -83,7 +83,7 @@ def test_fsck_anchors_missing(caplog):
 
     # remove anchors
     repo._git(['rm'] + anchors_to_remove)
-    repo._git(['commit', '-m', 'remove anchors'])
+    repo.commit('remove anchors')
 
     # test
     with pytest.raises(OnyoInvalidRepoError):
@@ -145,8 +145,8 @@ def test_fsck_unique_assets_conflict(caplog):
     for i in assets_to_conflict:
         Path(i).touch()
 
-    repo._git(['add'] + assets_to_conflict)
-    repo._git(['commit', '-m', 'add conflicts'])
+    repo.add(assets_to_conflict)
+    repo.commit('add conflicts')
 
     # test
     with pytest.raises(OnyoInvalidRepoError):
@@ -208,8 +208,8 @@ def test_fsck_yaml_invalid(caplog):
     for i in files_to_mangle:
         Path(i).write_text('dsfs: sdf: sdf:dd ad123e')
 
-    repo._git(['add'] + files_to_mangle)
-    repo._git(['commit', '-m', 'mangle files'])
+    repo.add(files_to_mangle)
+    repo.commit('mangle files')
 
     # test
     with pytest.raises(OnyoInvalidRepoError):

@@ -203,4 +203,4 @@ def mv(args, onyo_root):
     # mv and commit
     repo._git(['mv'] + paths_to_mv + [args.destination])
     # TODO: can this commit message be made more helpful?
-    repo._git(['commit', '-m', 'moved asset(s)\n\n' + '\n'.join(paths_to_mv)])
+    repo.commit('moved asset(s)', paths_to_mv)
