@@ -156,7 +156,7 @@ class Repo:
         """
         """
         if cwd is None:
-            cwd = self.root
+            cwd = self.opdir
 
         log.debug(f"Running 'git {args}'")
         ret = subprocess.run(["git"] + args,
