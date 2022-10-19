@@ -3,7 +3,7 @@ import os
 import sys
 import yaml
 import glob
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML  # pyre-ignore[21]
 
 from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import (

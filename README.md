@@ -10,11 +10,10 @@ the index and git to track history. This allows much of Onyo's functionality to
 be just a thin wrapper around git commands.
 
 ## Use
-
-See the documentation for [installation instructions](https://onyo.readthedocs.io/en/latest/installation.html) and general information about Onyo.
+See the documentation for [installation instructions](https://onyo.readthedocs.io/en/latest/installation.html)
+and general information about Onyo.
 
 ## Report Issues
-
 For general feedback, bug reports, and comments, please [open an issue](https://github.com/psyinfra/onyo/issues/new).
 
 ## Develop
@@ -22,7 +21,6 @@ For general feedback, bug reports, and comments, please [open an issue](https://
 ### Installation
 
 #### Non-Python Dependencies:
-
 In addition to Python >= 3.9, Onyo depends on a few system utilities.
 
 Debian/Ubuntu:
@@ -49,19 +47,24 @@ pip install -e ".[tests, docs]"
 ```
 
 ### Tests
-
 Tests are run from the top-level of the repository.
 ```
 pytest -vv
 ```
 
-Generating code coverage reports requires some small gymnastics due to Onyo's tests running in different working directories.
+Generating code coverage reports requires some small gymnastics due to Onyo's
+tests running in different working directories.
 ```
 REPO_ROOT=$PWD pytest -vv --cov
 ```
 
-### Documentation
+Linting uses both flake8 and Pyre.
+```
+flake8 $(find . -type f -name "*.py")
+pyre --noninteractive check
+```
 
+### Documentation
 Build the docs.
 ```
 make -C docs clean html

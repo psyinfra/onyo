@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Union
 
-from ruamel.yaml import YAML, scanner
+from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 from onyo.utils import (
     is_protected_path,
     validate_file
@@ -192,7 +192,7 @@ class Repo:
             if [x for x in tests if x not in all_tests.keys()]:
                 raise ValueError("Invalid test requested. Valid tests are: {}".format(', '.join(all_tests.keys())))
         else:
-            tests = all_tests.keys()
+            tests = list(all_tests.keys())
 
         # run the selected tests
         for key in tests:
