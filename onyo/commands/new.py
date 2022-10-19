@@ -1,9 +1,9 @@
 import logging
 import sys
 import shutil
-from git import Repo
 from pathlib import Path
 
+from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import (
     generate_faux_serial,
     get_config_value,
@@ -11,7 +11,6 @@ from onyo.utils import (
     get_git_root,
     edit_file
 )
-from onyo.commands.fsck import fsck
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -67,8 +66,9 @@ def run_onyo_new(directory, template, non_interactive, onyo_root, repo):
     # open new file?
     if not non_interactive:
         edit_file(filename, onyo_root, onyo_new=True)
+
     # add file to git
-    repo.git.add(filename)
+    repo._git(['add', filename])
     return filename
 
 
@@ -135,8 +135,11 @@ def new(args, onyo_root):
     After the editing is done, the new file will be checked for the validity of
     its YAML syntax and based on the rules in ``.onyo/validation/validation.yaml``.
     """
-    repo = Repo(onyo_root)
-    fsck(args, onyo_root, quiet=True)
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck()
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     # set and check paths, identify template
     [directory, template] = sanitize_paths(args.directory, args.template, onyo_root)
@@ -146,4 +149,4 @@ def new(args, onyo_root):
     git_filepath = created_file.relative_to(get_git_root(onyo_root))
 
     # commit new asset
-    repo.git.commit(m=f"new asset: {git_filepath}")
+    repo._git(['commit', '-m', f'new asset: {git_filepath}'])

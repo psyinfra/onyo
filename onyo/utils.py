@@ -448,7 +448,7 @@ def setup_parser():
         'fsck',
         description=textwrap.dedent(commands.fsck.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='check the onyo repository for sanity, and run YAML and onyo validation on all assets'
+        help='verify the integrity and validity of an onyo repository and its contents'
     )
     cmd_fsck.set_defaults(run=commands.fsck)
     #

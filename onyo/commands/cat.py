@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from onyo.commands.fsck import read_only_fsck
+from onyo.lib import Repo, InvalidOnyoRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -53,7 +53,11 @@ def cat(args, onyo_root):
     Print the contents of ``asset``\(s) to the terminal without parsing or
     validating the contents.
     """
-    read_only_fsck(args, onyo_root, quiet=True)
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck(['asset-yaml'])
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     paths_to_cat = sanitize_paths(args.asset, onyo_root)
 

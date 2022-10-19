@@ -2,8 +2,8 @@ import logging
 import re
 import sys
 from pathlib import Path
-from git import Repo
-from onyo.commands.fsck import fsck
+
+from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
@@ -178,8 +178,11 @@ def mv(args, onyo_root):
         log.error("The --quiet flag requires --yes.")
         sys.exit(1)
 
-    repo = Repo(onyo_root)
-    fsck(args, onyo_root, quiet=True)
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck()
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     # sanitize and validate arguments
     paths_to_mv = sanitize_sources(args.source, onyo_root)
@@ -187,7 +190,7 @@ def mv(args, onyo_root):
 
     if not args.quiet:
         # use git's --dry-run to generate the proposed changes
-        ret = repo.git.mv('--dry-run', paths_to_mv + [args.destination])
+        ret = repo._git(['mv', '--dry-run'] + paths_to_mv + [args.destination])
         print("The following will be moved:")
         print('\n'.join("'{}' -> '{}'".format(*r) for r in re.findall('Renaming (.*) to (.*)', ret)))
 
@@ -198,6 +201,6 @@ def mv(args, onyo_root):
                 sys.exit(0)
 
     # mv and commit
-    repo.git.mv(paths_to_mv + [args.destination])
+    repo._git(['mv'] + paths_to_mv + [args.destination])
     # TODO: can this commit message be made more helpful?
-    repo.git.commit(m='moved asset(s)\n\n' + '\n'.join(paths_to_mv))
+    repo._git(['commit', '-m', 'moved asset(s)\n\n' + '\n'.join(paths_to_mv)])

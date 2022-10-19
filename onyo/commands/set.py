@@ -5,22 +5,15 @@ import yaml
 import glob
 from ruamel.yaml import YAML
 
-from git import Repo
-
+from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import (
     run_cmd,
-    build_git_add_cmd,
     get_git_root,
     validate_rule_for_file
 )
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
-
-
-def build_commit_cmd(files_to_change, onyo_root):
-    return ["git -C \"" + onyo_root + "\" commit -m", "set values.\n\n" +
-            "\n".join(files_to_change)]
 
 
 def read_asset(file, onyo_root):
@@ -190,9 +183,13 @@ def set(args, onyo_root):
     error encountered while writing a file will cause Onyo to error and exit
     immediately.
     """
+    try:
+        repo = Repo(onyo_root)
+        # don't run onyo fsck, so values can be set for correcting assets.
+        # TODO: really?
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
-    # don't run onyo fsck, so values can be set for correcting assets.
-    # fsck(args, onyo_root, quiet=True)
     # get all files in which the values should be set/changed
     files_to_change = prepare_arguments(args.path, args.keys, args.quiet, args.yes, args.recursive, args.depth, onyo_root)
     if not args.quiet:
@@ -215,12 +212,9 @@ def set(args, onyo_root):
 
     for file in files_to_change:
         set_value(os.path.join(onyo_root, file), file, args.keys, onyo_root)
-        repo = Repo(onyo_root)
-        changed_files = [item.a_path for item in repo.index.diff(None)]
-        if len(changed_files) != 0:
-            git_add_cmd = build_git_add_cmd(onyo_root, file)
-            run_cmd(git_add_cmd)
-    # build commit command
-    [commit_cmd, commit_msg] = build_commit_cmd(files_to_change, onyo_root)
-    # run commands
-    run_cmd(commit_cmd, commit_msg)
+        # add any changes
+        repo._git(['add', file])
+
+    files_staged = [str(x) for x in repo.files_staged]
+    if files_staged:
+        repo._git(['commit', '-m', 'set values.\n\n' + '\n'.join(files_staged)])

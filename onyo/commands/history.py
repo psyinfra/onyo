@@ -4,8 +4,8 @@ import shutil
 import sys
 from pathlib import Path
 
+from onyo.lib import Repo, InvalidOnyoRepoError
 from onyo.utils import get_config_value
-from onyo.commands.fsck import read_only_fsck
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -71,7 +71,11 @@ def history(args, onyo_root):
 
     The commands to display history are configurable using ``onyo config``.
     """
-    read_only_fsck(args, onyo_root, quiet=True)
+    try:
+        repo = Repo(onyo_root)
+        repo.fsck(['asset-yaml'])
+    except InvalidOnyoRepoError:
+        sys.exit(1)
 
     # get the command and path
     history_cmd = get_history_cmd(args.interactive, onyo_root)
