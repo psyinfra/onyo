@@ -100,6 +100,16 @@ def test_mkdir_overlapping(caplog):
     assert not Path('overlap/two/overlap').exists()
     assert not Path('overlap/three/overlap').exists()
 
+    # test
+    repo.mkdir(['double-o', 'double-o/one', 'double-o/two', 'double-o/three'])
+    assert anchored_dir('double-o/one')
+    assert anchored_dir('double-o/two')
+    assert anchored_dir('double-o/three')
+    assert not Path('double-o/double-o').exists()
+    assert not Path('double-o/one/double-o').exists()
+    assert not Path('double-o/two/double-o').exists()
+    assert not Path('double-o/three/double-o').exists()
+
 
 def test_mkdir_path(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
