@@ -8,39 +8,11 @@ from onyo.lib import Repo, OnyoInvalidRepoError
 import pytest
 
 
-def populate_test_repo(path: str, dirs: list = [], files: list = []) -> None:
-    # setup repo
-    ret = subprocess.run(['onyo', 'init', path])
-    assert ret.returncode == 0
-
-    # enter repo
-    original_cwd = Path.cwd()
-    os.chdir(path)
-
-    # dirs
-    if dirs:
-        ret = subprocess.run(['onyo', 'mkdir'] + dirs)
-        assert ret.returncode == 0
-
-    # files
-    if files:
-        for i in files:
-            Path(i).touch()
-
-        ret = subprocess.run(['git', 'add'] + files)
-        assert ret.returncode == 0
-        ret = subprocess.run(['git', 'commit', '-m', 'populated for tests'])
-        assert ret.returncode == 0
-
-    # return to home
-    os.chdir(original_cwd)
-
-
-def test_fsck_anchors_empty(caplog):
+def test_fsck_anchors_empty(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     # setup repo
-    populate_test_repo('fsck-anchors-empty')
+    helpers.populate_repo('fsck-anchors-empty')
     os.chdir('fsck-anchors-empty')
     repo = Repo('.')
 
@@ -51,14 +23,14 @@ def test_fsck_anchors_empty(caplog):
     # TODO: assert 'anchors' in caplog.text
 
 
-def test_fsck_anchors_populated(caplog):
+def test_fsck_anchors_populated(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
-    populate_test_repo('fsck-anchors-populated', dirs, files)
+    helpers.populate_repo('fsck-anchors-populated', dirs, files)
     os.chdir('fsck-anchors-populated')
     repo = Repo('.')
 
@@ -69,7 +41,7 @@ def test_fsck_anchors_populated(caplog):
     # TODO: assert 'anchors' in caplog.text
 
 
-def test_fsck_anchors_missing(caplog):
+def test_fsck_anchors_missing(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd', 'r/e/c/u/r/s/i/v/e']
@@ -77,7 +49,7 @@ def test_fsck_anchors_missing(caplog):
     anchors_to_remove = ['a/.anchor', 'r/e/c/.anchor', 'r/e/c/u/r/s/i/v/.anchor']
 
     # setup repo
-    populate_test_repo('fsck-anchors-missing', dirs, files)
+    helpers.populate_repo('fsck-anchors-missing', dirs, files)
     os.chdir('fsck-anchors-missing')
     repo = Repo('.')
 
@@ -96,11 +68,11 @@ def test_fsck_anchors_missing(caplog):
     assert len(anchors_to_remove) == caplog.text.count('/.anchor')
 
 
-def test_fsck_unique_assets_empty(caplog):
+def test_fsck_unique_assets_empty(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     # setup repo
-    populate_test_repo('fsck-unique-assets-empty')
+    helpers.populate_repo('fsck-unique-assets-empty')
     os.chdir('fsck-unique-assets-empty')
     repo = Repo('.')
 
@@ -111,14 +83,14 @@ def test_fsck_unique_assets_empty(caplog):
     # TODO: assert 'asset-unique' in caplog.text
 
 
-def test_fsck_unique_assets_populated(caplog):
+def test_fsck_unique_assets_populated(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
-    populate_test_repo('fsck-unique-assets-populated', dirs, files)
+    helpers.populate_repo('fsck-unique-assets-populated', dirs, files)
     os.chdir('fsck-unique-assets-populated')
     repo = Repo('.')
 
@@ -129,7 +101,7 @@ def test_fsck_unique_assets_populated(caplog):
     # TODO: assert 'asset-unique' in caplog.text
 
 
-def test_fsck_unique_assets_conflict(caplog):
+def test_fsck_unique_assets_conflict(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd', 'r/e/c/u/r/s/i/v/e']
@@ -137,7 +109,7 @@ def test_fsck_unique_assets_conflict(caplog):
     assets_to_conflict = ['b/f_1', 'r/e/c/f_3', 'r/e/c/u/r/s/i/v/e/f_5']
 
     # setup repo
-    populate_test_repo('fsck-unique-assets-conflict', dirs, files)
+    helpers.populate_repo('fsck-unique-assets-conflict', dirs, files)
     os.chdir('fsck-unique-assets-conflict')
     repo = Repo('.')
 
@@ -159,11 +131,11 @@ def test_fsck_unique_assets_conflict(caplog):
         assert 2 == caplog.text.count(Path(i).name)
 
 
-def test_fsck_yaml_empty(caplog):
+def test_fsck_yaml_empty(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     # setup repo
-    populate_test_repo('fsck-yaml-empty')
+    helpers.populate_repo('fsck-yaml-empty')
     os.chdir('fsck-yaml-empty')
     repo = Repo('.')
 
@@ -174,14 +146,14 @@ def test_fsck_yaml_empty(caplog):
     # TODO: assert 'asset-yaml' in caplog.text
 
 
-def test_fsck_yaml_populated(caplog):
+def test_fsck_yaml_populated(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
-    populate_test_repo('fsck-yaml-populated', dirs, files)
+    helpers.populate_repo('fsck-yaml-populated', dirs, files)
     os.chdir('fsck-yaml-populated')
     repo = Repo('.')
 
@@ -192,7 +164,7 @@ def test_fsck_yaml_populated(caplog):
     # TODO: assert 'asset-yaml' in caplog.text
 
 
-def test_fsck_yaml_invalid(caplog):
+def test_fsck_yaml_invalid(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd', 'r/e/c/u/r/s/i/v/e']
@@ -200,7 +172,7 @@ def test_fsck_yaml_invalid(caplog):
     files_to_mangle = ['a/f_1', 'r/e/c/f_5', 'r/e/c/u/r/s/i/v/e/f_7']
 
     # setup repo
-    populate_test_repo('fsck-yaml-invalid', dirs, files)
+    helpers.populate_repo('fsck-yaml-invalid', dirs, files)
     os.chdir('fsck-yaml-invalid')
     repo = Repo('.')
 
@@ -221,11 +193,11 @@ def test_fsck_yaml_invalid(caplog):
         assert i in caplog.text
 
 
-def test_fsck_clean_tree_empty(caplog):
+def test_fsck_clean_tree_empty(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     # setup repo
-    populate_test_repo('fsck-clean-tree-empty')
+    helpers.populate_repo('fsck-clean-tree-empty')
     os.chdir('fsck-clean-tree-empty')
     repo = Repo('.')
 
@@ -236,14 +208,14 @@ def test_fsck_clean_tree_empty(caplog):
     # TODO: assert 'clean-tree' in caplog.text
 
 
-def test_fsck_clean_tree_populated(caplog):
+def test_fsck_clean_tree_populated(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
-    populate_test_repo('fsck-clean-tree-populated', dirs, files)
+    helpers.populate_repo('fsck-clean-tree-populated', dirs, files)
     os.chdir('fsck-clean-tree-populated')
     repo = Repo('.')
 
@@ -254,7 +226,7 @@ def test_fsck_clean_tree_populated(caplog):
     # TODO: assert 'clean-tree' in caplog.text
 
 
-def test_fsck_clean_tree_changed(caplog):
+def test_fsck_clean_tree_changed(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
@@ -262,7 +234,7 @@ def test_fsck_clean_tree_changed(caplog):
     files_to_change = ['a/f_1', 'b/f_3']
 
     # setup repo
-    populate_test_repo('fsck-clean-tree-changed', dirs, files)
+    helpers.populate_repo('fsck-clean-tree-changed', dirs, files)
     os.chdir('fsck-clean-tree-changed')
     repo = Repo('.')
 
@@ -280,7 +252,7 @@ def test_fsck_clean_tree_changed(caplog):
         assert i in caplog.text
 
 
-def test_fsck_clean_tree_staged(caplog):
+def test_fsck_clean_tree_staged(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
@@ -288,7 +260,7 @@ def test_fsck_clean_tree_staged(caplog):
     files_to_stage = ['a/f_1', 'b/f_3']
 
     # setup repo
-    populate_test_repo('fsck-clean-tree-staged', dirs, files)
+    helpers.populate_repo('fsck-clean-tree-staged', dirs, files)
     os.chdir('fsck-clean-tree-staged')
     repo = Repo('.')
 
@@ -309,7 +281,7 @@ def test_fsck_clean_tree_staged(caplog):
         assert i in caplog.text
 
 
-def test_fsck_clean_tree_untracked(caplog):
+def test_fsck_clean_tree_untracked(caplog, helpers):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
@@ -317,7 +289,7 @@ def test_fsck_clean_tree_untracked(caplog):
     files_to_be_untracked = ['LICENSE', 'd/f_9']
 
     # setup repo
-    populate_test_repo('fsck-clean-tree-untracked', dirs, files)
+    helpers.populate_repo('fsck-clean-tree-untracked', dirs, files)
     os.chdir('fsck-clean-tree-untracked')
     repo = Repo('.')
 

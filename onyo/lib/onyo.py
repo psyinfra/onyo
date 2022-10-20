@@ -381,7 +381,7 @@ class Repo:
         dirs = self._mkdir_sanitize(directories)
         # make dirs
         for d in dirs:
-            d.mkdir(parents=True)
+            d.mkdir(parents=True, exist_ok=True)
 
         # anchors
         anchors = {Path(i, '.anchor') for d in dirs

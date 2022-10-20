@@ -1,9 +1,13 @@
 import os
 import shutil
+import subprocess
 from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
 from tempfile import gettempdir
+
+from onyo import commands  # noqa: F401
+from onyo.lib import Repo
 import pytest
 
 
@@ -91,3 +95,26 @@ class Helpers:
                 return True
 
         return False
+
+    @staticmethod
+    def populate_repo(path: str, dirs: list = [], files: list = []) -> None:
+        """
+        Create and initialize a folder, and build a directory and file
+        structure.
+        """
+        # setup repo
+        ret = subprocess.run(['onyo', 'init', path])
+        assert ret.returncode == 0
+        repo = Repo(path)
+
+        # dirs
+        if dirs:
+            repo.mkdir(dirs)
+
+        # files
+        if files:
+            for i in files:
+                Path(path, i).touch()
+
+            repo.add(files)
+            repo.commit('populated for tests', files)

@@ -3,52 +3,12 @@ import subprocess
 from pathlib import Path
 
 
-def populate_test_repo(path):
-    create_dirs = ['simple',
-                   's p a c e s',
-                   's p a/c e s',
-                   'one',
-                   'two',
-                   'three',
-                   ]
+def test_mv_flags(helpers):
+    dirs = ['one', 'two', 'three']
+    files = ['a', 'b', 'c', 'one/d', 'two/e', 'three/f']
 
-    ret = subprocess.run(['onyo', 'init', path])
-    assert ret.returncode == 0
-
-    # enter repo
-    original_cwd = Path.cwd()
-    os.chdir(path)
-
-    # create dirs
-    ret = subprocess.run(['onyo', 'mkdir'] + create_dirs)
-    assert ret.returncode == 0
-
-    # create files
-    Path('a').touch()
-    Path('b').touch()
-    Path('c').touch()
-    Path('one/d').touch()
-    Path('two/e').touch()
-    Path('three/f').touch()
-    Path('s p a c e s/g').touch()
-    Path('s p a c e s/h').touch()
-    Path('s p a c e s/i').touch()
-    Path('s p a/c e s/1 2').touch()
-    Path('s p a/c e s/3 4').touch()
-    Path('s p a/c e s/5 6').touch()
-
-    # add and commit
-    ret = subprocess.run(['git', 'add', '.'])
-    assert ret.returncode == 0
-    ret = subprocess.run(['git', 'commit', '-m', 'populated for tests'])
-    assert ret.returncode == 0
-
-    # return to home
-    os.chdir(original_cwd)
-
-
-def test_mv_flags():
-    populate_test_repo('flags')
+    # setup repo
+    helpers.populate_repo('flags', dirs, files)
     os.chdir('flags')
 
     # --quiet (requires --yes)
@@ -84,8 +44,12 @@ def test_mv_flags():
     assert Path('three/c').is_file()
 
 
-def test_mv_protected():
-    populate_test_repo('protected')
+def test_mv_protected(helpers):
+    dirs = ['one', 'two', 'three']
+    files = ['a', 'b', 'c', 'one/d', 'two/e', 'three/f']
+
+    # setup repo
+    helpers.populate_repo('protected', dirs, files)
     os.chdir('protected')
 
     # cannot rename a file to .anchor
@@ -167,8 +131,12 @@ def test_mv_protected():
     assert not Path('one/refs').exists()
 
 
-def test_mv_rename_file():
-    populate_test_repo('rename_file')
+def test_mv_rename_file(helpers):
+    dirs = ['one', 'two', 'three']
+    files = ['a', 'b', 'c', 'one/d', 'two/e', 'three/f']
+
+    # setup repo
+    helpers.populate_repo('rename_file', dirs, files)
     os.chdir('rename_file')
 
     # cannot rename a file
@@ -212,33 +180,37 @@ def test_mv_rename_file():
     assert not Path('not-exist/c').is_file()
 
 
-def test_mv_rename_dir():
-    populate_test_repo('rename_dir')
+def test_mv_rename_dir(helpers):
+    dirs = ['one', 'two', 'three', 'four', 's p a/c e s']
+    files = []
+
+    # setup repo
+    helpers.populate_repo('rename_dir', dirs, files)
     os.chdir('rename_dir')
 
     # simple
-    ret = subprocess.run(['onyo', 'mv', '--yes', 'simple', 'simple.newname'], capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert ret.stdout
-    assert not ret.stderr
-    assert not Path('simple').exists()
-    assert Path('simple.newname').is_dir()
-
-    # rename into subdir
-    ret = subprocess.run(['onyo', 'mv', '--yes', 'one', 'three/one-rename'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'mv', '--yes', 'one', 'one.newname'], capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout
     assert not ret.stderr
     assert not Path('one').exists()
-    assert Path('three/one-rename').is_dir()
+    assert Path('one.newname').is_dir()
 
-    # same-name into subdir
-    ret = subprocess.run(['onyo', 'mv', '--yes', 'two', 'three/two'], capture_output=True, text=True)
+    # rename into subdir
+    ret = subprocess.run(['onyo', 'mv', '--yes', 'two', 'four/two-rename'], capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout
     assert not ret.stderr
     assert not Path('two').exists()
-    assert Path('three/two').is_dir()
+    assert Path('four/two-rename').is_dir()
+
+    # same-name into subdir
+    ret = subprocess.run(['onyo', 'mv', '--yes', 'three', 'four/three'], capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert ret.stdout
+    assert not ret.stderr
+    assert not Path('three').exists()
+    assert Path('four/three').is_dir()
 
     # spaces
     ret = subprocess.run(['onyo', 'mv', '--yes', 's p a/c e s', 'nospaces'], capture_output=True, text=True)
@@ -249,8 +221,13 @@ def test_mv_rename_dir():
     assert Path('nospaces').is_dir()
 
 
-def test_mv_move_file():
-    populate_test_repo('move_file')
+def test_mv_move_file(helpers):
+    dirs = ['s p a c e s', 's p a/c e s', 'one', 'two', 'three']
+    files = ['a', 'b', 'c', 'one/d', 'two/e', 'three/f', 's p a c e s/g',
+             's p a c e s/h', 's p a c e s/i', 's p a/c e s/1 2']
+
+    # setup repo
+    helpers.populate_repo('move_file', dirs, files)
     os.chdir('move_file')
 
     # NOTE: file names must be unique (otherwise fsck fails) and cannot be
@@ -321,8 +298,12 @@ def test_mv_move_file():
     assert Path('three/f').is_file()
 
 
-def test_mv_move_dir():
-    populate_test_repo('move_dir')
+def test_mv_move_dir(helpers):
+    dirs = ['simple', 's p a c e s', 's p a/c e s', 'one', 'two', 'three', 'conflict', 'three/conflict']
+    files = []
+
+    # setup repo
+    helpers.populate_repo('move_dir', dirs, files)
     os.chdir('move_dir')
 
     # single dir
@@ -357,10 +338,6 @@ def test_mv_move_dir():
     assert Path('s p a c e s/c e s').is_dir()
 
     # cannot move to conflict
-    ret = subprocess.run(['onyo', 'mkdir', 'conflict'], capture_output=True, text=True)
-    assert ret.returncode == 0
-    ret = subprocess.run(['onyo', 'mkdir', 'three/conflict'], capture_output=True, text=True)
-    assert ret.returncode == 0
     ret = subprocess.run(['onyo', 'mv', '--yes', 'conflict', 'three'], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
@@ -409,8 +386,12 @@ def test_mv_move_dir():
     assert not Path('not-exist').exists()
 
 
-def test_mv_move_mixed():
-    populate_test_repo('move_mixed')
+def test_mv_move_mixed(helpers):
+    dirs = ['one', 'two', 's p a/c e s', 's p a c e s']
+    files = ['a', 'b', 'one/d', 'two/e', 's p a/c e s/1 2', 's p a c e s/g']
+
+    # setup repo
+    helpers.populate_repo('move_mixed', dirs, files)
     os.chdir('move_mixed')
 
     # many depths with spaces
