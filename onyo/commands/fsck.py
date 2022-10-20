@@ -1,6 +1,6 @@
 import sys
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 
 
 def fsck(args, onyo_root):
@@ -22,5 +22,5 @@ def fsck(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck()
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)

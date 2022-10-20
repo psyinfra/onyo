@@ -1,6 +1,7 @@
-from .onyo import Repo, InvalidOnyoRepoError
+from .onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
 __all__ = [
     'Repo',
-    'InvalidOnyoRepoError'
+    'OnyoInvalidRepoError',
+    'OnyoProtectedPathError',
 ]

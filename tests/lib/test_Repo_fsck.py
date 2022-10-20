@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 from onyo import commands  # noqa: F401
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 import pytest
 
 
@@ -55,7 +55,7 @@ def test_fsck_anchors_populated(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
     populate_test_repo('fsck-anchors-populated', dirs, files)
@@ -73,7 +73,7 @@ def test_fsck_anchors_missing(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd', 'r/e/c/u/r/s/i/v/e']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
     anchors_to_remove = ['a/.anchor', 'r/e/c/.anchor', 'r/e/c/u/r/s/i/v/.anchor']
 
     # setup repo
@@ -83,10 +83,10 @@ def test_fsck_anchors_missing(caplog):
 
     # remove anchors
     repo._git(['rm'] + anchors_to_remove)
-    repo._git(['commit', '-m', 'remove anchors'])
+    repo.commit('remove anchors')
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['anchors'])
 
     # check log
@@ -115,7 +115,7 @@ def test_fsck_unique_assets_populated(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
     populate_test_repo('fsck-unique-assets-populated', dirs, files)
@@ -133,8 +133,8 @@ def test_fsck_unique_assets_conflict(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd', 'r/e/c/u/r/s/i/v/e']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'r/e/c/5', 'r/e/c/u/r/6', 'r/e/c/u/r/s/i/v/e/7']
-    assets_to_conflict = ['b/1', 'r/e/c/3', 'r/e/c/u/r/s/i/v/e/5']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'r/e/c/f_5', 'r/e/c/u/r/f_6', 'r/e/c/u/r/s/i/v/e/f_7']
+    assets_to_conflict = ['b/f_1', 'r/e/c/f_3', 'r/e/c/u/r/s/i/v/e/f_5']
 
     # setup repo
     populate_test_repo('fsck-unique-assets-conflict', dirs, files)
@@ -145,11 +145,11 @@ def test_fsck_unique_assets_conflict(caplog):
     for i in assets_to_conflict:
         Path(i).touch()
 
-    repo._git(['add'] + assets_to_conflict)
-    repo._git(['commit', '-m', 'add conflicts'])
+    repo.add(assets_to_conflict)
+    repo.commit('add conflicts')
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['asset-unique'])
 
     # check log
@@ -178,7 +178,7 @@ def test_fsck_yaml_populated(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
     populate_test_repo('fsck-yaml-populated', dirs, files)
@@ -196,8 +196,8 @@ def test_fsck_yaml_invalid(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd', 'r/e/c/u/r/s/i/v/e']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'r/e/c/5', 'r/e/c/u/r/6', 'r/e/c/u/r/s/i/v/e/7']
-    files_to_mangle = ['a/1', 'r/e/c/5', 'r/e/c/u/r/s/i/v/e/7']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'r/e/c/f_5', 'r/e/c/u/r/f_6', 'r/e/c/u/r/s/i/v/e/f_7']
+    files_to_mangle = ['a/f_1', 'r/e/c/f_5', 'r/e/c/u/r/s/i/v/e/f_7']
 
     # setup repo
     populate_test_repo('fsck-yaml-invalid', dirs, files)
@@ -208,11 +208,11 @@ def test_fsck_yaml_invalid(caplog):
     for i in files_to_mangle:
         Path(i).write_text('dsfs: sdf: sdf:dd ad123e')
 
-    repo._git(['add'] + files_to_mangle)
-    repo._git(['commit', '-m', 'mangle files'])
+    repo.add(files_to_mangle)
+    repo.commit('mangle files')
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['asset-yaml'])
 
     # check log
@@ -240,7 +240,7 @@ def test_fsck_clean_tree_populated(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
 
     # setup repo
     populate_test_repo('fsck-clean-tree-populated', dirs, files)
@@ -258,8 +258,8 @@ def test_fsck_clean_tree_changed(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
-    files_to_change = ['a/1', 'b/3']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
+    files_to_change = ['a/f_1', 'b/f_3']
 
     # setup repo
     populate_test_repo('fsck-clean-tree-changed', dirs, files)
@@ -271,7 +271,7 @@ def test_fsck_clean_tree_changed(caplog):
         Path(i).write_text('New contents')
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['clean-tree'])
 
     # check log
@@ -284,8 +284,8 @@ def test_fsck_clean_tree_staged(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
-    files_to_stage = ['a/1', 'b/3']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
+    files_to_stage = ['a/f_1', 'b/f_3']
 
     # setup repo
     populate_test_repo('fsck-clean-tree-staged', dirs, files)
@@ -300,7 +300,7 @@ def test_fsck_clean_tree_staged(caplog):
     assert ret.returncode == 0
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['clean-tree'])
 
     # check log
@@ -313,8 +313,8 @@ def test_fsck_clean_tree_untracked(caplog):
     caplog.set_level(logging.INFO, logger='onyo')
 
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
-    files_to_be_untracked = ['LICENSE', 'd/9']
+    files = ['README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8']
+    files_to_be_untracked = ['LICENSE', 'd/f_9']
 
     # setup repo
     populate_test_repo('fsck-clean-tree-untracked', dirs, files)
@@ -326,7 +326,7 @@ def test_fsck_clean_tree_untracked(caplog):
         Path(i).touch()
 
     # test
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['clean-tree'])
 
     # check log

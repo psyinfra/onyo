@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -56,7 +56,7 @@ def cat(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck(['asset-yaml'])
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     paths_to_cat = sanitize_paths(args.asset, onyo_root)

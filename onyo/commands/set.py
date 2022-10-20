@@ -5,7 +5,7 @@ import yaml
 import glob
 from ruamel.yaml import YAML  # pyre-ignore[21]
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import (
     run_cmd,
     get_git_root,
@@ -187,7 +187,7 @@ def set(args, onyo_root):
         repo = Repo(onyo_root)
         # don't run onyo fsck, so values can be set for correcting assets.
         # TODO: really?
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     # get all files in which the values should be set/changed
@@ -213,8 +213,8 @@ def set(args, onyo_root):
     for file in files_to_change:
         set_value(os.path.join(onyo_root, file), file, args.keys, onyo_root)
         # add any changes
-        repo._git(['add', file])
+        repo.add(file)
 
     files_staged = [str(x) for x in repo.files_staged]
     if files_staged:
-        repo._git(['commit', '-m', 'set values.\n\n' + '\n'.join(files_staged)])
+        repo.commit('set values', files_staged)

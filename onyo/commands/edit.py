@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import (
     run_cmd,
     edit_file
@@ -53,7 +53,7 @@ def edit(args, onyo_root):
         # This is so "onyo edit" can be used to fix an existing problem. This has
         # benefits over just simply using `vim`, etc directly, as "onyo edit" will
         # validate the contents of the file before saving and committing.
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     # check and set paths

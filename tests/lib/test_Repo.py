@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 from onyo import commands  # noqa: F401
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 import pytest
 
 
@@ -43,7 +43,7 @@ def test_Repo_instantiate_invalid_path():
 
 def test_Repo_instantiate_empty_dir():
     Path('empty-dir').mkdir()
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         Repo('empty-dir')
 
 
@@ -51,14 +51,14 @@ def test_Repo_instantiate_git_no_onyo():
     ret = subprocess.run(['git', 'init', 'git-no-onyo'])
     assert ret.returncode == 0
 
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         Repo('git-no-onyo')
 
 
 def test_Repo_instantiate_onyo_no_git():
     Path('onyo-no-git/.onyo').mkdir(parents=True)
 
-    with pytest.raises(InvalidOnyoRepoError):
+    with pytest.raises(OnyoInvalidRepoError):
         Repo('onyo-no-git')
 
 

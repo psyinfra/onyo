@@ -3,7 +3,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 from onyo.utils import (
@@ -15,8 +15,12 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-class InvalidOnyoRepoError(Exception):
+class OnyoInvalidRepoError(Exception):
     """Thrown if the repository is invalid."""
+
+
+class OnyoProtectedPathError(Exception):
+    """Thrown if path is protected (.anchor, .git/, .onyo/)."""
 
 
 class Repo:
@@ -133,12 +137,12 @@ class Repo:
             root = self._git(['rev-parse', '--show-toplevel'], cwd=self._opdir).strip()
         except subprocess.CalledProcessError:
             log.error(f"'{self._opdir}' is not a Git repository.")
-            raise InvalidOnyoRepoError(f"'{self._opdir}' is not a Git repository.")
+            raise OnyoInvalidRepoError(f"'{self._opdir}' is not a Git repository.")
 
         root = Path(root)
         if not Path(root, '.onyo').is_dir():
             log.error(f"'{root}' is not an Onyo repository.")
-            raise InvalidOnyoRepoError(f"'{self._opdir}' is not an Onyo repository.")
+            raise OnyoInvalidRepoError(f"'{self._opdir}' is not an Onyo repository.")
 
         # TODO: check .onyo/config, etc
 
@@ -152,7 +156,7 @@ class Repo:
         """
         """
         if cwd is None:
-            cwd = self.root
+            cwd = self.opdir
 
         log.debug(f"Running 'git {args}'")
         ret = subprocess.run(["git"] + args,
@@ -160,6 +164,49 @@ class Repo:
                              capture_output=True, text=True)
 
         return ret.stdout
+
+    #
+    # ADD
+    #
+    def add(self, targets: Union[Iterable[Union[Path, str]], Path, str]) -> None:
+        """
+        Perform ``git add`` to stage files.
+
+        Paths are relative to ``root.opdir``.
+        """
+        if isinstance(targets, (list, set)):
+            tgts = [str(x) for x in list(targets)]
+        else:
+            tgts = [str(targets)]
+
+        for t in tgts:
+            if not Path(self.opdir, t).exists():
+                log.error(f"'{t}' does not exist.")
+                raise FileNotFoundError(f"'{t}' does not exist.")
+
+        self._git(['add'] + tgts)
+
+    #
+    # COMMIT
+    #
+    def commit(self, *args) -> None:
+        """
+        Perform a ``git commit``. The first message argument is the title; each
+        argument after is a new paragraph. Messages are converted to strings.
+        Lists are printed one item per line, also converted to a string.
+        """
+        if not args:
+            raise ValueError('at least one commit message is required')
+
+        messages = []
+        for i in args:
+            messages.append('-m')
+            if isinstance(i, (list, set)):
+                messages.append('\n'.join([str(x) for x in i]))
+            else:
+                messages.append(str(i))
+
+        self._git(['commit'] + messages)
 
     #
     # FSCK
@@ -201,7 +248,7 @@ class Repo:
 
             if not all_tests[key]():
                 log.debug(f"'{key}' failed")
-                raise InvalidOnyoRepoError(f"'{self._opdir}' failed fsck test '{key}'")
+                raise OnyoInvalidRepoError(f"'{self._opdir}' failed fsck test '{key}'")
 
             log.debug(f"'{key}' succeeded")
 
@@ -313,3 +360,80 @@ class Repo:
             return False
 
         return True
+
+    #
+    # MKDIR
+    #
+    def mkdir(self, directories: Union[list[Union[Path, str]], Path, str]) -> None:
+        """
+        Create ``directory``\(s). Intermediate directories will be created as
+        needed (i.e. parent and child directories can be created in one call).
+
+        An empty ``.anchor`` file is added to each directory, to ensure that git
+        tracks it even when empty.
+
+        If a directory already exists, or the path is protected, an exception
+        will be raised. All checks are performed before creating directories.
+        """
+        if not isinstance(directories, list):
+            directories = [directories]
+
+        dirs = self._mkdir_sanitize(directories)
+        # make dirs
+        for d in dirs:
+            d.mkdir(parents=True)
+
+        # anchors
+        anchors = {Path(i, '.anchor') for d in dirs
+                   for i in [d] + list(d.parents)
+                   if i.is_relative_to(self.root) and
+                   not i.samefile(self.root)}
+        for a in anchors:
+            a.touch(exist_ok=True)
+
+        self.add(anchors)
+        # paths should be relative to root in commit messages
+        self.commit('mkdir: ' + ', '.join(["'{}'".format(x.relative_to(self.root)) for x in dirs]))
+
+    def _mkdir_sanitize(self, dirs: list) -> set[Path]:
+        """
+        Check and normalize a list of directories.
+
+        Returns a list of absolute Paths.
+        """
+        error_exist = []
+        error_path_protected = []
+        dirs_to_create = set()
+        # TODO: the set() neatly avoids creating the dame dir twice. Intentional?
+
+        for d in dirs:
+            full_dir = Path(self.opdir, d).resolve()
+
+            # check if it exists
+            if full_dir.exists():
+                error_exist.append(d)
+                continue
+
+            # protected paths
+            if is_protected_path(full_dir):
+                error_path_protected.append(d)
+                continue
+
+            dirs_to_create.add(full_dir)
+
+        # errors
+        if error_exist:
+            log.error('The following paths already exist:\n' +
+                      '\n'.join(error_exist) + '\n' +
+                      'No directories were created.')
+            raise FileExistsError('The following paths already exist:\n' +
+                                  '\n'.join(error_exist))
+
+        if error_path_protected:
+            log.error('The following paths are protected by onyo:\n' +
+                      '\n'.join(error_path_protected) + '\n' +
+                      '\nNo directories were created.')
+            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
+                                         '\n'.join(error_exist))
+
+        return dirs_to_create

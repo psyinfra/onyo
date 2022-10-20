@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -73,7 +73,7 @@ def config(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck(['asset-yaml'])
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     git_config_args = sanitize_args(args.git_config_args)
@@ -97,5 +97,5 @@ def config(args, onyo_root):
     # commit, if there's anything to commit
     if repo.files_changed:
         dot_onyo_config = Path(repo.root, '.onyo/config')
-        repo._git(['add', dot_onyo_config])
-        repo._git(['commit', '-m', 'onyo config: modify shared repository config'])
+        repo.add(dot_onyo_config)
+        repo.commit('config: modify repository config')

@@ -3,7 +3,7 @@ import re
 import sys
 from pathlib import Path
 
-from onyo.lib import Repo, InvalidOnyoRepoError
+from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import is_protected_path
 
 logging.basicConfig()
@@ -181,7 +181,7 @@ def mv(args, onyo_root):
     try:
         repo = Repo(onyo_root)
         repo.fsck()
-    except InvalidOnyoRepoError:
+    except OnyoInvalidRepoError:
         sys.exit(1)
 
     # sanitize and validate arguments
@@ -203,4 +203,4 @@ def mv(args, onyo_root):
     # mv and commit
     repo._git(['mv'] + paths_to_mv + [args.destination])
     # TODO: can this commit message be made more helpful?
-    repo._git(['commit', '-m', 'moved asset(s)\n\n' + '\n'.join(paths_to_mv)])
+    repo.commit('moved asset(s)', paths_to_mv)
