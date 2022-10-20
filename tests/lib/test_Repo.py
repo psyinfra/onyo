@@ -7,32 +7,6 @@ from onyo.lib import Repo, OnyoInvalidRepoError
 import pytest
 
 
-def populate_test_repo(path: str, dirs: list = [], files: list = []) -> None:
-    # setup repo
-    ret = subprocess.run(['onyo', 'init', path])
-    assert ret.returncode == 0
-
-    # enter repo
-    original_cwd = Path.cwd()
-    os.chdir(path)
-
-    # dirs
-    ret = subprocess.run(['onyo', 'mkdir'] + dirs)
-    assert ret.returncode == 0
-
-    # files
-    for i in files:
-        Path(i).touch()
-
-    ret = subprocess.run(['git', 'add'] + files)
-    assert ret.returncode == 0
-    ret = subprocess.run(['git', 'commit', '-m', 'populated for tests'])
-    assert ret.returncode == 0
-
-    # return to home
-    os.chdir(original_cwd)
-
-
 #
 # instantiation
 #
@@ -79,12 +53,12 @@ def test_Repo_instantiate_path():
 #
 # Repo.assets
 #
-def test_Repo_assets():
+def test_Repo_assets(helpers):
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
 
     # setup repo
-    populate_test_repo('assets', dirs, files)
+    helpers.populate_repo('assets', dirs, files)
     os.chdir('assets')
     repo = Repo('.')
 
@@ -115,12 +89,12 @@ def test_Repo_assets():
 #
 # Repo.dirs
 #
-def test_Repo_dirs():
+def test_Repo_dirs(helpers):
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
 
     # setup repo
-    populate_test_repo('dirs', dirs, files)
+    helpers.populate_repo('dirs', dirs, files)
     os.chdir('dirs')
     repo = Repo('.')
 
@@ -145,12 +119,12 @@ def test_Repo_dirs():
 #
 # Repo.files
 #
-def test_Repo_files():
+def test_Repo_files(helpers):
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
 
     # setup repo
-    populate_test_repo('files', dirs, files)
+    helpers.populate_repo('files', dirs, files)
     os.chdir('files')
     repo = Repo('.')
 
@@ -177,13 +151,13 @@ def test_Repo_files():
 #
 # Repo.files_changed
 #
-def test_Repo_files_changed():
+def test_Repo_files_changed(helpers):
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
     files_to_change = ['a/1', 'b/3']
 
     # setup repo
-    populate_test_repo('changed', dirs, files)
+    helpers.populate_repo('changed', dirs, files)
     os.chdir('changed')
     repo = Repo('.')
 
@@ -208,13 +182,13 @@ def test_Repo_files_changed():
 #
 # Repo.files_staged
 #
-def test_Repo_files_staged():
+def test_Repo_files_staged(helpers):
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
     files_to_stage = ['a/1', 'b/3']
 
     # setup repo
-    populate_test_repo('staged', dirs, files)
+    helpers.populate_repo('staged', dirs, files)
     os.chdir('staged')
     repo = Repo('.')
 
@@ -242,13 +216,13 @@ def test_Repo_files_staged():
 #
 # Repo.files_untracked
 #
-def test_Repo_files_untracked():
+def test_Repo_files_untracked(helpers):
     dirs = ['a', 'b', 'c', 'd']
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
     files_to_be_untracked = ['LICENSE', 'd/9']
 
     # setup repo
-    populate_test_repo('untracked', dirs, files)
+    helpers.populate_repo('untracked', dirs, files)
     os.chdir('untracked')
     repo = Repo('.')
 
