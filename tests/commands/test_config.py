@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 
 
 def test_onyo_init():
@@ -6,23 +7,21 @@ def test_onyo_init():
     assert ret.returncode == 0
 
 
-def test_config_set(helpers):
+def test_config_set():
     ret = subprocess.run(["onyo", "config", "onyo.test.set", "set-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stdout
     assert not ret.stderr
-    assert helpers.string_in_file('set =', '.onyo/config')
-    assert helpers.string_in_file('= set-test', '.onyo/config')
+    assert 'set =' in Path('.onyo/config').read_text()
+    assert '= set-test' in Path('.onyo/config').read_text()
 
 
-def test_config_get_onyo(helpers):
+def test_config_get_onyo():
     # set
     ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo", "get-onyo-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert helpers.string_in_file('get-onyo =', '.onyo/config')
-    assert helpers.string_in_file('= get-onyo-test', '.onyo/config')
 
     # get
     ret = subprocess.run(["onyo", "config", "--get", "onyo.test.get-onyo"],
@@ -33,12 +32,10 @@ def test_config_get_onyo(helpers):
 
 
 # onyo should not alter git config's output (newline, etc)
-def test_config_get_pristine(helpers):
+def test_config_get_pristine():
     ret = subprocess.run(["onyo", "config", "onyo.test.get-pristine", "get-pristine-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert helpers.string_in_file('get-pristine =', '.onyo/config')
-    assert helpers.string_in_file('= get-pristine-test', '.onyo/config')
 
     # git config's output
     ret = subprocess.run(["git", "config", "-f", ".onyo/config", "onyo.test.get-pristine"],
@@ -56,8 +53,8 @@ def test_config_get_pristine(helpers):
     assert ret.stdout == git_config_output
 
 
-def test_config_get_empty(helpers):
-    assert not helpers.string_in_file('onyo.test.not-exist', '.onyo/config')
+def test_config_get_empty():
+    assert 'onyo.test.not-exist' not in Path('.onyo/config').read_text()
 
     ret = subprocess.run(["onyo", "config", "--get", "onyo.test.not-exist"],
                          capture_output=True, text=True)
@@ -66,13 +63,11 @@ def test_config_get_empty(helpers):
     assert not ret.stderr
 
 
-def test_config_unset(helpers):
+def test_config_unset():
     # set
     ret = subprocess.run(["onyo", "config", "onyo.test.unset", "unset-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert helpers.string_in_file('unset =', '.onyo/config')
-    assert helpers.string_in_file('= unset-test', '.onyo/config')
 
     # unset
     ret = subprocess.run(["onyo", "config", "--unset", "onyo.test.unset"],
@@ -80,8 +75,8 @@ def test_config_unset(helpers):
     assert ret.returncode == 0
     assert not ret.stdout
     assert not ret.stderr
-    assert not helpers.string_in_file('unset =', '.onyo/config')
-    assert not helpers.string_in_file('= unset-test', '.onyo/config')
+    assert 'unset =' not in Path('.onyo/config').read_text()
+    assert '= unset-test' not in Path('.onyo/config').read_text()
 
     # get
     ret = subprocess.run(["onyo", "config", "--get", "onyo.test.unset"],
@@ -114,13 +109,13 @@ def test_config_forbidden_flags():
         assert flag in ret.stderr
 
 
-def test_config_bubble_retcode(helpers):
+def test_config_bubble_retcode():
     """
     Bubble up git-config's retcodes.
     According to the git config manpage, attempting to unset an option which
     does not exist exits with "5".
     """
-    assert not helpers.string_in_file('onyo.test.not-exist', '.onyo/config')
+    assert 'onyo.test.not-exist' not in Path('.onyo/config').read_text()
 
     ret = subprocess.run(["onyo", "config", "--unset", "onyo.test.not-exist"],
                          capture_output=True, text=True)

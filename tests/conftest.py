@@ -86,17 +86,6 @@ class Helpers:
         return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
     @staticmethod
-    def string_in_file(string, file):
-        """
-        Test whether a string is in a file.
-        """
-        with open(file) as f:
-            if string in f.read():
-                return True
-
-        return False
-
-    @staticmethod
     def populate_repo(path: str, dirs: list = [], files: list = []) -> None:
         """
         Create and initialize a folder, and build a directory and file

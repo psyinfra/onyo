@@ -1,7 +1,7 @@
 import os
 import subprocess
 import pytest
-
+from pathlib import Path
 from onyo import commands  # noqa: F401
 from onyo import utils
 
@@ -11,23 +11,23 @@ def test_onyo_init():
     assert ret.returncode == 0
 
 
-def test_get_config_value_git(helpers):
+def test_get_config_value_git():
     ret = subprocess.run(["git", "config", "onyo.test.get-git", "get-git-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert helpers.string_in_file('get-git =', '.git/config')
-    assert helpers.string_in_file('= get-git-test', '.git/config')
+    assert 'get-git =' in Path('.git/config').read_text()
+    assert '= get-git-test' in Path('.git/config').read_text()
 
     onyo_root = './'
     assert utils.get_config_value('onyo.test.get-git', onyo_root) == 'get-git-test'
 
 
-def test_get_config_value_onyo(helpers):
+def test_get_config_value_onyo():
     ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo", "get-onyo-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert helpers.string_in_file('get-onyo =', '.onyo/config')
-    assert helpers.string_in_file('= get-onyo-test', '.onyo/config')
+    assert 'get-onyo =' in Path('.onyo/config').read_text()
+    assert '= get-onyo-test' in Path('.onyo/config').read_text()
 
     onyo_root = './'
     assert utils.get_config_value('onyo.test.get-onyo', onyo_root) == 'get-onyo-test'
@@ -69,7 +69,7 @@ def test_get_editor_onyo():
     assert ret.returncode == 0
 
 
-def test_get_config_value_envvar(helpers):
+def test_get_config_value_envvar():
     """
     Get the editor from $EDITOR.
     """

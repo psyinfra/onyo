@@ -31,7 +31,7 @@ def test_onyo_init():
     assert ret.returncode == 0
 
 
-def test_history_noninteractive(helpers):
+def test_history_noninteractive():
     ret = subprocess.run(["onyo", "history", "-I"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -39,7 +39,7 @@ def test_history_noninteractive(helpers):
     assert not ret.stderr
 
 
-def test_history_noninteractive_file(helpers):
+def test_history_noninteractive_file():
     ret = subprocess.run(["onyo", "history", "-I", "a"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -47,7 +47,7 @@ def test_history_noninteractive_file(helpers):
     assert not ret.stderr
 
 
-def test_history_noninteractive_dir(helpers):
+def test_history_noninteractive_dir():
     ret = subprocess.run(["onyo", "history", "-I", "subdir/"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -55,7 +55,7 @@ def test_history_noninteractive_dir(helpers):
     assert not ret.stderr
 
 
-def test_history_noninteractive_spaces(helpers):
+def test_history_noninteractive_spaces():
     ret = subprocess.run(["onyo", "history", "-I", "s p a c e s/"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -70,7 +70,7 @@ def test_history_noninteractive_spaces(helpers):
     assert not ret.stderr
 
 
-def test_history_noninteractive_not_exist(helpers):
+def test_history_noninteractive_not_exist():
     ret = subprocess.run(["onyo", "history", "-I", "does_not_exist"],
                          capture_output=True, text=True)
     assert ret.returncode == 1
@@ -85,7 +85,7 @@ def test_history_noninteractive_not_exist(helpers):
     assert ret.stderr
 
 
-def test_history_noninteractive_too_many_args(helpers):
+def test_history_noninteractive_too_many_args():
     ret = subprocess.run(["onyo", "history", "-I", "a", "subdir/b"],
                          capture_output=True, text=True)
     assert ret.returncode != 0
@@ -95,7 +95,7 @@ def test_history_noninteractive_too_many_args(helpers):
 
 # NOTE: interactive cannot be tested directly, as onyo detects whether it's
 #       connected to a TTY.
-def test_history_interactive_fallback(helpers):
+def test_history_interactive_fallback():
     ret = subprocess.run(["onyo", "history", "subdir/b"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -104,9 +104,9 @@ def test_history_interactive_fallback(helpers):
 
 
 # Error when no config flag is found
-def test_history_config_unset(helpers):
+def test_history_config_unset():
     # git is already unset
-    assert not helpers.string_in_file('onyo.history.non-interactive', '.git/config')
+    assert 'onyo.history.non-interactive' not in Path('.git/config').read_text()
     # unset onyo
     ret = subprocess.run(["onyo", "config", "--unset", "onyo.history.non-interactive"],
                          capture_output=True, text=True)
@@ -120,9 +120,9 @@ def test_history_config_unset(helpers):
     assert ret.stderr
 
 
-def test_history_config_invalid(helpers):
+def test_history_config_invalid():
     # git is already unset
-    assert not helpers.string_in_file('onyo.history.non-interactive', '.git/config')
+    assert 'onyo.history.non-interactive' not in Path('.git/config').read_text()
     # set to invalid
     ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "does-not-exist-in-path"],
                          capture_output=True, text=True)
@@ -138,7 +138,7 @@ def test_history_config_invalid(helpers):
 
 # Reconfigure the history command to tickle some other functionality we're
 # interested in.
-def test_history_fake_noninteractive_stdout(helpers):
+def test_history_fake_noninteractive_stdout():
     ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/bin/printf"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -158,7 +158,7 @@ def test_history_fake_noninteractive_stdout(helpers):
     assert not ret.stderr
 
 
-def test_history_fake_noninteractive_stderr(helpers):
+def test_history_fake_noninteractive_stderr():
     ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/bin/printf >&2"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -178,7 +178,7 @@ def test_history_fake_noninteractive_stderr(helpers):
     assert Path(ret.stderr).resolve() == Path('s p a/c e s/1 2').resolve()
 
 
-def test_history_fake_noninteractive_bubble_exit_code(helpers):
+def test_history_fake_noninteractive_bubble_exit_code():
     # success
     ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/bin/true"],
                          capture_output=True, text=True)
