@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-
 import logging
+import re
 import subprocess
 from pathlib import Path
 from typing import Iterable, Optional, Union
@@ -437,3 +436,75 @@ class Repo:
                                          '\n'.join(error_path_protected))
 
         return dirs_to_create
+
+    #
+    # RM
+    #
+    def rm(self, paths: Union[Iterable[Union[Path, str]], Path, str], dryrun: bool = False) -> list[str]:
+        """
+        Delete ``asset``\(s) and ``directory``\(s).
+        """
+        if not isinstance(paths, (list, set)):
+            paths = [paths]
+
+        paths_to_rm = self._rm_sanitize(paths)
+
+        if dryrun:
+            ret = self._git(['rm', '-r', '--dry-run'] + [str(x) for x in paths_to_rm])
+        else:
+            # rm and commit
+            ret = self._git(['rm', '-r'] + [str(x) for x in paths_to_rm])
+            # TODO: should `rm` commit? (mkdir() does, add() doesn't)
+            # TODO: can this commit message be made more helpful?
+            # TODO: relative to self.root
+            self.commit('deleted asset(s)', paths_to_rm)
+
+        # TODO: change this to info
+        log.debug('The following will be deleted:\n' +
+                  '\n'.join([str(x.relative_to(self.opdir)) for x in paths_to_rm]))
+
+        # return a list of rm-ed assets
+        # TODO: should this also list the dirs?
+        # TODO: is this relative to opdir or root? (should be opdir)
+        return [r for r in re.findall("rm '(.*)'", ret)]
+
+    def _rm_sanitize(self, paths: Iterable[Union[Path, str]]) -> list[Path]:
+        """
+        Check and normalize a list of paths.
+
+        Returns a list of absolute Paths.
+        """
+        error_path_absent = []
+        error_path_protected = []
+        paths_to_rm = []
+
+        for p in paths:
+            full_path = Path(self.opdir, p).resolve()
+
+            # paths must exist
+            if not full_path.exists():
+                error_path_absent.append(p)
+                continue
+
+            # protected paths
+            if is_protected_path(full_path):
+                error_path_protected.append(p)
+                continue
+
+            paths_to_rm.append(full_path)
+
+        if error_path_absent:
+            log.error('The following paths do not exist:\n' +
+                      '\n'.join(error_path_absent) + '\n' +
+                      'Nothing was deleted.')
+            raise FileNotFoundError('The following paths do not exist:\n' +
+                                    '\n'.join(error_path_absent))
+
+        if error_path_protected:
+            log.error('The following paths are protected by onyo:\n' +
+                      '\n'.join(error_path_protected) + '\n' +
+                      '\nNo directories were created.')
+            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
+                                         '\n'.join(error_path_protected))
+
+        return paths_to_rm
