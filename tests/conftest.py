@@ -11,6 +11,60 @@ from onyo.lib import Repo
 import pytest
 
 
+@pytest.fixture(scope='function')
+def repo(tmp_path, monkeypatch, request):
+    """
+    This fixture:
+    - creates a new repository in a temporary directory
+    - `cd`s into the dir
+    - returns a handle to the repo
+
+    Furthermore, it will populate the repository by looking for the
+    following markers:
+    - repo_dirs()
+    - repo_files()
+      - files automatically have their parent dirs created.
+
+    """
+    repo_path = Path(tmp_path)
+    dirs = set()
+    files = set()
+
+    # initialize repo
+    ret = subprocess.run(['onyo', 'init', repo_path])
+    assert ret.returncode == 0
+    repo_ = Repo(repo_path)
+
+    # see if there's anything to populate the repo
+    m = request.node.get_closest_marker('repo_files')
+    if m:
+        files = {Path(repo_path, x) for x in m.args}
+
+    m = request.node.get_closest_marker('repo_dirs')
+    if m:
+        dirs = set(m.args)
+
+    # collect dirs for files too
+    dirs |= {x.parent for x in files if not x.parent.exists()}
+
+    # populate the repo
+    if dirs:
+        repo_.mkdir(dirs)
+
+    for i in files:
+        i.touch()
+
+    if files:
+        repo_.add(files)
+        repo_.commit('populated for tests', files)
+
+    # cd into repo; to ease testing
+    monkeypatch.chdir(repo_path)
+
+    # hand it off
+    yield repo_
+
+
 @pytest.fixture(scope="function", autouse=True)
 def change_cwd_to_sandbox(request, monkeypatch):
     """
