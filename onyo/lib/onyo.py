@@ -364,7 +364,7 @@ class Repo:
     #
     # MKDIR
     #
-    def mkdir(self, directories: Union[list[Union[Path, str]], Path, str]) -> None:
+    def mkdir(self, directories: Union[Iterable[Union[Path, str]], Path, str]) -> None:
         """
         Create ``directory``\(s). Intermediate directories will be created as
         needed (i.e. parent and child directories can be created in one call).
@@ -375,7 +375,7 @@ class Repo:
         If a directory already exists, or the path is protected, an exception
         will be raised. All checks are performed before creating directories.
         """
-        if not isinstance(directories, list):
+        if not isinstance(directories, (list, set)):
             directories = [directories]
 
         dirs = self._mkdir_sanitize(directories)
@@ -395,7 +395,7 @@ class Repo:
         # paths should be relative to root in commit messages
         self.commit('mkdir: ' + ', '.join(["'{}'".format(x.relative_to(self.root)) for x in dirs]))
 
-    def _mkdir_sanitize(self, dirs: list) -> set[Path]:
+    def _mkdir_sanitize(self, dirs: Iterable[Union[Path, str]]) -> set[Path]:
         """
         Check and normalize a list of directories.
 
@@ -404,7 +404,7 @@ class Repo:
         error_exist = []
         error_path_protected = []
         dirs_to_create = set()
-        # TODO: the set() neatly avoids creating the dame dir twice. Intentional?
+        # TODO: the set() neatly avoids creating the same dir twice. Intentional?
 
         for d in dirs:
             full_dir = Path(self.opdir, d).resolve()
@@ -434,6 +434,6 @@ class Repo:
                       '\n'.join(error_path_protected) + '\n' +
                       '\nNo directories were created.')
             raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         '\n'.join(error_exist))
+                                         '\n'.join(error_path_protected))
 
         return dirs_to_create

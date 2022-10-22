@@ -30,7 +30,7 @@ jobs:
         sudo apt-get install -y zsh
     - name: flake8 linting
       run: |
-        flake8 $(find . -type f -name "*.py")
+        flake8
     - name: Pyre type checking
       run: |
         pyre --noninteractive check

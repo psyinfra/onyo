@@ -1,235 +1,191 @@
-import logging
-import subprocess
 from pathlib import Path
-
-from onyo import commands  # noqa: F401
-from onyo.lib import Repo
 import pytest
 
 
-def test_onyo_init():
-    ret = subprocess.run(["onyo", "init"])
-    assert ret.returncode == 0
-
-
-def test_add_simple_str(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # test
-    Path('simple-str').touch()
-    repo.add('simple-str')
-    assert Path('simple-str') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
-
-
-def test_add_simple_Path(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
+variants = {
+    'str': 'single-file',
+    'Path': Path('single-file'),
+    'list-str': ['single-file'],
+    'list-Path': [Path('single-file')],
+    'set-str': {'single-file'},
+    'set-Path': {Path('single-file')},
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_args_single_file(repo, variant):
+    """
+    Single file across types.
+    """
+    Path('single-file').touch()
 
     # test
-    Path('simple-Path').touch()
-    repo.add(Path('simple-Path'))
-    assert Path('simple-Path') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
+    repo.add(variant)
+    assert Path('single-file') in repo.files_staged
 
 
-def test_add_list_str(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # test
-    Path('list-one').touch()
-    Path('list-two').touch()
-    Path('list-three').touch()
-    repo.add(['list-one', 'list-two', 'list-three'])
-    assert Path('list-one') in repo.files_staged
-    assert Path('list-two') in repo.files_staged
-    assert Path('list-three') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
-
-
-def test_add_list_Path(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
+variants = {  # pyre-ignore[9]
+    'list-str': ['one', 'two', 'three'],
+    'list-Path': [Path('one'), Path('two'), Path('three')],
+    'list-mixed': ['one', Path('two'), 'three'],
+    'set-str': {'one', 'two', 'three'},
+    'set-Path': {Path('one'), Path('two'), Path('three')},
+    'set-mixed': {Path('one'), 'two', Path('three')},
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_args_multi_file(repo, variant):
+    """
+    Multiple files across types.
+    """
+    Path('one').touch()
+    Path('two').touch()
+    Path('three').touch()
 
     # test
-    Path('list-Path-one').touch()
-    Path('list-Path-two').touch()
-    Path('list-Path-three').touch()
-    repo.add({Path('list-Path-one'), 'list-Path-two', Path('list-Path-three')})
-    assert Path('list-Path-one') in repo.files_staged
-    assert Path('list-Path-two') in repo.files_staged
-    assert Path('list-Path-three') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
+    repo.add(variant)
+    assert Path('one') in repo.files_staged
+    assert Path('two') in repo.files_staged
+    assert Path('three') in repo.files_staged
 
 
-def test_add_list_mixed(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # test
-    Path('list-mix-one-str').touch()
-    Path('list-mix-two-Path').touch()
-    Path('list-mix-three-str').touch()
-    repo.add(['list-mix-one-str', Path('list-mix-two-Path'), 'list-mix-three-str'])
-    assert Path('list-mix-one-str') in repo.files_staged
-    assert Path('list-mix-two-Path') in repo.files_staged
-    assert Path('list-mix-three-str') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
-
-
-def test_add_set_str(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
+variants = {
+    'str': 'single-dir',
+    'Path': Path('single-dir'),
+    'list-str': ['single-dir'],
+    'list-Path': [Path('single-dir')],
+    'set-str': {'single-dir'},
+    'set-Path': {Path('single-dir')},
+}
+@pytest.mark.repo_dirs('single-dir')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_args_single_dir(repo, variant):
+    """
+    Single directory across types.
+    """
+    Path('single-dir/file').touch()
 
     # test
-    Path('set-one').touch()
-    Path('set-two').touch()
-    Path('set-three').touch()
-    repo.add({'set-one', 'set-two', 'set-three'})
-    assert Path('set-one') in repo.files_staged
-    assert Path('set-two') in repo.files_staged
-    assert Path('set-three') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
+    repo.add(variant)
+    assert Path('single-dir/file') in repo.files_staged
 
 
-def test_add_set_Path(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # test
-    Path('set-Path-one').touch()
-    Path('set-Path-two').touch()
-    Path('set-Path-three').touch()
-    repo.add({Path('set-Path-one'), 'set-Path-two', Path('set-Path-three')})
-    assert Path('set-Path-one') in repo.files_staged
-    assert Path('set-Path-two') in repo.files_staged
-    assert Path('set-Path-three') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
-
-
-def test_add_set_mixed(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
+variants = {  # pyre-ignore[9]
+    'list-str': ['one', 'two', 'three'],
+    'list-Path': [Path('one'), Path('two'), Path('three')],
+    'list-mixed': ['one', Path('two'), 'three'],
+    'set-str': {'one', 'two', 'three'},
+    'set-Path': {Path('one'), Path('two'), Path('three')},
+    'set-mixed': {Path('one'), 'two', Path('three')},
+}
+@pytest.mark.repo_dirs('one', 'two', 'three')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_args_multi_dir(repo, variant):
+    """
+    Multiple directories across types.
+    """
+    Path('one/file-one-A').touch()
+    Path('one/file-one-B').touch()
+    Path('two/file-two-A').touch()
+    Path('two/file-two-B').touch()
+    Path('three/file-three-A').touch()
+    Path('three/file-three-B').touch()
 
     # test
-    Path('set-mix-one-Path').touch()
-    Path('set-mix-two-str').touch()
-    Path('set-mix-three-Path').touch()
-    repo.add({Path('set-mix-one-Path'), 'set-mix-two-str', Path('set-mix-three-Path')})
-    assert Path('set-mix-one-Path') in repo.files_staged
-    assert Path('set-mix-two-str') in repo.files_staged
-    assert Path('set-mix-three-Path') in repo.files_staged
+    repo.add(variant)
+    for i in variant:
+        assert Path(f'{i}/file-{i}-A') in repo.files_staged
+        assert Path(f'{i}/file-{i}-B') in repo.files_staged
 
-    # cleanup
-    repo.commit('commit')
+    assert len(variant) * 2 == len(repo.files_staged)
 
 
-def test_add_spaces_file(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # test
-    Path('s p a c e s').touch()
-    repo.add('s p a c e s')
-    assert Path('s p a c e s') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
-
-
-def test_add_dir(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
+variants = {  # pyre-ignore[9]
+    'top': {'dirs': 'r', 'num': 4},
+    'deep': {'dirs': 'r/e/c/u/r/s/i/v/e', 'num': 2},
+    'overlap-same': {'dirs': ['r/e/c/u/r', 'r/e/c/u/r/s/i/v/e'], 'num': 2},
+    'overlap-more': {'dirs': ['r/e', 'r/e/c/u/r/s/i/v/e'], 'num': 4},
+}
+@pytest.mark.repo_dirs('r/e/c/u/r/s/i/v/e')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_dir_recursive(repo, variant):
+    """
+    Recursive directories
+    """
+    Path('r/e/c/child-r-A').touch()
+    Path('r/e/c/child-r-B').touch()
+    Path('r/e/c/u/r/s/i/v/e/child-r-A').touch()
+    Path('r/e/c/u/r/s/i/v/e/child-r-B').touch()
 
     # test
-    Path('dir-one').mkdir()
-    Path('dir-two').mkdir()
-    Path('dir-one/child-one-A').touch()
-    Path('dir-one/child-one-B').touch()
-    Path('dir-two/child-two-A').touch()
-    Path('dir-two/child-two-B').touch()
-
-    repo.add(['dir-one', 'dir-two'])
-    assert Path('dir-one/child-one-A') in repo.files_staged
-    assert Path('dir-one/child-one-B') in repo.files_staged
-    assert Path('dir-two/child-two-A') in repo.files_staged
-    assert Path('dir-two/child-two-B') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
+    repo.add(variant['dirs'])
+    assert variant['num'] == len(repo.files_staged)
 
 
-def test_add_spaces_dir(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
+variants = {
+    'single': ['o n e'],
+    'multi': ['o n e', 't w o', 'd i r/t h r e e'],
+}
+@pytest.mark.repo_dirs('d i r')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_spaces(repo, variant):
+    """
+    Spaces.
+    """
+    Path('o n e').touch()
+    Path('t w o').touch()
+    Path('d i r/t h r e e').touch()
 
     # test
-    Path('s p a/c e s').mkdir(parents=True)
-    Path('s p a/c e s/child-A').touch()
-    repo.add('s p a')
-    assert Path('s p a/c e s/child-A') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
+    repo.add(variant)
+    for i in variant:
+        assert Path(i) in repo.files_staged
+    assert len(variant) == len(repo.files_staged)
 
 
-def test_add_repeat(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # test
-    Path('repeat-A').touch()
-    Path('repeat-B').touch()
-    Path('repeat-C').touch()
-    repo.add(['repeat-A', 'repeat-B', 'repeat-A', 'repeat-C'])
-    assert Path('repeat-A') in repo.files_staged
-    assert Path('repeat-B') in repo.files_staged
-    assert Path('repeat-C') in repo.files_staged
-
-    # cleanup
-    repo.commit('commit')
-
-
-def test_add_unchanged(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('unchanged').touch()
-    repo.add('unchanged')
-    repo.commit('commit')
+def test_add_repeat(repo):
+    """
+    Repeated target paths are OK.
+    """
+    Path('repeat-one').touch()
+    Path('two').touch()
+    Path('three').touch()
 
     # test
-    repo.add('unchanged')
+    repo.add(['repeat-one', 'two', 'repeat-one', 'three'])
+    assert Path('repeat-one') in repo.files_staged
+    assert Path('two') in repo.files_staged
+    assert Path('three') in repo.files_staged
 
 
-def test_add_missing(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
+variants = {
+    'file': 'unchanged-file',
+    'dir': 'unchanged-dir',
+    'mixed': ['unchanged-file', 'unchanged-dir'],
+}
+@pytest.mark.repo_dirs('unchanged-dir')
+@pytest.mark.repo_files('unchanged-file')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_unchanged(repo, variant):
+    """
+    Unchanged targets.
+    """
+    repo.add(variant)
+    assert not repo.files_staged
+
+
+variants = {
+    'root': ['one', 'not-exist', 'dir/three'],
+    'subdir': ['one', 'two', 'dir/not-exist'],
+}
+@pytest.mark.repo_dirs('dir')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_add_not_exist(repo, variant):
+    """
+    Targets that don't exist.
+    """
+    Path('one').touch()
+    Path('two').touch()
+    Path('dir/three').touch()
 
     # test
-    Path('missing-A').touch()
-    Path('missing-C').touch()
     with pytest.raises(FileNotFoundError):
-        repo.add(['missing-A', 'missing-B', 'missing-C'])
-    assert Path('missing-A') not in repo.files_staged
-    assert Path('missing-B') not in repo.files_staged
-    assert Path('missing-C') not in repo.files_staged
-
-    # no commit
+        repo.add(variant)
+    assert not repo.files_staged
