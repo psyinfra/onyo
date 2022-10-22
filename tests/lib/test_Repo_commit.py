@@ -1,9 +1,5 @@
-import logging
 import subprocess
 from pathlib import Path
-
-from onyo import commands  # noqa: F401
-from onyo.lib import Repo
 import pytest
 
 
@@ -13,136 +9,77 @@ def last_commit_message() -> str:
     return ret.stdout
 
 
-def test_onyo_init():
-    ret = subprocess.run(["onyo", "init"])
-    assert ret.returncode == 0
-
-
-def test_commit_str(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('str').touch()
-    repo.add('str')
+variants = {
+    'str': 'normal title',
+    'int': 525600,
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_commit_title(repo, variant):
+    Path('file').touch()
+    repo.add('file')
 
     # test
-    repo.commit('single string')
+    repo.commit(variant)
     msg = last_commit_message()
-    assert 'single string\n' == msg
+    assert f'{variant}\n' == msg
 
 
-def test_commit_int(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('int').touch()
-    repo.add('int')
+variants = {  # pyre-ignore[9]
+    'str': {'args': ('title', 'a two line\ndescription'),
+            'output': 'title\n\n' + 'a two line\ndescription'},
+    'int': {'args': ('title', 525600),
+            'output': 'title\n\n' + '525600'},
+    'Path-rel': {'args': ('title', Path('file')),
+                 'output': 'title\n\n' + 'file'},
+    'Path-abs': {'args': ('title', Path('file').resolve()),
+                 'output': 'title\n\n' + str(Path('file').resolve())},
+    'multiple': {'args': ('title', 'paragraph one', 'paragraph two'),
+                 'output': 'title\n\n' + 'paragraph one\n\n' + 'paragraph two'},
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_commit_title_and_description(repo, variant):
+    Path('file').touch()
+    repo.add('file')
 
     # test
-    repo.commit(525600)
+    repo.commit(*variant['args'])
     msg = last_commit_message()
-    assert '525600\n' == msg
+    assert f"{variant['output']}\n" == msg
 
 
-def test_commit_multi_str(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('multi-str').touch()
-    repo.add('multi-str')
+variants = {  # pyre-ignore[9]
+    'list-str': ['one', 'two', 'three'],
+    'list-Path': [Path('one'), Path('two'), Path('three')],
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_commit_list(repo, variant):
+    Path('file').touch()
+    repo.add('file')
 
     # test
-    repo.commit('multiple', 'strings', 'another')
+    repo.commit('title', 'List of things:', variant)
     msg = last_commit_message()
-    assert 'multiple\n\n' + 'strings\n\n' + 'another\n' == msg
+    assert 'title\n\n' + 'List of things:\n\n' + 'one\ntwo\nthree\n' == msg
 
 
-def test_commit_multi_str_Path(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('multi-str-Path').touch()
-    repo.add('multi-str-Path')
+variants = {  # pyre-ignore[9]
+    'set-str': {'one', 'two', 'three'},
+    'set-Path': {Path('one'), Path('two'), Path('three')},
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_commit_set(repo, variant):
+    Path('file').touch()
+    repo.add('file')
 
     # test
-    repo.commit('changed:', 'I HAVE REASONS', Path('multi-str-Path'))
+    repo.commit('title', 'List of things:', variant)
     msg = last_commit_message()
-    assert 'changed:\n\n' + 'I HAVE REASONS\n\n' + 'multi-str-Path\n' == msg
-
-
-def test_commit_multi_str_list(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('multi-str-list').touch()
-    repo.add('multi-str-list')
-
-    # test
-    repo.commit('changed:', 'I HAVE REASONS', ['one', 'two', 'three'])
-    msg = last_commit_message()
-    assert 'changed:\n\n' + 'I HAVE REASONS\n\n' + 'one\ntwo\nthree\n' == msg
-
-
-def test_commit_multi_str_set(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('multi-str-set').touch()
-    repo.add('multi-str-set')
-
-    # test
-    repo.commit('changed:', 'I HAVE REASONS', {'one', 'two', 'three'})
-    msg = last_commit_message()
-    assert 'changed:\n\n' + 'I HAVE REASONS\n\n' in msg
-    # sets are unordered
     assert 'one\n' in msg
     assert 'two\n' in msg
     assert 'three\n' in msg
 
 
-def test_commit_multi_str_list_Path(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('multi-str-list-Path').touch()
-    repo.add('multi-str-list-Path')
-
-    # test
-    repo.commit('changed:', 'I HAVE REASONS', [Path('one'), Path('two'), Path('three')])
-    msg = last_commit_message()
-    assert 'changed:\n\n' + 'I HAVE REASONS\n\n' + 'one\ntwo\nthree\n' == msg
-
-
-def test_commit_multi_str_set_Path(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # setup
-    Path('multi-str-set-Path').touch()
-    repo.add('multi-str-set-Path')
-
-    # test
-    repo.commit('changed:', 'I HAVE REASONS', {Path('one'), Path('two'), Path('three')})
-    msg = last_commit_message()
-    assert 'changed:\n\n' + 'I HAVE REASONS\n\n' in msg
-    # sets are unordered
-    assert 'one\n' in msg
-    assert 'two\n' in msg
-    assert 'three\n' in msg
-
-
-def test_commit_nothing(caplog):
-    caplog.set_level(logging.INFO, logger='onyo')
-    repo = Repo('.')
-
-    # test
+def test_commit_nothing(repo):
     with pytest.raises(subprocess.CalledProcessError):
         repo.commit('We believe in nothing Lebowski!')
 
