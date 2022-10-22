@@ -10,57 +10,57 @@ import pytest
 #
 # instantiation
 #
-def test_Repo_instantiate_invalid_path():
+variants = {
+    'str': 'the-repo',
+    'Path': Path('the-repo'),
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_Repo_instantiate_types(tmp_path, variant):
+    os.chdir(tmp_path)
+    ret = subprocess.run(['onyo', 'init', 'the-repo'])
+    assert ret.returncode == 0
+
+    # test
+    Repo(variant)
+
+
+def test_Repo_instantiate_invalid_path(tmp_path):
+    repo_path = Path(tmp_path, 'does-not-exist')
+
     with pytest.raises(FileNotFoundError):
-        Repo('does-not-exist')
+        Repo(repo_path)
 
 
-def test_Repo_instantiate_empty_dir():
-    Path('empty-dir').mkdir()
+def test_Repo_instantiate_empty_dir(tmp_path):
+    repo_path = Path(tmp_path)
     with pytest.raises(OnyoInvalidRepoError):
-        Repo('empty-dir')
+        Repo(repo_path)
 
 
-def test_Repo_instantiate_git_no_onyo():
-    ret = subprocess.run(['git', 'init', 'git-no-onyo'])
+def test_Repo_instantiate_git_no_onyo(tmp_path):
+    repo_path = Path(tmp_path)
+    ret = subprocess.run(['git', 'init', str(repo_path)])
     assert ret.returncode == 0
 
+    # test
     with pytest.raises(OnyoInvalidRepoError):
-        Repo('git-no-onyo')
+        Repo(repo_path)
 
 
-def test_Repo_instantiate_onyo_no_git():
-    Path('onyo-no-git/.onyo').mkdir(parents=True)
+def test_Repo_instantiate_onyo_no_git(tmp_path):
+    repo_path = Path(tmp_path)
+    Path(repo_path, '.onyo').mkdir()
 
     with pytest.raises(OnyoInvalidRepoError):
-        Repo('onyo-no-git')
-
-
-def test_Repo_instantiate_string():
-    ret = subprocess.run(['onyo', 'init', 'string'])
-    assert ret.returncode == 0
-
-    Repo('string')
-
-
-def test_Repo_instantiate_path():
-    ret = subprocess.run(['onyo', 'init', 'path'])
-    assert ret.returncode == 0
-
-    Repo(Path('path'))
+        Repo(repo_path)
 
 
 #
 # Repo.assets
 #
-def test_Repo_assets(helpers):
-    dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
-
-    # setup repo
-    helpers.populate_repo('assets', dirs, files)
-    os.chdir('assets')
-    repo = Repo('.')
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
+def test_Repo_assets(repo):
+    assets = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
 
     # test
     assert repo.assets
@@ -81,7 +81,7 @@ def test_Repo_assets(helpers):
         # TODO: make sure name pattern is for an asset (e.g. not README)
 
     # make sure all created files are returned
-    for i in files:
+    for i in assets:
         # TODO: only check assets
         assert [x for x in repo.files if x.samefile(Path(i))]
 
@@ -89,14 +89,9 @@ def test_Repo_assets(helpers):
 #
 # Repo.dirs
 #
-def test_Repo_dirs(helpers):
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
+def test_Repo_dirs(repo):
     dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
-
-    # setup repo
-    helpers.populate_repo('dirs', dirs, files)
-    os.chdir('dirs')
-    repo = Repo('.')
 
     # test
     assert repo.dirs
@@ -119,14 +114,9 @@ def test_Repo_dirs(helpers):
 #
 # Repo.files
 #
-def test_Repo_files(helpers):
-    dirs = ['a', 'b', 'c', 'd']
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
+def test_Repo_files(repo):
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
-
-    # setup repo
-    helpers.populate_repo('files', dirs, files)
-    os.chdir('files')
-    repo = Repo('.')
 
     # test
     assert repo.files
@@ -151,16 +141,9 @@ def test_Repo_files(helpers):
 #
 # Repo.files_changed
 #
-def test_Repo_files_changed(helpers):
-    dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
+def test_Repo_files_changed(repo):
     files_to_change = ['a/1', 'b/3']
-
-    # setup repo
-    helpers.populate_repo('changed', dirs, files)
-    os.chdir('changed')
-    repo = Repo('.')
-
     # change files
     for i in files_to_change:
         Path(i).write_text('New contents')
@@ -182,22 +165,15 @@ def test_Repo_files_changed(helpers):
 #
 # Repo.files_staged
 #
-def test_Repo_files_staged(helpers):
-    dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
+def test_Repo_files_staged(repo):
     files_to_stage = ['a/1', 'b/3']
-
-    # setup repo
-    helpers.populate_repo('staged', dirs, files)
-    os.chdir('staged')
-    repo = Repo('.')
 
     # change and stage files
     for i in files_to_stage:
         Path(i).write_text('New contents')
 
-    ret = subprocess.run(['git', 'add'] + files_to_stage)
-    assert ret.returncode == 0
+    repo.add(files_to_stage)
 
     # test
     assert repo.files_staged
@@ -216,15 +192,9 @@ def test_Repo_files_staged(helpers):
 #
 # Repo.files_untracked
 #
-def test_Repo_files_untracked(helpers):
-    dirs = ['a', 'b', 'c', 'd']
-    files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
+def test_Repo_files_untracked(repo):
     files_to_be_untracked = ['LICENSE', 'd/9']
-
-    # setup repo
-    helpers.populate_repo('untracked', dirs, files)
-    os.chdir('untracked')
-    repo = Repo('.')
 
     # create untracked files
     for i in files_to_be_untracked:
@@ -247,36 +217,47 @@ def test_Repo_files_untracked(helpers):
 #
 # Repo.opdir
 #
-def test_Repo_opdir():
+def test_Repo_opdir(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'opdir-repo'])
     assert ret.returncode == 0
 
+    # test
     repo = Repo('opdir-repo')
     assert isinstance(repo.opdir, Path)
 
 
-def test_Repo_opdir_parent():
+def test_Repo_opdir_parent(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'opdir-parent'])
     assert ret.returncode == 0
 
+    # test
     repo = Repo('opdir-parent')
     assert Path('opdir-parent').samefile(repo.opdir)
 
 
-def test_Repo_opdir_root():
+def test_Repo_opdir_root(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'opdir-root'])
     assert ret.returncode == 0
 
+    # test
     os.chdir('opdir-root')
     repo = Repo('.')
     assert Path('.').samefile(repo.opdir)
     assert repo.root.samefile(repo.opdir)
 
 
-def test_Repo_opdir_child():
+def test_Repo_opdir_child(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'opdir-child'])
     assert ret.returncode == 0
@@ -284,6 +265,7 @@ def test_Repo_opdir_child():
     ret = subprocess.run(['onyo', 'mkdir', '1/2/3/4/5/6'])
     assert ret.returncode == 0
 
+    # test
     os.chdir('1/2/3/4/5/6')
     repo = Repo('.')
     assert Path('.').samefile(repo.opdir)
@@ -292,7 +274,9 @@ def test_Repo_opdir_child():
 #
 # Repo.root
 #
-def test_Repo_root():
+def test_Repo_root(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'root-repo'])
     assert ret.returncode == 0
@@ -301,26 +285,34 @@ def test_Repo_root():
     assert isinstance(repo.root, Path)
 
 
-def test_Repo_root_parent():
+def test_Repo_root_parent(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'root-parent'])
     assert ret.returncode == 0
 
+    # test
     repo = Repo('root-parent')
     assert Path('root-parent').samefile(repo.root)
 
 
-def test_Repo_root_root():
+def test_Repo_root_root(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'root-root'])
     assert ret.returncode == 0
 
+    # test
     os.chdir('root-root')
     repo = Repo('.')
     assert Path('.').samefile(repo.root)
 
 
-def test_Repo_root_child():
+def test_Repo_root_child(tmp_path):
+    os.chdir(tmp_path)
+
     # setup repo
     ret = subprocess.run(['onyo', 'init', 'root-child'])
     assert ret.returncode == 0
@@ -328,6 +320,7 @@ def test_Repo_root_child():
     ret = subprocess.run(['onyo', 'mkdir', '1/2/3/4/5/6'])
     assert ret.returncode == 0
 
+    # test
     os.chdir('1/2/3/4/5/6')
     repo = Repo('.')
     assert Path('../../../../../../').samefile(repo.root)
