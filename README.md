@@ -60,8 +60,8 @@ REPO_ROOT=$PWD pytest -vv --cov
 
 Linting uses both flake8 and Pyre.
 ```
-flake8 $(find . -type f -name "*.py")
-pyre --noninteractive check
+flake8
+pyre check
 ```
 
 ### Documentation
