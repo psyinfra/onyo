@@ -434,6 +434,6 @@ class Repo:
                       '\n'.join(error_path_protected) + '\n' +
                       '\nNo directories were created.')
             raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         '\n'.join(error_exist))
+                                         '\n'.join(error_path_protected))
 
         return dirs_to_create
