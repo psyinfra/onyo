@@ -199,6 +199,9 @@ class Repo:
 
         messages = []
         for i in args:
+            if not i:
+                raise ValueError('commit messages cannot be empty')
+
             messages.append('-m')
             if isinstance(i, (list, set)):
                 messages.append('\n'.join([str(x) for x in i]))
