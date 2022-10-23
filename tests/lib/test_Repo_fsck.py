@@ -44,6 +44,39 @@ def test_fsck_populated(caplog, repo, variant):
     # TODO: assert variant in caplog.text
 
 
+variants = [
+    '',
+    'does-not-exist'
+]
+@pytest.mark.parametrize('variant', variants)
+def test_fsck_invalid_test(caplog, repo, variant):
+    caplog.set_level(logging.INFO, logger='onyo')
+
+    # test
+    with pytest.raises(ValueError):
+        repo.fsck([variant])
+
+    # check log
+    # TODO: assert variant in caplog.text
+
+
+def test_fsck_all(caplog, repo):
+    """
+    Default is to run all tests.
+    """
+    caplog.set_level(logging.INFO, logger='onyo')
+
+    # test
+    repo.fsck()
+
+    # check log
+    # TODO: assert 'anchors' in caplog.text
+    # TODO: assert 'asset-unique' in caplog.text
+    # TODO: assert 'asset-validate' in caplog.text
+    # TODO: assert 'asset-yaml' in caplog.text
+    # TODO: assert 'clean-tree' in caplog.text
+
+
 #
 # Anchors
 #

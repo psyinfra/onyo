@@ -79,9 +79,36 @@ def test_commit_set(repo, variant):
     assert 'three\n' in msg
 
 
-def test_commit_nothing(repo):
+def test_commit_nothing_staged(repo):
     with pytest.raises(subprocess.CalledProcessError):
         repo.commit('We believe in nothing Lebowski!')
 
     msg = last_commit_message()
     assert 'We believe in nothing Lebowski!' not in msg
+
+
+variants = {  # pyre-ignore[9]
+    'empty': (),
+    'str': (''),
+    'list': ([]),
+    'set': (set()),
+    'title-None': ('title', None),
+    'title-str': ('title', ''),
+    'title-list': ('title', []),
+    'title-set': ('title', set()),
+}
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_commit_empty_message(repo, variant):
+    Path('valid').touch()
+    repo.add('valid')
+    repo.commit('valid commit')
+
+    Path('file').touch()
+    repo.add('file')
+
+    # test
+    with pytest.raises(ValueError):
+        repo.commit(*variant)
+
+    msg = last_commit_message()
+    assert 'valid commit\n' == msg
