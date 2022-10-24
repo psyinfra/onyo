@@ -206,7 +206,7 @@ def test_rm_repeat(repo):
 
 
 @pytest.mark.repo_files('overlap/one', 'overlap/two', 'overlap/three')
-def test_mkdir_overlap(repo):
+def test_rm_overlap(repo):
     """
     Overlapping targets.
     """
@@ -218,7 +218,7 @@ def test_mkdir_overlap(repo):
 
 
 @pytest.mark.repo_files('s p a/c e s/1 2', 's p a/c e s/3 4')
-def test_mkdir_spaces(repo):
+def test_rm_spaces(repo):
     """
     Spaces.
     """
