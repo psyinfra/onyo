@@ -139,7 +139,7 @@ def test_history_config_invalid():
 # Reconfigure the history command to tickle some other functionality we're
 # interested in.
 def test_history_fake_noninteractive_stdout():
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/bin/printf"],
+    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/usr/bin/env printf"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -159,7 +159,7 @@ def test_history_fake_noninteractive_stdout():
 
 
 def test_history_fake_noninteractive_stderr():
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/bin/printf >&2"],
+    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/usr/bin/env printf >&2"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -180,7 +180,7 @@ def test_history_fake_noninteractive_stderr():
 
 def test_history_fake_noninteractive_bubble_exit_code():
     # success
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/bin/true"],
+    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/usr/bin/env true"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     ret = subprocess.run(["onyo", "history", "-I", "a"],
