@@ -174,7 +174,7 @@ class Repo:
         Paths are relative to ``root.opdir``.
         """
         if isinstance(targets, (list, set)):
-            tgts = [str(x) for x in list(targets)]
+            tgts = [str(x) for x in targets]
         else:
             tgts = [str(targets)]
 
