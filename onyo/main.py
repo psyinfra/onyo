@@ -481,7 +481,8 @@ def setup_parser():
         formatter_class=SubcommandHelpFormatter,
         help='shell completion for Onyo, suitable for use with "source"'
     )
-    cmd_shell_completion.set_defaults(run=commands.shell_completion)
+    cmd_shell_completion.set_defaults(run=commands.shell_completion,
+                                      parser=parser)
     cmd_shell_completion.add_argument(
         '-s', '--shell',
         metavar='SHELL',
