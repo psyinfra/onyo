@@ -149,6 +149,15 @@ class Repo:
         return root
 
     #
+    # HELPERS
+    #
+    def _n_join(self, to_join: Iterable) -> str:
+        """
+        Convert an Iterable's contents to strings and join with newlines.
+        """
+        return '\n'.join([str(x) for x in to_join])
+
+    #
     # _git
     #
     def _git(self, args: list[str], *, cwd: Optional[Path] = None, raise_error: bool = True) -> str:
@@ -204,7 +213,7 @@ class Repo:
 
             messages.append('-m')
             if isinstance(i, (list, set)):
-                messages.append('\n'.join([str(x) for x in i]))
+                messages.append(self._n_join(i))
             else:
                 messages.append(str(i))
 
@@ -266,7 +275,7 @@ class Repo:
 
         if difference:
             log.warning('The following .anchor files are missing:\n' +
-                        '\n'.join({str(x) for x in difference}))
+                        self._n_join(difference))
             log.warning("Likely 'mkdir' was used to create the directory. Use 'onyo mkdir' instead.")
             # TODO: Prompt the user if they want Onyo to fix it.
 
@@ -287,15 +296,15 @@ class Repo:
 
             if changed:
                 log.error('Changes not staged for commit:\n' +
-                          '\n'.join(changed))
+                          self._n_join(changed))
 
             if staged:
                 log.error('Changes to be committed:\n' +
-                          '\n'.join(staged))
+                          self._n_join(staged))
 
             if untracked:
                 log.error('Untracked files:\n' +
-                          '\n'.join(untracked))
+                          self._n_join(untracked))
 
             log.error('Please commit all changes or add untracked files to .gitignore')
 
@@ -357,7 +366,7 @@ class Repo:
 
         if invalid_yaml:
             log.error('The following files fail YAML validation:\n' +
-                      '\n'.join(invalid_yaml))
+                      self._n_join(invalid_yaml))
 
             return False
 
@@ -426,17 +435,17 @@ class Repo:
         # errors
         if error_exist:
             log.error('The following paths already exist:\n' +
-                      '\n'.join(error_exist) + '\n' +
+                      self._n_join(error_exist) + '\n' +
                       'No directories were created.')
             raise FileExistsError('The following paths already exist:\n' +
-                                  '\n'.join(error_exist))
+                                  self._n_join(error_exist))
 
         if error_path_protected:
             log.error('The following paths are protected by onyo:\n' +
-                      '\n'.join(error_path_protected) + '\n' +
-                      '\nNo directories were created.')
+                      self._n_join(error_path_protected) + '\n' +
+                      'No directories were created.')
             raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         '\n'.join(error_path_protected))
+                                         self._n_join(error_path_protected))
 
         return dirs_to_create
 
@@ -506,7 +515,7 @@ class Repo:
         if error_path_protected:
             log.error('The following paths are protected by onyo:\n' +
                       '\n'.join(error_path_protected) + '\n' +
-                      '\nNo directories were created.')
+                      'No directories were created.')
             raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
                                          '\n'.join(error_path_protected))
 
