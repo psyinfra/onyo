@@ -1,9 +1,8 @@
 import logging
 from pathlib import Path
 
-from onyo import commands  # noqa: F401
-from onyo.lib import OnyoInvalidRepoError
 import pytest
+from onyo.lib import OnyoInvalidRepoError
 
 
 #

@@ -2,7 +2,6 @@ import os
 import subprocess
 from pathlib import Path
 
-from onyo import commands  # noqa: F401
 from onyo.commands.edit import get_editor
 import pytest
 
