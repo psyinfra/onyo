@@ -16,14 +16,10 @@ log.setLevel(logging.INFO)
 class StoreDictKeyPair(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         self._nargs = nargs
-        super(StoreDictKeyPair, self).__init__(option_strings, dest, nargs=nargs, **kwargs)
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        my_dict = {}
-        for pair in parse_key_values(values):
-            k = pair[0]
-            v = pair[1]
-            my_dict[k] = v
+        my_dict = parse_key_values(values)
         setattr(namespace, self.dest, my_dict)
 
 
@@ -54,73 +50,27 @@ class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
         return text
 
 
-def parse_key_values(values):
-    results = []
-    rest_str = values
-    key = ""
-    value = ""
-    while True:
-        if len(rest_str) <= 0:
-            break
-        next_equal = rest_str.find('=')
-        # this happens when `onyo set a=5,b` is called and value is missing
-        if next_equal == -1:
-            log.error("No value after \"" + rest_str + "\". (Equal sign expected)")
-            sys.exit(1)
-        # find key:
-        key = rest_str[0:next_equal]
-        # go behind equal sign
-        rest_str = rest_str[next_equal + 1:]
-        # --- find value ---:
-        # if value starts with quote (then go to next quote, ignore commas until
-        # then)
-        if rest_str[0] == '"':
-            # next_quote ignores the first quote and looks for the next one
-            next_quote = rest_str[1:].find('"')
-            # next comma is then behind the quote
-            next_comma = rest_str[1 + next_quote:].find(',')
-            # if no other comma found, assume end of input
-            if next_comma == -1:
-                # if end reached and in quotes, ignore the leading and ending
-                # quote for string
-                value = rest_str[1:-1]
-                rest_str = ""
-            # take value until the next comma, rest_str starts then from behind
-            # the comma (with the next key/value pair)
-            else:
-                # the value to set beginns with/after quote and goes to the
-                # first comma after the next quote (e.g. it should skip the
-                # quoted comma in "12 , 12")
-                value = rest_str[1: next_quote + next_comma]
-                # rest string should be after the next comma (outside/after the
-                # next quote), and then go +2 to be first after the quote, and
-                # second after the following comma
-                rest_str = rest_str[next_quote + next_comma + 2:]
-        # if value does not start with quote, just go to next comma
-        else:
-            # go to the next comma
-            next_comma = rest_str.find(',')
-            # if there is no next comma, assume end of input
-            if next_comma == -1:
-                value = rest_str
-                rest_str = ""
-            # if there is a comma, the value will end behind it and the rest_str
-            # should follow with the next key/value pair
-            else:
-                value = rest_str[:next_comma]
-                rest_str = rest_str[next_comma + 1:]
-            # if the given values are int/float (and not in quotes), they
-            # should be treated as such
+def parse_key_values(string):
+    """
+    Convert a string of key-value pairs to a dictionary.
+
+    The shell interprets the key-value string before it is passed to argparse.
+    As a result, no quotes are passed through, but the chunking follows what the
+    quoting declared.
+
+    Because of the lack of quoting, this function cannot handle a comma in
+    either the key or value.
+    """
+    results = {k: v for k, v in (pair.split('=') for pair in string.split(','))}
+    for k, v in results.items():
+        try:
+            results.update({k: int(v)})
+        except ValueError:
             try:
-                value = int(value)
+                results.update({k: float(v)})
             except ValueError:
-                try:
-                    value = float(value)
-                except ValueError:
-                    pass
-        # add result
-        results.append([key, value])
-    # return key value pairs
+                pass
+
     return results
 
 
