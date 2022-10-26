@@ -79,7 +79,7 @@ def diff(repo: Repo) -> str:
     Return a diff of all uncommitted changes. The format is a simplified version
     of `git diff`.
     """
-    diff = repo._git(['--no-pager', 'diff', '--minimal', '--unified=0', 'HEAD']).split("\n")
+    diff = repo._git(['--no-pager', 'diff', '--minimal', '--unified=0', 'HEAD']).splitlines()
 
     # select the wanted lines from the git diff output, and put an empty line
     # and the assets name before the changes of each file
