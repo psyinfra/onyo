@@ -105,8 +105,6 @@ sophisticated checks.
 When invoking ``onyo edit`` or ``onyo new``, the file must pass validation
 before it will be saved and committed.
 
-See :ref:`validation`
-
 Docs
 ----
 - Command descriptions have been moved from the README into Onyo and are

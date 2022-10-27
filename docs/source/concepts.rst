@@ -105,11 +105,6 @@ repository.
   - the templates for the ``onyo new --template <template>`` command (see
     "Template Files")
 
-- ``.onyo/validation/validation.yaml``
-
-  - File describing rules for asset files and their fields (see "Field
-    Validation")
-
  .. _templates:
 
 Template Files
@@ -126,42 +121,6 @@ The default template that gets used when ``onyo new`` is called is
 ``onyo config template.default standard``.
 
 For examples, see the section "Templates" in :doc:`examples`.
-
-.. _validation:
-
-Field Validation
-****************
-
-To keep meta data fields consistent between different assets, rules for fields
-in assets can be defined in ``.onyo/validation/validation.yaml`` in an onyo
-repository. The validation file will be read from the top down, and the first
-path in the validation file that fits a asset file will be used to validate
-its contents.
-
-The structure for rules is:
-
-.. code::
-
-   <directory>/*:
-   - <Key>:
-       - Type: <type>
-
-The options that are currently supported are:
-
-- Type:
-
-    - can be int/float/str
-
-A file will be automatically validated every time after creation with ``onyo
-new``, and after changing it with ``onyo edit``, ``onyo set`` and ``onyo mv``.
-``onyo fsck`` will validate all fields in all assets in an onyo repository.
-
-Onyo differentiates between ``<directory>/*`` (files directly in
-``<directory>``) and ``<directory>/**`` (all assets in ``<directory>`` and all
-its sub-directories). YAML pointers can be used to define a set of rules once
-and apply it to multiple sub-directories.
-
-For further help, see the "Validation" section in :doc:`examples`.
 
 Environment Variables
 *********************

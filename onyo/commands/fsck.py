@@ -17,7 +17,7 @@ def fsck(args, onyo_root):
     - "asset-unique": verifies that all asset names are unique
     - "asset-yaml": loads each assets and checks if it's valid YAML
     - "asset-validity": loads each asset and validates the contents against
-      the validation rulesets defined in ``.onyo/validation/validation.yaml``.
+      the validation rulesets defined in ``.onyo/validation/``.
     """
     try:
         repo = Repo(onyo_root)
