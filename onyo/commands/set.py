@@ -63,7 +63,7 @@ def add_assets_from_directory(directory, asset_list, depth, onyo_root):
 def diff_changes(file_list, keys, onyo_root):
     output_str = ""
     asset = []
-    yaml = YAML(typ='safe')
+    yaml = YAML(typ='rt')
     for file in file_list:
         with open(os.path.join(onyo_root, file), "r") as stream:
             try:

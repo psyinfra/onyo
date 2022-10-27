@@ -355,7 +355,7 @@ class Repo:
         for asset in self.assets:
             # TODO: use valid_yaml()
             try:
-                YAML().load(Path(self.root, asset))
+                YAML(typ='rt').load(Path(self.root, asset))
             except scanner.ScannerError:
                 invalid_yaml.append(str(asset))
 

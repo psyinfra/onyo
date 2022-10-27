@@ -46,7 +46,7 @@ def edit_asset(editor: str, asset: Path) -> bool:
         os.system(f'{editor} "{asset}"')
 
         try:
-            YAML().load(asset)
+            YAML(typ='rt').load(asset)
             # TODO: add asset validity here
             return True
         except scanner.ScannerError:
