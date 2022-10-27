@@ -159,7 +159,7 @@ def test_mv_rename_file(helpers):
     ret = subprocess.run(['onyo', 'mv', '--yes', 'a', 'b'], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert 'exists and would conflict' in ret.stderr
+    assert 'cannot be a file' in ret.stderr
     assert Path('a').exists()
     assert Path('b').exists()
 
@@ -285,7 +285,7 @@ def test_mv_move_file(helpers):
     ret = subprocess.run(['onyo', 'mv', 'three/a', 'three/b', 'three/c'], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert 'is not a directory' in ret.stderr
+    assert 'cannot be a file' in ret.stderr
     assert Path('three/a').is_file()
     assert Path('three/b').is_file()
     assert Path('three/c').is_file()
@@ -294,7 +294,7 @@ def test_mv_move_file(helpers):
     ret = subprocess.run(['onyo', 'mv', 'three/f', 'three/f'], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert 'exists and would conflict' in ret.stderr
+    assert 'cannot be a file' in ret.stderr
     assert Path('three/f').is_file()
 
 
