@@ -15,15 +15,13 @@ def repo(tmp_path, monkeypatch, request):
     """
     This fixture:
     - creates a new repository in a temporary directory
-    - `cd`s into the dir
+    - `cd`s into the repository
     - returns a handle to the repo
 
-    Furthermore, it will populate the repository by looking for the
-    following markers:
+    Furthermore, it will populate the repository using these markers:
     - repo_dirs()
     - repo_files()
-      - files automatically have their parent dirs created.
-
+      - parent directories of files are automatically created
     """
     repo_path = Path(tmp_path)
     dirs = set()
@@ -34,16 +32,17 @@ def repo(tmp_path, monkeypatch, request):
     assert ret.returncode == 0
     repo_ = Repo(repo_path)
 
-    # see if there's anything to populate the repo
+    # collect files to populate the repo
     m = request.node.get_closest_marker('repo_files')
     if m:
         files = {Path(repo_path, x) for x in m.args}
 
+    # collect dirs to populate the repo
     m = request.node.get_closest_marker('repo_dirs')
     if m:
         dirs = set(m.args)
 
-    # collect dirs for files too
+    # collect dirs from files list too
     dirs |= {x.parent for x in files if not x.parent.exists()}
 
     # populate the repo
