@@ -140,7 +140,7 @@ def new(args, onyo_root):
     creation opens the new ``asset`` file with the editor.
 
     After the editing is done, the new file will be checked for the validity of
-    its YAML syntax and based on the rules in ``.onyo/validation/validation.yaml``.
+    its YAML syntax and based on the rules in ``.onyo/validation/``.
     """
     try:
         repo = Repo(onyo_root)

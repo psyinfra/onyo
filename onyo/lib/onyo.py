@@ -5,10 +5,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Union
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
-from onyo.utils import (
-    is_protected_path,
-    validate_file
-)
+from onyo.utils import is_protected_path
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -236,7 +233,7 @@ class Repo:
         - "asset-unique": verifies that all asset names are unique
         - "asset-yaml": loads each assets and checks if it's valid YAML
         - "asset-validity": loads each asset and validates the contents against
-          the validation rulesets defined in ``.onyo/validation/validation.yaml``.
+          the validation rulesets defined in ``.onyo/validation/``.
         """
         all_tests = {
             "clean-tree": self._fsck_clean_tree,
@@ -338,10 +335,8 @@ class Repo:
         """
         invalid = {}
         for asset in self.assets:
-            # TODO: check if this still works
-            msg = validate_file(asset, asset, self.root)
-            if msg:
-                invalid[asset] = msg
+            # TODO: validate assets
+            pass
 
         if invalid:
             log.error('The contents of the following files fail validation:\n' +
@@ -360,7 +355,7 @@ class Repo:
         for asset in self.assets:
             # TODO: use valid_yaml()
             try:
-                YAML().load(Path(self.root, asset))
+                YAML(typ='rt').load(Path(self.root, asset))
             except scanner.ScannerError:
                 invalid_yaml.append(str(asset))
 

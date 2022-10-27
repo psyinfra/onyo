@@ -46,7 +46,7 @@ def edit_asset(editor: str, asset: Path) -> bool:
         os.system(f'{editor} "{asset}"')
 
         try:
-            YAML().load(asset)
+            YAML(typ='rt').load(asset)
             # TODO: add asset validity here
             return True
         except scanner.ScannerError:
@@ -119,9 +119,9 @@ def edit(args, onyo_root: str) -> None:
     When multiple asset files are given, Onyo will open them in sequence.
 
     After editing an ``asset``, the contents will be checked for valid YAML and
-    also against any matching rules in ``.onyo/validation/validation.yaml``. If
-    problems are found, the choice will be offered to reopen the editor to fix
-    them, or abort and return to the original state.
+    also against any matching rules in ``.onyo/validation/``. If problems are
+    found, the choice will be offered to reopen the editor to fix them, or abort
+    and return to the original state.
     """
     repo = None
     try:

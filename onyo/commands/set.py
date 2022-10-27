@@ -1,15 +1,11 @@
 import logging
 import os
 import sys
-import yaml
-import glob
 from ruamel.yaml import YAML  # pyre-ignore[21]
 
 from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.utils import (
-    run_cmd,
-    get_git_root,
-    validate_rule_for_file
+    get_git_root
 )
 
 logging.basicConfig()
@@ -67,11 +63,11 @@ def add_assets_from_directory(directory, asset_list, depth, onyo_root):
 def diff_changes(file_list, keys, onyo_root):
     output_str = ""
     asset = []
-    ru_yaml = YAML(typ='safe')
+    yaml = YAML(typ='rt')
     for file in file_list:
         with open(os.path.join(onyo_root, file), "r") as stream:
             try:
-                asset = ru_yaml.load(stream)
+                asset = yaml.load(stream)
                 if not asset:
                     asset = []
             except yaml.YAMLError as e:
@@ -94,42 +90,13 @@ def diff_changes(file_list, keys, onyo_root):
     return output_str
 
 
-def simulate_validation_after_change(file, rules_file, keys, onyo_root):
-    problem_str = ""
-    temp_file = os.path.join(get_git_root(onyo_root), os.path.join(".onyo/temp/", os.path.basename(file)))
-    # either it exists relative from cwd, or else should use the absolute path
-    if os.path.isdir(file):
-        run_cmd("cp \"" + file + "\" \"" + temp_file + "\"")
-    else:
-        run_cmd("cp \"" + os.path.join(onyo_root, file) + "\" \"" + temp_file + "\"")
-    problem_str = problem_str + set_value(temp_file, temp_file, keys, onyo_root)
-    for path_of_rule in rules_file:
-        if os.path.join(onyo_root, file) in glob.glob(os.path.join(onyo_root, path_of_rule), recursive=True):
-            for rule in rules_file[path_of_rule]:
-                problem_str = problem_str + validate_rule_for_file(temp_file, rule, path_of_rule, file, onyo_root)
-                if problem_str != "":
-                    run_cmd("rm \"" + temp_file + "\"")
-                    return problem_str
-    run_cmd("rm \"" + temp_file + "\"")
-    return problem_str
-
-
 def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
     problem_str = ""
     asset_list = []
-    ru_yaml = YAML(typ='safe')
     if quiet and not yes:
         problem_str = problem_str + "\nonyo set --quiet can't be run without --yes flag."
     if not depth == -1 and not depth > 0:
         problem_str = problem_str + "\n--depth must be an integer bigger than 0."
-    # just open/validate the rules-file once
-    with open(os.path.join(get_git_root(onyo_root), ".onyo/validation/validation.yaml"), "r") as stream:
-        try:
-            rules_file = ru_yaml.load(stream)
-            if not rules_file:
-                rules_file = []
-        except yaml.YAMLError as e:
-            print(e)
     for file in path:
         asset = os.path.join(onyo_root, file)
         # if "onyo set RAM=10 *" is called, directories should not throw an
@@ -147,12 +114,7 @@ def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
             problem_str = problem_str + "\nAsset file " + file + " does not exist."
             continue
         asset_list.append(file)
-    # try validating:
-    validation_error_str = ""
-    for asset in asset_list:
-        validation_error_str = validation_error_str + simulate_validation_after_change(asset, rules_file, keys, onyo_root)
-    if validation_error_str != "":
-        problem_str = problem_str + "\n" + validation_error_str
+    # TODO: validate assets
     if len(asset_list) == 0:
         problem_str = problem_str + "\nNo assets selected."
     if problem_str != "":
