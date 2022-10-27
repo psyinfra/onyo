@@ -9,12 +9,10 @@ def fully_populated_dot_onyo(directory=''):
     dot_onyo = Path(directory, '.onyo')
 
     if not Path(dot_onyo).is_dir() or \
-       not Path(dot_onyo, "temp").is_dir() or \
        not Path(dot_onyo, "templates").is_dir() or \
        not Path(dot_onyo, "validation").is_dir() or \
        not Path(dot_onyo, "config").is_file() or \
        not Path(dot_onyo, ".anchor").is_file() or \
-       not Path(dot_onyo, "temp/.anchor").is_file() or \
        not Path(dot_onyo, "templates/.anchor").is_file() or \
        not Path(dot_onyo, "validation/.anchor").is_file():
            return False  # noqa: E111, E117

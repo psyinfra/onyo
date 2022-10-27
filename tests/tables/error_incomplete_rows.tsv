@@ -1,0 +1,6 @@
+type	make	model	serial	directory
+	apple	macbookpro	0	simple
+laptop		macbookpro	0	simple
+laptop	apple		0	simple
+laptop	apple	macbookpro		simple
+laptop	apple	macbookpro	0	

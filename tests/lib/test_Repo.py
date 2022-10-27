@@ -65,12 +65,10 @@ def fully_populated_dot_onyo(directory: Union[Path, str]) -> bool:
     dot_onyo = Path(directory, '.onyo')
 
     if not Path(dot_onyo).is_dir() or \
-       not Path(dot_onyo, "temp").is_dir() or \
        not Path(dot_onyo, "templates").is_dir() or \
        not Path(dot_onyo, "validation").is_dir() or \
        not Path(dot_onyo, "config").is_file() or \
        not Path(dot_onyo, ".anchor").is_file() or \
-       not Path(dot_onyo, "temp/.anchor").is_file() or \
        not Path(dot_onyo, "templates/.anchor").is_file() or \
        not Path(dot_onyo, "validation/.anchor").is_file():
            return False  # noqa: E111, E117
@@ -489,3 +487,67 @@ def test_Repo_root_child(tmp_path):
     os.chdir('1/2/3/4/5/6')
     repo = Repo('.')
     assert Path('../../../../../../').samefile(repo.root)
+
+
+#
+# Repo.templates
+#
+def test_Repo_templates(repo: Repo) -> None:
+    """
+    Test that the property repo.templates is a set of Paths to templates with
+    the right location without containing unwanted files.
+    """
+    # test
+    assert repo.templates
+    assert isinstance(repo.templates, set)
+
+    # fewer templates than files
+    assert len(repo.templates) < len(repo.files)
+
+    for i in repo.templates:
+        assert isinstance(i, Path)
+        assert i.is_file()
+        assert '.onyo' in i.parts and 'templates' in i.parts
+        # nothing from .git
+        assert '.git' not in i.parts
+        # no anchors
+        assert '.anchor' != i.name
+
+
+def test_Repo_get_template(repo: Repo) -> None:
+    """
+    Test that the function repo.get_template() can request all templates
+    contained in repo.templates when called with a string or a path.
+    repo.get_template() should always return a Path and can get a string or a
+    Path.
+    """
+    for i in repo.templates:
+        template = repo.get_template(i)
+        assert isinstance(template, Path)
+        template = repo.get_template(str(i))
+        assert isinstance(template, Path)
+        template = repo.get_template(i.name)
+        assert isinstance(template, Path)
+
+        assert template.is_file()
+        assert '.onyo' in template.parts and 'templates' in template.parts
+        # nothing from .git
+        assert '.git' not in template.parts
+        # no anchors
+        assert '.anchor' != template.name
+
+
+def test_Repo_get_template_default(repo: Repo) -> None:
+    """
+    Test that the function repo.get_template() gets the default template when
+    called without argument.
+    """
+    template = repo.get_template()
+    assert isinstance(template, Path)
+
+    assert template.is_file()
+    assert '.onyo' in template.parts and 'templates' in template.parts
+    # nothing from .git
+    assert '.git' not in template.parts
+    # no anchors
+    assert '.anchor' != template.name
