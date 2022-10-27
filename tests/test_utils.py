@@ -1,7 +1,7 @@
 import subprocess
-import pytest
 from pathlib import Path
-from onyo import commands  # noqa: F401
+
+import pytest
 from onyo import utils
 
 

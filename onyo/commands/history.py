@@ -52,7 +52,7 @@ def get_history_cmd(interactive, onyo_root):
         log.error("Please see 'onyo config --help' for information about how to set it. Exiting.")
         sys.exit(1)
 
-    history_program = history_cmd.split(' ')[0]
+    history_program = history_cmd.split()[0]
     if not shutil.which(history_program):
         log.error(f"'{history_cmd}' acquired from '{config_name}'.")
         log.error(f"The program '{history_program}' was not found. Exiting.")

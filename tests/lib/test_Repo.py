@@ -2,9 +2,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from onyo import commands  # noqa: F401
-from onyo.lib import Repo, OnyoInvalidRepoError
 import pytest
+from onyo.lib import Repo, OnyoInvalidRepoError
 
 
 #

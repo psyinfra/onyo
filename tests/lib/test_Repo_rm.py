@@ -1,8 +1,7 @@
 from pathlib import Path
 
-from onyo import commands  # noqa: F401
-from onyo.lib import OnyoProtectedPathError
 import pytest
+from onyo.lib import OnyoProtectedPathError
 
 
 variants = {

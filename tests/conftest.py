@@ -6,7 +6,6 @@ from itertools import chain, combinations
 from pathlib import Path
 from tempfile import gettempdir
 
-from onyo import commands  # noqa: F401
 from onyo.lib import Repo
 import pytest
 

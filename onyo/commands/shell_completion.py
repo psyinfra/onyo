@@ -1,5 +1,4 @@
 import argparse
-from onyo.utils import setup_parser
 
 
 class TabCompletion:
@@ -442,7 +441,7 @@ def shell_completion(args, onyo_root):
         $ source <(onyo shell-completion)
         $ onyo --<PRESS TAB to display available options>
     """
-    parser = setup_parser()
+    parser = args.parser
 
     if args.shell == 'zsh':
         type_to_action_map = {
