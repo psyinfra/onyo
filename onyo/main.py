@@ -117,6 +117,7 @@ def setup_parser():
     parser.add_argument(
         '-C',
         '--onyopath',
+        dest='opdir',
         metavar='DIR',
         required=False,
         default=os.getcwd(),
@@ -508,7 +509,7 @@ def main():
 
     # run the subcommand
     if subcmd_index:
-        args.run(args, args.onyopath)
+        args.run(args, args.opdir)
     else:
         parser.print_help()
         exit(1)

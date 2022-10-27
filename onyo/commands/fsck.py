@@ -3,7 +3,7 @@ import sys
 from onyo.lib import Repo, OnyoInvalidRepoError
 
 
-def fsck(args, onyo_root):
+def fsck(args, opdir):
     """
     Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
@@ -20,7 +20,7 @@ def fsck(args, onyo_root):
       the validation rulesets defined in ``.onyo/validation/``.
     """
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)

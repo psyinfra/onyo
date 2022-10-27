@@ -18,20 +18,20 @@ def build_tree_cmd(directory):
     return "tree \"" + directory + "\""
 
 
-def prepare_arguments(sources, onyo_root):
+def prepare_arguments(sources, opdir):
     problem_str = ""
     list_of_sources = []
     # just a single path?
     single_source = "".join(sources)
     if os.path.isdir(single_source):
         return [single_source]
-    elif os.path.isdir(os.path.join(onyo_root, single_source)):
-        return [os.path.join(onyo_root, single_source)]
+    elif os.path.isdir(os.path.join(opdir, single_source)):
+        return [os.path.join(opdir, single_source)]
     # build paths
     for source in sources:
         current_source = source
         if not os.path.exists(current_source):
-            current_source = os.path.join(onyo_root, source)
+            current_source = os.path.join(opdir, source)
         # check if path exists
         if not os.path.exists(current_source):
             problem_str = problem_str + "\n" + source + " does not exist."
@@ -45,19 +45,19 @@ def prepare_arguments(sources, onyo_root):
     return list_of_sources
 
 
-def tree(args, onyo_root):
+def tree(args, opdir):
     """
     List the assets and directories in ``directory`` using the ``tree``
     program.
     """
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         repo.fsck(['asset-yaml'])
     except OnyoInvalidRepoError:
         sys.exit(1)
 
     # check sources
-    list_of_sources = prepare_arguments(args.directory, onyo_root)
+    list_of_sources = prepare_arguments(args.directory, opdir)
     # build and run commands
     for source in list_of_sources:
         tree_command = build_tree_cmd(source)

@@ -11,17 +11,17 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def sanitize_path(path, onyo_root):
+def sanitize_path(path, opdir):
     """
-    Checks a path relative to onyo_root. If it does not exist, it will print
-    an error and exit.
+    Checks a path relative to opdir. If it does not exist, it will print an
+    error and exit.
 
     Returns an absolute path on success.
     """
     if not path:
         path = './'
 
-    full_path = Path(onyo_root, path).resolve()
+    full_path = Path(opdir, path).resolve()
 
     # check if path exists
     if not full_path.exists():
@@ -32,7 +32,7 @@ def sanitize_path(path, onyo_root):
     return full_path
 
 
-def get_history_cmd(interactive, onyo_root):
+def get_history_cmd(interactive, repo_root):
     """
     Get the command used to display history. The appropriate one is selected
     according to the interactive mode, and basic checks are performed for
@@ -46,7 +46,7 @@ def get_history_cmd(interactive, onyo_root):
     if not interactive or not sys.stdout.isatty():
         config_name = 'onyo.history.non-interactive'
 
-    history_cmd = get_config_value(config_name, onyo_root)
+    history_cmd = get_config_value(config_name, repo_root)
     if not history_cmd:
         log.error(f"'{config_name}' is unset and is required to display history.")
         log.error("Please see 'onyo config --help' for information about how to set it. Exiting.")
@@ -61,7 +61,7 @@ def get_history_cmd(interactive, onyo_root):
     return history_cmd
 
 
-def history(args, onyo_root):
+def history(args, opdir):
     """
     Display the history of an ``asset`` or ``directory``.
 
@@ -72,19 +72,19 @@ def history(args, onyo_root):
     The commands to display history are configurable using ``onyo config``.
     """
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         repo.fsck(['asset-yaml'])
     except OnyoInvalidRepoError:
         sys.exit(1)
 
     # get the command and path
-    history_cmd = get_history_cmd(args.interactive, onyo_root)
-    path = sanitize_path(args.path, onyo_root)
+    history_cmd = get_history_cmd(args.interactive, repo.root)
+    path = sanitize_path(args.path, opdir)
 
     # run it
     orig_cwd = os.getcwd()
     try:
-        os.chdir(onyo_root)
+        os.chdir(opdir)
         status = os.system(f"{history_cmd} '{path}'")
     except:  # noqa: E722
         pass

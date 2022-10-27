@@ -45,7 +45,7 @@ def get_git_root(path):
         return git_root
 
 
-def generate_faux_serial(onyo_root, faux_length=8):
+def generate_faux_serial(repo_root, faux_length=8):
     """
     Generate a unique faux serial number and verify that it does not appear in
     any other asset file name in any directory of the onyo repository.
@@ -62,7 +62,7 @@ def generate_faux_serial(onyo_root, faux_length=8):
     # generate a new faux serial number until a unique one (which is in no other
     # asset name in the repository) is found, then return it.
     alphanum = string.ascii_letters + string.digits
-    list_of_assets = get_list_of_assets(onyo_root)
+    list_of_assets = get_list_of_assets(repo_root)
     faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
     while True in [faux in asset[1] for asset in list_of_assets]:
         faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
@@ -73,7 +73,7 @@ def build_git_add_cmd(directory, file):
     return "git -C \"" + directory + "\" add \"" + file + "\""
 
 
-def get_config_value(name, onyo_root):
+def get_config_value(name, repo_root):
     """
     Get the value for a configuration option specified by `name`. git-config is
     checked first, as it is machine-local. The default order of git-config
@@ -82,7 +82,7 @@ def get_config_value(name, onyo_root):
     Returns a string with the config value on success. None otherwise.
     """
     value = None
-    repo = Repo(onyo_root)
+    repo = Repo(repo_root)
 
     # git-config (with its full stack of locations to check)
     try:
@@ -94,7 +94,7 @@ def get_config_value(name, onyo_root):
 
     # .onyo/config
     if not value:
-        dot_onyo_config = os.path.join(repo.git.rev_parse('--show-toplevel'), '.onyo/config')
+        dot_onyo_config = os.path.join(repo_root, '.onyo/config')
         try:
             value = repo.git.config('--get', name, f=dot_onyo_config)
             log.debug(f"onyo config acquired '{name}': '{value}'")
@@ -109,11 +109,11 @@ def get_config_value(name, onyo_root):
     return value
 
 
-def get_list_of_assets(repo_path):
+def get_list_of_assets(repo_root):
     """
     Return a list of all assets in an onyo repository.
     """
-    return [[x[0][0], Path(x[0][0]).name] for x in Repo(repo_path).index.entries.items()
+    return [[x[0][0], Path(x[0][0]).name] for x in Repo(repo_root).index.entries.items()
             if not is_protected_path(x[0][0])]
 
 

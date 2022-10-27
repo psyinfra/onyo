@@ -12,10 +12,10 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def read_asset(file, onyo_root):
+def read_asset(file, opdir):
     yaml = YAML(typ='rt')
     asset = {}
-    with open(os.path.join(onyo_root, file), "r") as stream:
+    with open(os.path.join(opdir, file), "r") as stream:
         try:
             asset = yaml.load(stream)
         except yaml.YAMLError as e:
@@ -25,27 +25,27 @@ def read_asset(file, onyo_root):
     return asset
 
 
-def write_asset(data, file, onyo_root):
+def write_asset(data, file, opdir):
     yaml = YAML(typ='rt')
-    with open(os.path.join(onyo_root, file), "w") as stream:
+    with open(os.path.join(opdir, file), "w") as stream:
         yaml.dump(data, stream)
 
 
-def set_value(file, git_filepath, keys, onyo_root):
-    asset = read_asset(git_filepath, onyo_root)
+def set_value(file, git_filepath, keys, opdir):
+    asset = read_asset(git_filepath, opdir)
     for key in keys.items():
         try:
             asset[key[0]] = key[1]
         # when a YAML asset just has a line with a key like "RAM" without value:
         except TypeError as e:
             return "Can't update asset " + git_filepath + ": " + str(e)
-    write_asset(asset, git_filepath, onyo_root)
+    write_asset(asset, git_filepath, opdir)
     return ""
 
 
-def add_assets_from_directory(directory, asset_list, depth, onyo_root):
-    for path in os.listdir(os.path.join(onyo_root, directory)):
-        asset = os.path.join(os.path.join(onyo_root, directory), path)
+def add_assets_from_directory(directory, asset_list, depth, opdir):
+    for path in os.listdir(os.path.join(opdir, directory)):
+        asset = os.path.join(os.path.join(opdir, directory), path)
         if path in [".git", ".onyo", ".anchor"]:
             continue
         if os.path.isfile(asset):
@@ -56,16 +56,16 @@ def add_assets_from_directory(directory, asset_list, depth, onyo_root):
             else:
                 if depth > 0:
                     depth = depth - 1
-                asset_list = add_assets_from_directory(os.path.join(directory, path), asset_list, depth, onyo_root)
+                asset_list = add_assets_from_directory(os.path.join(directory, path), asset_list, depth, opdir)
     return asset_list
 
 
-def diff_changes(file_list, keys, onyo_root):
+def diff_changes(file_list, keys, opdir):
     output_str = ""
     asset = []
     yaml = YAML(typ='rt')
     for file in file_list:
-        with open(os.path.join(onyo_root, file), "r") as stream:
+        with open(os.path.join(opdir, file), "r") as stream:
             try:
                 asset = yaml.load(stream)
                 if not asset:
@@ -83,14 +83,14 @@ def diff_changes(file_list, keys, onyo_root):
             # display new value:
             asset_changed = asset_changed + "\n+\t" + key + ": " + str(keys[key])
         if asset_changed:
-            if onyo_root in file:
-                output_str = output_str + "\n" + os.path.relpath(file, get_git_root(onyo_root)) + asset_changed
+            if opdir in file:
+                output_str = output_str + "\n" + os.path.relpath(file, get_git_root(opdir)) + asset_changed
             else:
                 output_str = output_str + "\n" + file + asset_changed
     return output_str
 
 
-def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
+def prepare_arguments(path, keys, quiet, yes, recursive, depth, opdir):
     problem_str = ""
     asset_list = []
     if quiet and not yes:
@@ -98,15 +98,15 @@ def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
     if not depth == -1 and not depth > 0:
         problem_str = problem_str + "\n--depth must be an integer bigger than 0."
     for file in path:
-        asset = os.path.join(onyo_root, file)
+        asset = os.path.join(opdir, file)
         # if "onyo set RAM=10 *" is called, directories should not throw an
         # error, but also not be added to the asset list.
         if os.path.isdir(asset):
             if recursive:
                 if file == ".":
-                    asset_list = add_assets_from_directory(onyo_root, asset_list, depth, onyo_root)
+                    asset_list = add_assets_from_directory(opdir, asset_list, depth, opdir)
                 else:
-                    asset_list = add_assets_from_directory(file, asset_list, depth, onyo_root)
+                    asset_list = add_assets_from_directory(file, asset_list, depth, opdir)
             else:
                 log.info("Can't set values for folder \"" + file + "\" without --recursive flag.\n")
             continue
@@ -124,7 +124,7 @@ def prepare_arguments(path, keys, quiet, yes, recursive, depth, onyo_root):
     return asset_list
 
 
-def set(args, onyo_root):
+def set(args, opdir):
     """
     Set the ``value`` of ``key`` for matching assets. If the key does not exist,
     it is added and set appropriately.
@@ -146,16 +146,16 @@ def set(args, onyo_root):
     immediately.
     """
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         # don't run onyo fsck, so values can be set for correcting assets.
         # TODO: really?
     except OnyoInvalidRepoError:
         sys.exit(1)
 
     # get all files in which the values should be set/changed
-    files_to_change = prepare_arguments(args.path, args.keys, args.quiet, args.yes, args.recursive, args.depth, onyo_root)
+    files_to_change = prepare_arguments(args.path, args.keys, args.quiet, args.yes, args.recursive, args.depth, opdir)
     if not args.quiet:
-        diff_output = diff_changes(files_to_change, args.keys, onyo_root)
+        diff_output = diff_changes(files_to_change, args.keys, opdir)
         if diff_output:
             print("onyo wants to update the following assets:")
             print(diff_output)
@@ -173,7 +173,7 @@ def set(args, onyo_root):
             sys.exit(0)
 
     for file in files_to_change:
-        set_value(os.path.join(onyo_root, file), file, args.keys, onyo_root)
+        set_value(os.path.join(opdir, file), file, args.keys, opdir)
         # add any changes
         repo.add(file)
 

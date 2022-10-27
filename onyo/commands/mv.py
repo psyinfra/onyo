@@ -2,7 +2,7 @@ import sys
 from onyo.lib import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
 
-def mv(args, onyo_root: str) -> None:
+def mv(args, opdir: str) -> None:
     """
     Move ``source``\(s) (assets or directories) to the ``destination``
     directory, or rename a ``source`` directory to ``destination``.
@@ -17,7 +17,7 @@ def mv(args, onyo_root: str) -> None:
         sys.exit(1)
 
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)
