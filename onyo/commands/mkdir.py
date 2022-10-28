@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 from onyo.lib import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
@@ -22,5 +23,6 @@ def mkdir(args, opdir):
 
     try:
         repo.mkdir(args.directory)
+        repo.commit('mkdir: ' + ','.join(["'{}'".format(Path(opdir, x).resolve().relative_to(repo.root)) for x in args.directory]))
     except (FileExistsError, OnyoProtectedPathError):
         sys.exit(1)

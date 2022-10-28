@@ -1,4 +1,6 @@
 import sys
+from pathlib import Path
+
 from onyo.lib import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
 
@@ -40,5 +42,8 @@ def mv(args, opdir: str) -> None:
 
     try:
         repo.mv(args.source, args.destination)
-    except (FileExistsError, FileNotFoundError, NotADirectoryError, OnyoProtectedPathError, ValueError):
+        repo.commit('mv: ' +
+                    ','.join(["'{}'".format(Path(opdir, x).resolve().relative_to(repo.root)) for x in args.source]) +
+                    ' -> ' + str(Path(opdir, args.destination).resolve().relative_to(repo.root)))
+    except (FileExistsError, FileNotFoundError, OnyoProtectedPathError, ValueError):
         sys.exit(1)
