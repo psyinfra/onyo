@@ -31,8 +31,13 @@ def test_mkdir_single(repo, variant):
     repo.mkdir(variant)
     assert anchored_dir('one')
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = {  # pyre-ignore[9]
@@ -53,8 +58,13 @@ def test_mkdir_multi(repo, variant):
     assert anchored_dir('two')
     assert anchored_dir('three')
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = {
@@ -71,8 +81,13 @@ def test_mkdir_spaces(repo, variant):
     for i in variant:
         assert anchored_dir(i)
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 def test_mkdir_recursive(repo):
@@ -90,8 +105,13 @@ def test_mkdir_recursive(repo):
     assert anchored_dir('r/e/c/u/r/s/i/v')
     assert anchored_dir('r/e/c/u/r/s/i/v/e')
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = {
@@ -111,8 +131,13 @@ def test_mkdir_overlap(repo, variant):
     assert not Path('overlap/two/overlap').exists()
     assert not Path('overlap/three/overlap').exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -132,8 +157,13 @@ def test_mkdir_protected(repo, variant):
 
     assert not Path(variant).exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -155,13 +185,18 @@ def test_mkdir_protected_mixed(repo, variant, caplog):
     assert not Path('valid-two').exists()
     assert not Path(variant).exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'valid-one' not in caplog.text
     assert 'valid-two' not in caplog.text
     assert variant in caplog.text
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -172,7 +207,7 @@ variants = [  # pyre-ignore[9]
 @pytest.mark.parametrize('variant', variants)
 def test_mkdir_exists_dir(repo, variant, caplog):
     """
-    TODO
+    Cannot re-create an existing directory.
     """
     with pytest.raises(FileExistsError):
         repo.mkdir(variant)
@@ -180,11 +215,16 @@ def test_mkdir_exists_dir(repo, variant, caplog):
     assert anchored_dir(variant)
     assert not anchored_dir(f'{variant}/{variant}')
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert variant in caplog.text
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -195,18 +235,23 @@ variants = [  # pyre-ignore[9]
 @pytest.mark.parametrize('variant', variants)
 def test_mkdir_exists_file(repo, variant, caplog):
     """
-    TODO
+    Target directory cannot be a file.
     """
     with pytest.raises(FileExistsError):
         repo.mkdir(variant)
 
     assert Path(variant).is_file()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert variant in caplog.text
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -218,7 +263,7 @@ variants = [  # pyre-ignore[9]
 @pytest.mark.parametrize('variant', variants)
 def test_mkdir_exists_mixed(repo, variant, caplog):
     """
-    TODO
+    Target directories must not exist.
     """
     with pytest.raises(FileExistsError):
         repo.mkdir(['valid-one', variant, 'valid-two'])
@@ -228,10 +273,15 @@ def test_mkdir_exists_mixed(repo, variant, caplog):
     assert Path('exists-file').exists()
     assert anchored_dir('exists-dir')
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'valid-one' not in caplog.text
     assert 'valid-two' not in caplog.text
     assert variant in caplog.text
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # check anchors
+    repo.fsck(['anchors'])

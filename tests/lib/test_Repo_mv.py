@@ -29,12 +29,14 @@ def test_missing_parent(repo, variant, caplog):
     assert not Path('does').exists()
     assert 'does not exist' in caplog.text
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 #
@@ -67,11 +69,13 @@ def test_rename_types_dir(repo, variant, caplog):
     assert not Path('dir').exists()
     assert Path('dir.rename').exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -98,12 +102,14 @@ def test_rename_src_not_exist(repo, variant, caplog):
     assert not dest.exists()
     assert dest.parent.exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
     assert 'source paths do not exist' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -128,11 +134,13 @@ def test_rename_dir(repo, variant, caplog):
     assert not Path(variant[0]).exists()
     assert Path(variant[1]).exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -157,12 +165,14 @@ def test_rename_file(repo, variant, caplog):
     assert Path(variant[0]).is_file()
     assert not Path(variant[1]).exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
     assert 'Cannot rename asset' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -193,12 +203,14 @@ def test_rename_conflict_file(repo, variant, caplog):
     assert src.exists()
     assert dest.is_file()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
     assert 'cannot be a file' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -222,12 +234,14 @@ def test_rename_dir_into_self(repo, variant, caplog):
     assert src.is_dir()
     assert not dest.exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
     assert 'into itself' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -263,11 +277,13 @@ def test_rename_protected(repo, variant, caplog):
     assert Path(variant[0]).exists()
     assert not Path(variant[1]).exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'move mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 #
@@ -300,11 +316,13 @@ def test_move_types_dir(repo, variant, caplog):
     assert not Path('src-dir').exists()
     assert Path('dest-dir', 'src-dir').exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -335,11 +353,13 @@ def test_move_types_file(repo, variant, caplog):
     assert not Path('src-file').exists()
     assert Path('dest-dir', 'src-file').exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -374,11 +394,13 @@ def test_move_types_mixed(repo, variant, caplog):
         assert src.parent.exists()
         assert Path('dest-dir', src.name).exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -414,11 +436,13 @@ def test_move_single_implicit(repo, variant, caplog):
     assert src.parent.exists()
     assert Path(dest, src.name).exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -453,11 +477,13 @@ def test_move_single_explicit(repo, variant, caplog):
     assert src.parent.exists()
     assert dest.exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -493,11 +519,13 @@ def test_move_multiple(repo, variant, caplog):
         assert src.parent.exists()
         assert Path(dest, src.name).exists()
 
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -548,11 +576,13 @@ def test_move_protected(repo, variant, caplog):
         assert not Path(dest, 'one').exists()
         assert not Path(dest, 'three').exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -586,12 +616,14 @@ def test_move_src_not_exist(repo, variant, caplog):
     assert Path('exist-file-1').exists()
     assert Path('exist-dir-3').exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
     assert 'source paths do not exist' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -621,12 +653,14 @@ def test_move_dest_not_exist(repo, variant, caplog):
         assert src.exists()
         assert not Path(dest, src.name).exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
     assert 'does not exist' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -654,12 +688,14 @@ def test_move_into_self(repo, variant, caplog):
         assert src.exists()
         assert not Path(dest, src.name).exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
     assert 'into itself' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -691,12 +727,14 @@ def test_move_name_conflict(repo, variant, caplog):
         assert src.exists()
         assert not Path(dest, src.name, src.name).exists()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
     assert 'destinations exist and would conflict' or 'cannot be a file' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
 
 
 variants = {  # pyre-ignore[9]
@@ -725,9 +763,11 @@ def test_move_dest_must_be_dir(repo, variant, caplog):
 
     assert dest.is_file()
 
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
     # check log
     assert 'rename mode' not in caplog.text
     assert 'cannot be a file' in caplog.text
-
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
