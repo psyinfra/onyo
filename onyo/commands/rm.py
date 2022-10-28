@@ -3,7 +3,7 @@ import sys
 from onyo.lib import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
 
-def rm(args, onyo_root: str) -> None:
+def rm(args, opdir: str) -> None:
     """
     Delete ``asset``\(s) and ``directory``\(s).
 
@@ -18,7 +18,7 @@ def rm(args, onyo_root: str) -> None:
         sys.exit(1)
 
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)

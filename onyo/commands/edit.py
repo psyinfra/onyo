@@ -11,13 +11,13 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def get_editor(onyo_root: Path) -> str:
+def get_editor(repo_root: Path) -> str:
     """
     Returns the editor, progressing through git, onyo, $EDITOR, and finally
     fallback to "nano".
     """
     # onyo config and git config
-    editor = get_config_value('onyo.core.editor', onyo_root)
+    editor = get_config_value('onyo.core.editor', repo_root)
 
     # $EDITOR environment variable
     if not editor:
@@ -111,7 +111,7 @@ def sanitize_assets(assets: list[str], repo: Repo) -> list[Path]:
     return valid_assets
 
 
-def edit(args, onyo_root: str) -> None:
+def edit(args, opdir: str) -> None:
     """
     Open the ``asset`` file(s) using the editor specified by "onyo.core.editor",
     the environment variable ``EDITOR``, or ``nano`` (as a final fallback).
@@ -125,7 +125,7 @@ def edit(args, onyo_root: str) -> None:
     """
     repo = None
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         # "onyo fsck" is intentionally not run here.
         # This is so "onyo edit" can be used to fix an existing problem. This has
         # benefits over just simply using `vim`, etc directly, as "onyo edit" will

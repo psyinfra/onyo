@@ -133,7 +133,7 @@ def sanitize_paths(directory, template, repo):
     return [directory, template]
 
 
-def new(args, onyo_root):
+def new(args, opdir):
     """
     Creates a new ``asset`` in ``directory``. The command opens a dialog that
     asks for the field names defined by the asset name scheme, and after
@@ -143,7 +143,7 @@ def new(args, onyo_root):
     its YAML syntax and based on the rules in ``.onyo/validation/``.
     """
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)

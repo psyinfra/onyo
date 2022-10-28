@@ -17,15 +17,15 @@ def get_skel_dir():
     return skel
 
 
-def sanitize_dir(directory, onyo_root):
+def sanitize_dir(directory, opdir):
     """
     Check the directory for viability as an init target.
 
     Returns the absolute path on success.
     """
-    full_dir = Path(onyo_root)
+    full_dir = Path(opdir)
     if directory:
-        full_dir = Path(onyo_root, directory)
+        full_dir = Path(opdir, directory)
 
     # sanity checks
     # already an .onyo repo
@@ -50,7 +50,7 @@ def sanitize_dir(directory, onyo_root):
     return abs_dir
 
 
-def init(args, onyo_root):
+def init(args, opdir):
     """
     Initialize an Onyo repository. The directory will be initialized as a git
     repository (if it is not one already), the ``.onyo/`` directory created
@@ -62,7 +62,7 @@ def init(args, onyo_root):
     Running ``onyo init`` on an existing repository is safe. It will not
     overwrite anything; it will exit with an error.
     """
-    target_dir = sanitize_dir(args.directory, onyo_root)
+    target_dir = sanitize_dir(args.directory, opdir)
     Path(target_dir).mkdir(exist_ok=True)
 
     try:

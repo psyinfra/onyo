@@ -3,7 +3,7 @@ import sys
 from onyo.lib import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
 
-def mkdir(args, onyo_root):
+def mkdir(args, opdir):
     """
     Create ``directory``\(s). Intermediate directories will be created as needed
     (i.e. parent and child directories can be created in one call).
@@ -15,7 +15,7 @@ def mkdir(args, onyo_root):
     an error. All checks are performed before creating directories.
     """
     try:
-        repo = Repo(onyo_root)
+        repo = Repo(opdir)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)
