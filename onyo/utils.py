@@ -1,48 +1,12 @@
-import subprocess
 import logging
 import os
-import sys
-import shlex
-import string
 import random
+import string
 from pathlib import Path
 from git import Repo, exc
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
-
-
-def run_cmd(cmd, comment=""):
-    if comment != "":
-        run_process = subprocess.Popen(shlex.split(cmd) + [comment],
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       universal_newlines=True)
-    else:
-        run_process = subprocess.Popen(shlex.split(cmd),
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       universal_newlines=True)
-    run_output, run_error = run_process.communicate()
-    if (run_error != ""):
-        log.error(run_error)
-        sys.exit(1)
-    else:
-        log.debug(cmd + " " + comment)
-    return run_output
-
-
-def get_git_root(path):
-    # first checks if file is in git from current position
-    try:
-        git_repo = Repo(path, search_parent_directories=True)
-        git_root = git_repo.git.rev_parse("--show-toplevel")
-        if os.path.isdir(os.path.join(git_root, ".onyo")):
-            return git_root
-    except (exc.NoSuchPathError, exc.InvalidGitRepositoryError):
-        log.error(path + " is no onyo repository.")
-        sys.exit(1)
-        return git_root
 
 
 def generate_faux_serial(repo_root, faux_length=8):
@@ -67,10 +31,6 @@ def generate_faux_serial(repo_root, faux_length=8):
     while True in [faux in asset[1] for asset in list_of_assets]:
         faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
     return faux
-
-
-def build_git_add_cmd(directory, file):
-    return "git -C \"" + directory + "\" add \"" + file + "\""
 
 
 def get_config_value(name, repo_root):
