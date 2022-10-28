@@ -4,9 +4,6 @@ import sys
 from ruamel.yaml import YAML  # pyre-ignore[21]
 
 from onyo.lib import Repo, OnyoInvalidRepoError
-from onyo.utils import (
-    get_git_root
-)
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -84,7 +81,7 @@ def diff_changes(file_list, keys, opdir):
             asset_changed = asset_changed + "\n+\t" + key + ": " + str(keys[key])
         if asset_changed:
             if opdir in file:
-                output_str = output_str + "\n" + os.path.relpath(file, get_git_root(opdir)) + asset_changed
+                output_str = output_str + "\n" + os.path.relpath(file, opdir) + asset_changed
             else:
                 output_str = output_str + "\n" + file + asset_changed
     return output_str
