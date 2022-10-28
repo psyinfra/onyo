@@ -1,9 +1,8 @@
 import logging
-import os
 import random
 import string
 from pathlib import Path
-from git import Repo, exc
+from git import Repo
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -31,42 +30,6 @@ def generate_faux_serial(repo_root, faux_length=8):
     while True in [faux in asset[1] for asset in list_of_assets]:
         faux = "faux" + ''.join(random.choices(alphanum, k=faux_length))
     return faux
-
-
-def get_config_value(name, repo_root):
-    """
-    Get the value for a configuration option specified by `name`. git-config is
-    checked first, as it is machine-local. The default order of git-config
-    checks is retained. If that is empty, then the .onyo/config file is checked.
-
-    Returns a string with the config value on success. None otherwise.
-    """
-    value = None
-    repo = Repo(repo_root)
-
-    # git-config (with its full stack of locations to check)
-    try:
-        value = repo.git.config('--get', name)
-        log.debug(f"git config acquired '{name}': '{value}'")
-    except exc.GitCommandError:
-        log.debug(f"git config missed '{name}'")
-        pass
-
-    # .onyo/config
-    if not value:
-        dot_onyo_config = os.path.join(repo_root, '.onyo/config')
-        try:
-            value = repo.git.config('--get', name, f=dot_onyo_config)
-            log.debug(f"onyo config acquired '{name}': '{value}'")
-        except exc.GitCommandError:
-            log.debug(f"onyo config missed '{name}'")
-            pass
-
-    # reset to None if empty
-    if not value:
-        value = None
-
-    return value
 
 
 def get_list_of_assets(repo_root):

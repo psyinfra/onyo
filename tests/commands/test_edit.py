@@ -22,7 +22,7 @@ def test_get_editor_git(repo):
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
-    assert get_editor(repo.root) == 'vi'
+    assert get_editor(repo) == 'vi'
 
 
 def test_get_editor_onyo(repo):
@@ -34,7 +34,7 @@ def test_get_editor_onyo(repo):
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
-    assert get_editor(repo.root) == 'vi'
+    assert get_editor(repo) == 'vi'
 
 
 def test_get_config_value_envvar(repo):
@@ -50,7 +50,7 @@ def test_get_config_value_envvar(repo):
     assert not ret.stdout
 
     os.environ['EDITOR'] = 'vi'
-    assert get_editor(repo.root) == 'vi'
+    assert get_editor(repo) == 'vi'
 
 
 def test_get_editor_fallback(repo):
@@ -65,7 +65,7 @@ def test_get_editor_fallback(repo):
                          capture_output=True, text=True)
     assert not ret.stdout
 
-    assert get_editor(repo.root) == 'nano'
+    assert get_editor(repo) == 'nano'
 
 
 def test_get_editor_precedence(repo):
@@ -85,19 +85,19 @@ def test_get_editor_precedence(repo):
     os.environ['EDITOR'] = 'third'
 
     # git should win
-    assert get_editor(repo.root) == 'first'
+    assert get_editor(repo) == 'first'
 
     # onyo should win
     ret = subprocess.run(["git", "config", '--unset', "onyo.core.editor"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert get_editor(repo.root) == 'second'
+    assert get_editor(repo) == 'second'
 
     # $EDITOR is all that's left
     ret = subprocess.run(["onyo", "config", '--unset', "onyo.core.editor"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert get_editor(repo.root) == 'third'
+    assert get_editor(repo) == 'third'
 
 
 @pytest.mark.repo_files('laptop_apple_macbookpro.0',

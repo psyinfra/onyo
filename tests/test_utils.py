@@ -1,28 +1,5 @@
-import subprocess
-from pathlib import Path
-
 import pytest
 from onyo import utils
-
-
-def test_get_config_value_git(repo):
-    ret = subprocess.run(["git", "config", "onyo.test.get-git", "get-git-test"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert 'get-git =' in Path('.git/config').read_text()
-    assert '= get-git-test' in Path('.git/config').read_text()
-
-    assert utils.get_config_value('onyo.test.get-git', repo.root) == 'get-git-test'
-
-
-def test_get_config_value_onyo(repo):
-    ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo", "get-onyo-test"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert 'get-onyo =' in Path('.onyo/config').read_text()
-    assert '= get-onyo-test' in Path('.onyo/config').read_text()
-
-    assert utils.get_config_value('onyo.test.get-onyo', repo.root) == 'get-onyo-test'
 
 
 def test_generate_faux_serials(repo):

@@ -3,7 +3,6 @@ import os
 import sys
 
 from onyo.lib import Repo, OnyoInvalidRepoError
-from onyo.utils import get_config_value
 from pathlib import Path
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
@@ -11,13 +10,13 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def get_editor(repo_root: Path) -> str:
+def get_editor(repo: Repo) -> str:
     """
     Returns the editor, progressing through git, onyo, $EDITOR, and finally
     fallback to "nano".
     """
     # onyo config and git config
-    editor = get_config_value('onyo.core.editor', repo_root)
+    editor = repo.get_config('onyo.core.editor')
 
     # $EDITOR environment variable
     if not editor:
@@ -135,7 +134,7 @@ def edit(args, opdir: str) -> None:
 
     # check and set paths
     assets = sanitize_assets(args.asset, repo)
-    editor = get_editor(repo.root)
+    editor = get_editor(repo)
 
     for asset in assets:
         if edit_asset(editor, asset):

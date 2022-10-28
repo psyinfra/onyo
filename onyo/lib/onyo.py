@@ -230,6 +230,69 @@ class Repo:
         self._git(['commit'] + messages)
 
     #
+    # CONFIG
+    #
+    def get_config(self, name: str) -> Union[str, None]:
+        """
+        Get the value for a configuration option specified by `name`.
+
+        git-config is checked following its order of precedence (worktree,
+        local, global, system). If the config name is not found, .onyo/config is
+        checked.
+
+        Returns a string with the config value on success. None otherwise.
+        """
+        value = None
+
+        # git-config (with its full stack of locations to check)
+        try:
+            value = self._git(['config', '--get', name]).strip()
+            log.debug(f"git config acquired '{name}': '{value}'")
+        except subprocess.CalledProcessError:
+            log.debug(f"git config missed '{name}'")
+            pass
+
+        # .onyo/config
+        if not value:
+            dot_onyo_config = str(Path(self.root, '.onyo/config'))
+            try:
+                value = self._git(['config', '--file', dot_onyo_config, '--get', name]).strip()
+                log.debug(f"onyo config acquired '{name}': '{value}'")
+            except subprocess.CalledProcessError:
+                log.debug(f"onyo config missed '{name}'")
+                pass
+
+        return value
+
+    def set_config(self, name: str, value: str, location: str = 'onyo') -> bool:
+        """
+        Set the `name` configuration option to `value`. The local is `onyo` by
+        default. Other git config locations are: `system`, `global`, `local`,
+        and `worktree`.
+
+        Returns True on success. Raises an exception otherwise.
+        """
+        location_options = {
+            'onyo': ['--file', str(Path(self.root, '.onyo/config'))],
+            'system': ['--system'],
+            'global': ['--global'],
+            'local': ['--local'],
+            'worktree': ['--worktree']
+        }
+        location_arg = []
+
+        try:
+            location_arg = location_options[location]
+        except KeyError:
+            raise ValueError("Invalid config location requested. Valid options are: {}".format(', '.join(location_options.keys())))
+
+        # git-config (with its full stack of locations to check)
+        self._git(['config'] + location_arg + [name, value]).strip()
+        log.debug(f"'config for '{location}' set '{name}': '{value}'")
+
+        return True
+
+    #
     # FSCK
     #
     def fsck(self, tests: Optional[list[str]] = None) -> None:

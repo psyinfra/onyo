@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 
 from onyo.lib import Repo, OnyoInvalidRepoError
-from onyo.utils import get_config_value
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -32,7 +31,7 @@ def sanitize_path(path, opdir):
     return full_path
 
 
-def get_history_cmd(interactive, repo_root):
+def get_history_cmd(interactive, repo: Repo):
     """
     Get the command used to display history. The appropriate one is selected
     according to the interactive mode, and basic checks are performed for
@@ -46,7 +45,7 @@ def get_history_cmd(interactive, repo_root):
     if not interactive or not sys.stdout.isatty():
         config_name = 'onyo.history.non-interactive'
 
-    history_cmd = get_config_value(config_name, repo_root)
+    history_cmd = repo.get_config(config_name)
     if not history_cmd:
         log.error(f"'{config_name}' is unset and is required to display history.")
         log.error("Please see 'onyo config --help' for information about how to set it. Exiting.")
@@ -78,8 +77,8 @@ def history(args, opdir):
         sys.exit(1)
 
     # get the command and path
-    history_cmd = get_history_cmd(args.interactive, repo.root)
     path = sanitize_path(args.path, opdir)
+    history_cmd = get_history_cmd(args.interactive, repo)
 
     # run it
     orig_cwd = os.getcwd()
