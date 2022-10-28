@@ -62,28 +62,3 @@ def test_length_range_of_generate_faux_serials(repo):
     faux = [utils.generate_faux_serial(repo.root, x) for x in range(1, 37)]
     assert len(faux) == len(set(faux))
     assert len(faux) > 0
-
-
-def test_is_protected_path(repo):
-    # simple
-    assert utils.is_protected_path('.anchor')
-    assert utils.is_protected_path('.git')
-    assert utils.is_protected_path('.onyo')
-
-    # beginning
-    assert utils.is_protected_path('.git/config')
-    assert utils.is_protected_path('.onyo/templates')
-
-    # middle
-    assert utils.is_protected_path('subdir/.git/config')
-    assert utils.is_protected_path('subdir/.onyo/templates')
-
-    # end
-    assert utils.is_protected_path('subdir/.anchor')
-    assert utils.is_protected_path('subdir/.git')
-    assert utils.is_protected_path('subdir/.onyo')
-
-    # unprotected paths
-    assert not utils.is_protected_path('anchor')
-    assert not utils.is_protected_path('git')
-    assert not utils.is_protected_path('onyo')

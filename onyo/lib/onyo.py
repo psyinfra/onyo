@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Iterable, Optional, Union
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
-from onyo.utils import is_protected_path
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -76,7 +75,7 @@ class Repo:
         """
         Return a set of all assets in the repository.
         """
-        assets = {x for x in self.files if not is_protected_path(x)}
+        assets = {x for x in self.files if not self._is_protected_path(x)}
 
         # TODO: make if asset-style name (i.e. README won't match)
         # TODO: check for .onyoignore
@@ -148,6 +147,20 @@ class Repo:
     #
     # HELPERS
     #
+    def _is_protected_path(self, path: Union[Path, str]) -> bool:
+        """
+        Checks whether a path contains protected elements (.anchor, .git, .onyo).
+        Returns True if it contains protected elements. Otherwise False.
+        """
+        full_path = Path(path).resolve()
+
+        # protected paths
+        for p in full_path.parts:
+            if p in ['.anchor', '.git', '.onyo']:
+                return True
+
+        return False
+
     def _n_join(self, to_join: Iterable) -> str:
         """
         Convert an Iterable's contents to strings and join with newlines.
@@ -267,7 +280,7 @@ class Repo:
         """
         anchors_exist = {x for x in self.files if x.name == '.anchor' and '.onyo' not in x.parts}
         anchors_expected = {x.joinpath('.anchor') for x in self.dirs
-                            if not is_protected_path(x)}
+                            if not self._is_protected_path(x)}
         difference = anchors_expected.difference(anchors_exist)
 
         if difference:
@@ -419,7 +432,7 @@ class Repo:
                 continue
 
             # protected paths
-            if is_protected_path(full_dir):
+            if self._is_protected_path(full_dir):
                 error_path_protected.append(d)
                 continue
 
@@ -517,7 +530,7 @@ class Repo:
         Common checks
         """
         # protected paths
-        if is_protected_path(dest_path):
+        if self._is_protected_path(dest_path):
             log.error('The following paths are protected by onyo:\n' +
                       f'{dest_path}\n' +
                       'Nothing was moved.')
@@ -637,7 +650,7 @@ class Repo:
                 continue
 
             # protected paths
-            if is_protected_path(full_path):
+            if self._is_protected_path(full_path):
                 error_path_protected.append(src)
                 continue
 
@@ -705,7 +718,7 @@ class Repo:
                 continue
 
             # protected paths
-            if is_protected_path(full_path):
+            if self._is_protected_path(full_path):
                 error_path_protected.append(p)
                 continue
 

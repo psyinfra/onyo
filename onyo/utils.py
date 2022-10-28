@@ -75,18 +75,3 @@ def get_list_of_assets(repo_root):
     """
     return [[x[0][0], Path(x[0][0]).name] for x in Repo(repo_root).index.entries.items()
             if not is_protected_path(x[0][0])]
-
-
-def is_protected_path(path):
-    """
-    Checks whether a path contains protected elements (.anchor, .git, .onyo).
-    Returns True if it contains protected elements. Otherwise False.
-    """
-    full_path = Path(path).resolve()
-
-    # protected paths
-    for p in full_path.parts:
-        if p in ['.anchor', '.git', '.onyo']:
-            return True
-
-    return False
