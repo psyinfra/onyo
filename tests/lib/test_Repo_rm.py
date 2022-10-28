@@ -22,8 +22,13 @@ def test_rm_args_single_file(repo, variant):
     assert not Path('single-file').exists()
     assert Path('untouched').exists()
 
-    # make sure everything is clean
-    repo.fsck(['clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = {
@@ -44,8 +49,13 @@ def test_rm_args_single_dir(repo, variant):
     assert not Path('single-dir').exists()
     assert Path('untouched').exists()
 
-    # make sure everything is clean
-    repo.fsck(['clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = {  # pyre-ignore[9]
@@ -68,8 +78,13 @@ def test_rm_args_multi_file(repo, variant):
     assert not Path('three').exists()
     assert Path('untouched').exists()
 
-    # make sure everything is clean
-    repo.fsck(['clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = {  # pyre-ignore[9]
@@ -92,8 +107,13 @@ def test_rm_args_multi_dir(repo, variant):
     assert not Path('three').exists()
     assert Path('untouched').exists()
 
-    # make sure everything is clean
-    repo.fsck(['clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -111,8 +131,13 @@ def test_rm_not_exist(repo, variant):
 
     assert Path('subdir').exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -132,8 +157,13 @@ def test_rm_not_exist_mixed(repo, variant):
     assert Path('two').exists()
     assert Path('subdir').exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -154,8 +184,13 @@ def test_rm_protected(repo, variant):
 
     assert Path(variant).exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 variants = [  # pyre-ignore[9]
@@ -178,8 +213,13 @@ def test_rm_protected_mixed(repo, variant):
     assert Path('valid-two').exists()
     assert Path(variant).exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 @pytest.mark.repo_dirs('repeat-dir', 'dir-two', 'dir-three')
@@ -200,8 +240,13 @@ def test_rm_repeat(repo):
     assert not Path('dir-two').exists()
     assert not Path('dir-three').exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 @pytest.mark.repo_files('overlap/one', 'overlap/two', 'overlap/three')
@@ -212,8 +257,13 @@ def test_rm_overlap(repo):
     repo.rm(['overlap/one', 'overlap', 'overlap/three'])
     assert not Path('overlap').exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 @pytest.mark.repo_files('s p a/c e s/1 2', 's p a/c e s/3 4')
@@ -230,8 +280,13 @@ def test_rm_spaces(repo):
     assert not Path('s p a/c e s/').exists()
     assert Path('s p a/').exists()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 @pytest.mark.repo_dirs('r/e/c/u/r/s/i/v/e')
@@ -252,8 +307,13 @@ def test_rm_subdirs(repo):
     assert not Path('r/e/c/u/r').is_dir()
     assert Path('r/e/c/u').is_dir()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # everything should be staged
+    assert not repo.files_changed
+    assert repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 @pytest.mark.repo_dirs('r/e/c/u/r/s/i/v/e')
@@ -267,8 +327,13 @@ def test_rm_dryrun(repo):
     assert Path('two/b').is_file()
     assert Path('r').is_dir()
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])
 
 
 @pytest.mark.repo_dirs('dir/subdir')
@@ -288,5 +353,10 @@ def test_rm_return_value(repo):
     assert 'dir/.anchor' in ret
     assert 'dir/subdir/.anchor' in ret
 
-    # make sure everything is clean
-    repo.fsck(['anchors', 'clean-tree'])
+    # nothing should be changed
+    assert not repo.files_changed
+    assert not repo.files_staged
+    assert not repo.files_untracked
+
+    # check anchors
+    repo.fsck(['anchors'])

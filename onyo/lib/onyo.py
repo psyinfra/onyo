@@ -398,8 +398,6 @@ class Repo:
             a.touch(exist_ok=True)
 
         self.add(anchors)
-        # paths should be relative to root in commit messages
-        self.commit('mkdir: ' + ', '.join(["'{}'".format(x.relative_to(self.root)) for x in dirs]))
 
     def _mkdir_sanitize(self, dirs: Iterable[Union[Path, str]]) -> set[Path]:
         """
@@ -466,12 +464,7 @@ class Repo:
         if dryrun:
             ret = self._git(['mv', '--dry-run'] + [str(x) for x in src_paths] + [str(dest_path)])
         else:
-            # mv and commit
             ret = self._git(['mv'] + [str(x) for x in src_paths] + [str(dest_path)])
-            # TODO: should `mv` commit? (mkdir() does, add() doesn't)
-            # TODO: can this commit message be made more helpful?
-            # TODO: relative to self.root
-            self.commit('moved asset(s)', src_paths)
 
         # TODO: change this to info
         log.debug('The following will be moved:\n' +
@@ -683,10 +676,6 @@ class Repo:
         else:
             # rm and commit
             ret = self._git(['rm', '-r'] + [str(x) for x in paths_to_rm])
-            # TODO: should `rm` commit? (mkdir() does, add() doesn't)
-            # TODO: can this commit message be made more helpful?
-            # TODO: relative to self.root
-            self.commit('deleted asset(s)', paths_to_rm)
 
         # TODO: change this to info
         log.debug('The following will be deleted:\n' +

@@ -48,13 +48,14 @@ def repo(tmp_path, monkeypatch, request):
     # populate the repo
     if dirs:
         repo_.mkdir(dirs)
+        repo_.commit('populate dirs for tests', dirs)
 
     for i in files:
         i.touch()
 
     if files:
         repo_.add(files)
-        repo_.commit('populated for tests', files)
+        repo_.commit('populate files for tests', files)
 
     # cd into repo; to ease testing
     monkeypatch.chdir(repo_path)
@@ -151,6 +152,7 @@ class Helpers:
         # dirs
         if dirs:
             repo.mkdir(dirs)
+            repo.commit('populate dirs for tests', dirs)
 
         # files
         if files:
@@ -158,4 +160,4 @@ class Helpers:
                 Path(path, i).touch()
 
             repo.add(files)
-            repo.commit('populated for tests', files)
+            repo.commit('populate files for tests', files)
