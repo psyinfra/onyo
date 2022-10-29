@@ -1,5 +1,7 @@
 import logging
+import random
 import re
+import string
 import subprocess
 from pathlib import Path
 from typing import Iterable, Optional, Union
@@ -734,6 +736,33 @@ class Repo:
                                          self._n_join(error_path_protected))
 
         return paths_to_mv
+
+    #
+    # NEW
+    #
+    def generate_faux_serials(self, length: int = 6, num: int = 1) -> set[str]:
+        """
+        Generate a unique faux serial and verify that it is not used by any
+        other asset in the repository. The length of the faux serial must be 4
+        or greater.
+
+        Returns a set of unique faux serials.
+        """
+        if length < 4:
+            # 62^4 is ~14.7 million combinations. Which is the lowest acceptable
+            # risk of collisions between independent checkouts of a repo.
+            raise ValueError('The length of faux serial numbers must be greater than 4.')
+
+        alphanum = string.ascii_letters + string.digits
+        faux_serials = set()
+        repo_faux_serials = {str(x.name).split('faux')[-1] for x in self.assets}
+
+        while len(faux_serials) < num:
+            serial = ''.join(random.choices(alphanum, k=length))
+            if serial not in repo_faux_serials:
+                faux_serials.add(f'faux{serial}')
+
+        return faux_serials
 
     #
     # RM

@@ -6,7 +6,6 @@ from pathlib import Path
 from onyo.lib import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import edit_asset, get_editor
 
-from onyo.utils import generate_faux_serial
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -89,7 +88,7 @@ def create_filename(repo):
         word = read_new_word('<' + field + '>*:')
         if field == "serial" and word == "faux":
             try:
-                word = generate_faux_serial(repo.root)
+                word = repo.generate_faux_serials().pop()
             except ValueError as e:
                 print(e, file=sys.stderr)
                 sys.exit(1)
