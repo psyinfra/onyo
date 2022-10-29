@@ -13,58 +13,43 @@ assets = ['laptop_apple_macbookpro.0',
           ]
 
 
-def test_get_editor_git(repo):
+variants = ['local', 'onyo']
+@pytest.mark.parametrize('variant', variants)
+def test_get_editor_git(repo, variant):
     """
-    Get the editor from git settings.
+    Get the editor from git or onyo configs.
     """
-    # set the editor
-    ret = subprocess.run(["git", "config", "onyo.core.editor", 'vi'],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
+    repo.set_config('onyo.core.editor', variant, location=variant)
 
-    assert get_editor(repo) == 'vi'
-
-
-def test_get_editor_onyo(repo):
-    """
-    Get the editor from onyo settings.
-    """
-    # set the editor
-    ret = subprocess.run(["onyo", "config", "onyo.core.editor", 'vi'],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-
-    assert get_editor(repo) == 'vi'
+    # test
+    editor = get_editor(repo)
+    assert editor == variant
 
 
-def test_get_config_value_envvar(repo):
+def test_get_editor_envvar(repo):
     """
     Get the editor from $EDITOR.
     """
     # verify that onyo.core.editor is not set
-    ret = subprocess.run(["git", "config", "--get", "onyo.core.editor"],
-                         capture_output=True, text=True)
-    assert not ret.stdout
-    ret = subprocess.run(["onyo", "config", "--get", "onyo.core.editor"],
-                         capture_output=True, text=True)
-    assert not ret.stdout
+    assert not repo.get_config('onyo.core.editor')
 
-    os.environ['EDITOR'] = 'vi'
-    assert get_editor(repo) == 'vi'
+    # test
+    os.environ['EDITOR'] = 'editor'
+    assert get_editor(repo) == 'editor'
 
 
 def test_get_editor_fallback(repo):
     """
-    When no editor is set, nano should be the fallback.
+    When no editor is set, nano is the fallback.
     """
     # verify that onyo.core.editor is not set
-    ret = subprocess.run(["git", "config", "--get", "onyo.core.editor"],
-                         capture_output=True, text=True)
-    assert not ret.stdout
-    ret = subprocess.run(["onyo", "config", "--get", "onyo.core.editor"],
-                         capture_output=True, text=True)
-    assert not ret.stdout
+    assert not repo.get_config('onyo.core.editor')
+    try:
+        assert not os.environ['EDITOR']
+    except KeyError:
+        pass
 
+    # test
     assert get_editor(repo) == 'nano'
 
 
@@ -72,32 +57,23 @@ def test_get_editor_precedence(repo):
     """
     The order of precedence should be git > onyo > $EDITOR.
     """
-    # set for git
-    ret = subprocess.run(["git", "config", "onyo.core.editor", 'first'],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    # set for onyo
-    ret = subprocess.run(["onyo", "config", "onyo.core.editor", 'second'],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-
-    # set $EDITOR
-    os.environ['EDITOR'] = 'third'
+    # set locations
+    repo.set_config('onyo.core.editor', 'local', location='local')
+    repo.set_config('onyo.core.editor', 'onyo', location='onyo')
+    os.environ['EDITOR'] = 'editor'
 
     # git should win
-    assert get_editor(repo) == 'first'
+    assert get_editor(repo) == 'local'
 
     # onyo should win
-    ret = subprocess.run(["git", "config", '--unset', "onyo.core.editor"],
-                         capture_output=True, text=True)
+    ret = subprocess.run(["git", "config", '--unset', "onyo.core.editor"])
     assert ret.returncode == 0
-    assert get_editor(repo) == 'second'
+    assert get_editor(repo) == 'onyo'
 
     # $EDITOR is all that's left
-    ret = subprocess.run(["onyo", "config", '--unset', "onyo.core.editor"],
-                         capture_output=True, text=True)
+    ret = subprocess.run(["onyo", "config", '--unset', "onyo.core.editor"])
     assert ret.returncode == 0
-    assert get_editor(repo) == 'third'
+    assert get_editor(repo) == 'editor'
 
 
 @pytest.mark.repo_files('laptop_apple_macbookpro.0',
