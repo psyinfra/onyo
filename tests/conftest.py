@@ -6,7 +6,7 @@ from itertools import chain, combinations
 from pathlib import Path
 from tempfile import gettempdir
 
-from onyo.lib import Repo
+from onyo import Repo
 import pytest
 
 

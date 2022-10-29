@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo import Repo, OnyoInvalidRepoError
 
 
 #

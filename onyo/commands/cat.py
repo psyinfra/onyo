@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo import Repo, OnyoInvalidRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')

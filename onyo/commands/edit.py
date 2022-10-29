@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo import Repo, OnyoInvalidRepoError
 from pathlib import Path
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 

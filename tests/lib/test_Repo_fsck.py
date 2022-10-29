@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 import pytest
-from onyo.lib import OnyoInvalidRepoError
+from onyo import OnyoInvalidRepoError
 
 
 #

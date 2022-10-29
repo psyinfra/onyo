@@ -3,7 +3,7 @@ import sys
 import shutil
 from pathlib import Path
 
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import edit_asset, get_editor
 
 

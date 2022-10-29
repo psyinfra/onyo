@@ -3,7 +3,7 @@ import os
 import sys
 from ruamel.yaml import YAML  # pyre-ignore[21]
 
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo import Repo, OnyoInvalidRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
