@@ -24,8 +24,8 @@ def sanitize_path(path, opdir):
 
     # check if path exists
     if not full_path.exists():
-        log.error(f"Cannot display the history of '{full_path}'. It does not exist.")
-        log.error("Exiting.")
+        print(f"Cannot display the history of '{full_path}'. It does not exist.", file=sys.stderr)
+        print("Exiting.", file=sys.stderr)
         sys.exit(1)
 
     return full_path
@@ -47,14 +47,14 @@ def get_history_cmd(interactive, repo: Repo):
 
     history_cmd = repo.get_config(config_name)
     if not history_cmd:
-        log.error(f"'{config_name}' is unset and is required to display history.")
-        log.error("Please see 'onyo config --help' for information about how to set it. Exiting.")
+        print(f"'{config_name}' is unset and is required to display history.", file=sys.stderr)
+        print("Please see 'onyo config --help' for information about how to set it. Exiting.", file=sys.stderr)
         sys.exit(1)
 
     history_program = history_cmd.split()[0]
     if not shutil.which(history_program):
-        log.error(f"'{history_cmd}' acquired from '{config_name}'.")
-        log.error(f"The program '{history_program}' was not found. Exiting.")
+        print(f"'{history_cmd}' acquired from '{config_name}'.", file=sys.stderr)
+        print(f"The program '{history_program}' was not found. Exiting.", file=sys.stderr)
         sys.exit(1)
 
     return history_cmd
