@@ -3,13 +3,8 @@ import sys
 import shutil
 from pathlib import Path
 
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import edit_asset, get_editor
-
-from onyo.utils import (
-    generate_faux_serial,
-    get_config_value
-)
 
 
 logging.basicConfig()
@@ -42,7 +37,7 @@ def read_new_word(word_description):
     return word
 
 
-def run_onyo_new(directory, template, interactive, repo):
+def run_onyo_new(directory, template, interactive, repo: Repo):
     """
     Read a new asset name, check it for uniqueness and validity, create the
     asset (from a template if one was given), edit the new asset (if not
@@ -67,7 +62,7 @@ def run_onyo_new(directory, template, interactive, repo):
 
     successful = True
     if interactive:
-        editor = get_editor(repo.root)
+        editor = get_editor(repo)
         successful = edit_asset(editor, temp_asset)
 
     # add file to git
@@ -93,7 +88,7 @@ def create_filename(repo):
         word = read_new_word('<' + field + '>*:')
         if field == "serial" and word == "faux":
             try:
-                word = generate_faux_serial(repo.root)
+                word = repo.generate_faux_serials().pop()
             except ValueError as e:
                 print(e, file=sys.stderr)
                 sys.exit(1)
@@ -117,7 +112,7 @@ def sanitize_paths(directory, template, repo):
     """
     directory = Path(repo.root, directory).resolve()
     if not template:
-        template = get_config_value('onyo.new.template', repo.root)
+        template = repo.get_config('onyo.new.template')
 
     template = Path(repo.root, ".onyo/templates", template).resolve()
 

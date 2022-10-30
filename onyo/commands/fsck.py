@@ -1,6 +1,6 @@
 import sys
 
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo import Repo, OnyoInvalidRepoError
 
 
 def fsck(args, opdir):

@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from onyo.lib import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
+from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
 
 def mkdir(args, opdir):

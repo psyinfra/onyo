@@ -1,11 +1,12 @@
 import logging
+import random
 import re
+import string
 import subprocess
 from pathlib import Path
 from typing import Iterable, Optional, Union
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
-from onyo.utils import is_protected_path
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -76,7 +77,7 @@ class Repo:
         """
         Return a set of all assets in the repository.
         """
-        assets = {x for x in self.files if not is_protected_path(x)}
+        assets = {x for x in self.files if not self._is_protected_path(x)}
 
         # TODO: make if asset-style name (i.e. README won't match)
         # TODO: check for .onyoignore
@@ -148,6 +149,20 @@ class Repo:
     #
     # HELPERS
     #
+    def _is_protected_path(self, path: Union[Path, str]) -> bool:
+        """
+        Checks whether a path contains protected elements (.anchor, .git, .onyo).
+        Returns True if it contains protected elements. Otherwise False.
+        """
+        full_path = Path(path).resolve()
+
+        # protected paths
+        for p in full_path.parts:
+            if p in ['.anchor', '.git', '.onyo']:
+                return True
+
+        return False
+
     def _n_join(self, to_join: Iterable) -> str:
         """
         Convert an Iterable's contents to strings and join with newlines.
@@ -217,6 +232,69 @@ class Repo:
         self._git(['commit'] + messages)
 
     #
+    # CONFIG
+    #
+    def get_config(self, name: str) -> Union[str, None]:
+        """
+        Get the value for a configuration option specified by `name`.
+
+        git-config is checked following its order of precedence (worktree,
+        local, global, system). If the config name is not found, .onyo/config is
+        checked.
+
+        Returns a string with the config value on success. None otherwise.
+        """
+        value = None
+
+        # git-config (with its full stack of locations to check)
+        try:
+            value = self._git(['config', '--get', name]).strip()
+            log.debug(f"git config acquired '{name}': '{value}'")
+        except subprocess.CalledProcessError:
+            log.debug(f"git config missed '{name}'")
+            pass
+
+        # .onyo/config
+        if not value:
+            dot_onyo_config = str(Path(self.root, '.onyo/config'))
+            try:
+                value = self._git(['config', '--file', dot_onyo_config, '--get', name]).strip()
+                log.debug(f"onyo config acquired '{name}': '{value}'")
+            except subprocess.CalledProcessError:
+                log.debug(f"onyo config missed '{name}'")
+                pass
+
+        return value
+
+    def set_config(self, name: str, value: str, location: str = 'onyo') -> bool:
+        """
+        Set the `name` configuration option to `value`. The local is `onyo` by
+        default. Other git config locations are: `system`, `global`, `local`,
+        and `worktree`.
+
+        Returns True on success. Raises an exception otherwise.
+        """
+        location_options = {
+            'onyo': ['--file', str(Path(self.root, '.onyo/config'))],
+            'system': ['--system'],
+            'global': ['--global'],
+            'local': ['--local'],
+            'worktree': ['--worktree']
+        }
+        location_arg = []
+
+        try:
+            location_arg = location_options[location]
+        except KeyError:
+            raise ValueError("Invalid config location requested. Valid options are: {}".format(', '.join(location_options.keys())))
+
+        # git-config (with its full stack of locations to check)
+        self._git(['config'] + location_arg + [name, value]).strip()
+        log.debug(f"'config for '{location}' set '{name}': '{value}'")
+
+        return True
+
+    #
     # FSCK
     #
     def fsck(self, tests: Optional[list[str]] = None) -> None:
@@ -267,7 +345,7 @@ class Repo:
         """
         anchors_exist = {x for x in self.files if x.name == '.anchor' and '.onyo' not in x.parts}
         anchors_expected = {x.joinpath('.anchor') for x in self.dirs
-                            if not is_protected_path(x)}
+                            if not self._is_protected_path(x)}
         difference = anchors_expected.difference(anchors_exist)
 
         if difference:
@@ -419,7 +497,7 @@ class Repo:
                 continue
 
             # protected paths
-            if is_protected_path(full_dir):
+            if self._is_protected_path(full_dir):
                 error_path_protected.append(d)
                 continue
 
@@ -517,7 +595,7 @@ class Repo:
         Common checks
         """
         # protected paths
-        if is_protected_path(dest_path):
+        if self._is_protected_path(dest_path):
             log.error('The following paths are protected by onyo:\n' +
                       f'{dest_path}\n' +
                       'Nothing was moved.')
@@ -637,7 +715,7 @@ class Repo:
                 continue
 
             # protected paths
-            if is_protected_path(full_path):
+            if self._is_protected_path(full_path):
                 error_path_protected.append(src)
                 continue
 
@@ -658,6 +736,33 @@ class Repo:
                                          self._n_join(error_path_protected))
 
         return paths_to_mv
+
+    #
+    # NEW
+    #
+    def generate_faux_serials(self, length: int = 6, num: int = 1) -> set[str]:
+        """
+        Generate a unique faux serial and verify that it is not used by any
+        other asset in the repository. The length of the faux serial must be 4
+        or greater.
+
+        Returns a set of unique faux serials.
+        """
+        if length < 4:
+            # 62^4 is ~14.7 million combinations. Which is the lowest acceptable
+            # risk of collisions between independent checkouts of a repo.
+            raise ValueError('The length of faux serial numbers must be greater than 4.')
+
+        alphanum = string.ascii_letters + string.digits
+        faux_serials = set()
+        repo_faux_serials = {str(x.name).split('faux')[-1] for x in self.assets}
+
+        while len(faux_serials) < num:
+            serial = ''.join(random.choices(alphanum, k=length))
+            if serial not in repo_faux_serials:
+                faux_serials.add(f'faux{serial}')
+
+        return faux_serials
 
     #
     # RM
@@ -705,7 +810,7 @@ class Repo:
                 continue
 
             # protected paths
-            if is_protected_path(full_path):
+            if self._is_protected_path(full_path):
                 error_path_protected.append(p)
                 continue
 

@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 import pytest
 from onyo import commands  # noqa: F401
-from onyo.lib import OnyoProtectedPathError
+from onyo import OnyoProtectedPathError
 
 
 #

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from onyo.lib import OnyoProtectedPathError
+from onyo import OnyoProtectedPathError
 
 
 variants = {
