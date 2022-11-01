@@ -1,206 +1,166 @@
 import subprocess
+from pathlib import Path
+import pytest
+from onyo import OnyoInvalidRepoError
 
-
-def create_file(name, content):
-    """
-    Create and populate a file. Then add and commit to git.
-    """
-    with open(name, 'w') as f:
-        f.write(content)
-
-    # add and commit
-    ret = subprocess.run(['git', 'add', name])
-    assert ret.returncode == 0
-    ret = subprocess.run(['git', 'commit', '-m', f'add {name} for tests'])
-    assert ret.returncode == 0
-
-
-def delete_file(name):
-    """
-    Git rm a file and commit.
-    """
-    ret = subprocess.run(['git', 'rm', name])
-    assert ret.returncode == 0
-    ret = subprocess.run(['git', 'commit', '-m', f'remove {name} for tests'])
-    assert ret.returncode == 0
-
-
-def test_onyo_init():
-    ret = subprocess.run(["onyo", "init"])
-    assert ret.returncode == 0
-
-
-def test_single():
+variants = [
+    'file',
+    'dir/file',
+    's p a c e s',
+    'd i r/s p a c e s'
+]
+@pytest.mark.repo_dirs('dir', 'd i r')
+@pytest.mark.parametrize('variant', variants)
+def test_single(repo, variant):
     """
     Test that a single file is cat successfully, and that stdout matches file
     content.
     """
-    name = "single"
+    name = variant
     content = "---\nRAM:\nSize:\nUSB:\n"
-    create_file(name, content)
 
+    # add file
+    Path(name).write_text(content)
+    repo.add(name)
+    repo.commit('populate for tests')
+
+    # test
     ret = subprocess.run(["onyo", "cat", name], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
     assert ret.stdout == content
 
 
-def test_multiple():
+@pytest.mark.repo_dirs('dir')
+def test_multiple(repo):
     """
     Test that multiple files are cat successfully, and that stdout matches file
     content.
     """
     name_1 = "one"
     content_1 = "---\nRAM: 1\nSize: 1\nUSB: 1\n"
-    create_file(name_1, content_1)
-
-    name_2 = "two"
+    name_2 = "dir/two"
     content_2 = "---\nRAM: 2\nSize: 2\nUSB: 2\n"
-    create_file(name_2, content_2)
-
-    name_3 = "three"
+    name_3 = "t h r e e"
     content_3 = "---\nRAM: 3\nSize: 3\nUSB: 3\n"
-    create_file(name_3, content_3)
 
+    # add files
+    Path(name_1).write_text(content_1)
+    Path(name_2).write_text(content_2)
+    Path(name_3).write_text(content_3)
+    repo.add([name_1, name_2, name_3])
+    repo.commit('populate for tests')
+
+    # test
     ret = subprocess.run(["onyo", "cat", name_1, name_2, name_3], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
     assert ret.stdout == content_1 + content_2 + content_3
 
 
-def test_absent_path():
+variants = [
+    'does-not-exist',
+    'dir/does-not-exist',
+    'does/not-exist'
+]
+@pytest.mark.repo_files('one', 'dir/two')
+@pytest.mark.parametrize('variant', variants)
+def test_absent_path(repo, variant):
     """
     Test that cat fails for a path that doesn't exist.
     """
-    ret = subprocess.run(["onyo", "cat", "absent/path"], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat', variant], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
 
 
-def test_multiple_with_missing():
+variants = {  # pyre-ignore[9]
+    'first': ['does-not-exist', 'one', 'dir/two'],
+    'middle': ['one', 'does-not-exist', 'dir/two'],
+    'last': ['one', 'dir/two', 'does-not-exist'],
+}
+@pytest.mark.repo_files('one', 'dir/two')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_multiple_with_missing(repo, variant):
     """
     Test that cat fails with multiple paths if at least one doesn't exist.
     """
-    ret = subprocess.run(["onyo", "cat", "one", "two", "absent/path"], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat'] + variant, capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
 
 
-def test_not_a_file():
+@pytest.mark.repo_dirs('dir')
+def test_not_a_file(repo):
     """
     Test that cat fails if path provided not a file.
     """
-    ret = subprocess.run(["onyo", "mkdir", "not_a_file/"])
-    assert ret.returncode == 0
-
-    ret = subprocess.run(["onyo", "cat", "not_a_file/"], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat', 'dir'], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
 
 
-def test_with_spaces():
-    """
-    Test that cat succeeds if filename contains spaces.
-    """
-    name = "s p a c e s"
-    content = "---\nRAM:\nSize:\nUSB:\n"
-    create_file(name, content)
-
-    ret = subprocess.run(["onyo", "cat", name], capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-    assert ret.stdout == content
-
-
-def test_nested_with_spaces():
-    """
-    Test that cat succeeds if multiple filenames contain spaces and if files are
-    nested within a directory.
-    """
-    ret = subprocess.run(["onyo", "mkdir", "nested/"])
-    assert ret.returncode == 0
-
-    name_1 = "nested/o n e"
-    content_1 = "---\nRAM: 1\nSize: 1\nUSB: 1\n"
-    create_file(name_1, content_1)
-
-    name_2 = "nested/t w o"
-    content_2 = "---\nRAM: 2\nSize: 2\nUSB: 2\n"
-    create_file(name_2, content_2)
-
-    name_3 = "nested/t h r e e"
-    content_3 = "---\nRAM: 3\nSize: 3\nUSB: 3\n"
-    create_file(name_3, content_3)
-
-    ret = subprocess.run(["onyo", "cat", name_1, name_2, name_3], capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-    assert ret.stdout == content_1 + content_2 + content_3
-
-
-def test_same_target():
+def test_same_target(repo):
     """
     Test that cat succeeds if the same path is provided more than once.
     """
     name = "same_target"
     content = "---\nRAM:\nSize:\nUSB:\n"
-    create_file(name, content)
 
-    ret = subprocess.run(["onyo", "cat", name, name], capture_output=True, text=True)
+    # add file
+    Path(name).write_text(content)
+    repo.add(name)
+    repo.commit('populate for tests')
+
+    # test
+    ret = subprocess.run(['onyo', 'cat', name, name], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
     assert ret.stdout == content + content
 
 
-def test_no_trailing_newline():
+def test_no_trailing_newline(repo):
     """
     Test that cat outputs the file content exactly, and doesn't add any newlines
     or other characters.
     """
     name = "no_trailing_newline"
     content = "---\nRAM:\nSize:\nUSB:"
-    create_file(name, content)
 
-    ret = subprocess.run(["onyo", "cat", name], capture_output=True, text=True)
+    # add file
+    Path(name).write_text(content)
+    repo.add(name)
+    repo.commit('populate for tests')
+
+    # test
+    ret = subprocess.run(['onyo', 'cat', name], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
     assert ret.stdout == content
 
 
-def test_invalid_yaml():
+def test_invalid_yaml(repo):
     """
     Test that cat fails for a file with invalid yaml content.
     """
-    # create directory
-    ret = subprocess.run(["onyo", "mkdir", "invalid_yaml/"])
-    assert ret.returncode == 0
-
-    # check that the current repo state is valid (this is technically redundant
-    # as mkdir already does an onyo fsck)
-    ret = subprocess.run(["onyo", "fsck"], capture_output=True, text=True)
-    assert ret.returncode == 0
-
     # create file with invalid yaml content
-    name = "invalid_yaml/bad_yaml"
+    name = "bad_yaml"
     content = "I: \nam:bad:\nbad:yaml\n"
-    create_file(name, content)
+
+    # add file
+    Path(name).write_text(content)
+    repo.add(name)
+    repo.commit('populate for tests')
 
     # check that yaml is invalid
-    ret = subprocess.run(["onyo", "fsck"], capture_output=True, text=True)
-    assert ret.returncode == 1
+    with pytest.raises(OnyoInvalidRepoError):
+        repo.fsck(['asset-yaml'])
 
-    # check that cat fails with invalid yaml content
-    ret = subprocess.run(["onyo", "cat", name], capture_output=True, text=True)
+    # test
+    ret = subprocess.run(['onyo', 'cat', name], capture_output=True, text=True)
     assert ret.returncode == 1
     assert ret.stderr
     assert not ret.stdout
-
-    # clean up invalid file
-    delete_file(name)
-
-    # Do another fsck to guarantee that the repo is clean
-    ret = subprocess.run(["onyo", "fsck"], capture_output=True, text=True)
-    assert ret.returncode == 0
