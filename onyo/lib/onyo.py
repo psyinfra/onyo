@@ -1,6 +1,7 @@
 import logging
 import random
 import re
+import shutil
 import string
 import subprocess
 from pathlib import Path
@@ -23,7 +24,10 @@ class OnyoProtectedPathError(Exception):
 class Repo:
     """
     """
-    def __init__(self, path: Union[Path, str]) -> None:
+    def __init__(self, path: Union[Path, str], init: bool = False) -> None:
+        if init:
+            self._init(path)
+
         self._opdir = Path(path).resolve()
         self._root = self._get_root()
         # caches
@@ -444,6 +448,68 @@ class Repo:
             return False
 
         return True
+
+    #
+    # INIT
+    #
+    def _init(self, directory: Union[Path, str]) -> None:
+        """
+        Initialize an Onyo repository. The directory will be initialized as a
+        git repository (if it is not one already), ``.onyo/`` directory created
+        (containing default config files, templates, etc), and everything
+        committed.
+
+        Re-init-ing an existing repository is safe. It will not overwrite
+        anything; it will raise an exception.
+        """
+        target_dir = self._init_sanitize(directory)
+        skel_dir = Path(Path(__file__).resolve().parent.parent, 'skel')
+        dot_onyo = Path(target_dir, '.onyo')
+
+        # create target if it doesn't already exist
+        target_dir.mkdir(exist_ok=True)
+
+        # git init (if needed)
+        if Path(target_dir, '.git').exists():
+            log.info(f"'{target_dir}' is already a git repository.")
+        else:
+            ret = self._git(['init'], cwd=target_dir)
+            log.info(ret.strip())
+
+        # populate .onyo dir
+        shutil.copytree(skel_dir, dot_onyo)
+
+        # add and commit
+        self._git(['add', '.onyo/'], cwd=target_dir)
+        self._git(['commit', '-m', 'Initialize as an Onyo repository'], cwd=target_dir)
+
+        log.info(f'Initialized Onyo repository in {dot_onyo}/')
+
+    def _init_sanitize(self, directory: Union[Path, str]) -> Path:
+        """
+        Check the target path for viability as an init target.
+
+        Returns an absolute Path on success.
+        """
+        full_path = Path(directory).resolve()
+
+        # target must be a directory
+        if full_path.exists() and not full_path.is_dir():
+            log.error(f"'{full_path}' exists but is not a directory.")
+            raise FileExistsError(f"'{full_path}' exists but is not a directory.")
+
+        # parent must exist
+        if not full_path.parent.exists():
+            log.error(f"'{full_path.parent}' does not exist.")
+            raise FileNotFoundError(f"'{full_path.parent}' does not exist.")
+
+        # cannot already be an .onyo repo
+        dot_onyo = Path(full_path, '.onyo')
+        if dot_onyo.exists():
+            log.error(f"'{dot_onyo}' already exists.")
+            raise FileExistsError(f"'{dot_onyo}' already exists.")
+
+        return full_path
 
     #
     # MKDIR
