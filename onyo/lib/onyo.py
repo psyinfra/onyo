@@ -817,7 +817,12 @@ class Repo:
         if length < 4:
             # 62^4 is ~14.7 million combinations. Which is the lowest acceptable
             # risk of collisions between independent checkouts of a repo.
-            raise ValueError('The length of faux serial numbers must be greater than 4.')
+            raise ValueError('The length of faux serial numbers must be >= 4.')
+
+        if num < 1:
+            # 62^4 is ~14.7 million combinations. Which is the lowest acceptable
+            # risk of collisions between independent checkouts of a repo.
+            raise ValueError('The length of faux serial numbers must be >= 1.')
 
         alphanum = string.ascii_letters + string.digits
         faux_serials = set()
