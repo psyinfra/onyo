@@ -1,92 +1,51 @@
 import subprocess
 from pathlib import Path
+import pytest
 
 
 # NOTE: the output of `onyo history` is not tested for formatting or content, as
 #       the commands called by `onyo history` are user-configurable. Instead, it
 #       is tested for whether the output of the underlying command is unaltered.
-def test_onyo_init():
-    ret = subprocess.run(["onyo", "init"])
-    assert ret.returncode == 0
-
-    create_dirs = ['subdir',
-                   's p a c e s',
-                   's p a/c e s',
-                   ]
-
-    # create dirs
-    ret = subprocess.run(['onyo', 'mkdir'] + create_dirs)
-    assert ret.returncode == 0
-
-    # create files
-    Path('a').touch()
-    Path('subdir/b').touch()
-    Path('s p a c e s/c').touch()
-    Path('s p a/c e s/1 2').touch()
-
-    # add and commit
-    ret = subprocess.run(['git', 'add', '.'])
-    assert ret.returncode == 0
-    ret = subprocess.run(['git', 'commit', '-m', 'populated for tests'])
-    assert ret.returncode == 0
-
-
-def test_history_noninteractive():
-    ret = subprocess.run(["onyo", "history", "-I"],
+variants = [
+    'file',
+    'dir',
+    'dir/subfile-1',
+    's p a c e s/subfile-2',
+    's p a/c e s/sub file 3',
+]
+@pytest.mark.repo_files('file', 'dir/subfile-1', 's p a c e s/subfile-2', 's p a/c e s/sub file 3')
+@pytest.mark.parametrize('variant', variants)
+def test_history_noninteractive(repo, variant):
+    ret = subprocess.run(['onyo', 'history', '-I', variant],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout
     assert not ret.stderr
 
 
-def test_history_noninteractive_file():
-    ret = subprocess.run(["onyo", "history", "-I", "a"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert ret.stdout
-    assert not ret.stderr
-
-
-def test_history_noninteractive_dir():
-    ret = subprocess.run(["onyo", "history", "-I", "subdir/"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert ret.stdout
-    assert not ret.stderr
-
-
-def test_history_noninteractive_spaces():
-    ret = subprocess.run(["onyo", "history", "-I", "s p a c e s/"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert ret.stdout
-    assert not ret.stderr
-
-    # subdir
-    ret = subprocess.run(["onyo", "history", "-I", "s p a/c e s/1 2"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert ret.stdout
-    assert not ret.stderr
-
-
-def test_history_noninteractive_not_exist():
-    ret = subprocess.run(["onyo", "history", "-I", "does_not_exist"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 1
-    assert not ret.stdout
-    assert ret.stderr
-
-    # subdir
-    ret = subprocess.run(["onyo", "history", "-I", "subdir/does_not_exist"],
+variants = [
+    'does-not-exist',
+    'subdir/does-not-exist',
+]
+@pytest.mark.repo_dirs('subdir')
+@pytest.mark.parametrize('variant', variants)
+def test_history_noninteractive_not_exist(repo, variant):
+    ret = subprocess.run(['onyo', 'history', '-I', variant],
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
 
 
-def test_history_noninteractive_too_many_args():
-    ret = subprocess.run(["onyo", "history", "-I", "a", "subdir/b"],
+variants = {  # pyre-ignore[9]
+    'both-exist': ['file', 'dir/subfile-1'],
+    'first-exist': ['file', 'does-not-exist'],
+    'second-exist': ['does-not-exist', 'file'],
+}
+@pytest.mark.repo_files('file', 'dir/subfile-1')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_history_noninteractive_too_many_args(repo, variant):
+    ret = subprocess.run(['onyo', 'history', '-I'] + variant,
                          capture_output=True, text=True)
     assert ret.returncode != 0
     assert not ret.stdout
@@ -95,8 +54,9 @@ def test_history_noninteractive_too_many_args():
 
 # NOTE: interactive cannot be tested directly, as onyo detects whether it's
 #       connected to a TTY.
-def test_history_interactive_fallback():
-    ret = subprocess.run(["onyo", "history", "subdir/b"],
+@pytest.mark.repo_files('file')
+def test_history_interactive_fallback(repo):
+    ret = subprocess.run(['onyo', 'history', 'file'],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout
@@ -104,32 +64,32 @@ def test_history_interactive_fallback():
 
 
 # Error when no config flag is found
-def test_history_config_unset():
-    # git is already unset
-    assert 'onyo.history.non-interactive' not in Path('.git/config').read_text()
-    # unset onyo
-    ret = subprocess.run(["onyo", "config", "--unset", "onyo.history.non-interactive"],
+@pytest.mark.repo_files('file')
+def test_history_config_unset(repo):
+    """
+    The command should error when no tool is configured.
+    """
+    # unset config for history tool
+    ret = subprocess.run(['onyo', 'config', '--unset', 'onyo.history.non-interactive'],
                          capture_output=True, text=True)
     assert ret.returncode == 0
+    assert not repo.get_config('onyo.history.non-interactive')
 
-    # run history
-    ret = subprocess.run(["onyo", "history", "-I", "subdir/b"],
+    # test
+    ret = subprocess.run(['onyo', 'history', '-I', 'file'],
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
 
 
-def test_history_config_invalid():
-    # git is already unset
-    assert 'onyo.history.non-interactive' not in Path('.git/config').read_text()
+@pytest.mark.repo_files('file')
+def test_history_config_invalid(repo):
     # set to invalid
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "does-not-exist-in-path"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
+    repo.set_config('onyo.history.non-interactive', 'does-not-exist-in-path')
 
     # run history
-    ret = subprocess.run(["onyo", "history", "-I", "subdir/b"],
+    ret = subprocess.run(['onyo', 'history', '-I', 'file'],
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
@@ -138,62 +98,61 @@ def test_history_config_invalid():
 
 # Reconfigure the history command to tickle some other functionality we're
 # interested in.
-def test_history_fake_noninteractive_stdout():
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/usr/bin/env printf"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
+variants = [
+    'file',
+    'dir/subfile-1',
+    's p a/c e s/sub file 3',
+]
+@pytest.mark.repo_files('file', 'dir/subfile-1', 's p a c e s/subfile-2', 's p a/c e s/sub file 3')
+@pytest.mark.parametrize('variant', variants)
+def test_history_fake_noninteractive_stdout(repo, variant):
+    repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf')
 
-    # single file
-    ret = subprocess.run(["onyo", "history", "-I", "a"],
+    # test
+    ret = subprocess.run(['onyo', 'history', '-I', variant],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert Path(ret.stdout).resolve() == Path('a').resolve()
+    assert Path(ret.stdout).resolve() == Path(variant).resolve()
     assert not ret.stderr
 
-    # spaces
-    ret = subprocess.run(["onyo", "history", "-I", "s p a/c e s/1 2"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert Path(ret.stdout).resolve() == Path('s p a/c e s/1 2').resolve()
-    assert not ret.stderr
 
+variants = [
+    'file',
+    'dir/subfile-1',
+    's p a/c e s/sub file 3',
+]
+@pytest.mark.repo_files('file', 'dir/subfile-1', 's p a c e s/subfile-2', 's p a/c e s/sub file 3')
+@pytest.mark.parametrize('variant', variants)
+def test_history_fake_noninteractive_stderr(repo, variant):
+    repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf >&2')
 
-def test_history_fake_noninteractive_stderr():
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/usr/bin/env printf >&2"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-
-    # single file
-    ret = subprocess.run(["onyo", "history", "-I", "a"],
+    # test
+    ret = subprocess.run(['onyo', 'history', '-I', variant],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stdout
-    assert Path(ret.stderr).resolve() == Path('a').resolve()
-
-    # spaces
-    ret = subprocess.run(["onyo", "history", "-I", "s p a/c e s/1 2"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stdout
-    assert Path(ret.stderr).resolve() == Path('s p a/c e s/1 2').resolve()
+    assert Path(ret.stderr).resolve() == Path(variant).resolve()
 
 
-def test_history_fake_noninteractive_bubble_exit_code():
-    # success
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "/usr/bin/env true"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    ret = subprocess.run(["onyo", "history", "-I", "a"],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
+variants = {  # pyre-ignore[9]
+    'success': {
+        'cmd': '/usr/bin/env true',
+        'retval': 0,
+    },
+    'error': {
+        'cmd': '/usr/bin/env false',
+        'retval': 1,
+    },
+    'error-129': {
+        'cmd': 'git config --invalid-flag-oopsies',
+        'retval': 129,
+    },
+}
+@pytest.mark.repo_files('file')
+@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
+def test_history_fake_noninteractive_bubble_exit_code(repo, variant):
+    repo.set_config('onyo.history.non-interactive', variant['cmd'])
 
-    # error
-    ret = subprocess.run(["onyo", "config", "onyo.history.non-interactive", "git config --invalid-flag-oopsies"],
+    ret = subprocess.run(['onyo', 'history', '-I', 'file'],
                          capture_output=True, text=True)
-    assert ret.returncode == 0
-    ret = subprocess.run(["onyo", "history", "-I", "a"],
-                         capture_output=True, text=True)
-    # Passing invalid flags to git causes it to exit with "129".
-    assert ret.returncode == 129
-
-# TODO: test from outside the repo (-C)
+    assert ret.returncode == variant['retval']
