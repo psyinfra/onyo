@@ -10,7 +10,6 @@ setup(
     packages=find_packages(),
     license='ISC',
     install_requires=[
-        'GitPython',
         'ruamel.yaml'
     ],
     extras_require={

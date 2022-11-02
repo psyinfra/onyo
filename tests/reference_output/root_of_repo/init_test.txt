@@ -1,1 +1,2 @@
-Initialized Onyo repository in <replace>/.onyo
+INFO:onyo:Initialized empty Git repository in <replace>/.git/
+INFO:onyo:Initialized Onyo repository in <replace>/.onyo/

@@ -1,5 +1,6 @@
 import os
 import subprocess
+from typing import Union
 from pathlib import Path
 
 import pytest
@@ -52,6 +53,171 @@ def test_Repo_instantiate_onyo_no_git(tmp_path):
 
     with pytest.raises(OnyoInvalidRepoError):
         Repo(repo_path)
+
+
+#
+# Initialization
+#
+def fully_populated_dot_onyo(directory: Union[Path, str]) -> bool:
+    """
+    Assert whether a .onyo dir is fully populated.
+    """
+    dot_onyo = Path(directory, '.onyo')
+
+    if not Path(dot_onyo).is_dir() or \
+       not Path(dot_onyo, "temp").is_dir() or \
+       not Path(dot_onyo, "templates").is_dir() or \
+       not Path(dot_onyo, "validation").is_dir() or \
+       not Path(dot_onyo, "config").is_file() or \
+       not Path(dot_onyo, ".anchor").is_file() or \
+       not Path(dot_onyo, "temp/.anchor").is_file() or \
+       not Path(dot_onyo, "templates/.anchor").is_file() or \
+       not Path(dot_onyo, "validation/.anchor").is_file():
+           return False  # noqa: E111, E117
+    # TODO: assert that no unstaged or untracked under .onyo/
+
+    return True
+
+
+variants = {
+    'string': 'dir',
+    'Path': Path('dir'),
+}
+@pytest.mark.parametrize('variant', variants)
+def test_init_types(tmp_path, variant):
+    """
+    Init an existing, empty directory.
+    """
+    os.chdir(tmp_path)
+
+    # test
+    Repo(variant, init=True)
+    assert fully_populated_dot_onyo(variant)
+
+
+def test_init_False(tmp_path):
+    """
+    False does not init.
+    """
+    # test
+    with pytest.raises(OnyoInvalidRepoError):
+        Repo(tmp_path, init=False)
+    assert not fully_populated_dot_onyo(tmp_path)
+
+
+variants = [  # pyre-ignore[9]
+    'dir',
+    's p a c e s',
+]
+@pytest.mark.parametrize('variant', variants)
+def test_init_not_exist_dir(tmp_path, variant):
+    """
+    Init a non-existent directory.
+    """
+    repo_path = Path(tmp_path, variant).resolve()
+
+    # test
+    Repo(repo_path, init=True)
+    assert fully_populated_dot_onyo(repo_path)
+
+
+variants = [  # pyre-ignore[9]
+    '',
+    './',
+    'dir',
+    's p a c e s',
+]
+@pytest.mark.parametrize('variant', variants)
+def test_init_exist_dir(tmp_path, variant):
+    """
+    Init an existing, empty directory.
+    """
+    os.chdir(tmp_path)
+    repo_path = Path(tmp_path, variant)
+    repo_path.mkdir(exist_ok=True, parents=True)
+
+    # test
+    Repo(repo_path, init=True)
+    assert fully_populated_dot_onyo(repo_path)
+
+
+variants = [  # pyre-ignore[9]
+    './',
+    'dir',
+    's p a c e s',
+]
+@pytest.mark.parametrize('variant', variants)
+def test_init_reinit(tmp_path, variant):
+    """
+    Cannot re-init an Onyo repo.
+    """
+    os.chdir(tmp_path)
+    repo_path = Path(tmp_path, variant)
+    Repo(repo_path, init=True)
+
+    # test
+    with pytest.raises(FileExistsError):
+        Repo(repo_path, init=True)
+
+    # nothing should be lost
+    assert fully_populated_dot_onyo(repo_path)
+    # nothing should be created
+    assert not Path(repo_path, '.onyo/', '.onyo/').exists()
+
+
+def test_init_file(tmp_path):
+    """
+    Target must be a directory.
+    """
+    repo_path = Path(tmp_path, 'file').resolve()
+    repo_path.touch()
+
+    # test
+    with pytest.raises(FileExistsError):
+        Repo(repo_path, init=True)
+
+
+def test_init_missing_parent_dir(tmp_path):
+    """
+    Parent directories must exist.
+    """
+    repo_path = Path(tmp_path, 'missing', 'parent', 'dir').resolve()
+
+    # test
+    with pytest.raises(FileNotFoundError):
+        Repo(repo_path, init=True)
+
+    assert not fully_populated_dot_onyo(repo_path)
+    for i in repo_path.parents:
+        assert not fully_populated_dot_onyo(i)
+
+
+def test_init_already_git(tmp_path):
+    """
+    Init-ing a git repo is allowed.
+    """
+    repo_path = Path(tmp_path).resolve()
+    ret = subprocess.run(['git', 'init', repo_path])
+    assert ret.returncode == 0
+
+    # test
+    Repo(repo_path, init=True)
+    assert fully_populated_dot_onyo(repo_path)
+
+
+def test_init_with_cruft(tmp_path):
+    """
+    Init-ing a directory with content is allowed, and should not commit anything
+    other than the newly created .onyo dir.
+    """
+    repo_path = Path(tmp_path).resolve()
+    Path(repo_path, 'dir').mkdir()
+    Path(repo_path, 'dir', 'such_cruft.txt').touch()
+
+    # test
+    repo = Repo(repo_path, init=True)
+    assert fully_populated_dot_onyo(repo_path)
+    assert Path('dir', 'such_cruft.txt') not in repo.files
 
 
 #

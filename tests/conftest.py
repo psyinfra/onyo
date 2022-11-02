@@ -1,6 +1,5 @@
 import os
 import shutil
-import subprocess
 from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
@@ -28,9 +27,7 @@ def repo(tmp_path, monkeypatch, request):
     files = set()
 
     # initialize repo
-    ret = subprocess.run(['onyo', 'init', repo_path])
-    assert ret.returncode == 0
-    repo_ = Repo(repo_path)
+    repo_ = Repo(repo_path, init=True)
 
     # collect files to populate the repo
     m = request.node.get_closest_marker('repo_files')
@@ -144,10 +141,8 @@ class Helpers:
         Create and initialize a folder, and build a directory and file
         structure.
         """
-        # setup repo
-        ret = subprocess.run(['onyo', 'init', path])
-        assert ret.returncode == 0
-        repo = Repo(path)
+        # init repo
+        repo = Repo(path, init=True)
 
         # dirs
         if dirs:
