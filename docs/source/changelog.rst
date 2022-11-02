@@ -4,7 +4,14 @@ Changelog
 Next
 ****
 
-Changes listed here have been merged into Onyo and will be part of the next release.
+Changes listed here will be part of the next release.
+
+--------------------------------------------------------------------------------
+
+0.3.0 (2022.11.02)
+******************
+This release introduces an Onyo API and contains general code modernization,
+performance improvements, and expansion of tests.
 
 The highlights are:
 
