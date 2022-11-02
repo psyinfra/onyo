@@ -4,7 +4,115 @@ Changelog
 Next
 ****
 
-Changes listed have been merged into Onyo and will be part of the next release.
+Changes listed here have been merged into Onyo and will be part of the next release.
+
+The highlights are:
+
+Command Changes
+---------------
+- ``onyo mv --rename`` is retired. ``onyo set`` is the only command that can
+  change keys/pseudo-keys.
+- add ``onyo mv --quiet``
+- rename ``onyo mv --force`` to ``onyo mv --yes`` to match other commands
+- ``onyo new`` faux serials default length is decreased from 8 to 6
+- asset read/write always preserves key order and comments (aka: roundtrip mode)
+
+API
+---
+- a new ``Repo`` class to represent a repository as an object
+- ``Repo(init=True)`` initializes a new repository
+- the following properties are added to ``Repo``:
+
+  - ``assets``: assets in the repo
+  - ``dirs``: directories in the repo
+  - ``files``: files in the repo
+  - ``files_changes``: files in the "changed" state in git
+  - ``files_staged``: files in the "staged" state in git
+  - ``files_untracked``: files "untracked" by git
+  - ``root``: repository root
+  - ``opdir``: operating directory
+
+- the following public methods are added to ``Repo``:
+
+  - ``Repo.add()``: stage a file's changed contents
+  - ``Repo.commit()``: commit all staged changes
+  - ``Repo.generate_faux_serials()``: generate unique, fake serials
+  - ``Repo.get_config()``: get a config value
+  - ``Repo.set_config()``: set a config name and value, in either ``.onyo/config``
+    or any other valid git-config location
+  - ``Repo.fsck()``: fsck the repository, individual tests can be selected
+  - ``Repo.mkdir()``: create a directory (and any parents), add ``.anchor`` files,
+    and stage them
+  - ``Repo.mv()``: move/rename a directory/file and stage it
+  - ``Repo.rm()``: delete a directory/file and stage it
+
+- remove ``onyo/utils.py``
+- most tests are rewritten/updated to be self-contained
+
+Bugs
+----
+- ``onyo history`` honors ``onyo -C``
+- ``onyo history`` errors bubble up the correct exit code
+- "protected paths" (such as ``.anchor``, ``.git``, ``.onyo``) are checked
+  for anywhere in the path name.
+- calling ``onyo`` with an insufficient number of arguments no longer exits 0
+- arguments named 'config' no longer result in ignoring subsequent arguments
+- simultaneous use of ``onyo -C`` and ``onyo --debug`` no longer crashes Onyo
+- faux serials are generated in a more random way
+- ``onyo mkdir`` no longer errors with overlapping target directories
+- ``onyo mv file-1 subdir/file-1`` (aka: explicit move) no longer errors
+
+Validation
+----------
+Validation is entirely removed. It will be reintroduced, in an improved form, in
+a later release.
+
+Docs
+----
+Linting is documented.
+
+Tests
+-----
+- add tests for the ``onyo edit`` command
+- add tests for the ``onyo history`` command
+- add tests for the ``onyo mv`` command
+- add tests for the ``onyo new`` command
+- add tests for the ``onyo`` command
+- add tests for the ``Repo`` class:
+
+  - initialization
+  - instantiation
+  - ``assets``
+  - ``dirs``
+  - ``files``
+  - ``files_changes``
+  - ``files_staged``
+  - ``files_untracked``
+  - ``root``
+  - ``opdir``
+  - ``add()``
+  - ``commit()``
+  - ``generate_faux_serials()``
+  - ``get_config()``
+  - ``set_config()``
+  - ``fsck()``
+  - ``mkdir()``
+  - ``mv()``
+  - ``rm()``
+
+- `Pyre <https://pyre-check.org/>`_ is used for type checking
+- ``repo`` fixture to assist with test setup and isolation
+
+Installation
+------------
+The Python version required by Onyo is bumped from 3.7 to 3.9.
+
+Both GitPython and PyYAML are dropped as dependencies.
+
+Authors
+-------
+-  Tobias Kadelka (`@TobiasKadelka <https://github.com/TobiasKadelka>`__)
+-  Alex Waite (`@aqw <https://github.com/aqw>`__)
 
 --------------------------------------------------------------------------------
 
