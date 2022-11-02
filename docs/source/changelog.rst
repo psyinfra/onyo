@@ -33,7 +33,7 @@ API
   - ``assets``: assets in the repo
   - ``dirs``: directories in the repo
   - ``files``: files in the repo
-  - ``files_changes``: files in the "changed" state in git
+  - ``files_changed``: files in the "changed" state in git
   - ``files_staged``: files in the "staged" state in git
   - ``files_untracked``: files "untracked" by git
   - ``root``: repository root
@@ -63,7 +63,7 @@ Bugs
 - "protected paths" (such as ``.anchor``, ``.git``, ``.onyo``) are checked
   for anywhere in the path name.
 - calling ``onyo`` with an insufficient number of arguments no longer exits 0
-- arguments named 'config' no longer result in ignoring subsequent arguments
+- arguments named 'config' no longer ignore subsequent arguments
 - simultaneous use of ``onyo -C`` and ``onyo --debug`` no longer crashes Onyo
 - faux serials are generated in a more random way
 - ``onyo mkdir`` no longer errors with overlapping target directories
