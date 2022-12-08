@@ -514,6 +514,66 @@ def setup_parser():
         type=directory,
         help='directories to print'
     )
+    #
+    # subcommand "unset"
+    #
+    cmd_unset = subcmds.add_parser(
+        'unset',
+        description=textwrap.dedent(commands.unset.__doc__),
+        formatter_class=SubcommandHelpFormatter,
+        help='remove values from assets'
+    )
+    cmd_unset.set_defaults(run=commands.unset)
+    cmd_unset.add_argument(
+        '-d', '--depth',
+        metavar='N',
+        type=int,
+        required=False,
+        default=None,
+        help='descend at most "N" levels of directories below the starting-point; used only with --recursive'
+    )
+    cmd_unset.add_argument(
+        '-n', "--dry-run",
+        required=False,
+        default=False,
+        action='store_true',
+        help='perform a non-interactive trial-run without making any changes'
+    )
+    cmd_unset.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence output (requires the --yes flag)'
+    )
+    cmd_unset.add_argument(
+        '-R', '--recursive',
+        required=False,
+        default=False,
+        action='store_true',
+        help='unset values recursively for all assets in a directory'
+    )
+    cmd_unset.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_unset.add_argument(
+        'keys',
+        metavar="KEYS",
+        type=str,
+        help='keys to unset in assets; multiple values can be separated by commas (e.g. key,key2,key3)'
+    )
+    cmd_unset.add_argument(
+        'path',
+        metavar='PATH',
+        default='.',
+        nargs='*',
+        type=path,
+        help='assets or directories for which to set values'
+    )
     return parser
 
 

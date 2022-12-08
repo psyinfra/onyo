@@ -1223,3 +1223,38 @@ class Repo:
                                          self._n_join(error_path_protected))
 
         return paths_to_rm
+
+    #
+    # UNSET
+    #
+    def unset(self, paths: Iterable[Union[Path, str]], values: str, dryrun: bool,
+              recursive: bool, quiet: bool, depth: Union[int]) -> str:
+
+        # set and unset should select assets exactly the same way
+        assets_to_unset = self._set_sanitize(paths, recursive, depth)
+        keys = values.split(',')
+
+        if any([key in ["type", "make", "model", "serial"] for key in keys]):
+            log.error("Can't unset pseudo keys (name fields are required).")
+            raise ValueError("Can't unset pseudo keys (name fields are required).")
+
+        for asset in assets_to_unset:
+            contents = self._read_asset(asset)
+
+            for field in keys:
+                try:
+                    del contents[field]
+                except KeyError:
+                    if not quiet:
+                        log.info(f"Field {field} does not exist in {asset}")
+
+            self._write_asset(asset, contents)
+            self.add(asset)
+
+        # generate diff, and restore changes for dry-runs
+        diff = self._diff_changes()
+        if diff and dryrun:
+            self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
+                      [str(file) for file in self.files_staged])
+
+        return diff
