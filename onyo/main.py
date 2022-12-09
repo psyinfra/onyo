@@ -14,7 +14,7 @@ log.setLevel(logging.INFO)
 
 # This class enables e.g. onyo set to receive a dictionary of key=value and a
 # list of paths
-class StoreDictKeyValuePairs(argparse.Action):
+class StoreKeyValuePairsAndAssetsSeparately(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
@@ -22,8 +22,17 @@ class StoreDictKeyValuePairs(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         pairs = select_key_value(values)
         paths = select_paths(values)
-        setattr(namespace, "keys", pairs)
-        setattr(namespace, "path", paths)
+        # onyo new has different parameter names
+        if parser.prog == "onyo new":
+            setattr(namespace, "set", pairs)
+            setattr(namespace, "asset", paths)
+        else:
+            setattr(namespace, "keys", pairs)
+            # use default path "." if no paths are given explicitly
+            if not paths:
+                setattr(namespace, "path", ["."])
+            else:
+                setattr(namespace, "path", paths)
 
 
 def select_key_value(arg_values):
@@ -40,8 +49,6 @@ def select_paths(arg_values):
     for value in arg_values:
         if "=" not in value:
             paths.append(value)
-    if not paths:
-        return ["."]
     return paths
 
 
@@ -350,6 +357,7 @@ def setup_parser():
     cmd_new.add_argument(
         'asset',
         metavar='ASSET',
+        action=StoreKeyValuePairsAndAssetsSeparately,
         type=path,
         nargs='*',
         help='add new assets'
@@ -368,12 +376,6 @@ def setup_parser():
         default=False,
         action='store_true',
         help='respond "yes" to any prompts'
-    )
-    cmd_new.add_argument(
-        '-s', '--set',
-        action=StoreDictKeyValuePairs,
-        metavar="KEYS",
-        help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
     #
     # subcommand "rm"
@@ -461,23 +463,11 @@ def setup_parser():
     )
     cmd_set.add_argument(
         'keys',
-        action=StoreDictKeyValuePairs,
+        action=StoreKeyValuePairsAndAssetsSeparately,
         metavar="KEYS",
         nargs='*',
         help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
-    # TODO: removing this does functionally the correct thing, but also removes
-    # the help text
-    # cmd_set.add_argument(
-    #    'path',
-    #    action=StoreDictKeyValuePairs,
-    #    metavar='PATH',
-    #    default='.',
-    #    nargs='*',
-    #    type=path,
-    #    help='assets or directories for which to set values'
-    # )
-    # TODO: end of todo
     #
     # subcommand shell-completion
     #
