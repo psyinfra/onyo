@@ -1,6 +1,0 @@
-RAM: 20
-CPU: vier
-USB: None
-var: str ing
-RAM: 50
-USB: 3
