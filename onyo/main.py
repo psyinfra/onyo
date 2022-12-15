@@ -311,14 +311,6 @@ def setup_parser():
     )
     cmd_new.set_defaults(run=commands.new)
     cmd_new.add_argument(
-        '-I', '--non-interactive',
-        dest='interactive',
-        required=False,
-        default=True,
-        action='store_false',
-        help='do not prompt or open the editor; values must be piped in (e.g. echo "<type>\\n<make>\\n<model>\\n<serial>" | onyo new -I shelf/)'
-    )
-    cmd_new.add_argument(
         '-t', '--template',
         metavar='TEMPLATE',
         required=False,
@@ -327,10 +319,39 @@ def setup_parser():
         help='the template to seed the new asset'
     )
     cmd_new.add_argument(
-        'directory',
-        metavar='DIR',
-        type=directory,
-        help='add a new asset to DIR'
+        '-e', '--edit',
+        required=False,
+        default=False,
+        action='store_true',
+        help='Open new assets to edit them before creation'
+    )
+    cmd_new.add_argument(
+        'asset',
+        metavar='ASSET',
+        type=path,
+        nargs='*',
+        help='add new assets'
+    )
+    cmd_new.add_argument(
+        '-tsv', '--tsv',
+        metavar='TSV',
+        required=False,
+        default=None,
+        type=path,
+        help='tsv file describing new assets'
+    )
+    cmd_new.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_new.add_argument(
+        '-s', '--set',
+        action=StoreDictKeyPair,
+        metavar="KEYS",
+        help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
     #
     # subcommand "rm"

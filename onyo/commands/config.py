@@ -64,7 +64,7 @@ def config(args, opdir):
       running ``onyo history`` with ``--non-interactive``.
       (default: "git --no-pager log --follow")
     - ``onyo.new.template``: The default template to use with ``onyo new``.
-      (default: "standard")
+      (default: "empty")
 
     Example:
 

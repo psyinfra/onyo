@@ -35,6 +35,7 @@ class Repo:
         self._dirs = None
         self._files = None
         self._gitfiles = None
+        self._templates = None
 
     @property
     def assets(self) -> set[Path]:
@@ -76,6 +77,13 @@ class Repo:
     @property
     def root(self) -> Path:
         return self._root
+
+    @property
+    def templates(self) -> set[Path]:
+        if not self._templates:
+            self._templates = self._get_templates()
+
+        return self._templates
 
     def _get_assets(self) -> set[Path]:
         """
@@ -149,6 +157,12 @@ class Repo:
 
         log.debug(f"Onyo repo found at '{root}'")
         return root
+
+    def _get_templates(self) -> set[Path]:
+        templates = {Path(file) for file in Path(self.root, ".onyo", "templates").glob('*') if
+                     Path(file).is_file() and not Path(file).name == ".anchor"}
+
+        return templates
 
     #
     # HELPERS
@@ -832,6 +846,65 @@ class Repo:
                 faux_serials.add(f'faux{serial}')
 
         return faux_serials
+
+    def get_template(self, template_name: Union[Path, str, None] = None) -> Path:
+        """
+        Select the template to use. If no template name is given, use the
+        template from the repository config file `.onyo/config`.
+
+        Returns the template path on success, or exits with error.
+        """
+        if not template_name:
+            template_name = self.get_config('onyo.new.template')
+            if template_name is None:
+                log.error("Either --template must be given or 'onyo.new.template' must be set.")
+                raise ValueError("Either --template must be given or 'onyo.new.template' must be set.")
+
+        template_name = Path(template_name)
+        for template in self.templates:
+            if template.name == template_name.name:
+                return template.relative_to(self.root)
+            elif template_name.is_file() and template.samefile(template_name):
+                return template.relative_to(self.root)
+
+        log.error(f"Template {template_name} does not exist.")
+        raise ValueError(f"Template {template_name} does not exist.")
+
+    def valid_name(self, asset: Path) -> bool:
+        """
+        Verify that an asset name fits into the asset name scheme of onyo:
+        <type>_<make>_<model>.<serial>
+        Where the fields type, make, and model do not allow the characters '.'
+        and '_' to be part of the field, and no field is allowed to be empty.
+
+        Returns True for valid asset names, and False if invalid.
+        """
+        # verify that a dot exists
+        if "." not in asset.name:
+            log.error("Asset names must have a '.'")
+            return False
+
+        # split fields
+        try:
+            # reverse order, because re reads from right to left and splits,
+            # and this way '.' and '_' are in serial field
+            [serial, model, make, type] = re.findall('(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]
+        except (ValueError, IndexError):
+            log.error(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
+            return False
+
+        # check against special characters in fields 'type', 'make', 'model'
+        # if '_' in type or '.' in type or '_' in make or '.' in make or '_' in model or '.' in model:
+        if any('.' in x or '_' in x for x in [type, make, model]):
+            log.error(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
+            return False
+
+        # none of the fields is allowed to be empty
+        if not all([type, make, model, serial]):
+            log.error("The fields 'type', 'make', 'model' and 'serial' are not allowed to be empty.")
+            return False
+
+        return True
 
     #
     # RM

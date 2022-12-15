@@ -1,0 +1,3 @@
+type	make	model	serial	directory
+laptop	apple	macbookpro	0	simple
+laptop	apple	macbookpro	0	overlap/one

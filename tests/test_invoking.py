@@ -53,14 +53,14 @@ class TestClass:
         ("onyo mkdir shelf/", "", "empty_file.txt"),
         ("onyo mkdir 'trash bin/' delete_me", "", "empty_file.txt"),
         ("git status", "", "git_status_working_tree_clean.txt"),
-        ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n1", "onyo_new_works.txt"),
-        ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n2", "onyo_new_works.txt"),
-        ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n3", "onyo_new_works.txt"),
-        ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n4", "onyo_new_works.txt"),
-        ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n5", "onyo_new_works.txt"),
-        ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n6", "onyo_new_works.txt"),
-        ("onyo new --non-interactive shelf", "laptop\napple\nmacbookpro\n7", "onyo_new_works.txt"),
-        ("onyo new --non-interactive 'trash bin/'", "this\ndevice\nis very\ngood", "onyo_new_works.txt"),
+        ("onyo new --yes shelf/laptop_apple_macbookpro.1", "", "new.txt"),
+        ("onyo new --yes shelf/laptop_apple_macbookpro.2", "", "new.txt"),
+        ("onyo new --yes shelf/laptop_apple_macbookpro.3", "", "new.txt"),
+        ("onyo new --yes shelf/laptop_apple_macbookpro.4", "", "new.txt"),
+        ("onyo new --yes shelf/laptop_apple_macbookpro.5", "", "new.txt"),
+        ("onyo new --yes shelf/laptop_apple_macbookpro.6", "", "new.txt"),
+        ("onyo new --yes shelf/laptop_apple_macbookpro.7", "", "new.txt"),
+        ("onyo new --yes trash\\ bin/this_device_is\\ very.good", "", "new.txt"),
         ("git status", "", "git_status_working_tree_clean.txt"),
         ("onyo rm shelf/laptop_apple_macbookpro.7", "y", "delete_device.txt"),
         ("onyo mv -q -y shelf/laptop_apple_macbookpro.2 user/", "", "empty_file.txt"),
@@ -93,6 +93,8 @@ class TestClass:
         # rm tests use a different replacement text
         if "onyo rm" in command:
             replace_str = command.replace("onyo rm ", "")
+        elif "onyo new" in command:
+            replace_str = command.replace("onyo new --yes ", "").replace("\\ ", " ")
         else:
             replace_str = str(test_dir)
 
@@ -121,6 +123,8 @@ class TestClass:
         # rm tests use a different replacement text
         if f"onyo -C '{test_dir}' rm" in command:
             replace_str = command.replace(f"onyo -C '{test_dir}' rm ", "")
+        elif f"onyo -C '{test_dir}' new" in command:
+            replace_str = command.replace(f"onyo -C '{test_dir}' new --yes ", "").replace("\\ ", " ")
         else:
             replace_str = str(test_dir)
 
