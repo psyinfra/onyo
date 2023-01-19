@@ -48,7 +48,7 @@ def set(args, opdir: str) -> None:
 
     diff = ""
     try:
-        diff = repo.set(args.path, args.keys, args.dry_run, args.recursive, args.rename, args.depth)
+        diff = repo.set(args.path, args.keys, args.dry_run, args.rename, args.depth)
     except ValueError:
         sys.exit(1)
 

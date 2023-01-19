@@ -89,35 +89,12 @@ def test_set_error_non_existing_assets(repo: Repo, no_assets: list[str]) -> None
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('set_values', values)
-def test_set_with_dot_non_recursive(repo: Repo, set_values: list[str]) -> None:
-    """
-    Test that when `onyo set KEY=VALUE .` is called from the repository root,
-    onyo uses all assets on that level, but not recursively from folders.
-    """
-    ret = subprocess.run(['onyo', 'set'] + set_values + ["."], input='y', capture_output=True, text=True)
-
-    # verify output for just dot, should be all in onyo root, but not recursive
-    assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
-    for directory in directories[1:]:
-        assert directory not in ret.stdout
-
-    # count that for each asset on onyo root the output mentions the changes
-    for value in set_values:
-        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(files)
-    assert not ret.stderr
-    assert ret.returncode == 0
-    repo.fsck()
-
-
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('set_values', values)
 def test_set_with_dot_recursive(repo: Repo, set_values: list[str]) -> None:
     """
-    Test that when `onyo set --recursive KEY=VALUE .` is called from the
-    repository root, onyo selects all assets in the complete repo recursively.
+    Test that when `onyo set KEY=VALUE .` is called from the repository root,
+    onyo selects all assets in the complete repo recursively.
     """
-    ret = subprocess.run(['onyo', 'set', '--recursive'] + set_values + ["."], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set'] + set_values + ["."], input='y', capture_output=True, text=True)
 
     # verify that output mentions every asset
     assert "The following assets will be changed:" in ret.stdout
@@ -135,33 +112,12 @@ def test_set_with_dot_recursive(repo: Repo, set_values: list[str]) -> None:
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('set_values', values)
-def test_set_without_path_non_recursive(repo: Repo, set_values: list[str]) -> None:
+def test_set_without_path(repo: Repo, set_values: list[str]) -> None:
     """
     Test that `onyo set KEY=VALUE` without a given path selects all assets in
-    the root of the repository (e.g. cwd), but not recursively.
+    the repository, beginning with cwd.
     """
     ret = subprocess.run(['onyo', 'set'] + set_values, input='y', capture_output=True, text=True)
-
-    # verify output for root, should be all in onyo root, but not recursive
-    assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
-
-    # "+key: value" should mentioned one time for each asset in root
-    for value in set_values:
-        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(files)
-    assert not ret.stderr
-    assert ret.returncode == 0
-    repo.fsck()
-
-
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('set_values', values)
-def test_set_without_path_recursive(repo: Repo, set_values: list[str]) -> None:
-    """
-    Test that `onyo set --recursive KEY=VALUE` without a given path selects all
-    assets in the repository, beginning with cwd.
-    """
-    ret = subprocess.run(['onyo', 'set', '--recursive'] + set_values, input='y', capture_output=True, text=True)
 
     # verify that output contains one line per asset
     assert "The following assets will be changed:" in ret.stdout
@@ -183,10 +139,10 @@ def test_set_without_path_recursive(repo: Repo, set_values: list[str]) -> None:
 @pytest.mark.parametrize('set_values', values)
 def test_set_recursive_directories(repo: Repo, directory: str, set_values: list[str]) -> None:
     """
-    Test that `onyo set --recursive KEY=VALUE <directory>` updates contents of
-    assets correctly.
+    Test that `onyo set KEY=VALUE <directory>` updates contents of assets
+    correctly.
     """
-    ret = subprocess.run(['onyo', 'set', '--recursive'] + set_values + [directory], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set'] + set_values + [directory], input='y', capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -230,11 +186,10 @@ def test_set_discard_changes_single_assets(repo: Repo, asset: str, set_values: l
 @pytest.mark.repo_files(*assets)
 def test_set_discard_changes_recursive(repo: Repo) -> None:
     """
-    Test that `onyo set --recursive` discards changes for all assets
-    successfully.
+    Test that `onyo set` discards changes for all assets successfully.
     """
     set_values = "key=discard"
-    ret = subprocess.run(['onyo', 'set', '--recursive', set_values], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', set_values], input='n', capture_output=True, text=True)
 
     # verify output for just dot, should be all in onyo root, but not recursive
     assert "The following assets will be changed:" in ret.stdout
@@ -371,7 +326,7 @@ def test_set_depth_flag(repo: Repo, set_values: list[str]) -> None:
     assert ret.returncode == 1
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'set', '--recursive', '--depth', '0'] + set_values, input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--depth', '0'] + set_values, input='n', capture_output=True, text=True)
     # verify output for --depth 0
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" not in ret.stdout
@@ -379,7 +334,7 @@ def test_set_depth_flag(repo: Repo, set_values: list[str]) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'set', '--recursive', '--depth', '1'] + set_values, input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--depth', '1'] + set_values, input='n', capture_output=True, text=True)
     # verify output for --depth 1
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -388,7 +343,7 @@ def test_set_depth_flag(repo: Repo, set_values: list[str]) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'set', '--recursive', '--depth', '3'] + set_values, input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--depth', '3'] + set_values, input='n', capture_output=True, text=True)
     # verify output for --depth 3
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -398,7 +353,7 @@ def test_set_depth_flag(repo: Repo, set_values: list[str]) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'set', '--recursive', '--depth', '6'] + set_values, input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--depth', '6'] + set_values, input='n', capture_output=True, text=True)
     # verify output for --depth 6 (maximum depth) contains all files
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -410,7 +365,7 @@ def test_set_depth_flag(repo: Repo, set_values: list[str]) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'set', '--recursive', '--depth', '10'] + set_values, input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--depth', '10'] + set_values, input='n', capture_output=True, text=True)
     # verify output for --depth bigger then folder depth without error
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -620,7 +575,7 @@ def test_update_many_faux_serial_numbers(repo: Repo) -> None:
     """
     # remember old assets before renaming
     old_asset_names = repo.assets
-    ret = subprocess.run(['onyo', 'set', '--recursive', '--rename', 'serial=faux'] + list(assets), input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--rename', 'serial=faux'] + list(assets), input='y', capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout

@@ -934,15 +934,15 @@ class Repo:
     # SET
     #
     def set(self, paths: Iterable[Union[Path, str]], values: dict, dryrun: bool,
-            recursive: bool, rename: bool, depth: Union[int]) -> str:
+            rename: bool, depth: Union[int]) -> str:
         """
         Set values for a list of assets (or directories), or rename assets
         through updating their name fields.
 
-        Flags enable to set values in directories optionally recursively, and/or
-        limit the depth of recursion.
+        A flag enable to limit the depth of recursion for setting values in
+        directories.
         """
-        assets_to_set = self._set_sanitize(paths, recursive, depth)
+        assets_to_set = self._set_sanitize(paths, depth)
 
         content_values = dict((field, values[field]) for field in values.keys() if field not in ["type", "make", "model", "serial"])
         name_values = dict((field, values[field]) for field in values.keys() if field in ["type", "make", "model", "serial"])
@@ -981,8 +981,8 @@ class Repo:
 
         return diff
 
-    def _select_assets_from_directory(self, directory: Path, depth: Union[int, None],
-                                      recursive: Union[bool, None]) -> list[Path]:
+    def _select_assets_from_directory(self, directory: Path,
+                                      depth: Union[int, None]) -> list[Path]:
         """
         Select all assets from `directory` and return them as a list.
 
@@ -1001,17 +1001,17 @@ class Repo:
                 assets.append(path)
 
             # add files from a directory recursively until depth is 0
-            elif path.is_dir() and recursive:
+            elif path.is_dir():
                 # if flag --depth is used, but the max depth is reached, it
                 # should skip folders and just care about the files anymore
                 if depth is not None and depth == 0:
                     continue
                 # before max depth is reached, go down one level more
                 elif depth is not None and depth > 0:
-                    assets += self._select_assets_from_directory(path, depth - 1, recursive)
+                    assets += self._select_assets_from_directory(path, depth - 1)
                 # flag is not set, so use infinite depth
                 elif not depth:
-                    assets += self._select_assets_from_directory(path, depth, recursive)
+                    assets += self._select_assets_from_directory(path, depth)
 
         return assets
 
@@ -1042,7 +1042,7 @@ class Repo:
 
         return contents
 
-    def _set_sanitize(self, paths: Iterable[Union[Path, str]], recursive: bool,
+    def _set_sanitize(self, paths: Iterable[Union[Path, str]],
                       depth: Union[int, None]) -> list[Path]:
         """
         Check and normalize a list of paths. Traverse directories and select all
@@ -1055,10 +1055,6 @@ class Repo:
         if depth and depth < 0:
             log.error(f"depth values must be positive, but is {depth}.")
             raise ValueError(f"depth values must be positive, but is {depth}.")
-
-        if depth and not recursive:
-            log.error("Specifying a depth limit requires recursive mode.")
-            raise ValueError("Specifying a depth limit requires recursive mode.")
 
         for p in paths:
             full_path = Path(self.opdir, p).resolve()
@@ -1074,7 +1070,7 @@ class Repo:
                 continue
 
             if full_path.is_dir():
-                paths_to_set += self._select_assets_from_directory(full_path, depth, recursive)
+                paths_to_set += self._select_assets_from_directory(full_path, depth)
             else:
                 paths_to_set.append(full_path)
 
@@ -1227,11 +1223,11 @@ class Repo:
     #
     # UNSET
     #
-    def unset(self, paths: Iterable[Union[Path, str]], values: str, dryrun: bool,
-              recursive: bool, quiet: bool, depth: Union[int]) -> str:
+    def unset(self, paths: Iterable[Union[Path, str]], values: str,
+              dryrun: bool, quiet: bool, depth: Union[int]) -> str:
 
         # set and unset should select assets exactly the same way
-        assets_to_unset = self._set_sanitize(paths, recursive, depth)
+        assets_to_unset = self._set_sanitize(paths, depth)
         keys = values.split(',')
 
         if any([key in ["type", "make", "model", "serial"] for key in keys]):

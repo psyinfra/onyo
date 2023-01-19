@@ -424,7 +424,7 @@ def setup_parser():
         type=int,
         required=False,
         default=None,
-        help='descend at most "N" levels of directories below the starting-point; used only with --recursive'
+        help='descend at most "N" levels of directories below the starting-point'
     )
     cmd_set.add_argument(
         '-n', "--dry-run",
@@ -439,13 +439,6 @@ def setup_parser():
         default=False,
         action='store_true',
         help='silence output (requires the --yes flag)'
-    )
-    cmd_set.add_argument(
-        '-R', '--recursive',
-        required=False,
-        default=False,
-        action='store_true',
-        help='set values recursively for all assets in a directory'
     )
     cmd_set.add_argument(
         '-r', '--rename',
@@ -520,7 +513,7 @@ def setup_parser():
         type=int,
         required=False,
         default=None,
-        help='descend at most "N" levels of directories below the starting-point; used only with --recursive'
+        help='descend at most "N" levels of directories below the starting-point'
     )
     cmd_unset.add_argument(
         '-n', "--dry-run",
@@ -535,13 +528,6 @@ def setup_parser():
         default=False,
         action='store_true',
         help='silence output (requires the --yes flag)'
-    )
-    cmd_unset.add_argument(
-        '-R', '--recursive',
-        required=False,
-        default=False,
-        action='store_true',
-        help='unset values recursively for all assets in a directory'
     )
     cmd_unset.add_argument(
         '-y', '--yes',

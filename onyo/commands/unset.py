@@ -43,8 +43,7 @@ def unset(args, opdir: str) -> None:
 
     diff = ""
     try:
-        diff = repo.unset(args.path, args.keys, args.dry_run, args.recursive,
-                          args.quiet, args.depth)
+        diff = repo.unset(args.path, args.keys, args.dry_run, args.quiet, args.depth)
     except ValueError:
         sys.exit(1)
 

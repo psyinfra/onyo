@@ -162,50 +162,23 @@ def test_unset_error_non_existing_assets(repo: Repo, no_assets: list[str]) -> No
 
 
 @pytest.mark.repo_files(*assets)
-def test_unset_with_dot_non_recursive(repo: Repo) -> None:
+def test_unset_with_dot(repo: Repo) -> None:
     """
-    Test that when `onyo unset KEY .` is called from the repository root,
-    onyo uses all assets on that level, but not recursively from folders.
-    """
-    set_values = "key=value"
-    key = "key"
-
-    ret = subprocess.run(['onyo', 'set', set_values, "."], input='y', capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert "+key: value" in ret.stdout
-
-    # unset key
-    ret = subprocess.run(['onyo', 'unset', key, '.'], input='y', capture_output=True, text=True)
-    assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
-    assert "-key: value" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify changes, and the repository clean
-    for asset in repo.assets:
-        assert key not in Path.read_text(Path(asset))
-    repo.fsck()
-
-
-@pytest.mark.repo_files(*assets)
-def test_unset_with_dot_recursive(repo: Repo) -> None:
-    """
-    Test that when `onyo unset --recursive KEY=VALUE .` is called from the
+    Test that when `onyo unset KEY=VALUE .` is called from the
     repository root, onyo uses all assets in the completely repo recursively.
     """
     key_values = "key=recursive"
     key = "key"
 
     # set values:
-    ret = subprocess.run(['onyo', 'set', '--recursive', key_values, "."], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', key_values, "."], input='y', capture_output=True, text=True)
     assert ret.stdout.count("+key: recursive") == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
     repo.fsck()
 
     # unset `key` again
-    ret = subprocess.run(['onyo', 'unset', '--recursive', key, "."], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', key, "."], input='y', capture_output=True, text=True)
 
     # verify that output contains one line per asset
     assert "The following assets will be changed:" in ret.stdout
@@ -218,23 +191,23 @@ def test_unset_with_dot_recursive(repo: Repo) -> None:
 
 
 @pytest.mark.repo_files(*assets)
-def test_unset_without_path_non_recursive(repo: Repo) -> None:
+def test_unset_without_path(repo: Repo) -> None:
     """
     Test that `onyo unset KEY` without a given path argument selects all assets
-    in the root of the repository (e.g. cwd), but not recursively.
+    recursively.
 
     This uses first `onyo set` (and verifies success) to set all values, and
     then a similar `onyo unset` call to remove the keys.
     """
-    set_values = "key=cwd_not_recursive"
+    set_values = "key=cwd_recursive"
     key = "key"
 
     # first set values for all the assets, to make sure that really just the
     # ones in root get removed, even if others with the same key exist
-    ret = subprocess.run(['onyo', 'set', '--recursive', set_values, "."], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', set_values, "."], input='y', capture_output=True, text=True)
 
     # verify success
-    assert ret.stdout.count("+key: cwd_not_recursive") == len(assets)
+    assert ret.stdout.count("+key: cwd_recursive") == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
     repo.fsck()
@@ -245,44 +218,7 @@ def test_unset_without_path_non_recursive(repo: Repo) -> None:
     # verify the output
     assert "The following assets will be changed:" in ret.stdout
     assert "Update assets? (y/n) " in ret.stdout
-    # becaues "directories" on top contains ".", each element in files is also
-    # once generated on the repository root, and the `unset` call should remove
-    # `len(files)` times the key
-    assert ret.stdout.count("-key: cwd_not_recursive") == len(files)
-    assert not ret.stderr
-    assert ret.returncode == 0
-    repo.fsck()
-
-
-@pytest.mark.repo_files(*assets)
-def test_unset_without_path_recursive(repo: Repo) -> None:
-    """
-    Test that `onyo unset --recursive KEY` without a given path argument selects
-    all assets recursively.
-
-    This uses first `onyo set` (and verifies success) to set all values, and
-    then a similar `onyo unset` call to remove the keys.
-    """
-    set_values = "key=cwd_this_time_recursive"
-    key = "key"
-
-    # first set values for all the assets, to make sure that really just the
-    # ones in root get removed, even if others with the same key exist
-    ret = subprocess.run(['onyo', 'set', '--recursive', set_values, "."], input='y', capture_output=True, text=True)
-
-    # verify success
-    assert ret.stdout.count("+key: cwd_this_time_recursive") == len(assets)
-    assert not ret.stderr
-    assert ret.returncode == 0
-    repo.fsck()
-
-    # unset `key` again
-    ret = subprocess.run(['onyo', 'unset', '--recursive', key], input='y', capture_output=True, text=True)
-
-    # verify the output
-    assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
-    assert ret.stdout.count("-key: cwd_this_time_recursive") == len(assets)
+    assert ret.stdout.count("-key: cwd_recursive") == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
     repo.fsck()
@@ -292,7 +228,7 @@ def test_unset_without_path_recursive(repo: Repo) -> None:
 @pytest.mark.parametrize('directory', directories)
 def test_unset_recursive_directories(repo: Repo, directory: str) -> None:
     """
-    Test that `onyo unset --recursive KEY <directory>` updates contents of
+    Test that `onyo unset KEY <directory>` updates contents of
     assets in <directory>.
 
     This uses first `onyo set` (and verifies success) to set all values, and
@@ -300,7 +236,7 @@ def test_unset_recursive_directories(repo: Repo, directory: str) -> None:
     """
     set_values = "key=recursive_directories"
     key = "key"
-    ret = subprocess.run(['onyo', 'set', '--recursive', set_values, "."], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', set_values, "."], input='y', capture_output=True, text=True)
 
     # verify output
     assert str(Path(directory)) in ret.stdout
@@ -308,7 +244,7 @@ def test_unset_recursive_directories(repo: Repo, directory: str) -> None:
     assert ret.returncode == 0
 
     # unset values
-    ret = subprocess.run(['onyo', 'unset', '--recursive', key, directory], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', key, directory], input='y', capture_output=True, text=True)
 
     # verify changes, and the repository clean
     # TODO: update this after solving #259
@@ -349,12 +285,11 @@ def test_unset_discard_changes_single_assets(repo: Repo, asset: str) -> None:
 @pytest.mark.repo_files(*assets)
 def test_unset_discard_changes_recursive(repo: Repo) -> None:
     """
-    Test that `onyo unset --recursive` discards changes for all assets
-    successfully.
+    Test that `onyo unset` discards changes for all assets successfully.
     """
     set_values = "key=discard"
     key = "key"
-    ret = subprocess.run(['onyo', 'set', '--recursive', set_values], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', set_values], input='y', capture_output=True, text=True)
 
     # verify output for just dot, should be all in onyo root, but not recursive
     assert ret.stdout.count("+key: discard") == len(repo.assets)
@@ -362,7 +297,7 @@ def test_unset_discard_changes_recursive(repo: Repo) -> None:
     assert ret.returncode == 0
 
     # call `unset`, but discard changes
-    ret = subprocess.run(['onyo', 'unset', '--recursive', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', key], input='n', capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -507,7 +442,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     key = "key"
     # first, set values for the complete repository, so that there is something
     # to `onyo unset`
-    ret = subprocess.run(['onyo', 'set', '--recursive', set_values], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', set_values], input='y', capture_output=True, text=True)
 
     # try `onyo unset --depth` for different values. Always discards changes,
     # and just checks if the output is the correct one.
@@ -518,7 +453,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 1
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--recursive', '--depth', '0', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '0', key], input='n', capture_output=True, text=True)
     # verify output for --depth 0
     assert "laptop_macbook_pro.0" in ret.stdout
     assert f"-{key}" in ret.stdout
@@ -530,7 +465,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--recursive', '--depth', '1', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '1', key], input='n', capture_output=True, text=True)
     # verify output for --depth 1
     assert "laptop_macbook_pro.0" in ret.stdout
     assert ret.stdout.count(f"-{key}") == 2
@@ -540,7 +475,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--recursive', '--depth', '3', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '3', key], input='n', capture_output=True, text=True)
     # verify output for --depth 3
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -551,7 +486,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--recursive', '--depth', '6', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '6', key], input='n', capture_output=True, text=True)
     # verify output for --depth 6 (maximum depth) contains all files
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -564,7 +499,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--recursive', '--depth', '10', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '10', key], input='n', capture_output=True, text=True)
     # verify output for --depth bigger then folder depth without error
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
