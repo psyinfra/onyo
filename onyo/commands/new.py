@@ -5,28 +5,9 @@ from pathlib import Path
 
 from onyo import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import edit_asset, get_editor, request_user_response
-from onyo.commands.set import read_asset, set_value
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
-
-
-def valid_asset_path_and_name_available(asset: Path, repo: Repo, new_assets: dict) -> None:
-    """
-    Test for an assets path and name if it can be used to create a new asset.
-    """
-    if not repo.valid_name(asset):
-        print(f"'{asset}' is not a valid asset name.", file=sys.stderr)
-        sys.exit(1)
-    if file := [file for file in repo.assets if asset.name == file.name]:
-        print(f"Filename '{asset.name}' already exists as '{file[0]}'.", file=sys.stderr)
-        sys.exit(1)
-    elif file := [file for file in new_assets if asset.name == file.name]:
-        print(f"Input contains multiple '{file[0].name}'", file=sys.stderr)
-        sys.exit(1)
-    if repo._is_protected_path(asset):
-        print(f"The path is protected by onyo: '{asset}'", file=sys.stderr)
-        sys.exit(1)
 
 
 def create_assets_in_destination(assets: dict, repo: Repo) -> None:
@@ -37,9 +18,9 @@ def create_assets_in_destination(assets: dict, repo: Repo) -> None:
         # create missing directories
         if not asset.parent.exists():
             repo.mkdir(asset.parent)
-        asset.touch()
-        # TODO: this call must be updated when set.py is refactored.
-        set_value(str(asset), str(asset), assets[asset], repo.root)
+        if not asset.is_file():
+            asset.touch()
+        repo._write_asset(asset, assets[asset])
     repo.add(list(assets.keys()))
 
 
@@ -84,7 +65,11 @@ def read_assets_from_tsv(tsv: str, template_name: str, set_values: dict, repo: R
             new_path = Path(repo.root, directory, filename).resolve()
 
             # verify that the asset name is valid and unique in repo and table
-            valid_asset_path_and_name_available(new_path, repo, new_assets)
+            try:
+                repo.valid_asset_path_and_name_available(new_path, [*new_assets])
+            except ValueError as e:
+                print(e, file=sys.stderr)
+                sys.exit(1)
 
             # either a template is given in table, CLI, or onyo config
             template = None
@@ -103,7 +88,7 @@ def read_assets_from_tsv(tsv: str, template_name: str, set_values: dict, repo: R
 
             # set the values from --set and TSV columns, check for conflicts
             contents_valid = True
-            contents = read_asset(template, repo.opdir)
+            contents = repo._read_asset(template)
             if set_values:
                 contents.update(set_values)
             for col in row.keys():
@@ -142,7 +127,7 @@ def read_assets_from_CLI(assets: list[str], template_name: str, set_values: dict
 
     for asset in assets:
         new_path = ""
-        contents = {}
+        contents = dict()
 
         # set paths
         if asset[-5:] == ".faux":
@@ -150,7 +135,11 @@ def read_assets_from_CLI(assets: list[str], template_name: str, set_values: dict
         new_path = Path(repo.opdir, asset).resolve()
 
         # verify that the asset name is valid and unique in repo and table
-        valid_asset_path_and_name_available(new_path, repo, new_assets)
+        try:
+            repo.valid_asset_path_and_name_available(new_path, [*new_assets])
+        except ValueError as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)
 
         # get template and check its existence and validity
         template = None
@@ -160,7 +149,7 @@ def read_assets_from_CLI(assets: list[str], template_name: str, set_values: dict
             sys.exit(1)
 
         # add values from --set and template to asset:
-        contents = read_asset(template, repo.opdir)
+        contents = repo._read_asset(template)
         if set_values:
             contents.update(set_values)
 

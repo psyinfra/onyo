@@ -73,21 +73,6 @@ def request_user_response(question: str) -> bool:
     return False
 
 
-def diff(repo: Repo) -> str:
-    """
-    Return a diff of all uncommitted changes. The format is a simplified version
-    of `git diff`.
-    """
-    diff = repo._git(['--no-pager', 'diff', '--minimal', '--unified=0', 'HEAD']).splitlines()
-
-    # select the wanted lines from the git diff output, and put an empty line
-    # and the assets name before the changes of each file
-    diff = [line.replace("+++ b/", "\n") for line in diff if len(line) > 0 and
-            line[0] in ['+', '-'] and not line[0:6] == '--- a/']
-
-    return "\n".join(diff).strip()
-
-
 def sanitize_assets(assets: list[str], repo: Repo) -> list[Path]:
     """
     Checks for a list of assets if they are valid paths to files that exist as
@@ -149,7 +134,7 @@ def edit(args, opdir: str) -> None:
     # commit changes
     files_staged = repo.files_staged
     if files_staged:
-        print(diff(repo))
+        print(repo._diff_changes())
         if request_user_response("Save changes? No discards all changes. (y/n) "):
             repo.commit('edit asset(s).', files_staged)
         else:

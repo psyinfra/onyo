@@ -1,7 +1,6 @@
 onyo wants to update the following assets:
-
 shelf/laptop_apple_macbookpro.1
--	RAM: 10
-+	RAM: 50
-+	USB: 3
-Update assets? (y/N) 
+-RAM: 10
++RAM: 50
++USB: 3
+Update assets? (y/n) 
