@@ -12,15 +12,44 @@ log = logging.getLogger('onyo')
 log.setLevel(logging.INFO)
 
 
-# This class enables e.g. onyo set to receive a dictionary of key=value
-class StoreDictKeyPair(argparse.Action):
+# This class enables e.g. onyo set to receive a dictionary of key=value and a
+# list of paths
+class StoreKeyValuePairsAndAssetsSeparately(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        my_dict = parse_key_values(values)
-        setattr(namespace, self.dest, my_dict)
+        pairs = select_key_value(values)
+        paths = select_paths(values)
+        # onyo new has different parameter names
+        if parser.prog == "onyo new":
+            setattr(namespace, "set", pairs)
+            setattr(namespace, "asset", paths)
+        else:
+            setattr(namespace, "keys", pairs)
+            # use default path "." if no paths are given explicitly
+            if not paths:
+                setattr(namespace, "path", ["."])
+            else:
+                setattr(namespace, "path", paths)
+
+
+def select_key_value(arg_values):
+    pairs = {}
+    for value in arg_values:
+        if "=" in value:
+            pair = value.split("=")
+            pairs[pair[0]] = pair[1]
+    return pairs
+
+
+def select_paths(arg_values):
+    paths = []
+    for value in arg_values:
+        if "=" not in value:
+            paths.append(value)
+    return paths
 
 
 # credit: https://stackoverflow.com/a/13429281
@@ -328,6 +357,7 @@ def setup_parser():
     cmd_new.add_argument(
         'asset',
         metavar='ASSET',
+        action=StoreKeyValuePairsAndAssetsSeparately,
         type=path,
         nargs='*',
         help='add new assets'
@@ -346,12 +376,6 @@ def setup_parser():
         default=False,
         action='store_true',
         help='respond "yes" to any prompts'
-    )
-    cmd_new.add_argument(
-        '-s', '--set',
-        action=StoreDictKeyPair,
-        metavar="KEYS",
-        help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
     #
     # subcommand "rm"
@@ -399,8 +423,8 @@ def setup_parser():
         metavar='N',
         type=int,
         required=False,
-        default=-1,
-        help='descend at most "N" levels of directories below the starting-point; used only with --recursive'
+        default=None,
+        help='descend at most "N" levels of directories below the starting-point'
     )
     cmd_set.add_argument(
         '-n', "--dry-run",
@@ -417,11 +441,11 @@ def setup_parser():
         help='silence output (requires the --yes flag)'
     )
     cmd_set.add_argument(
-        '-R', '--recursive',
+        '-r', '--rename',
         required=False,
         default=False,
         action='store_true',
-        help='set values recursively for all assets in a directory'
+        help='Permit assigning values to pseudo-keys that would result in the file(s) being renamed.'
     )
     cmd_set.add_argument(
         '-y', '--yes',
@@ -432,17 +456,10 @@ def setup_parser():
     )
     cmd_set.add_argument(
         'keys',
-        action=StoreDictKeyPair,
+        action=StoreKeyValuePairsAndAssetsSeparately,
         metavar="KEYS",
-        help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
-    )
-    cmd_set.add_argument(
-        'path',
-        metavar='PATH',
-        default='.',
         nargs='*',
-        type=path,
-        help='assets or directories for which to set values'
+        help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
     #
     # subcommand shell-completion
@@ -479,6 +496,59 @@ def setup_parser():
         nargs='*',
         type=directory,
         help='directories to print'
+    )
+    #
+    # subcommand "unset"
+    #
+    cmd_unset = subcmds.add_parser(
+        'unset',
+        description=textwrap.dedent(commands.unset.__doc__),
+        formatter_class=SubcommandHelpFormatter,
+        help='remove values from assets'
+    )
+    cmd_unset.set_defaults(run=commands.unset)
+    cmd_unset.add_argument(
+        '-d', '--depth',
+        metavar='N',
+        type=int,
+        required=False,
+        default=None,
+        help='descend at most "N" levels of directories below the starting-point'
+    )
+    cmd_unset.add_argument(
+        '-n', "--dry-run",
+        required=False,
+        default=False,
+        action='store_true',
+        help='perform a non-interactive trial-run without making any changes'
+    )
+    cmd_unset.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence output (requires the --yes flag)'
+    )
+    cmd_unset.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_unset.add_argument(
+        'keys',
+        metavar="KEYS",
+        type=str,
+        help='keys to unset in assets; multiple values can be separated by commas (e.g. key,key2,key3)'
+    )
+    cmd_unset.add_argument(
+        'path',
+        metavar='PATH',
+        default='.',
+        nargs='*',
+        type=path,
+        help='assets or directories for which to set values'
     )
     return parser
 

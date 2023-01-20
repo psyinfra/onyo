@@ -8,20 +8,16 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def set(args, opdir: str) -> None:
+def unset(args, opdir: str) -> None:
     """
-    Set the ``value`` of ``key`` for matching assets. If the key does not exist,
-    it is added and set appropriately.
-
-    Key names can be any valid YAML key name.
+    Remove the ``value`` of ``key`` for matching assets.
 
     Multiple ``key=value`` pairs can be declared and divided by spaces. Quotes
     can be used around ``value``, which is necessary when it contains a comma,
     whitespace, etc.
 
-    The ``type``, ``make``, ``model``, and ``serial`` pseudo-keys can be set
-    when the `--rename` flag is used. It will result in the file(s) being
-    renamed.
+    The ``type``, ``make``, ``model``, and ``serial`` pseudo-keys cannot be
+    changed, to rename a file(s) use ``onyo set --rename``.
 
     If no ``asset`` or ``directory`` is specified, the current working directory
     is used. If Onyo is invoked from outside of the Onyo repository, the root of
@@ -33,13 +29,12 @@ def set(args, opdir: str) -> None:
     error encountered while writing a file will cause Onyo to error and exit
     immediately.
     """
-    repo = None
-
     # check flags for conflicts
     if args.quiet and not args.yes:
         print('The --quiet flag requires --yes.', file=sys.stderr)
         sys.exit(1)
 
+    repo = None
     try:
         repo = Repo(opdir)
         repo.fsck()
@@ -48,7 +43,7 @@ def set(args, opdir: str) -> None:
 
     diff = ""
     try:
-        diff = repo.set(args.path, args.keys, args.dry_run, args.rename, args.depth)
+        diff = repo.unset(args.path, args.keys, args.dry_run, args.quiet, args.depth)
     except ValueError:
         sys.exit(1)
 
@@ -59,14 +54,14 @@ def set(args, opdir: str) -> None:
     elif args.quiet:
         pass
     else:
-        print("The values are already set. No assets updated.")
+        print("No assets containing the specified key(s) could be found. No assets updated.")
         sys.exit(0)
 
     # commit or discard changes
     files_staged = repo.files_staged
     if files_staged:
         if args.yes or request_user_response("Update assets? (y/n) "):
-            repo.commit('set values', files_staged)
+            repo.commit('remove key(s)', files_staged)
         else:
             repo._git(['restore', '--source=HEAD', '--staged', '--worktree'] + [str(file) for file in files_staged])
             # when names were changed, the first restoring just brings

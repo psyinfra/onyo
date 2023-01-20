@@ -11,6 +11,7 @@ from .rm import rm
 from .set import set
 from .shell_completion import shell_completion
 from .tree import tree
+from .unset import unset
 
 __all__ = [
     'cat',
@@ -26,4 +27,5 @@ __all__ = [
     'set',
     'shell_completion',
     'tree',
+    'unset',
 ]

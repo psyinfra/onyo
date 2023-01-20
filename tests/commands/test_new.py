@@ -149,14 +149,14 @@ def test_yes_flag(repo: Repo, directory: str) -> None:
 @pytest.mark.parametrize('directory', directories)
 def test_set_flag(repo: Repo, directory: str) -> None:
     """
-    Test that `onyo new --set KEY=VALUE` creates assets with contents set.
+    Test that `onyo new KEY=VALUE` creates assets with contents set.
     """
     # set `key=value` for --set, and asset name
     asset = f"{directory}/laptop_apple_macbookpro.0"
     set_values = "mode=set_flag"
 
     # create asset with --set
-    ret = subprocess.run(['onyo', 'new', '--set', set_values, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', set_values, asset], input='y', capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
@@ -222,7 +222,7 @@ def test_new_protected_folder(repo: Repo, protected_folder: str) -> None:
 @pytest.mark.parametrize('directory', directories)
 def test_new_with_flags_edit_set_template(repo: Repo, directory: str) -> None:
     """
-    Test `onyo new --edit --set KEY=VALUE --template <TEMPLATE>` works when
+    Test `onyo new --edit KEY=VALUE --template <TEMPLATE>` works when
     called and all flags get executed together and modify the output correctly.
     """
     # set editor, template, key=value and asset
@@ -232,9 +232,7 @@ def test_new_with_flags_edit_set_template(repo: Repo, directory: str) -> None:
     set_values = "mode=set"
 
     # create asset with --edit and --template
-    ret = subprocess.run(['onyo', 'new', '--edit', '--set', set_values,
-                          '--template', template, str(asset)],
-                         input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--edit', '--template', template, set_values, str(asset)], input='y', capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
@@ -401,7 +399,7 @@ def test_tsv_with_value_columns(repo: Repo) -> None:
                        'overlap/one')
 def test_tsv_with_flags_template_set_edit(repo: Repo) -> None:
     """
-    Test `onyo new --tsv <table> --template <template> --set <key=value> --edit`
+    Test `onyo new --tsv <table> --template <template> <key=value> --edit`
     with a table containing the minimal set of columns to create assets, a
     non-empty template, values to set, and an editor.
     """
@@ -413,7 +411,7 @@ def test_tsv_with_flags_template_set_edit(repo: Repo) -> None:
     assert table_path.is_file()
 
     # create assets with table
-    ret = subprocess.run(['onyo', 'new', '--yes', '--edit', '--set', set_values,
+    ret = subprocess.run(['onyo', 'new', '--yes', '--edit', set_values,
                           '--tsv', table_path, '--template', template],
                          capture_output=True, text=True)
 
@@ -468,7 +466,7 @@ def test_conflicting_and_missing_arguments(repo: Repo) -> None:
     - error if `onyo new` gets neither table nor asset names
     - error if `onyo new` with table and assets in CLI
     - error if both `--template` and 'template' column in tsv header are given
-    - error if both `--set KEY=VALUE` and a column named `KEY` is given
+    - error if both `KEY=VALUE` and a column named `KEY` is given
     """
     table_path = Path(Path(__file__).parent.parent, "tables/table_with_template.tsv")
     assert table_path.is_file()
@@ -494,7 +492,7 @@ def test_conflicting_and_missing_arguments(repo: Repo) -> None:
 
     # error if both `--set KEY=VALUE` and a column named `KEY` is given
     table_path = Path(Path(__file__).parent.parent, "tables/values_for_set.tsv")
-    ret = subprocess.run(['onyo', 'new', '--set', 'group=a_group', '--tsv', table_path],
+    ret = subprocess.run(['onyo', 'new', 'group=a_group', '--tsv', table_path],
                          capture_output=True, text=True)
     assert not ret.stdout
     assert "Can't use --set" in ret.stderr and "and have tsv column" in ret.stderr

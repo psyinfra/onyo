@@ -1,4 +1,0 @@
-The following will be deleted:
-<replace>
-Delete assets? (y/N) 
-

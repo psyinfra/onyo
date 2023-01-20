@@ -38,7 +38,7 @@ class Repo:
         self._templates = None
 
     @property
-    def assets(self) -> set[Path]:
+    def assets(self) -> set[Path]:  # pyre-ignore[11]
         if not self._assets:
             self._assets = self._get_assets()
 
@@ -84,6 +84,13 @@ class Repo:
             self._templates = self._get_templates()
 
         return self._templates
+
+    def clear_caches(self) -> None:
+        self._assets = None
+        self._dirs = None
+        self._files = None
+        self._gitfiles = None
+        self._templates = None
 
     def _get_assets(self) -> set[Path]:
         """
@@ -863,12 +870,29 @@ class Repo:
         template_name = Path(template_name)
         for template in self.templates:
             if template.name == template_name.name:
-                return template.relative_to(self.root)
+                return template
             elif template_name.is_file() and template.samefile(template_name):
-                return template.relative_to(self.root)
+                return template
 
         log.error(f"Template {template_name} does not exist.")
         raise ValueError(f"Template {template_name} does not exist.")
+
+    def valid_asset_path_and_name_available(self, asset: Path, new_assets: list[Path]) -> None:
+        """
+        Test for an assets path and name if it can be used to create a new asset.
+        """
+        if not self.valid_name(asset):
+            log.error(f"'{asset}' is not a valid asset name.")
+            raise ValueError(f"'{asset}' is not a valid asset name.")
+        if file := [file for file in self.assets if asset.name == file.name]:
+            log.error(f"Filename '{asset.name}' already exists as '{file[0]}'.")
+            raise ValueError(f"Filename '{asset.name}' already exists as '{file[0]}'.")
+        elif file := [file for file in new_assets if asset.name == file.name]:
+            log.error(f"Input contains multiple '{file[0].name}'")
+            raise ValueError(f"Input contains multiple '{file[0].name}'")
+        if self._is_protected_path(asset):
+            log.error(f"The path is protected by onyo: '{asset}'")
+            raise ValueError(f"Input contains multiple '{file[0].name}'")
 
     def valid_name(self, asset: Path) -> bool:
         """
@@ -905,6 +929,228 @@ class Repo:
             return False
 
         return True
+
+    #
+    # SET
+    #
+    def set(self, paths: Iterable[Union[Path, str]], values: dict, dryrun: bool,
+            rename: bool, depth: Union[int]) -> str:
+        """
+        Set values for a list of assets (or directories), or rename assets
+        through updating their name fields.
+
+        A flag enable to limit the depth of recursion for setting values in
+        directories.
+        """
+        assets_to_set = self._set_sanitize(paths, depth)
+
+        content_values = dict((field, values[field]) for field in values.keys() if field not in ["type", "make", "model", "serial"])
+        name_values = dict((field, values[field]) for field in values.keys() if field in ["type", "make", "model", "serial"])
+
+        if name_values and not rename:
+            log.error("Can't change pseudo keys without --rename.")
+            raise ValueError("Can't change pseudo keys without --rename.")
+
+        if content_values:
+            for asset in assets_to_set:
+                contents = self._read_asset(asset)
+                contents.update(content_values)
+                self._write_asset(asset, contents)
+                self.add(asset)
+
+        if name_values:
+            try:
+                self._update_names(assets_to_set, name_values)
+                self.clear_caches()
+            except ValueError as e:
+                self.clear_caches()
+                if self.files_staged:
+                    self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
+                              [str(file) for file in self.files_staged])
+                # reset renaming needs double-restoring
+                if self.files_staged:
+                    self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
+                              [str(file) for file in self.files_staged])
+                raise ValueError(e)
+
+        # generate diff, and restore changes for dry-runs
+        diff = self._diff_changes()
+        if diff and dryrun:
+            self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
+                      [str(file) for file in self.files_staged])
+
+        return diff
+
+    def _select_assets_from_directory(self, directory: Path,
+                                      depth: Union[int, None]) -> list[Path]:
+        """
+        Select all assets from `directory` and return them as a list.
+
+        TODO: Enable this with changing the Repo.assets and Repo._get_assets()
+              etc. for other attributes. See also #259
+        """
+        assets = []
+
+        for path in directory.iterdir():
+            # ignore .anchor and others
+            if self._is_protected_path(path):
+                continue
+
+            # add files
+            if path.is_file():
+                assets.append(path)
+
+            # add files from a directory recursively until depth is 0
+            elif path.is_dir():
+                # if flag --depth is used, but the max depth is reached, it
+                # should skip folders and just care about the files anymore
+                if depth is not None and depth == 0:
+                    continue
+                # before max depth is reached, go down one level more
+                elif depth is not None and depth > 0:
+                    assets += self._select_assets_from_directory(path, depth - 1)
+                # flag is not set, so use infinite depth
+                elif not depth:
+                    assets += self._select_assets_from_directory(path, depth)
+
+        return assets
+
+    def _diff_changes(self) -> str:
+        """
+        Return a diff of all uncommitted changes. The format is a simplified
+        version of `git diff`.
+        """
+        diff = self._git(['--no-pager', 'diff', 'HEAD']).splitlines()
+        diff = [line.strip().replace("+++ b/", "\n").replace("+++ /dev/null", "\n")
+                for line in diff if len(line) > 0 and line[0] in ['+', '-'] and not
+                line[0:4] == '--- ' or "rename" in line]
+
+        return "\n".join(diff).strip()
+
+    def _read_asset(self, asset: Path) -> dict:
+        """
+        Read and return the contents of an asset as a dictionary.
+        """
+        yaml = YAML(typ='rt', pure=True)
+        contents = dict()
+        try:
+            contents = yaml.load(asset)
+        except scanner.ScannerError as e:
+            print(e)
+        if contents is None:
+            return dict()
+
+        return contents
+
+    def _set_sanitize(self, paths: Iterable[Union[Path, str]],
+                      depth: Union[int, None]) -> list[Path]:
+        """
+        Check and normalize a list of paths. Traverse directories and select all
+        assets from `paths` and return them as a list of absolute Paths.
+        """
+        error_path_absent = []
+        error_path_protected = []
+        paths_to_set = []
+
+        if depth and depth < 0:
+            log.error(f"depth values must be positive, but is {depth}.")
+            raise ValueError(f"depth values must be positive, but is {depth}.")
+
+        for p in paths:
+            full_path = Path(self.opdir, p).resolve()
+
+            # paths must exist
+            if not full_path.exists():
+                error_path_absent.append(p)
+                continue
+
+            # protected paths
+            if self._is_protected_path(full_path):
+                error_path_protected.append(p)
+                continue
+
+            if full_path.is_dir():
+                paths_to_set += self._select_assets_from_directory(full_path, depth)
+            else:
+                paths_to_set.append(full_path)
+
+        if error_path_absent:
+            log.error('The following paths do not exist:\n' +
+                      self._n_join(error_path_absent) + '\n' +
+                      'Nothing was deleted.')
+            raise FileNotFoundError('The following paths do not exist:\n' +
+                                    self._n_join(error_path_absent))
+
+        if error_path_protected:
+            log.error('The following paths are protected by onyo:\n' +
+                      self._n_join(error_path_protected) + '\n' +
+                      'No directories were created.')
+            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
+                                         self._n_join(error_path_protected))
+
+        if len(paths_to_set) == 0:
+            log.error("No assets selected.")
+            raise ValueError("No assets selected.")
+
+        return paths_to_set
+
+    def _update_names(self, assets: list[Path], name_values: dict) -> None:
+        """
+        Set the pseudo key fields of an assets name (rename an asset file) from
+        values of a dictionary and test that the new name is valid and
+        available.
+        """
+        new_assets = []
+
+        # count and request the needed faux serial numbers
+        faux_serial_list = []
+        if 'serial' in name_values.keys() and name_values['serial'] == 'faux':
+            faux_number = len(assets)
+            if faux_number > 0:
+                faux_serial_list = self.generate_faux_serials(num=faux_number)
+
+        for asset in assets:
+            # split old name into parts
+            [serial, model, make, type] = [field[::-1] for field in re.findall('(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]]
+            fields = name_values.keys()
+
+            # update name fields and build new asset name
+            if "serial" in fields:
+                if name_values["serial"] == "faux":
+                    serial = faux_serial_list.pop()
+                else:
+                    serial = name_values["serial"]
+            if "model" in fields:
+                model = name_values["model"]
+            if "make" in fields:
+                make = name_values["make"]
+            if "type" in fields:
+                type = name_values["type"]
+            new_name = Path(asset.parent, f"{type}_{make}_{model}.{serial}")
+
+            # Check validity of the new asset name
+            if new_name == asset.name:
+                log.error(f"New asset names must be different than old names: '{new_name}'")
+                raise ValueError(f"New asset names must be different than old names: '{new_name}'")
+
+            if not self.valid_name(new_name):
+                log.error(f"New asset name is not valid: '{new_name}'")
+                raise ValueError(f"New asset name is not valid: '{new_name}'")
+
+            self.valid_asset_path_and_name_available(new_name, new_assets)
+            new_assets.append(new_name)
+
+            self._git(["mv", str(asset), str(new_name)])
+
+    def _write_asset(self, asset: Path, contents: dict) -> None:
+        """
+        Write contents into an asset file.
+        """
+        if contents == {}:
+            asset.open('w').write("")
+        else:
+            yaml = YAML(typ='rt')
+            yaml.dump(contents, asset)
 
     #
     # RM
@@ -960,16 +1206,51 @@ class Repo:
 
         if error_path_absent:
             log.error('The following paths do not exist:\n' +
-                      '\n'.join(error_path_absent) + '\n' +
+                      self._n_join(error_path_absent) + '\n' +
                       'Nothing was deleted.')
             raise FileNotFoundError('The following paths do not exist:\n' +
-                                    '\n'.join(error_path_absent))
+                                    self._n_join(error_path_absent))
 
         if error_path_protected:
             log.error('The following paths are protected by onyo:\n' +
-                      '\n'.join(error_path_protected) + '\n' +
+                      self._n_join(error_path_protected) + '\n' +
                       'No directories were created.')
             raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         '\n'.join(error_path_protected))
+                                         self._n_join(error_path_protected))
 
         return paths_to_rm
+
+    #
+    # UNSET
+    #
+    def unset(self, paths: Iterable[Union[Path, str]], values: str,
+              dryrun: bool, quiet: bool, depth: Union[int]) -> str:
+
+        # set and unset should select assets exactly the same way
+        assets_to_unset = self._set_sanitize(paths, depth)
+        keys = values.split(',')
+
+        if any([key in ["type", "make", "model", "serial"] for key in keys]):
+            log.error("Can't unset pseudo keys (name fields are required).")
+            raise ValueError("Can't unset pseudo keys (name fields are required).")
+
+        for asset in assets_to_unset:
+            contents = self._read_asset(asset)
+
+            for field in keys:
+                try:
+                    del contents[field]
+                except KeyError:
+                    if not quiet:
+                        log.info(f"Field {field} does not exist in {asset}")
+
+            self._write_asset(asset, contents)
+            self.add(asset)
+
+        # generate diff, and restore changes for dry-runs
+        diff = self._diff_changes()
+        if diff and dryrun:
+            self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
+                      [str(file) for file in self.files_staged])
+
+        return diff
