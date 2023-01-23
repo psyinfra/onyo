@@ -79,17 +79,96 @@ esac
 ######
 # MAIN
 ######
+ONYO_REPO_DIR=$(pwd)
 cd "$DEMO_DIR"
-pwd
 
 # initialize a repository
 onyo init
 
 # setup basic folder structure
 onyo mkdir warehouse
+onyo mkdir recycling
+onyo mkdir repair
 
-# add an asset
-onyo new -y warehouse/laptop_apple_macbook.serialabc123
+# add existing inventory from a table
+onyo new -y --tsv "$ONYO_REPO_DIR/demo/inventory.tsv"
+
+# add a set of newly bought assets
+# TODO Update all serials
+onyo new -y RAM=8GB display=13.3 warehouse/laptop_apple_macbook.9r32he
+onyo new -y RAM=8GB display=13.3 warehouse/laptop_apple_macbook.9r5qlk
+onyo new -y RAM=8GB display=14.6 warehouse/laptop_lenovo_thinkpad.owh8e2
+onyo new -y RAM=8GB display=14.6 warehouse/laptop_lenovo_thinkpad.iu7h6d
+onyo new -y RAM=8GB display=12.4 touchscreen=yes warehouse/laptop_microsoft_surface.oq782j
+# NOTE: headphones normally do not have a serial, and a faux serial would be
+# generated (e.g. headphones_JBL_pro.faux). However, for the sake of a
+# reproducible demo, serials are specified.
+onyo new -y warehouse/headphones_apple_airpods.7h8f04
+onyo new -y warehouse/headphones_JBL_pro.325gtt
+onyo new -y warehouse/headphones_JBL_pro.e98t2p
+onyo new -y warehouse/headphones_JBL_pro.ph9527
+
+# one pair of headphones was added by accident; remove it
+onyo rm -y warehouse/headphones_JBL_pro.ph9527
+
+# a few new users join
+onyo mkdir "ethics/Max Mustermann" "ethics/Achilles Book"
+onyo mkdir "accounting/Bingo Bob"
+
+# assign equipment to new users
+onyo mv -y warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Achilles Book"
+onyo mv -y warehouse/headphones_JBL_pro.e98t2p "ethics/Achilles Book"
+
+onyo mv -y warehouse/laptop_apple_macbook.9r32he "ethics/Max Mustermann"
+onyo mv -y warehouse/headphones_apple_airpods.7h8f04 "ethics/Max Mustermann"
+
+# give a broken device to repair and replace with another laptop
+onyo mv -y "ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2" repair
+onyo mv -y warehouse/laptop_microsoft_surface.oq782j "ethics/Achilles Book"
+
+# give macbooks information about number of USB C ports
+onyo set -y USB_A=2 USB_C=1 */laptop_apple_macbook.* */*/laptop_apple_macbook.*
+
+# give all laptops information about USB A ports
+onyo set -y USB_A=2 */laptop_*.* */*/laptop_*.*
+
+# buy some new laptops
+onyo new -y RAM=8GB display=13.3 USB_A=2 USB_C=1 \
+    warehouse/laptop_apple_macbook.{uef82b3,9il2b4,73b2cn}
+
+# buy new equipment give it to a user
+onyo new -y display=22.0 warehouse/monitor_dell_PH123.86JZho
+onyo new -y RAM=8GB display=13.3 USB_A=2 warehouse/laptop_apple_macbook.oiw629
+onyo new -y warehouse/headphones_apple_airpods.uzl8e1
+onyo mv -y warehouse/monitor_dell_PH123.86JZho warehouse/laptop_apple_macbook.oiw629 warehouse/headphones_apple_airpods.uzl8e1 "accounting/Bingo Bob"
+
+# update and return a repaired device back into the warehouse
+onyo set -y RAM=32GB repair/laptop_lenovo_thinkpad.owh8e2
+onyo mv -y repair/laptop_lenovo_thinkpad.owh8e2 warehouse
+
+# update a device to have more RAM
+onyo set -y RAM=16GB "ethics/Achilles Book/laptop_microsoft_surface.oq782j"
+
+# a device of a user is too old; replace it with a new one
+onyo mv -y ethics/Max\ Mustermann/laptop_apple_macbook.9r32he recycling
+onyo mv -y warehouse/laptop_apple_macbook.uef82b3 ethics/Max\ Mustermann/
+
+# a new group gets created, users move there and take their equipment with them
+onyo mkdir "management"
+onyo mv -y "ethics/Max Mustermann" management
+onyo mkdir "management/Alice Wonder"
+onyo new -y RAM=8GB display=13.3 USB_A=2 "management/Alice Wonder/laptop_apple_macbook.83hd0"
+
+# a new user joins; give repaired laptop from warehouse
+onyo mkdir "ethics/Theo Turtle"
+onyo mv -y warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Theo Turtle"
+
+# a user retires; return the hardware and delete the user folder
+onyo mv -y management/Max\ Mustermann/* warehouse
+onyo rm -y "management/Max Mustermann"
+
+# test the validity of the inventory's state
+onyo fsck
 
 # TODO: compare
 # git log
