@@ -92,6 +92,13 @@ class Repo:
         self._gitfiles = None
         self._templates = None
 
+    def restore(self) -> None:
+        """
+        Restore all staged files with uncommitted changes in the repository.
+        """
+        self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
+                  [str(file) for file in self.files_staged])
+
     def _get_assets(self) -> set[Path]:
         """
         Return a set of all assets in the repository.
@@ -965,19 +972,16 @@ class Repo:
             except ValueError as e:
                 self.clear_caches()
                 if self.files_staged:
-                    self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                              [str(file) for file in self.files_staged])
+                    self.restore()
                 # reset renaming needs double-restoring
                 if self.files_staged:
-                    self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                              [str(file) for file in self.files_staged])
+                    self.restore()
                 raise ValueError(e)
 
         # generate diff, and restore changes for dry-runs
         diff = self._diff_changes()
         if diff and dryrun:
-            self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                      [str(file) for file in self.files_staged])
+            self.restore()
 
         return diff
 
@@ -1250,7 +1254,6 @@ class Repo:
         # generate diff, and restore changes for dry-runs
         diff = self._diff_changes()
         if diff and dryrun:
-            self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                      [str(file) for file in self.files_staged])
+            self.restore()
 
         return diff
