@@ -21,7 +21,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: git config
       run: |
-        git config --global user.email "onyo@example.com"
+        git config --global user.email "yoko@onyo.org"
         git config --global user.name "Yoko Onyo"
     - name: Install dependencies
       run: |
@@ -31,7 +31,7 @@ jobs:
     - name: flake8 linting
       run: |
         flake8
-    - name: Pyre type checking
+    - name: Pyre type-checking
       run: |
         pyre --noninteractive check
     - name: Test with pytest and collect coverage
