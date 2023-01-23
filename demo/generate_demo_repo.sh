@@ -167,6 +167,9 @@ onyo mv -y warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Theo Turtle"
 onyo mv -y management/Max\ Mustermann/* warehouse
 onyo rm -y "management/Max Mustermann"
 
+# A test; Not intended to merge
+onyo mkdir "Horatio Hornblower"
+
 # test the validity of the inventory's state
 onyo fsck
 
