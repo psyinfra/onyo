@@ -68,11 +68,10 @@ def set(args, opdir: str) -> None:
         if args.yes or request_user_response("Update assets? (y/n) "):
             repo.commit('set values', staged)
         else:
-            repo._git(['restore', '--source=HEAD', '--staged', '--worktree'] + [str(file) for file in staged])
+            repo.restore()
             # when names were changed, the first restoring just brings
             # back the name, but leaves working-tree unclean
-            staged = repo.files_staged
-            if staged:
-                repo._git(['restore', '--source=HEAD', '--staged', '--worktree'] + [str(file) for file in staged])
+            if repo.files_staged:
+                repo.restore()
             if not args.quiet:
                 print("No assets updated.")

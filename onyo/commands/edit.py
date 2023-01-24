@@ -138,6 +138,5 @@ def edit(args, opdir: str) -> None:
         if request_user_response("Save changes? No discards all changes. (y/n) "):
             repo.commit('edit asset(s).', staged)
         else:
-            repo._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                      [str(file) for file in staged])
+            repo.restore()
             print('No assets updated.')
