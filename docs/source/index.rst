@@ -8,6 +8,10 @@ database, web interface, etc. It is inspired by `pass`_ (password management) an
 Onyo uses the filesystem as the index and git to track history. This allows much
 of Onyo's functionality to be just a thin wrapper around git commands.
 
+An `example Onyo repository`_ is available. It's easier to get a feel for how
+Onyo works with a populated repository with actual history, rather than starting
+from scratch. Just install Onyo, clone the demo repo, and start poking around!
+
 Overview
 ********
 
@@ -21,13 +25,7 @@ Overview
    examples
    changelog
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
 .. _pass: https://www.passwordstore.org
 .. _ledger: https://www.ledger-cli.org
 .. _plain text accounting: https://plaintextaccounting.org
+.. _example Onyo repository: https://github.com/psyinfra/onyo-demo/

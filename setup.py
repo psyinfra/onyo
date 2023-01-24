@@ -13,8 +13,18 @@ setup(
         'ruamel.yaml'
     ],
     extras_require={
-        'tests': ['flake8', 'pyre-check', 'pytest', 'pytest-cov'],
-        'docs': ['sphinx', 'sphinx-argparse', 'sphinx-rtd-theme']},
+        'tests': [
+            'flake8',
+            'pyre-check',
+            'pytest',
+            'pytest-cov'
+        ],
+        'docs': [
+            'sphinx>=4.3.0',
+            'sphinx-argparse',
+            'sphinx-rtd-theme>=0.5.2'
+        ]
+    },
     python_requires=">=3.9",
     entry_points={
         'console_scripts': [

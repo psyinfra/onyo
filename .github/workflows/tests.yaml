@@ -1,4 +1,4 @@
-name: Onyo Tests
+name: tests
 
 on:
   push:
