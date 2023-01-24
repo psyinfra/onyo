@@ -1,8 +1,8 @@
-name: Deploy Onyo Demo
+name: demo repo
 
 on:
   workflow_run:
-    workflows: ["Onyo Tests"]
+    workflows: ["tests"]
     types:
       - completed
 
