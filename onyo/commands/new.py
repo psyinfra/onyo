@@ -248,7 +248,7 @@ def new(args, opdir: str) -> None:
     # they are build, their values are set, and they where opened to edit
 
     # print diff-like output and remember new directories and assets
-    staged = repo.files_staged
+    staged = sorted(repo.files_staged)
     changes = []
     if staged:
         print("The following will be created:")
