@@ -18,10 +18,10 @@ DEMO_DIR=''
 # set reproducible commit hashes
 export GIT_AUTHOR_NAME='Yoko Onyo'
 export GIT_AUTHOR_EMAIL='yoko@onyo.org'
-export GIT_AUTHOR_DATE='2023-01-01T00:00:00'
+export GIT_AUTHOR_DATE='2023-01-01 00:00:00 +0100'
 export GIT_COMMITTER_NAME='Yoko Onyo'
 export GIT_COMMITTER_EMAIL='yoko@onyo.org'
-export GIT_COMMITTER_DATE='2023-01-01T00:00:00'
+export GIT_COMMITTER_DATE='2023-01-01 00:00:00 +0100'
 
 
 ############
