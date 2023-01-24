@@ -132,12 +132,12 @@ def edit(args, opdir: str) -> None:
             print(f"'{asset}' not updated.")
 
     # commit changes
-    files_staged = repo.files_staged
-    if files_staged:
+    staged = sorted(repo.files_staged)
+    if staged:
         print(repo._diff_changes())
         if request_user_response("Save changes? No discards all changes. (y/n) "):
-            repo.commit('edit asset(s).', files_staged)
+            repo.commit('edit asset(s).', staged)
         else:
             repo._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                      [str(file) for file in files_staged])
+                      [str(file) for file in staged])
             print('No assets updated.')
