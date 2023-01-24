@@ -25,13 +25,6 @@ Overview
    examples
    changelog
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
 .. _pass: https://www.passwordstore.org
 .. _ledger: https://www.ledger-cli.org
 .. _plain text accounting: https://plaintextaccounting.org
