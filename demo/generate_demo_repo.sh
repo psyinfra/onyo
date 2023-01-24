@@ -5,12 +5,14 @@
 # This script generates a demo Onyo repository.
 # It is not meant to be comprehensive, but should cover a wide range of Onyo's
 # functionality.
+set -e
 
 ############
 ## Variables
 ############
-readonly VERSION=0.0.1
+readonly VERSION=1.0.0
 readonly SCRIPT_NAME=${0##*/}
+readonly SCRIPT_DIR=$(dirname $(realpath -e "$0"))
 DEMO_DIR=''
 
 # set reproducible commit hashes
@@ -79,7 +81,6 @@ esac
 ######
 # MAIN
 ######
-ONYO_REPO_DIR=$(pwd)
 cd "$DEMO_DIR"
 
 # initialize a repository
@@ -92,7 +93,7 @@ onyo mkdir repair
 
 # import some existing hardware
 # TSV files can be very useful when adding large amounts of assets
-onyo new -y --tsv "$ONYO_REPO_DIR/demo/inventory.tsv"
+onyo new -y --tsv "${SCRIPT_DIR}/inventory.tsv"
 
 # add a set of newly bought assets
 onyo new -y RAM=8GB display=13.3 warehouse/laptop_apple_macbook.9r32he
