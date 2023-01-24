@@ -1,6 +1,6 @@
 # Onyo
 
-![Build Status](https://github.com/psyinfra/onyo/actions/workflows/main.yml/badge.svg)
+![Build Status](https://github.com/psyinfra/onyo/actions/workflows/tests.yaml/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/onyo/badge/?version=latest)](https://onyo.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/psyinfra/onyo/branch/main/graph/badge.svg?token=Z0VGYCHHAR)](https://codecov.io/gh/psyinfra/onyo)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blueviolet.svg)](https://opensource.org/licenses/ISC)
