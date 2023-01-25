@@ -126,7 +126,7 @@ class Repo:
         Return a set of all files in the repository (except under .git).
         """
         log.debug('Acquiring list of files')
-        files = {Path(x) for x in self._git(['ls-files']).splitlines() if x}
+        files = {Path(x) for x in self._git(['ls-files', '-z']).split('\0') if x}
         return files
 
     def _get_files_changed(self) -> set[Path]:
@@ -134,7 +134,7 @@ class Repo:
         Return a set of all unstaged changes in the repository.
         """
         log.debug('Acquiring list of changed files')
-        changed = {Path(x) for x in self._git(['diff', '--name-only']).splitlines() if x}
+        changed = {Path(x) for x in self._git(['diff', '-z', '--name-only']).split('\0') if x}
         return changed
 
     def _get_files_staged(self) -> set[Path]:
@@ -142,7 +142,7 @@ class Repo:
         Return a set of all staged changes in the repository.
         """
         log.debug('Acquiring list of staged files')
-        staged = {Path(x) for x in self._git(['diff', '--name-only', '--staged']).splitlines() if x}
+        staged = {Path(x) for x in self._git(['diff', '--name-only', '-z', '--staged']).split('\0') if x}
         return staged
 
     def _get_files_untracked(self) -> set[Path]:
@@ -150,7 +150,7 @@ class Repo:
         Return a set of all untracked files in the repository.
         """
         log.debug('Acquiring list of untracked files')
-        untracked = {Path(x) for x in self._git(['ls-files', '--others', '--exclude-standard']).splitlines() if x}
+        untracked = {Path(x) for x in self._git(['ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
         return untracked
 
     def _get_root(self) -> Path:
