@@ -1,5 +1,5 @@
 import logging
-import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -9,7 +9,7 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def sanitize_directories(directories: list, opdir: str) -> str:
+def sanitize_directories(directories: list, opdir: str) -> list[str]:
     """
     Check a list of directories. If any do not exist or are a file, and error
     will be printed.
@@ -32,7 +32,7 @@ def sanitize_directories(directories: list, opdir: str) -> str:
               file=sys.stderr)
         sys.exit(1)
 
-    return ' '.join(str(x) for x in dirs)
+    return dirs
 
 
 def tree(args, opdir: str) -> None:
@@ -49,19 +49,12 @@ def tree(args, opdir: str) -> None:
     dirs = sanitize_directories(args.directory, opdir)
 
     # run it
-    status = int()
-    orig_cwd = os.getcwd()
-    try:
-        os.chdir(opdir)
-        status = os.system(f"tree {dirs}")
-    except:  # noqa: E722
-        pass
-    finally:
-        os.chdir(orig_cwd)
+    ret = subprocess.run(['tree'] + dirs, capture_output=True, text=True)
 
-    # covert the return status into a return code
-    returncode = os.waitstatus_to_exitcode(status)
+    # check for errors
+    if ret.stderr:
+        print(ret.stderr)
+        sys.exit(1)
 
-    # bubble up error retval
-    if returncode != 0:
-        exit(returncode)
+    # print tree output
+    print(ret.stdout)

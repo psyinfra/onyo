@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from shlex import quote
 
 from onyo import Repo, OnyoInvalidRepoError
 
@@ -84,7 +85,7 @@ def history(args, opdir):
     orig_cwd = os.getcwd()
     try:
         os.chdir(opdir)
-        status = os.system(f"{history_cmd} '{path}'")
+        status = os.system(f"{history_cmd} {quote(str(path))}")
     except:  # noqa: E722
         pass
     finally:
