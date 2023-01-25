@@ -901,38 +901,21 @@ class Repo:
             log.error(f"The path is protected by onyo: '{asset}'")
             raise ValueError(f"Input contains multiple '{file[0].name}'")
 
-    def valid_name(self, asset: Path) -> bool:
+    def valid_name(self, asset: Union[Path, str]) -> bool:
         """
-        Verify that an asset name fits into the asset name scheme of onyo:
+        Verify that an asset name complies with the name scheme:
         <type>_<make>_<model>.<serial>
-        Where the fields type, make, and model do not allow the characters '.'
-        and '_' to be part of the field, and no field is allowed to be empty.
+        Where the fields type, make, and model do not allow '.' or '_', serial
+        permits all characters, and no field can be empty.
 
         Returns True for valid asset names, and False if invalid.
         """
-        # verify that a dot exists
-        if "." not in asset.name:
-            log.error("Asset names must have a '.'")
-            return False
+        asset = Path(asset)
 
-        # split fields
         try:
-            # reverse order, because re reads from right to left and splits,
-            # and this way '.' and '_' are in serial field
-            [serial, model, make, type] = re.findall('(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]
+            re.findall('(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset.name)[0]
         except (ValueError, IndexError):
-            log.error(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
-            return False
-
-        # check against special characters in fields 'type', 'make', 'model'
-        # if '_' in type or '.' in type or '_' in make or '.' in make or '_' in model or '.' in model:
-        if any('.' in x or '_' in x for x in [type, make, model]):
-            log.error(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
-            return False
-
-        # none of the fields is allowed to be empty
-        if not all([type, make, model, serial]):
-            log.error("The fields 'type', 'make', 'model' and 'serial' are not allowed to be empty.")
+            log.info(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
             return False
 
         return True

@@ -601,3 +601,31 @@ def test_tsv_error_template_does_not_exist(repo: Repo) -> None:
     # verify that no new assets were created and the repository is still clean
     assert len(repo.assets) == 0
     repo.fsck()
+
+
+variants = ['laptop_apple_macbookpro_0',
+            'lap top _ app le _ mac book pro_ 0',
+            'laptop_ap.ple_macbookpro.0',
+            'lap_top_apple_macbookpro.0',
+            'laptop-apple-macbookpro.0',
+            '_apple_macbookpro.0',
+            'laptop__macbookpro.0',
+            'laptop_apple_.0',
+            'laptop_apple_macbookpro.'
+            ]
+@pytest.mark.parametrize('variant', variants)
+def test_error_namescheme(repo: Repo, variant: str) -> None:
+    """
+    Test that `onyo new` prints correct errors for different invalid names:
+    - '.' in another field as serial number
+    - Additional '_' in one of the early fields
+    - instead of '_' using '-' to divide fields
+    """
+    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
+    assert not ret.stdout
+    assert ret.returncode == 1
+    assert "must be in the format '<type>_<make>_<model>.<serial>'" in ret.stderr
+
+    # verify that no new assets were created and the repository state is clean
+    assert len(repo.assets) == 0
+    repo.fsck()

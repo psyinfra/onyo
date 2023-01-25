@@ -1,6 +1,6 @@
 import random
 import pytest
-import subprocess
+from pathlib import Path
 
 from onyo.lib import Repo
 
@@ -31,8 +31,6 @@ def test_generate_faux_serials_invalid_length(repo, variant):
     """
     Fewer than 4 character in the serial is invalid.
     """
-    # faux serial numbers must have at least length 1 and the function raises
-    # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
 
@@ -44,8 +42,6 @@ def test_generate_faux_serials_invalid_number(repo, variant):
     """
     Number of serials must be greater than 0.
     """
-    # faux serial numbers must have at least length 1 and the function raises
-    # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
 
@@ -57,67 +53,42 @@ def test_generate_faux_serials_invalid_length_and_number(repo, variant):
     """
     Both length and number are invalid.
     """
-    # faux serial numbers must have at least length 1 and the function raises
-    # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
 
 
-variants = ['laptop_apple_macbookpro_0',
-            'lap top _ app le _ mac book pro_ 0']
-@pytest.mark.parametrize('variant', variants)
-def test_error_invalid_namescheme_no_dot(repo: Repo, variant: str) -> None:
-    """
-    Test that `onyo new` prints correct errors for different invalid names if
-    the '.' is missing in the asset name.
-    """
-    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
-    assert not ret.stdout
-    assert ret.returncode == 1
-    assert "Asset names must have a '.'" in ret.stderr
-
-    # verify that no new assets were created and the repository state is clean
-    assert len(repo.assets) == 0
-    repo.fsck()
-
-
-variants = ['laptop_ap.ple_macbookpro.0',
-            'lap_top_apple_macbookpro.0',
-            'laptop-apple-macbookpro.0']
-@pytest.mark.parametrize('variant', variants)
-def test_error_invalid_namescheme_wrong_format(repo: Repo, variant: str) -> None:
-    """
-    Test that `onyo new` prints correct errors for different invalid names:
-    - '.' in another field as serial number
-    - Additional '_' in one of the early fields
-    - instead of '_' using '-' to divide fields
-    """
-    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
-    assert not ret.stdout
-    assert ret.returncode == 1
-    assert "must be in the format '<type>_<make>_<model>.<serial>'" in ret.stderr
-
-    # verify that no new assets were created and the repository state is clean
-    assert len(repo.assets) == 0
-    repo.fsck()
-
-
-variants = ['_apple_macbookpro.0',
-            'laptop__macbookpro.0',
-            'laptop_apple_.0',
-            'laptop_apple_macbookpro.'
+variants = ['laptop_apple_macbookpro_0',  # no .
+            'laptop-apple-macbookpro.0',  # no _
+            'laptop-apple-macbookpro-0',  # no _ or -
+            'laptop_ap.ple_macbookpro.0',  # . can only be in serial field
+            'lap_top_apple_macbookpro.0',  # too many fields (_)
+            '__.',  # all fields are empty
+            '_apple_macbookpro.0',  # empty type
+            'laptop__macbookpro.0',  # empty make
+            'laptop_apple_.0',  # empty model
+            'laptop_apple_macbookpro.'  # empty serial
             ]
 @pytest.mark.parametrize('variant', variants)
-def test_error_invalid_namescheme_empty_fields(repo: Repo, variant: str) -> None:
+def test_valid_name_error(repo: Repo, variant: str) -> None:
     """
-    Test the correct error if a name field ('type', 'make', 'model', 'serial')
-    is empty, while the format (e.g. needed '_' and '.' exist) is correct.
+    Test `Repo.valid_name()` against invalid asset names.
     """
-    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
-    assert not ret.stdout
-    assert ret.returncode == 1
-    assert "The fields 'type', 'make', 'model' and 'serial' are not allowed to be empty." in ret.stderr
+    for asset in [variant, Path(variant)]:
+        valid = repo.valid_name(asset)
+        assert isinstance(valid, bool)
+        assert not valid
 
-    # verify that no new assets were created and the repository state is clean
-    assert len(repo.assets) == 0
-    repo.fsck()
+
+variants = ['laptop_apple_macbookpro.serial123',  # normal
+            'lap top_app le_mac book.ser ial',  # spaces are allowed
+            'laptop_apple_macbookpro.serial_a.b_c.d'  # serial allows any characters
+            ]
+@pytest.mark.parametrize('variant', variants)
+def test_valid_name(repo: Repo, variant: str) -> None:
+    """
+    Test `Repo.valid_name()` against valid asset names --- including weird ones.
+    """
+    for asset in [variant, Path(variant)]:
+        valid = repo.valid_name(asset)
+        assert isinstance(valid, bool)
+        assert valid
