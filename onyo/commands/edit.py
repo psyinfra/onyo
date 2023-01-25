@@ -1,10 +1,11 @@
 import logging
 import os
 import sys
-
-from onyo import Repo, OnyoInvalidRepoError
 from pathlib import Path
+from shlex import quote
+
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
+from onyo import Repo, OnyoInvalidRepoError
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -42,8 +43,7 @@ def edit_asset(editor: str, asset: Path) -> bool:
     if the user wants to discard the changes.
     """
     while True:
-        os.system(f'{editor} "{asset}"')
-
+        os.system(f'{editor} {quote(str(asset))}')
         try:
             YAML(typ='rt').load(asset)
             # TODO: add asset validity here
