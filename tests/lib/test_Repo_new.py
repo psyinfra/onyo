@@ -1,6 +1,5 @@
 import random
 import pytest
-import subprocess
 
 from onyo.lib import Repo
 
@@ -61,63 +60,3 @@ def test_generate_faux_serials_invalid_length_and_number(repo, variant):
     # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
-
-
-variants = ['laptop_apple_macbookpro_0',
-            'lap top _ app le _ mac book pro_ 0']
-@pytest.mark.parametrize('variant', variants)
-def test_error_invalid_namescheme_no_dot(repo: Repo, variant: str) -> None:
-    """
-    Test that `onyo new` prints correct errors for different invalid names if
-    the '.' is missing in the asset name.
-    """
-    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
-    assert not ret.stdout
-    assert ret.returncode == 1
-    assert "Asset names must have a '.'" in ret.stderr
-
-    # verify that no new assets were created and the repository state is clean
-    assert len(repo.assets) == 0
-    repo.fsck()
-
-
-variants = ['laptop_ap.ple_macbookpro.0',
-            'lap_top_apple_macbookpro.0',
-            'laptop-apple-macbookpro.0']
-@pytest.mark.parametrize('variant', variants)
-def test_error_invalid_namescheme_wrong_format(repo: Repo, variant: str) -> None:
-    """
-    Test that `onyo new` prints correct errors for different invalid names:
-    - '.' in another field as serial number
-    - Additional '_' in one of the early fields
-    - instead of '_' using '-' to divide fields
-    """
-    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
-    assert not ret.stdout
-    assert ret.returncode == 1
-    assert "must be in the format '<type>_<make>_<model>.<serial>'" in ret.stderr
-
-    # verify that no new assets were created and the repository state is clean
-    assert len(repo.assets) == 0
-    repo.fsck()
-
-
-variants = ['_apple_macbookpro.0',
-            'laptop__macbookpro.0',
-            'laptop_apple_.0',
-            'laptop_apple_macbookpro.'
-            ]
-@pytest.mark.parametrize('variant', variants)
-def test_error_invalid_namescheme_empty_fields(repo: Repo, variant: str) -> None:
-    """
-    Test the correct error if a name field ('type', 'make', 'model', 'serial')
-    is empty, while the format (e.g. needed '_' and '.' exist) is correct.
-    """
-    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
-    assert not ret.stdout
-    assert ret.returncode == 1
-    assert "The fields 'type', 'make', 'model' and 'serial' are not allowed to be empty." in ret.stderr
-
-    # verify that no new assets were created and the repository state is clean
-    assert len(repo.assets) == 0
-    repo.fsck()
