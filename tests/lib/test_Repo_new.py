@@ -31,8 +31,6 @@ def test_generate_faux_serials_invalid_length(repo, variant):
     """
     Fewer than 4 character in the serial is invalid.
     """
-    # faux serial numbers must have at least length 1 and the function raises
-    # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
 
@@ -44,8 +42,6 @@ def test_generate_faux_serials_invalid_number(repo, variant):
     """
     Number of serials must be greater than 0.
     """
-    # faux serial numbers must have at least length 1 and the function raises
-    # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
 
@@ -57,8 +53,6 @@ def test_generate_faux_serials_invalid_length_and_number(repo, variant):
     """
     Both length and number are invalid.
     """
-    # faux serial numbers must have at least length 1 and the function raises
-    # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
 
