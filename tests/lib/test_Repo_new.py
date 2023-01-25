@@ -1,5 +1,6 @@
 import random
 import pytest
+from pathlib import Path
 
 from onyo.lib import Repo
 
@@ -60,3 +61,40 @@ def test_generate_faux_serials_invalid_length_and_number(repo, variant):
     # ValueError:
     with pytest.raises(ValueError):
         repo.generate_faux_serials(*variant)
+
+
+variants = ['laptop_apple_macbookpro_0',  # no .
+            'laptop-apple-macbookpro.0',  # no _
+            'laptop-apple-macbookpro-0',  # no _ or -
+            'laptop_ap.ple_macbookpro.0',  # . can only be in serial field
+            'lap_top_apple_macbookpro.0',  # too many fields (_)
+            '__.',  # all fields are empty
+            '_apple_macbookpro.0',  # empty type
+            'laptop__macbookpro.0',  # empty make
+            'laptop_apple_.0',  # empty model
+            'laptop_apple_macbookpro.'  # empty serial
+            ]
+@pytest.mark.parametrize('variant', variants)
+def test_valid_name_error(repo: Repo, variant: str) -> None:
+    """
+    Test `Repo.valid_name()` against invalid asset names.
+    """
+    for asset in [variant, Path(variant)]:
+        valid = repo.valid_name(asset)
+        assert isinstance(valid, bool)
+        assert not valid
+
+
+variants = ['laptop_apple_macbookpro.serial123',  # normal
+            'lap top_app le_mac book.ser ial',  # spaces are allowed
+            'laptop_apple_macbookpro.serial_a.b_c.d'  # serial allows any characters
+            ]
+@pytest.mark.parametrize('variant', variants)
+def test_valid_name(repo: Repo, variant: str) -> None:
+    """
+    Test `Repo.valid_name()` against valid asset names --- including weird ones.
+    """
+    for asset in [variant, Path(variant)]:
+        valid = repo.valid_name(asset)
+        assert isinstance(valid, bool)
+        assert valid
