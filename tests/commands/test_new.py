@@ -12,6 +12,7 @@ directories = ['simple',
                'overlap/one',
                'overlap/two',
                'overlap/three',
+               'spe\"cial\\char\'acteஞrs',
                'very/very/very/deep'
                ]
 
@@ -265,9 +266,10 @@ def test_new_with_flags_edit_set_template(repo: Repo, directory: str) -> None:
     repo.fsck()
 
 
-variants = ['spa ces_i n_as set.na me'
-            # TODO: 'quotes_in_asset.na"me',
-            # TODO: 'escapes_in_asset.na\\me'
+variants = ['spa ces_i n_as set.na me',
+            'quotes_in_asset.na"me',
+            'escapes_in_asset.na\\me'
+            'lap\"top_appஞle_mac\\book\'pro.0'
             ]
 @pytest.mark.parametrize('directory', directories)
 @pytest.mark.parametrize('variant', variants)
