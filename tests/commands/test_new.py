@@ -5,8 +5,7 @@ from pathlib import Path
 from onyo.lib import Repo
 import pytest
 
-directories = ['./',
-               'simple',
+directories = ['simple',
                's p a c e s',
                's p a/c e s',
                'r/e/c/u/r/s/i/v/e',
@@ -16,15 +15,7 @@ directories = ['./',
                'very/very/very/deep'
                ]
 
-
-@pytest.mark.repo_dirs('simple',
-                       's p a c e s',
-                       's p a/c e s',
-                       'r/e/c/u/r/s/i/v/e',
-                       'overlap/one',
-                       'overlap/two',
-                       'overlap/three',
-                       'very/very/very/deep')
+@pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
 def test_new(repo: Repo, directory: str) -> None:
     """
@@ -36,9 +27,28 @@ def test_new(repo: Repo, directory: str) -> None:
     # verify correct output
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
+    assert file in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+    assert Path(file).exists()
 
-    # double-casting needed to remove ./ in beginning
-    assert str(Path(file)) in ret.stdout
+    # verify that the new asset exists and the repository is in a clean state
+    assert len(repo.assets) == 1
+    repo.fsck()
+
+
+def test_new_top_level(repo: Repo) -> None:
+    """
+    Test that `onyo new <path>` can create an asset on the top level of the
+    repository.
+    """
+    file = 'laptop_apple_macbookpro.0'
+    ret = subprocess.run(['onyo', 'new', file], input='y', capture_output=True, text=True)
+
+    # verify correct output
+    assert "The following will be created:" in ret.stdout
+    assert "Create assets? (y/n) " in ret.stdout
+    assert file in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
     assert Path(file).exists()
@@ -61,7 +71,7 @@ def test_folder_creation_with_new(repo: Repo, directory: str) -> None:
     # verify correct output
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
-    assert str(Path(asset)) in ret.stdout
+    assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -86,7 +96,7 @@ def test_with_faux_serial_number(repo: Repo) -> None:
     # verify correct output
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
-    assert ret.stdout.count(str(Path(file))) == len(assets)
+    assert ret.stdout.count(file) == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -108,7 +118,7 @@ def test_new_assets_in_multiple_directories_at_once(repo: Repo) -> None:
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
     for asset in assets:
-        assert str(Path(asset)) in ret.stdout
+        assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -131,7 +141,7 @@ def test_yes_flag(repo: Repo, directory: str) -> None:
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert str(Path(asset)) in ret.stdout
+    assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -161,7 +171,7 @@ def test_set_flag(repo: Repo, directory: str) -> None:
     # verify output
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
-    assert str(Path(asset)) in ret.stdout
+    assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -182,7 +192,7 @@ def test_discard_changes(repo: Repo, directory: str) -> None:
     # verify correct output
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
-    assert str(Path(asset)) in ret.stdout
+    assert asset in ret.stdout
     assert 'No new assets created.' in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -271,7 +281,7 @@ def test_with_special_characters(repo: Repo, directory: str, variant: str) -> No
     # verify correct output
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
-    assert str(Path(asset)) in ret.stdout
+    assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
