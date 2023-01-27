@@ -1,147 +1,147 @@
 import subprocess
 from pathlib import Path
 
+import pytest
+from onyo.lib import Repo
 
-def anchored_dir(directory):
+
+directories = ['simple',
+               's p a c e s',
+               's p a/c e s',
+               'overlap/one',
+               'overlap/two',
+               'overlap/three',
+               'r/e/c/u/r/s/i/v/e',
+               'spe\"cial\\char\'actஞers',
+               'very/very/very/deep'
+               ]
+
+
+@pytest.mark.parametrize('directory', directories)
+def test_mkdir(repo: Repo, directory: str) -> None:
     """
-    Returns True if a directory exists and contains an .anchor file.
-    Otherwise it returns False.
+    Test that `onyo mkdir <dir>` creates new directories correctly for different
+    depths and directory names.
     """
-    if Path(directory).is_dir() and Path(directory, '.anchor').is_file():
-        return True
+    ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
 
-    return False
-
-
-def test_onyo_init():
-    ret = subprocess.run(["onyo", "init"])
+    # verify output
+    assert not ret.stdout
+    assert not ret.stderr
     assert ret.returncode == 0
 
+    # verify folders and anchors exist
+    d = Path(directory)
+    while not d.samefile(repo.root):
+        assert Path(d).is_dir()
+        assert Path(d, ".anchor").is_file()
+        d = d.parent
 
-def test_simple_dir():
-    ret = subprocess.run(["onyo", "mkdir", "simple/"])
+    # verify that the repository is clean
+    repo.fsck()
+
+
+def test_mkdir_multiple_inputs(repo: Repo) -> None:
+    """
+    Test that `onyo mkdir <dirs>` creates new directories all in one call when
+    given a list of inputs.
+    """
+    ret = subprocess.run(['onyo', 'mkdir'] + directories, capture_output=True, text=True)
+
+    # verify output
+    assert not ret.stdout
+    assert not ret.stderr
     assert ret.returncode == 0
-    assert anchored_dir('simple')
+
+    # verify folders and anchors exist
+    for directory in directories:
+        d = Path(directory)
+        while not d.samefile(repo.root):
+            assert Path(d).is_dir()
+            assert Path(d, ".anchor").is_file()
+            d = d.parent
+
+    # verify that the repository is clean
+    repo.fsck()
 
 
-def test_dir_exists():
-    ret = subprocess.run(["onyo", "mkdir", "simple/"])
-    assert anchored_dir('simple')
+@pytest.mark.repo_dirs(*directories)
+@pytest.mark.parametrize('directory', directories)
+def test_error_dir_exists(repo: Repo, directory: str) -> None:
+    """
+    Test the correct error behavior when `onyo mkdir <path>` is called on an
+    existing directory name.
+    """
+    ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
+
+    # verify output
+    assert not ret.stdout
+    assert "The following paths already exist:" in ret.stderr
     assert ret.returncode == 1
 
+    assert Path(directory).is_dir()
+    assert Path(directory, ".anchor").is_file()
 
-def test_dir_exists_as_file():
-    ret = subprocess.run(["onyo", "mkdir", "simple/.anchor"])
+    # verify that the repository is clean
+    repo.fsck()
+
+
+@pytest.mark.repo_files(*directories)  # used as files to test errors
+@pytest.mark.parametrize('file', directories)
+def test_dir_exists_as_file(repo: Repo, file: str) -> None:
+    """
+    Test the correct error behavior when `onyo mkdir <file>` is called on files.
+    """
+    ret = subprocess.run(['onyo', 'mkdir', file], capture_output=True, text=True)
+
+    # verify output
+    assert not ret.stdout
+    assert "The following paths already exist:" in ret.stderr
     assert ret.returncode == 1
 
+    assert Path(file).is_file()
 
-def test_dir_protected():
-    # dir named .anchor
-    ret = subprocess.run(["onyo", "mkdir", ".anchor"], capture_output=True, text=True)
-    assert ret.returncode == 1
+    # verify that the repository is clean
+    repo.fsck()
+
+
+protected_paths = [".anchor",
+                   "simple/.git",
+                   "simple/.onyo",
+                   ".git/nope"
+                   ".onyo/nope",
+                   ]
+@pytest.mark.repo_dirs("simple")
+@pytest.mark.parametrize('protected_path', protected_paths)
+def test_dir_protected(repo: Repo, protected_path: str) -> None:
+    """
+    Test the correct error behavior of `onyo mkdir <path>` on protected paths.
+    """
+    ret = subprocess.run(["onyo", "mkdir", protected_path], capture_output=True, text=True)
+
+    # verify output
     assert not ret.stdout
     assert 'protected by onyo' in ret.stderr
-    assert not Path('.anchor').exists()
-
-    # dir named .git
-    ret = subprocess.run(["onyo", "mkdir", "simple/.git"], capture_output=True, text=True)
     assert ret.returncode == 1
+
+    # verify that the directory was not created and the repository is clean
+    assert not Path(protected_path).is_dir()
+    repo.fsck()
+
+
+@pytest.mark.repo_dirs("simple")
+def test_mkdir_relative_path(repo: Repo) -> None:
+    """
+    Test `onyo mkdir <path>` with a relative path given as input.
+    """
+    ret = subprocess.run(["onyo", "mkdir", "simple/../relative"], capture_output=True, text=True)
+
+    # verify output
     assert not ret.stdout
-    assert 'protected by onyo' in ret.stderr
-    assert not Path('simple/.git').exists()
-
-    # dir named .onyo
-    ret = subprocess.run(["onyo", "mkdir", "simple/.onyo"], capture_output=True, text=True)
-    assert ret.returncode == 1
-    assert not ret.stdout
-    assert 'protected by onyo' in ret.stderr
-    assert not Path('simple/.onyo').exists()
-
-    # dir inside of .onyo
-    ret = subprocess.run(["onyo", "mkdir", ".onyo/nope"], capture_output=True, text=True)
-    assert ret.returncode == 1
-    assert not ret.stdout
-    assert 'protected by onyo' in ret.stderr
-    assert not Path('.onyo/nope').exists()
-
-
-def test_recursive_dirs():
-    ret = subprocess.run(["onyo", "mkdir", "r/e/c/u/r/s/i/v/e"])
+    assert not ret.stderr
     assert ret.returncode == 0
-    assert anchored_dir('r')
-    assert anchored_dir('r/e')
-    assert anchored_dir('r/e/c')
-    assert anchored_dir('r/e/c/u')
-    assert anchored_dir('r/e/c/u/r')
-    assert anchored_dir('r/e/c/u/r/s')
-    assert anchored_dir('r/e/c/u/r/s/i')
-    assert anchored_dir('r/e/c/u/r/s/i/v')
-    assert anchored_dir('r/e/c/u/r/s/i/v/e')
 
-
-def test_recursive_dir_exists():
-    ret = subprocess.run(["onyo", "mkdir", "r/e/c/u/r/s/i/v/e"])
-    assert ret.returncode == 1
-    # they should be untouched
-    assert anchored_dir('r')
-    assert anchored_dir('r/e')
-    assert anchored_dir('r/e/c')
-    assert anchored_dir('r/e/c/u')
-    assert anchored_dir('r/e/c/u/r')
-    assert anchored_dir('r/e/c/u/r/s')
-    assert anchored_dir('r/e/c/u/r/s/i')
-    assert anchored_dir('r/e/c/u/r/s/i/v')
-    assert anchored_dir('r/e/c/u/r/s/i/v/e')
-
-
-def test_recursive_dir_exists_as_file():
-    ret = subprocess.run(["onyo", "mkdir", "r/e/c/u/r/s/.anchor"])
-    assert ret.returncode == 1
-    # they should be untouched
-    assert anchored_dir('r')
-    assert anchored_dir('r/e')
-    assert anchored_dir('r/e/c')
-    assert anchored_dir('r/e/c/u')
-    assert anchored_dir('r/e/c/u/r')
-    assert anchored_dir('r/e/c/u/r/s')
-    assert anchored_dir('r/e/c/u/r/s/i')
-    assert anchored_dir('r/e/c/u/r/s/i/v')
-    assert anchored_dir('r/e/c/u/r/s/i/v/e')
-
-
-def test_dir_with_spaces():
-    ret = subprocess.run(["onyo", "mkdir", "s p a c e s"])
-    assert ret.returncode == 0
-    assert anchored_dir('s p a c e s')
-    for d in ['s', 'p', 'a', 'c', 'e', 's']:
-        assert not Path(d).exists()
-
-    ret = subprocess.run(["onyo", "mkdir", "s p a/c e s"])
-    assert ret.returncode == 0
-    assert anchored_dir('s p a')
-    assert anchored_dir('s p a/c e s')
-    for d in ['s', 'p', 'a', 'c', 'e', 's']:
-        assert not Path(d).exists()
-
-
-def test_dir_relative():
-    ret = subprocess.run(["onyo", "mkdir", "simple/../relative"])
-    assert ret.returncode == 0
-    assert anchored_dir('relative')
-    assert not Path('simple/\.\./relative').exists()
-
-
-def test_multiple_dirs():
-    ret = subprocess.run(["onyo", "mkdir", "one", "two", "three"])
-    assert ret.returncode == 0
-    assert anchored_dir('one')
-    assert anchored_dir('two')
-    assert anchored_dir('three')
-
-
-def test_multiple_overlapping_dirs():
-    ret = subprocess.run(["onyo", "mkdir", "overlap/one", "overlap/two", "overlap/three"])
-    assert ret.returncode == 0
-    assert anchored_dir('overlap/one')
-    assert anchored_dir('overlap/two')
-    assert anchored_dir('overlap/three')
+    # verify that the correct directory was created and the repository is clean
+    assert Path("./relative").exists()
+    assert not Path('simple/\\.\\./relative').exists()
+    repo.fsck()
