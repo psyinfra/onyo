@@ -28,6 +28,27 @@ def test_set(repo: Repo, asset: str, set_values: list[str]) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` updates contents of assets.
     """
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + [asset], capture_output=True, text=True)
+
+    # verify output
+    assert "The following assets will be changed:" in ret.stdout
+    assert str(Path(asset)) in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify changes, and the repository clean
+    for value in set_values:
+        assert value.replace("=", ": ") in Path.read_text(Path(asset))
+    repo.fsck()
+
+
+@pytest.mark.repo_files(*assets)
+@pytest.mark.parametrize('asset', assets)
+@pytest.mark.parametrize('set_values', values)
+def test_set_interactive(repo: Repo, asset: str, set_values: list[str]) -> None:
+    """
+    Test that `onyo set KEY=VALUE <asset>` updates contents of assets.
+    """
     ret = subprocess.run(['onyo', 'set'] + set_values + [asset], input='y', capture_output=True, text=True)
 
     # verify output
@@ -50,11 +71,10 @@ def test_set_multiple_assets(repo: Repo, set_values: list[str]) -> None:
     Test that `onyo set KEY=VALUE <asset>` can update the contents of multiple
     assets in a single call.
     """
-    ret = subprocess.run(['onyo', 'set'] + set_values + assets, input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + assets, capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -94,11 +114,10 @@ def test_set_with_dot_recursive(repo: Repo, set_values: list[str]) -> None:
     Test that when `onyo set KEY=VALUE .` is called from the repository root,
     onyo selects all assets in the complete repo recursively.
     """
-    ret = subprocess.run(['onyo', 'set'] + set_values + ["."], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + ["."], capture_output=True, text=True)
 
     # verify that output mentions every asset
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     for asset in assets:
         assert str(Path(asset)) in ret.stdout
 
@@ -117,11 +136,10 @@ def test_set_without_path(repo: Repo, set_values: list[str]) -> None:
     Test that `onyo set KEY=VALUE` without a given path selects all assets in
     the repository, beginning with cwd.
     """
-    ret = subprocess.run(['onyo', 'set'] + set_values, input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values, capture_output=True, text=True)
 
     # verify that output contains one line per asset
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     for asset in assets:
         assert str(Path(asset)) in ret.stdout
 
@@ -142,11 +160,10 @@ def test_set_recursive_directories(repo: Repo, directory: str, set_values: list[
     Test that `onyo set KEY=VALUE <directory>` updates contents of assets
     correctly.
     """
-    ret = subprocess.run(['onyo', 'set'] + set_values + [directory], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + [directory], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(directory)) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -170,7 +187,6 @@ def test_set_discard_changes_single_assets(repo: Repo, asset: str, set_values: l
 
     # verify output for just dot, should be all in onyo root, but not recursive
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert "No assets updated." in ret.stdout
     assert not ret.stderr
@@ -386,11 +402,10 @@ def test_add_new_key_to_existing_content(repo: Repo, asset: str) -> None:
     different `KEY`, and adds it without overwriting existing values.
     """
     set_1 = "change=one"
-    ret = subprocess.run(['onyo', 'set', set_1, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', set_1, asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_1.replace("=", ": ") in ret.stdout
     assert set_1.replace("=", ": ") in Path.read_text(Path(asset))
@@ -399,11 +414,10 @@ def test_add_new_key_to_existing_content(repo: Repo, asset: str) -> None:
 
     # call again and add a different KEY, without overwriting existing contents
     set_2 = "different=key"
-    ret = subprocess.run(['onyo', 'set', set_2, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', set_2, asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_2.replace("=", ": ") in ret.stdout
     assert not ret.stderr
@@ -428,11 +442,10 @@ def test_set_overwrite_key(repo: Repo, asset: str) -> None:
     different VALUE for the same KEY, and overwrites existing values correctly.
     """
     set_value = "value=original"
-    ret = subprocess.run(['onyo', 'set', set_value, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', set_value, asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_value.replace("=", ": ") in ret.stdout
     assert set_value.replace("=", ": ") in Path.read_text(Path(asset))
@@ -441,11 +454,10 @@ def test_set_overwrite_key(repo: Repo, asset: str) -> None:
 
     # call again with same key, but different value
     set_value_2 = "value=updated"
-    ret = subprocess.run(['onyo', 'set', set_value_2, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', set_value_2, asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert f"-{set_value}".replace("=", ": ") in ret.stdout
     assert f"+{set_value_2}".replace("=", ": ") in ret.stdout
@@ -467,11 +479,10 @@ def test_setting_new_values_if_some_values_already_set(repo: Repo, asset: str) -
     the correct output if called multiple times, and that the output is correct.
     """
     set_values = "change=one"
-    ret = subprocess.run(['onyo', 'set', set_values, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', set_values, asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_values.replace("=", ": ") in Path.read_text(Path(asset))
     assert not ret.stderr
@@ -480,11 +491,10 @@ def test_setting_new_values_if_some_values_already_set(repo: Repo, asset: str) -
     # call with two values, one of which is already set and should not appear
     # again in the output.
     set_values = ["change=one", "different=key"]
-    ret = subprocess.run(['onyo', 'set'] + set_values + [asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + [asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -510,11 +520,10 @@ def test_values_already_set(repo: Repo, asset: str, set_values: list[str]) -> No
     if called again with same valid values the command does display the correct
     info message without error, and the repository stays in a clean state.
     """
-    ret = subprocess.run(['onyo', 'set'] + set_values + [asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + [asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     for value in set_values:
         assert value.replace("=", ": ") in Path.read_text(Path(asset))
@@ -522,7 +531,7 @@ def test_values_already_set(repo: Repo, asset: str, set_values: list[str]) -> No
     assert ret.returncode == 0
 
     # call `onyo set` again with the same values
-    ret = subprocess.run(['onyo', 'set'] + set_values + [asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + [asset], capture_output=True, text=True)
 
     # verify second output
     assert "The values are already set. No assets updated." in ret.stdout
@@ -550,11 +559,10 @@ def test_set_update_name_fields(repo: Repo, asset: str, set_values: list[str]) -
     faux serials can be set and name fields are recognized and can be updated
     when they are `onyo set` together with a list of content fields.
     """
-    ret = subprocess.run(['onyo', 'set', '--rename'] + set_values + [asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--rename'] + set_values + [asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -575,11 +583,10 @@ def test_update_many_faux_serial_numbers(repo: Repo) -> None:
     """
     # remember old assets before renaming
     old_asset_names = repo.assets
-    ret = subprocess.run(['onyo', 'set', '--rename', 'serial=faux'] + list(assets), input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--rename', 'serial=faux'] + list(assets), capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
     assert len(assets) == ret.stdout.count('faux')
     assert not ret.stderr
     assert ret.returncode == 0

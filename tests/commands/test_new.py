@@ -23,6 +23,27 @@ def test_new(repo: Repo, directory: str) -> None:
     Test that `onyo new` can create an asset in different directories.
     """
     file = f'{directory}/laptop_apple_macbookpro.0'
+    ret = subprocess.run(['onyo', 'new', '--yes', file], capture_output=True, text=True)
+
+    # verify correct output
+    assert "The following will be created:" in ret.stdout
+    assert file in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+    assert Path(file).exists()
+
+    # verify that the new asset exists and the repository is in a clean state
+    assert len(repo.assets) == 1
+    repo.fsck()
+
+
+@pytest.mark.repo_dirs(*directories)
+def test_new_interactive(repo: Repo) -> None:
+    """
+    Test that `onyo new` can create an asset in different directories when given
+    'y' as input in the dialog, instead of using the flag '--yes'.
+    """
+    file = f'{directories[0]}/laptop_apple_macbookpro.0'
     ret = subprocess.run(['onyo', 'new', file], input='y', capture_output=True, text=True)
 
     # verify correct output
@@ -44,11 +65,10 @@ def test_new_top_level(repo: Repo) -> None:
     repository.
     """
     file = 'laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', file], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', file], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     assert file in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -59,19 +79,19 @@ def test_new_top_level(repo: Repo) -> None:
     repo.fsck()
 
 
-@pytest.mark.repo_dirs('overlap')
+@pytest.mark.repo_dirs('overlap')  # to test sub-dir creation for existing dir
 @pytest.mark.parametrize('directory', directories)
 def test_folder_creation_with_new(repo: Repo, directory: str) -> None:
     """
     Test that `onyo new` can create new folders for assets.
-    Tests that folders are created when a sub-folder already exist, too.
+    Tests that folders are created when a sub-folder already exist, too, through
+    existing dir 'overlap'.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', asset], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -92,11 +112,10 @@ def test_with_faux_serial_number(repo: Repo) -> None:
     file = "laptop_apple_macbookpro.faux"
     num = 10
     assets = [f"{d}/{file}" for d in directories for i in range(0, num)]
-    ret = subprocess.run(['onyo', 'new'] + assets, input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes'] + assets, capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     assert ret.stdout.count(file) == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
@@ -113,11 +132,10 @@ def test_new_assets_in_multiple_directories_at_once(repo: Repo) -> None:
     """
     assets = [f'{directory}/laptop_apple_macbookpro.{i}'
               for i, directory in enumerate(directories)]
-    ret = subprocess.run(['onyo', 'new'] + assets, input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes'] + assets, capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     for asset in assets:
         assert asset in ret.stdout
     assert not ret.stderr
@@ -167,11 +185,10 @@ def test_set_flag(repo: Repo, directory: str) -> None:
     set_values = "mode=set_flag"
 
     # create asset with --set
-    ret = subprocess.run(['onyo', 'new', set_values, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', set_values, asset], capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -243,11 +260,10 @@ def test_new_with_flags_edit_set_template(repo: Repo, directory: str) -> None:
     set_values = "mode=set"
 
     # create asset with --edit and --template
-    ret = subprocess.run(['onyo', 'new', '--edit', '--template', template, set_values, str(asset)], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--edit', '--template', template, set_values, str(asset)], capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     assert str(asset) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -278,11 +294,10 @@ def test_with_special_characters(repo: Repo, directory: str, variant: str) -> No
     Test `onyo new` with names containing special characters.
     """
     asset = f'{directory}/{variant}'
-    ret = subprocess.run(['onyo', 'new', asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', asset], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -370,10 +385,9 @@ def test_tsv(repo: Repo) -> None:
     assert table_path.is_file()
 
     # create assets with table
-    ret = subprocess.run(['onyo', 'new', "--tsv", table_path], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', "--tsv", table_path], capture_output=True, text=True)
     assert not ret.stderr
     assert "The following will be created:" in ret.stdout
-    assert "Create assets? (y/n) " in ret.stdout
     assert ret.returncode == 0
 
     # verify that the new assets exist and the repository is in a clean state
