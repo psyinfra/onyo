@@ -239,6 +239,75 @@ def setup_parser() -> argparse.ArgumentParser:
         help='verify the integrity and validity of an onyo repository and its contents'
     )
     cmd_fsck.set_defaults(run=commands.fsck)
+
+    #
+    # subcommand "get"
+    #
+    cmd_get = subcmds.add_parser(
+        'get',
+        description=textwrap.dedent(commands.get.__doc__),
+        formatter_class=SubcommandHelpFormatter,
+        help=(
+            'Return matching asset(s) and values corresponding to the '
+            'requested key(s). If no key(s) are given, the pseudo-keys are'
+            'returned instead.'))
+    cmd_get.set_defaults(run=commands.get)
+    cmd_get.add_argument(
+        '-d', '--depth',
+        metavar='DEPTH',
+        type=int,
+        required=False,
+        default=0,
+        help=(
+            'descend at most DEPTH levels of directories below the '
+            'starting-point, with a DEPTH value of 0 having no descend limit'))
+    cmd_get.add_argument(
+        '-f', '--filter',
+        metavar='FILTER',
+        nargs='+',
+        type=str,
+        default=None,
+        help=(
+            'filter the results by key=value conditional statement(s) '
+            'to return only assets matching the condition. Multiple '
+            'conditions are separated by spaces and function as a logical '
+            'conjunction. Regular expressions can be used as a value and '
+            'pseudo-keys can also be used'))
+    cmd_get.add_argument(
+        '-H', '--machine-readable',
+        dest='machine_readable',
+        action='store_true',
+        help=(
+            'return output separating assets by new lines and keys by tabs '
+            'instead of a formatted table'))
+    cmd_get.add_argument(
+        '-k', '--keys',
+        metavar='KEYS',
+        nargs='+',
+        default=[],
+        help=(
+            'key value(s) to return. Pseudo-keys (i.e., keys for which the '
+            'values are only stored in the asset name) are also available '
+            'for queries'))
+    cmd_get.add_argument(
+        '-p', '--path',
+        metavar='PATH',
+        default=['.'],
+        nargs='+',
+        help='asset(s) or directory(s) to search through')
+    cmd_get.add_argument(
+        '-s', '--sort-ascending',
+        dest='sort_ascending',
+        action='store_true',
+        default=False,
+        help='sort output by keys in ascending order')
+    cmd_get.add_argument(
+        '-S', '--sort-descending',
+        dest='sort_descending',
+        action='store_true',
+        default=False,
+        help='sort output by keys in descending order')
+
     #
     # subcommand "history"
     #
@@ -638,6 +707,7 @@ def setup_parser() -> argparse.ArgumentParser:
         type=path,
         help='assets or directories for which to unset values'
     )
+
     return parser
 
 

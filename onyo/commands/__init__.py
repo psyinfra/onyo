@@ -2,6 +2,7 @@ from .cat import cat
 from .config import config
 from .edit import edit
 from .fsck import fsck
+from .get import get
 from .history import history
 from .init import init
 from .mkdir import mkdir
@@ -18,6 +19,7 @@ __all__ = [
     'config',
     'edit',
     'fsck',
+    'get',
     'history',
     'init',
     'mkdir',
@@ -27,5 +29,5 @@ __all__ = [
     'set',
     'shell_completion',
     'tree',
-    'unset',
+    'unset'
 ]
