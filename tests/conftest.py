@@ -134,25 +134,3 @@ class Helpers:
         "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
         s = list(iterable)
         return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
-
-    @staticmethod
-    def populate_repo(path: str, dirs: list = [], files: list = []) -> None:
-        """
-        Create and initialize a folder, and build a directory and file
-        structure.
-        """
-        # init repo
-        repo = Repo(path, init=True)
-
-        # dirs
-        if dirs:
-            repo.mkdir(dirs)
-            repo.commit('populate dirs for tests', dirs)
-
-        # files
-        if files:
-            for i in files:
-                Path(path, i).touch()
-
-            repo.add(files)
-            repo.commit('populate files for tests', files)
