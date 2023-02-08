@@ -1,36 +1,35 @@
 import subprocess
 from itertools import product
 
+import pytest
 
-def test_onyo_init():
-    ret = subprocess.run(["onyo", "init"])
+
+variants = [
+    '-d',
+    '--debug',
+]
+@pytest.mark.repo_dirs('just-a-dir')
+@pytest.mark.parametrize('variant', variants)
+def test_onyo_debug(repo, variant):
+    ret = subprocess.run(['onyo', variant, 'mkdir', f'flag{variant}'], capture_output=True, text=True)
     assert ret.returncode == 0
+    assert 'DEBUG:onyo' in ret.stderr
 
 
-def test_onyo_debug(helpers):
-    # populate repo, so there's something to be noisy about
-    ret = subprocess.run(['onyo', 'mkdir', 'just-a-dir'])
+variants = [
+    '-h',
+    '--help',
+]
+@pytest.mark.parametrize('variant', variants)
+def test_onyo_help(repo, variant):
+    ret = subprocess.run(['onyo', variant], capture_output=True, text=True)
     assert ret.returncode == 0
-
-    for i in ['-d', '--debug']:
-        full_cmd = ['onyo', i, 'mkdir', f'flag{i}']
-
-        ret = subprocess.run(full_cmd, capture_output=True, text=True)
-        assert ret.returncode == 0
-        assert 'DEBUG:onyo' in ret.stderr
+    assert 'usage: onyo [-h]' in ret.stdout
+    assert not ret.stderr
 
 
-def test_onyo_help(helpers):
-    for i in ['-h', '--help']:
-        full_cmd = ['onyo', i]
-
-        ret = subprocess.run(full_cmd, capture_output=True, text=True)
-        assert ret.returncode == 0
-        assert 'usage: onyo [-h]' in ret.stdout
-        assert not ret.stderr
-
-
-def test_onyo_without_subcommand(helpers):
+# TODO: this would be better if parametrized
+def test_onyo_without_subcommand(repo, helpers):
     """
     Test all possible combinations of flags for onyo, without any subcommand.
     """
