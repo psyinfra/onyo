@@ -2,12 +2,7 @@ import subprocess
 from pathlib import Path
 
 
-def test_onyo_init():
-    ret = subprocess.run(["onyo", "init"])
-    assert ret.returncode == 0
-
-
-def test_config_set():
+def test_config_set(repo):
     ret = subprocess.run(["onyo", "config", "onyo.test.set", "set-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -17,7 +12,7 @@ def test_config_set():
     assert '= set-test' in Path('.onyo/config').read_text()
 
 
-def test_config_get_onyo():
+def test_config_get_onyo(repo):
     # set
     ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo", "get-onyo-test"],
                          capture_output=True, text=True)
@@ -31,8 +26,10 @@ def test_config_get_onyo():
     assert not ret.stderr
 
 
-# onyo should not alter git config's output (newline, etc)
-def test_config_get_pristine():
+def test_config_get_pristine(repo):
+    """
+    onyo should not alter git config's output (newline, etc)
+    """
     ret = subprocess.run(["onyo", "config", "onyo.test.get-pristine", "get-pristine-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -53,7 +50,7 @@ def test_config_get_pristine():
     assert ret.stdout == git_config_output
 
 
-def test_config_get_empty():
+def test_config_get_empty(repo):
     assert 'onyo.test.not-exist' not in Path('.onyo/config').read_text()
 
     ret = subprocess.run(["onyo", "config", "--get", "onyo.test.not-exist"],
@@ -63,7 +60,7 @@ def test_config_get_empty():
     assert not ret.stderr
 
 
-def test_config_unset():
+def test_config_unset(repo):
     # set
     ret = subprocess.run(["onyo", "config", "onyo.test.unset", "unset-test"],
                          capture_output=True, text=True)
@@ -86,7 +83,7 @@ def test_config_unset():
     assert not ret.stderr
 
 
-def test_config_help():
+def test_config_help(repo):
     """
     `onyo config --help` is shown and not `git config --help`.
     """
@@ -98,7 +95,7 @@ def test_config_help():
         assert not ret.stderr
 
 
-def test_config_forbidden_flags():
+def test_config_forbidden_flags(repo):
     """
     Flags that change the source of values are not allowed.
     """
@@ -109,7 +106,7 @@ def test_config_forbidden_flags():
         assert flag in ret.stderr
 
 
-def test_config_bubble_retcode():
+def test_config_bubble_retcode(repo):
     """
     Bubble up git-config's retcodes.
     According to the git config manpage, attempting to unset an option which
@@ -122,7 +119,7 @@ def test_config_bubble_retcode():
     assert ret.returncode == 5
 
 
-def test_config_bubble_stderr():
+def test_config_bubble_stderr(repo):
     """
     Bubble up git-config printing to stderr.
     """
