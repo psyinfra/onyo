@@ -12,14 +12,15 @@ log = logging.getLogger('onyo')
 log.setLevel(logging.INFO)
 
 
-# This class enables e.g. onyo set to receive a dictionary of key=value and a
-# list of paths
+# TODO: remove this class
+# This class is just currently relevant for `onyo new --set` and is to be
+# removed with the solving of issue #287.
 class StoreKeyValuePairsAndAssetsSeparately(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values: list[str], option_string=None):
         pairs = select_key_value(values)
         paths = select_paths(values)
         # onyo new has different parameter names
@@ -35,7 +36,7 @@ class StoreKeyValuePairsAndAssetsSeparately(argparse.Action):
                 setattr(namespace, "path", paths)
 
 
-def select_key_value(arg_values):
+def select_key_value(arg_values: list[str]):
     pairs = {}
     for value in arg_values:
         if "=" in value:
@@ -44,12 +45,32 @@ def select_key_value(arg_values):
     return pairs
 
 
-def select_paths(arg_values):
+def select_paths(arg_values: list[str]):
     paths = []
     for value in arg_values:
         if "=" not in value:
             paths.append(value)
     return paths
+
+
+class StoreKeyValuePairs(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        self._nargs = nargs
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(self, parser, namespace, key_values: list[str], option_string=None):
+        results = {}
+        for pair in key_values:
+            k, v = pair.split('=', maxsplit=1)
+            try:
+                v = int(v)
+            except ValueError:
+                try:
+                    float(v)
+                except ValueError:
+                    pass
+            results[k] = v
+        setattr(namespace, self.dest, results)
 
 
 # credit: https://stackoverflow.com/a/13429281
@@ -455,11 +476,20 @@ def setup_parser():
         help='respond "yes" to any prompts'
     )
     cmd_set.add_argument(
-        'keys',
-        action=StoreKeyValuePairsAndAssetsSeparately,
+        '-k', '--keys',
+        required=True,
+        action=StoreKeyValuePairs,
         metavar="KEYS",
+        nargs='+',
+        help='key-value pairs to set in assets; multiple pairs can be given (e.g. key=value key2=value2)'
+    )
+    cmd_set.add_argument(
+        '-p', '--path',
+        default=".",
+        metavar='PATH',
         nargs='*',
-        help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
+        type=path,
+        help='assets or directories to set keys/values in'
     )
     #
     # subcommand "shell-completion"
