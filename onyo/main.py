@@ -173,7 +173,7 @@ def setup_parser():
     )
     subcmds.metavar = '<command>'
     #
-    # subcommand cat
+    # subcommand "cat"
     #
     cmd_cat = subcmds.add_parser(
         'cat',
@@ -462,7 +462,7 @@ def setup_parser():
         help='key-value pairs to set in assets; multiple pairs can be separated by commas (e.g. key=value,key2=value2)'
     )
     #
-    # subcommand shell-completion
+    # subcommand "shell-completion"
     #
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
