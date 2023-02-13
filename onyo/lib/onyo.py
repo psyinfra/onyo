@@ -1210,12 +1210,11 @@ class Repo:
     #
     # UNSET
     #
-    def unset(self, paths: Iterable[Union[Path, str]], values: str,
+    def unset(self, paths: Iterable[Union[Path, str]], keys: list[str],
               dryrun: bool, quiet: bool, depth: Union[int]) -> str:
 
         # set and unset should select assets exactly the same way
         assets_to_unset = self._set_sanitize(paths, depth)
-        keys = values.split(',')
 
         if any([key in ["type", "make", "model", "serial"] for key in keys]):
             log.error("Can't unset pseudo keys (name fields are required).")

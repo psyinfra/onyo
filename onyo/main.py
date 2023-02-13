@@ -567,18 +567,20 @@ def setup_parser():
         help='respond "yes" to any prompts'
     )
     cmd_unset.add_argument(
-        'keys',
+        '-k', '--keys',
+        required=True,
         metavar="KEYS",
+        nargs='+',
         type=str,
-        help='keys to unset in assets; multiple values can be separated by commas (e.g. key,key2,key3)'
+        help='keys to unset in assets; multiple keys can be given (e.g. key key2 key3)'
     )
     cmd_unset.add_argument(
-        'path',
-        metavar='PATH',
-        default='.',
+        '-p', '--path',
+        default=".",
+        metavar="PATH",
         nargs='*',
         type=path,
-        help='assets or directories for which to set values'
+        help='assets or directories for which to unset values'
     )
     return parser
 
