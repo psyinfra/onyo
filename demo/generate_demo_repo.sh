@@ -128,11 +128,11 @@ onyo mv -y warehouse/laptop_microsoft_surface.oq782j "ethics/Achilles Book"
 
 # specify number of USB type A ports on all laptops
 # TODO: use --filter
-onyo set -y USB_A=2 */laptop_*.* */*/laptop_*.*
+onyo set -y --keys USB_A=2 --path */laptop_*.* */*/laptop_*.*
 
 # specify the number of USB ports (type A and C) on MacBooks
 # TODO: use --filter
-onyo set -y USB_A=2 USB_C=1 */laptop_apple_macbook.* */*/laptop_apple_macbook.*
+onyo set -y --keys USB_A=2 USB_C=1 --path */laptop_apple_macbook.* */*/laptop_apple_macbook.*
 
 # add three newly purchased laptops; shell brace-expansion can be very useful
 onyo new -y RAM=8GB display=13.3 USB_A=2 USB_C=1 \
@@ -146,7 +146,7 @@ onyo new -y warehouse/headphones_apple_airpods.uzl8e1
 onyo mv -y warehouse/monitor_dell_PH123.86JZho warehouse/laptop_apple_macbook.oiw629 warehouse/headphones_apple_airpods.uzl8e1 "accounting/Bingo Bob"
 
 # the broken laptop has been repaired (bad RAM, which has also been increased)
-onyo set -y RAM=32GB repair/laptop_lenovo_thinkpad.owh8e2
+onyo set -y --keys RAM=32GB --path repair/laptop_lenovo_thinkpad.owh8e2
 onyo mv -y repair/laptop_lenovo_thinkpad.owh8e2 warehouse
 
 # Max's laptop is old; retire it and replace with a new one
