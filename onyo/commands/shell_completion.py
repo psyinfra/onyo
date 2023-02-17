@@ -126,9 +126,7 @@ class TabCompletion:
                 # arguments for a flag
                 cmd_tree['flags'][flag_string]['args'] = {}
 
-                # TODO: handle non-int nargs
-                # TODO: handle >1 nargs
-                if sp.nargs is None or sp.nargs > 0:
+                if sp.nargs != 0:
                     cmd_tree['flags'][flag_string]['args'][sp.metavar] = self._build_arg_dict(sp)
             else:  # argument
                 cmd_tree['args'][sp.metavar] = self._build_arg_dict(sp)
@@ -365,7 +363,30 @@ compdef _onyo onyo
         # build arg/actions
         #
         for arg, arg_tree in flag_tree['args'].items():
-            chunks['action'] += self._zsh_build_arg(arg, arg_tree)
+            action = self._zsh_build_arg(arg, arg_tree)
+
+            # flags which accept multiple arguments require another delimited field
+            if action[0] == '*':
+                # HACK: This is an ugly hack, and has flaws.
+                # - prepending a ":" is required, and not part of the ugly
+                # - the first "*" declares that it's a "pattern", but it alone
+                #   implies "empty", which means "match everything". To leave
+                #   the pattern as such would prevent any subsequent flag from
+                #   being detected
+                # - thus a pattern is used to match anything starting with a "-"
+                #   However, according to the documentation: "[...] all the
+                #   words up to and including a word matching the pattern are to
+                #   be completed [...]". So the "stop" is included (sigh).
+                #   In practice, the following will work (assuming one types
+                #   --yes by hand):
+                #       onyo unset --keys x y z --yes --paths dir1 dir2
+                #   This is because of the interim flag (--yes), which ZSH
+                #   assumes is part of --keys.
+                #   However, the following would fail to complete:
+                #       onyo unset --keys x y z --paths dir1 dir2
+                action = action.replace('*', ':*-*', 1)
+
+            chunks['action'] += action
 
         # ZSH's _argument optspec format covers:
         #   - exclusion (pattern which should disallow matching)
