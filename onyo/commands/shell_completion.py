@@ -340,11 +340,14 @@ compdef _onyo onyo
         # build exclude
         #
         # e.g.: '(- : *)'{{-h,--help}}'[display usage information]'
-        # TODO
+        # TODO: this section is naive. Real support should be added.
 
-        # always exclude for -h/--help
         if flag == '-h,--help':
+            # always exclude for -h/--help
             chunks['exclude'] = "(- : *)"
+        else:
+            # always exclude self; aka: don't allow repeats
+            chunks['exclude'] = "(" + flag.replace(',', ' ') + ")"
 
         #
         # build flag
