@@ -30,11 +30,11 @@ def test_unset(repo: Repo, asset: str) -> None:
 
     # TODO: find out if there is a faster way than `onyo set` for writing
     # without leaving an unclean git tree
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values, '--path', asset], capture_output=True, text=True)
     assert ret.returncode == 0
     assert "key: value" in Path.read_text(Path(asset))
 
-    ret = subprocess.run(['onyo', 'unset', '--yes', key, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -57,11 +57,11 @@ def test_unset_interactive(repo: Repo, asset: str) -> None:
     set_values = "key=value"
     key = "key"
 
-    ret = subprocess.run(['onyo', 'set', set_values, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--keys', set_values, '--path', asset], input='y', capture_output=True, text=True)
     assert ret.returncode == 0
     assert "key: value" in Path.read_text(Path(asset))
 
-    ret = subprocess.run(['onyo', 'unset', key, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--keys', key, '--path', asset], input='y', capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -85,11 +85,11 @@ def test_unset_subset_of_keys(repo: Repo, asset: str) -> None:
     """
     set_values = ["first=value", "key=value", "second=key"]
     key = "key"
-    ret = subprocess.run(['onyo', 'set', '--yes'] + set_values + [asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
     assert ret.returncode == 0
 
     # test un-setting just a subset of the existing keys
-    ret = subprocess.run(['onyo', 'unset', '--yes', key, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -120,17 +120,18 @@ def test_error_unset_non_existing_key(repo: Repo, asset: str) -> None:
     no_key = "non_existing"
 
     # test un-setting a non-existing key from an empty file
-    ret = subprocess.run(['onyo', 'unset', '--yes', no_key, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', no_key, '--path', asset], capture_output=True, text=True)
     assert "No assets containing the specified key(s) could be found. No assets updated." in ret.stdout
     assert f"Field {no_key} does not exist in " in ret.stderr
     assert ret.returncode == 0
 
     # set key so the asset is not empty
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values, '--path', asset], capture_output=True, text=True)
     assert ret.returncode == 0
 
     # test un-setting a non-existing key from an asset with other keys
-    ret = subprocess.run(['onyo', 'unset', '--yes', "non_existing,existing", asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', 'non_existing',
+                          'existing', '--path', asset], capture_output=True, text=True)
     assert "-existing: key" in ret.stdout
     assert f"Field {no_key} does not exist in " in ret.stderr
     assert ret.returncode == 0
@@ -148,11 +149,11 @@ def test_unset_multiple_assets(repo: Repo) -> None:
     set_values = "key=value"
     key = "key"
 
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values] + list(assets), capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values, '--path', *assets], capture_output=True, text=True)
     assert ret.returncode == 0
 
     # test unsetting multiple keys:
-    ret = subprocess.run(['onyo', 'unset', '--yes', key] + list(assets), capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', *assets], capture_output=True, text=True)
     # verify output
     assert "The following assets will be changed:" in ret.stdout
     for asset in repo.assets:
@@ -177,7 +178,7 @@ def test_unset_error_non_existing_assets(repo: Repo, no_assets: list[str]) -> No
     on root, in directories, or if an invalid asset name is in a list of
     valid ones.
     """
-    ret = subprocess.run(['onyo', 'unset', 'key'] + no_assets, capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--keys', 'key', '--path', *no_assets], capture_output=True, text=True)
 
     # verify output
     assert not ret.stdout
@@ -196,14 +197,14 @@ def test_unset_with_dot(repo: Repo) -> None:
     key = "key"
 
     # set values:
-    ret = subprocess.run(['onyo', 'set', '--yes', key_values, "."], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', key_values, '--path', "."], capture_output=True, text=True)
     assert ret.stdout.count("+key: recursive") == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
     repo.fsck()
 
     # unset `key` again
-    ret = subprocess.run(['onyo', 'unset', '--yes', key, "."], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', "."], capture_output=True, text=True)
 
     # verify that output contains one line per asset
     assert "The following assets will be changed:" in ret.stdout
@@ -228,7 +229,7 @@ def test_unset_without_path(repo: Repo) -> None:
 
     # first set values for all the assets, to make sure that really just the
     # ones in root get removed, even if others with the same key exist
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values, "."], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values, '--path', "."], capture_output=True, text=True)
 
     # verify success
     assert ret.stdout.count("+key: cwd_recursive") == len(assets)
@@ -237,7 +238,7 @@ def test_unset_without_path(repo: Repo) -> None:
     repo.fsck()
 
     # unset `key` again
-    ret = subprocess.run(['onyo', 'unset', '--yes', key], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key], capture_output=True, text=True)
 
     # verify the output
     assert "The following assets will be changed:" in ret.stdout
@@ -259,7 +260,7 @@ def test_unset_recursive_directories(repo: Repo, directory: str) -> None:
     """
     set_values = "key=recursive_directories"
     key = "key"
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values, "."], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values, '--path', "."], capture_output=True, text=True)
 
     # verify output
     assert str(Path(directory)) in ret.stdout
@@ -267,7 +268,7 @@ def test_unset_recursive_directories(repo: Repo, directory: str) -> None:
     assert ret.returncode == 0
 
     # unset values
-    ret = subprocess.run(['onyo', 'unset', '--yes', key, directory], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', directory], capture_output=True, text=True)
 
     # verify changes, and the repository clean
     # TODO: update this after solving #259
@@ -286,7 +287,7 @@ def test_unset_discard_changes_single_assets(repo: Repo, asset: str) -> None:
     """
     set_values = "key=discard_value"
     key = "key"
-    ret = subprocess.run(['onyo', 'set', set_values, asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--keys', set_values, '--path', asset], input='y', capture_output=True, text=True)
 
     assert str(Path(asset)) in ret.stdout
     assert "+key: discard_value" in ret.stdout
@@ -294,7 +295,7 @@ def test_unset_discard_changes_single_assets(repo: Repo, asset: str) -> None:
     assert ret.returncode == 0
 
     # do an `onyo unset`, but answer "n" to discard the changes done by unset
-    ret = subprocess.run(['onyo', 'unset', key, asset], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--keys', key, '--path', asset], input='n', capture_output=True, text=True)
     assert "-key: discard_value" in ret.stdout
     assert "No assets updated." in ret.stdout
     assert not ret.stderr
@@ -312,7 +313,7 @@ def test_unset_discard_changes_recursive(repo: Repo) -> None:
     """
     set_values = "key=discard"
     key = "key"
-    ret = subprocess.run(['onyo', 'set', set_values], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--keys', set_values], input='y', capture_output=True, text=True)
 
     # verify output for just dot, should be all in onyo root, but not recursive
     assert ret.stdout.count("+key: discard") == len(repo.assets)
@@ -320,7 +321,7 @@ def test_unset_discard_changes_recursive(repo: Repo) -> None:
     assert ret.returncode == 0
 
     # call `unset`, but discard changes
-    ret = subprocess.run(['onyo', 'unset', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--keys', key], input='n', capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -345,10 +346,10 @@ def test_unset_yes_flag(repo: Repo, asset: str) -> None:
     """
     set_values = "key=yes"
     key = "key"
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values, '--path', asset], capture_output=True, text=True)
 
     # remove the key again
-    ret = subprocess.run(['onyo', 'unset', '--yes', key, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -372,7 +373,7 @@ def test_unset_quiet_without_yes_flag(repo: Repo) -> None:
     Test that `onyo unset --quiet KEY <asset>` errors correctly without
     the --yes flag.
     """
-    ret = subprocess.run(['onyo', 'unset', '--quiet', "dummy_key", asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--quiet', '--keys', 'dummy_key', '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert not ret.stdout
@@ -391,11 +392,11 @@ def test_unset_quiet_flag(repo: Repo, asset: str) -> None:
     output and user-response.
     """
     set_values = "key=quiet"
-    ret = subprocess.run(['onyo', 'set', '--yes', '--quiet', set_values, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--quiet', '--keys', set_values, '--path', asset], capture_output=True, text=True)
     assert not ret.stderr
     assert ret.returncode == 0
 
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--quiet', "key", asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--quiet', '--keys', 'key', '--path', asset], capture_output=True, text=True)
     # verify that output is completely empty
     assert not ret.stdout
     assert not ret.stderr
@@ -417,13 +418,13 @@ def test_unset_dryrun_flag(repo: Repo) -> None:
     set_values = "key=dry-run"
     key = "key"
     # set values normally
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values] + list(assets), capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values, '--path', *assets], capture_output=True, text=True)
     assert not ret.stderr
     assert ret.returncode == 0
 
     # do a dry-run with unset, to check if the diff is correct without actually
     # changing an asset
-    ret = subprocess.run(['onyo', 'unset', '--dry-run', key] + list(assets), capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--dry-run', '--keys', key, '--path', *assets], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -465,18 +466,18 @@ def test_unset_depth_flag(repo: Repo) -> None:
     key = "key"
     # first, set values for the complete repository, so that there is something
     # to `onyo unset`
-    ret = subprocess.run(['onyo', 'set', '--yes', set_values], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', set_values], capture_output=True, text=True)
 
     # try `onyo unset --depth` for different values. Always discards changes,
     # and just checks if the output is the correct one.
-    ret = subprocess.run(['onyo', 'unset', '--depth', '-1', key], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '-1', '--keys', key], capture_output=True, text=True)
     # verify output for invalid --depth
     assert not ret.stdout
     assert "depth values must be positive, but is -1" in ret.stderr
     assert ret.returncode == 1
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--depth', '0', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '0', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 0
     assert "laptop_macbook_pro.0" in ret.stdout
     assert f"-{key}" in ret.stdout
@@ -488,7 +489,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--depth', '1', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '1', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 1
     assert "laptop_macbook_pro.0" in ret.stdout
     assert ret.stdout.count(f"-{key}") == 2
@@ -498,7 +499,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--depth', '3', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '3', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 3
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -509,7 +510,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--depth', '6', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '6', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 6 (maximum depth) contains all files
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -522,7 +523,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert ret.returncode == 0
     repo.fsck()
 
-    ret = subprocess.run(['onyo', 'unset', '--depth', '10', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--depth', '10', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth bigger then folder depth without error
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
@@ -536,21 +537,21 @@ def test_unset_depth_flag(repo: Repo) -> None:
     repo.fsck()
 
 
-name_fields = ["type",
-               "make",
-               "model",
-               "serial",
-               "key,type"]
+name_fields = [["type"],
+               ["make"],
+               ["model"],
+               ["serial"],
+               ["key", "type"]]
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 @pytest.mark.parametrize('name_field', name_fields)
-def test_error_unset_name_fields(repo: Repo, asset: str, name_field: str) -> None:
+def test_error_unset_name_fields(repo: Repo, asset: str, name_field: list[str]) -> None:
     """
     Test that `onyo unset KEY <asset>` throws the correct error without printing
     the usual information (e.g. diff output), when called with a KEY that is a
     name field (type, make, model or/and serial number), not a content field.
     """
-    ret = subprocess.run(['onyo', 'unset', name_field, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--keys', *name_field, '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert not ret.stdout

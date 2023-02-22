@@ -1,28 +1,28 @@
-commit 59fe24a906abadc8a3b64a3acfc5aba9fbf14325
+commit 17db8fbee2ed19f56489872c88d0948d9048fad7
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     rm: 'management/Max Mustermann'
 
-commit 09de0124150fbcc7d028776ff5a7e3b940620993
+commit 7ee4a9df9e9ea6f642db2a426635bddf1b0b9c66
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mv: 'management/Max Mustermann/headphones_apple_airpods.7h8f04','management/Max Mustermann/laptop_apple_macbook.uef82b3' -> warehouse
 
-commit 831eed2b5e58faa663880fbd40551c013d8ac4e7
+commit 0177b277690b9af1c3d735961556b4935c268c39
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mv: 'warehouse/laptop_lenovo_thinkpad.owh8e2' -> ethics/Theo Turtle
 
-commit d6c40e0da880edb1312578177d489e47edca7496
+commit e52813efd6a23c01a991dddf4fa554399f759435
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mkdir: 'ethics/Theo Turtle'
 
-commit c4974b20047a3eada3680a7652bb59d31f6aefa3
+commit 422aa403bd2cfb6976e06d6e8155948d6a381959
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -30,43 +30,43 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     
     management/Alice Wonder/laptop_apple_macbook.83hd0
 
-commit 6f4aee6304ce452ed8056280cebbdd69f689fce5
+commit 6c2cb42b954ade164574072eda54f487bafd6d46
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mkdir: 'management/Alice Wonder'
 
-commit 974f275fec14a5d9a57244d3da3777d938340183
+commit a1872e05f45468f8ca0f5a72fde5159de90184e6
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mv: 'ethics/Max Mustermann' -> management
 
-commit b0c022aefa9416514b2bf63843555d1eaff811c1
+commit e6ee18036caaf79912d844efd817689ce8ce7acb
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mkdir: 'management'
 
-commit 212f83eeba2f17d8334350076c434122fe33b0e1
+commit 4270a74e482137da979401bd4f7eee2cf4b9cbe3
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mv: 'warehouse/laptop_apple_macbook.uef82b3' -> ethics/Max Mustermann
 
-commit 43774ccdd6134fdb2705f484b8b1aca2a1f448ad
+commit f8216b61d4a8a790a1bc59a5b93a6db9a828838d
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mv: 'ethics/Max Mustermann/laptop_apple_macbook.9r32he' -> recycling
 
-commit 9dc33836fdf99d984755718d99b20ff8f049f26a
+commit b237953eb07678f3ebdcc99975c058eff966486b
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mv: 'repair/laptop_lenovo_thinkpad.owh8e2' -> warehouse
 
-commit 17e82eeee783476f45434b106ced046f79f389a0
+commit 4e27505f9deb42ce14e6e0ca00b1dc04a78b0ed8
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -74,13 +74,13 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     
     repair/laptop_lenovo_thinkpad.owh8e2
 
-commit 4fc3e2855d4497e038365eda73172424c8c18827
+commit 4f24e1e0911cb90a809c093a88b0e5b764682946
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mv: 'warehouse/monitor_dell_PH123.86JZho','warehouse/laptop_apple_macbook.oiw629','warehouse/headphones_apple_airpods.uzl8e1' -> accounting/Bingo Bob
 
-commit 459fc04f425e937cfa4a03f575965ab7def39b88
+commit 7a7bca0def75f65b096bc1e53416f8ce4b0ef5b8
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -88,7 +88,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     
     warehouse/headphones_apple_airpods.uzl8e1
 
-commit 20a33df3756a9a48a5ea4b852f4ea4cd074843fa
+commit 12fbfcef4cfad6de252b2b15ae3e18be75cbfe84
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -96,7 +96,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     
     warehouse/laptop_apple_macbook.oiw629
 
-commit 5271d6c561e7c55ba533ac1daf77eeccb8c7988c
+commit 1c7ac8df18b2ad9fae7a95285d6329c13e100690
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -104,13 +104,13 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     
     warehouse/monitor_dell_PH123.86JZho
 
-commit 31cf383f569fa9c09b1f982948bf9e0ed8efd2ea
+commit e2c0b30692b0e44c42120344eb94fa472a1fcdc5
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
     mkdir: 'accounting/Bingo Bob'
 
-commit 3ac909efba16ec6f87595302c6319f6cf3d664d6
+commit 5d1ebd1c2db951a402dab94db2d7952bfd91c0ad
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -120,7 +120,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     warehouse/laptop_apple_macbook.9il2b4
     warehouse/laptop_apple_macbook.uef82b3
 
-commit 950b7329e2762cd76110cc493d72a5904aac8dea
+commit 9796347d25bf31668fad536fb238a83665bfdf67
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -129,7 +129,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     ethics/Max Mustermann/laptop_apple_macbook.9r32he
     warehouse/laptop_apple_macbook.9r5qlk
 
-commit d297115b79fa41f073a0945460a5ea4bb1edb513
+commit 9f259958c06955af947b3be27e80419d2d908ca1
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
