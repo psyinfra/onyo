@@ -187,10 +187,10 @@ def check_against_argument_conflicts(args) -> None:
     """
     # have either tsv table describing paths and asset names, or have it as
     # input argument, but not both.
-    if args.tsv and args.asset:
+    if args.tsv and args.path:
         print("Can't have asset(s) and tsv file given.", file=sys.stderr)
         sys.exit(1)
-    if not args.tsv and not args.asset:
+    if not args.tsv and not args.path:
         print("Either asset(s) or a tsv file must be given.", file=sys.stderr)
         sys.exit(1)
 
@@ -233,7 +233,8 @@ def new(args, opdir: str) -> None:
     check_against_argument_conflicts(args)
 
     # read and verify the information for new assets from TSV and CLI
-    assets = sanitize_asset_information(args.asset, args.template, args.tsv, args.set, repo)
+    assets = sanitize_asset_information(args.path, args.template, args.tsv,
+                                        args.keys, repo)
 
     # create all assets (and non-existing folder), and set their contents
     create_assets_in_destination(assets, repo)
