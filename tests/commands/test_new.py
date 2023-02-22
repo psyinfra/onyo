@@ -23,7 +23,7 @@ def test_new(repo: Repo, directory: str) -> None:
     Test that `onyo new` can create an asset in different directories.
     """
     file = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', file], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -44,7 +44,7 @@ def test_new_interactive(repo: Repo) -> None:
     'y' as input in the dialog, instead of using the flag '--yes'.
     """
     file = f'{directories[0]}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', file], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--path', file], input='y', capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -61,11 +61,11 @@ def test_new_interactive(repo: Repo) -> None:
 
 def test_new_top_level(repo: Repo) -> None:
     """
-    Test that `onyo new <path>` can create an asset on the top level of the
-    repository.
+    Test that `onyo new --path <path>` can create an asset on the top level of
+    the repository.
     """
     file = 'laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', file], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -88,7 +88,7 @@ def test_folder_creation_with_new(repo: Repo, directory: str) -> None:
     existing dir 'overlap'.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', '--yes', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', asset], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -112,7 +112,7 @@ def test_with_faux_serial_number(repo: Repo) -> None:
     file = "laptop_apple_macbookpro.faux"
     num = 10
     assets = [f"{d}/{file}" for d in directories for i in range(0, num)]
-    ret = subprocess.run(['onyo', 'new', '--yes'] + assets, capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', *assets], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -132,7 +132,7 @@ def test_new_assets_in_multiple_directories_at_once(repo: Repo) -> None:
     """
     assets = [f'{directory}/laptop_apple_macbookpro.{i}'
               for i, directory in enumerate(directories)]
-    ret = subprocess.run(['onyo', 'new', '--yes'] + assets, capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', *assets], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -156,7 +156,7 @@ def test_yes_flag(repo: Repo, directory: str) -> None:
     Test that `onyo new --yes` creates assets in different directories.
     """
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', asset], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -176,16 +176,16 @@ def test_yes_flag(repo: Repo, directory: str) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_set_flag(repo: Repo, directory: str) -> None:
+def test_keys_flag(repo: Repo, directory: str) -> None:
     """
-    Test that `onyo new KEY=VALUE` creates assets with contents set.
+    Test that `onyo new --keys KEY=VALUE` creates assets with contents added.
     """
-    # set `key=value` for --set, and asset name
+    # set `key=value` for --keys, and asset name
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    set_values = "mode=set_flag"
+    key_values = "mode=keys_flag"
 
-    # create asset with --set
-    ret = subprocess.run(['onyo', 'new', '--yes', set_values, asset], capture_output=True, text=True)
+    # create asset with --keys
+    ret = subprocess.run(['onyo', 'new', '--yes', '--keys', key_values, '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
@@ -195,7 +195,7 @@ def test_set_flag(repo: Repo, directory: str) -> None:
 
     # verify that asset exists, the content is set, and the repository is clean
     assert Path(asset) in repo.assets
-    assert 'mode: set_flag' in Path.read_text(Path(asset))
+    assert 'mode: keys_flag' in Path.read_text(Path(asset))
     repo.fsck()
 
 
@@ -205,7 +205,7 @@ def test_discard_changes(repo: Repo, directory: str) -> None:
     Test that `onyo new` can discard new assets and the repository stays clean.
     """
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', asset], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--path', asset], input='n', capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -237,7 +237,7 @@ def test_new_protected_folder(repo: Repo, protected_folder: str) -> None:
     instead of creating an asset.
     """
     asset = f"{protected_folder}/laptop_apple_macbookpro.faux"
-    ret = subprocess.run(['onyo', 'new', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--path', asset], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert "protected by onyo" in ret.stderr
@@ -248,19 +248,21 @@ def test_new_protected_folder(repo: Repo, protected_folder: str) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_new_with_flags_edit_set_template(repo: Repo, directory: str) -> None:
+def test_new_with_flags_edit_keys_template(repo: Repo, directory: str) -> None:
     """
-    Test `onyo new --edit KEY=VALUE --template <TEMPLATE>` works when
+    Test `onyo new --edit --keys KEY=VALUE --template <TEMPLATE>` works when
     called and all flags get executed together and modify the output correctly.
     """
     # set editor, template, key=value and asset
     os.environ['EDITOR'] = "printf 'key: value' >>"
     template = "laptop.example"
     asset = Path(f"{directory}/laptop_apple_macbookpro.0")
-    set_values = "mode=set"
+    key_values = "mode=keys"
 
-    # create asset with --edit and --template
-    ret = subprocess.run(['onyo', 'new', '--yes', '--edit', '--template', template, set_values, str(asset)], capture_output=True, text=True)
+    # create asset with --edit, --template and --keys
+    ret = subprocess.run(['onyo', 'new', '--yes', '--edit',
+                          '--template', template, '--keys', key_values,
+                          '--path', str(asset)], capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
@@ -268,15 +270,50 @@ def test_new_with_flags_edit_set_template(repo: Repo, directory: str) -> None:
     assert not ret.stderr
     assert ret.returncode == 0
 
-    # verify that new asset exists and that the content is set
+    # verify that new asset exists and that the content is added.
     assert asset in repo.assets
     contents = Path.read_text(asset)
     # value from --template:
     assert 'RAM:' in contents
     # value from --edit:
     assert 'key: value' in contents
-    # value from --set:
-    assert 'mode: set' in contents
+    # value from --keys:
+    assert 'mode: keys' in contents
+
+    # verify that the repository is in a clean state
+    repo.fsck()
+
+
+@pytest.mark.parametrize('directory', directories)
+def test_new_with_keys_overwrite_template(repo: Repo, directory: str) -> None:
+    """
+    Test `onyo new --keys <KEY=VALUE> --template <TEMPLATE>` does overwrite the
+    contents of <TEMPLATE> with <KEY=VALUE>
+    """
+    # set asset, --template and --keys
+    template = "laptop.example"
+    asset = Path(f"{directory}/laptop_apple_macbookpro.0")
+    key_values = ["RAM=16GB", "Size=24.2", "USB=3"]
+
+    # create asset with --template and --keys
+    ret = subprocess.run(['onyo', 'new', '--yes', '--template', template,
+                          '--keys', *key_values, '--path', str(asset)],
+                         capture_output=True, text=True)
+
+    # verify output
+    assert "The following will be created:" in ret.stdout
+    assert str(asset) in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify that new asset exists and that the content is added.
+    assert asset in repo.assets
+    contents = Path.read_text(asset)
+
+    # verify values from --keys are set
+    assert "RAM: 16GB" in contents
+    assert "Size: '24.2'" in contents
+    assert "USB: 3" in contents
 
     # verify that the repository is in a clean state
     repo.fsck()
@@ -294,7 +331,7 @@ def test_with_special_characters(repo: Repo, directory: str, variant: str) -> No
     Test `onyo new` with names containing special characters.
     """
     asset = f'{directory}/{variant}'
-    ret = subprocess.run(['onyo', 'new', '--yes', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', asset], capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
@@ -315,7 +352,7 @@ def test_error_asset_exists_already(repo: Repo, directory: str) -> None:
     an asset name that already exists elsewhere in the directory.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--path', asset], capture_output=True, text=True)
 
     # verify correct error
     assert not ret.stdout
@@ -336,7 +373,7 @@ def test_error_two_identical_assets_in_input(repo: Repo, directory: str) -> None
     """
     asset_a = "laptop_apple_macbookpro.0"
     asset_b = f"{directory}/{asset_a}"
-    ret = subprocess.run(['onyo', 'new', asset_a, asset_b], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--path', asset_a, asset_b], capture_output=True, text=True)
 
     # verify correct error
     assert not ret.stdout
@@ -355,7 +392,8 @@ def test_error_template_does_not_exist(repo: Repo) -> None:
     """
     asset = "laptop_apple_macbookpro.0"
     no_template = "no_template"
-    ret = subprocess.run(['onyo', 'new', '--template', no_template, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--template', no_template,
+                          '--path', asset], capture_output=True, text=True)
 
     # verify correct error
     assert not ret.stdout
@@ -403,15 +441,15 @@ def test_tsv_with_value_columns(repo: Repo) -> None:
     Test `onyo new --tsv <table>` with a table containing a column with the age
     of the device and a group to which it belongs.
     """
-    table_path = Path(Path(__file__).parent.parent, "tables/values_for_set.tsv")
+    table_path = Path(Path(__file__).parent.parent, "tables/table_with_key_values.tsv")
     ret = subprocess.run(['onyo', 'new', '--yes', '--tsv', table_path], capture_output=True, text=True)
 
     assert "The following will be created:" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
-    # verify that the new assets exist, the contents  are set and the repository
-    # is in a clean state
+    # verify that the new assets exist, the contents are added, and the
+    # repository is in a clean state
     repo_assets = repo.assets
     assert len(repo_assets) > 0
     for asset in repo_assets:
@@ -423,22 +461,23 @@ def test_tsv_with_value_columns(repo: Repo) -> None:
 
 @pytest.mark.repo_dirs('simple',
                        'overlap/one')
-def test_tsv_with_flags_template_set_edit(repo: Repo) -> None:
+def test_tsv_with_flags_template_keys_edit(repo: Repo) -> None:
     """
     Test `onyo new --tsv <table> --template <template> <key=value> --edit`
     with a table containing the minimal set of columns to create assets, a
-    non-empty template, values to set, and an editor.
+    non-empty template, values to set with --keys, and an editor.
     """
-    # select table, editor, --set values and template
+    # select table, editor, --keys values and template
     table_path = Path(Path(__file__).parent.parent, "tables/table.tsv")
     os.environ['EDITOR'] = "printf 'key: value' >>"
     template = "laptop.example"
-    set_values = "mode=set"
+    key_values = "mode=keys"
     assert table_path.is_file()
 
     # create assets with table
-    ret = subprocess.run(['onyo', 'new', '--yes', '--edit', set_values,
-                          '--tsv', table_path, '--template', template],
+    ret = subprocess.run(['onyo', 'new', '--yes', '--edit',
+                          '--keys', key_values, '--tsv', table_path,
+                          '--template', template],
                          capture_output=True, text=True)
 
     assert "The following will be created:" in ret.stdout
@@ -455,8 +494,8 @@ def test_tsv_with_flags_template_set_edit(repo: Repo) -> None:
         assert "RAM:" in contents
         # from --edit:
         assert 'key: value' in contents
-        # from --set:
-        assert 'mode: set' in contents
+        # from --keys:
+        assert 'mode: keys' in contents
     repo.fsck()
 
 
@@ -504,7 +543,9 @@ def test_conflicting_and_missing_arguments(repo: Repo) -> None:
     assert ret.returncode == 1
 
     # error if `onyo new` is called with TSV and assets in CLI
-    ret = subprocess.run(['onyo', 'new', "--tsv", table_path, "simple/laptop_apple_macbookpro.0"], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', "--tsv", table_path,
+                          '--path', 'simple/laptop_apple_macbookpro.0'],
+                         capture_output=True, text=True)
     assert not ret.stdout
     assert "Can't have asset(s) and tsv file given." in ret.stderr
     assert ret.returncode == 1
@@ -516,12 +557,12 @@ def test_conflicting_and_missing_arguments(repo: Repo) -> None:
     assert "Can't use --template and template column in tsv." in ret.stderr
     assert ret.returncode == 1
 
-    # error if both `--set KEY=VALUE` and a column named `KEY` is given
-    table_path = Path(Path(__file__).parent.parent, "tables/values_for_set.tsv")
-    ret = subprocess.run(['onyo', 'new', 'group=a_group', '--tsv', table_path],
-                         capture_output=True, text=True)
+    # error if both `--keys KEY=VALUE` and a column named `KEY` is given
+    table_path = Path(Path(__file__).parent.parent, "tables/table_with_key_values.tsv")
+    ret = subprocess.run(['onyo', 'new', '--keys', 'group=a_group',
+                          '--tsv', table_path], capture_output=True, text=True)
     assert not ret.stdout
-    assert "Can't use --set" in ret.stderr and "and have tsv column" in ret.stderr
+    assert "Can't use --keys" in ret.stderr and "and have tsv column" in ret.stderr
     assert ret.returncode == 1
 
     # verify that the repository is in a clean state
@@ -647,7 +688,7 @@ def test_error_namescheme(repo: Repo, variant: str) -> None:
     - Additional '_' in one of the early fields
     - instead of '_' using '-' to divide fields
     """
-    ret = subprocess.run(['onyo', 'new', variant], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--path', variant], capture_output=True, text=True)
     assert not ret.stdout
     assert ret.returncode == 1
     assert "must be in the format '<type>_<make>_<model>.<serial>'" in ret.stderr

@@ -24,7 +24,7 @@ def create_assets_in_destination(assets: dict, repo: Repo) -> None:
     repo.add(list(assets.keys()))
 
 
-def read_assets_from_tsv(tsv: str, template_name: str, set_values: dict, repo: Repo) -> dict:
+def read_assets_from_tsv(tsv: str, template_name: str, key_values: dict, repo: Repo) -> dict:
     """
     Read a tsv table with a header row and one row for each new asset to
     create. Check the information (e.g. filenames correct and unique), and add
@@ -86,18 +86,18 @@ def read_assets_from_tsv(tsv: str, template_name: str, set_values: dict, repo: R
             except ValueError:
                 sys.exit(1)
 
-            # set the values from --set and TSV columns, check for conflicts
+            # set the values from --keys and TSV columns, check for conflicts
             contents_valid = True
             contents = repo._read_asset(template)
-            if set_values:
-                contents.update(set_values)
+            if key_values:
+                contents.update(key_values)
             for col in row.keys():
                 # these fields contain meta information, not values for content
                 if col in ['type', 'make', 'model', 'serial', 'directory', 'template']:
                     continue
-                # information from --set is not allowed to conflict with columns
-                if set_values and col in set_values.keys():
-                    print(f"Can't use --set '{col}' and have tsv column '{col}'", file=sys.stderr)
+                # information from --keys is not allowed to conflict with columns
+                if key_values and col in key_values.keys():
+                    print(f"Can't use --keys '{col}' and have tsv column '{col}'", file=sys.stderr)
                     contents_valid = False
                     break
                 contents[col] = row[col]
@@ -109,7 +109,7 @@ def read_assets_from_tsv(tsv: str, template_name: str, set_values: dict, repo: R
     return new_assets
 
 
-def read_assets_from_CLI(assets: list[str], template_name: str, set_values: dict, repo: Repo) -> dict:
+def read_assets_from_CLI(assets: list[str], template_name: str, key_values: dict, repo: Repo) -> dict:
     """
     Read information from `assets`, with a new asset file for each entry.
     Check the information (e.g. filename correct and unique), and add
@@ -148,10 +148,10 @@ def read_assets_from_CLI(assets: list[str], template_name: str, set_values: dict
         except ValueError:
             sys.exit(1)
 
-        # add values from --set and template to asset:
+        # add values from --keys and template to asset:
         contents = repo._read_asset(template)
-        if set_values:
-            contents.update(set_values)
+        if key_values:
+            contents.update(key_values)
 
         new_assets[new_path] = contents
 
@@ -159,7 +159,7 @@ def read_assets_from_CLI(assets: list[str], template_name: str, set_values: dict
 
 
 def sanitize_asset_information(assets: list[str], template: str,
-                               tsv: str, set_values: dict, repo: Repo) -> dict:
+                               tsv: str, key_values: dict, repo: Repo) -> dict:
     """
     Collect and normalize information from TSV and CLI for the creation of
     new assets.
@@ -170,9 +170,9 @@ def sanitize_asset_information(assets: list[str], template: str,
     new_assets = {}
 
     if tsv:
-        new_assets = read_assets_from_tsv(tsv, template, set_values, repo)
+        new_assets = read_assets_from_tsv(tsv, template, key_values, repo)
     else:
-        new_assets = read_assets_from_CLI(assets, template, set_values, repo)
+        new_assets = read_assets_from_CLI(assets, template, key_values, repo)
     if not new_assets:
         print("No new assets given.", file=sys.stderr)
         sys.exit(1)
@@ -216,7 +216,7 @@ def check_against_argument_conflicts(args) -> None:
 def new(args, opdir: str) -> None:
     """
     Create new ``<path>/asset``\(s) and add contents with ``--template``,
-    ``--set`` and ``--edit``. If the directories do not exist, they will be
+    ``--keys`` and ``--edit``. If the directories do not exist, they will be
     created.
 
     After the contents are added, the new ``assets``\(s) will be checked for the
