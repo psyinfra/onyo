@@ -18,7 +18,7 @@ assets = ['laptop_apple_macbookpro.0',
 # FLAGS
 #
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
-def test_mv_interactive_missing_y(repo):
+def test_mv_interactive_missing_y(repo: Repo) -> None:
     """
     Default mode is interactive. It requires a "y" to approve.
     """
@@ -29,10 +29,11 @@ def test_mv_interactive_missing_y(repo):
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
     assert not Path('laptop_apple_macbook.abc123').exists()
+    repo.fsck()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
-def test_mv_interactive_abort(repo):
+def test_mv_interactive_abort(repo: Repo) -> None:
     """
     Default mode is interactive. Provide the "n" to abort.
     """
@@ -43,10 +44,11 @@ def test_mv_interactive_abort(repo):
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
     assert not Path('laptop_apple_macbook.abc123').exists()
+    repo.fsck()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
-def test_mv_interactive(repo):
+def test_mv_interactive(repo: Repo) -> None:
     """
     Default mode is interactive. Provide the "y" to approve.
     """
@@ -57,10 +59,11 @@ def test_mv_interactive(repo):
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
+    repo.fsck()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
-def test_mv_quiet_missing_yes(repo):
+def test_mv_quiet_missing_yes(repo: Repo) -> None:
     """
     ``--quiet`` requires ``--yes``
     """
@@ -71,10 +74,11 @@ def test_mv_quiet_missing_yes(repo):
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
     assert not Path('laptop_apple_macbook.abc123').exists()
+    repo.fsck()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
-def test_mv_quiet(repo):
+def test_mv_quiet(repo: Repo) -> None:
     """
     ``--quiet`` requires ``--yes``
     """
@@ -85,10 +89,10 @@ def test_mv_quiet(repo):
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
-
+    repo.fsck()
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
-def test_mv_yes(repo):
+def test_mv_yes(repo: Repo) -> None:
     """
     --yes removes any prompts and auto-approves the move.
     """
@@ -100,6 +104,7 @@ def test_mv_yes(repo):
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
+    repo.fsck()
 
 
 @pytest.mark.repo_files(*assets)
