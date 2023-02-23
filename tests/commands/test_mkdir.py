@@ -65,6 +65,25 @@ def test_mkdir_multiple_inputs(repo: Repo) -> None:
     repo.fsck()
 
 
+def test_mkdir_message_flag(repo: Repo) -> None:
+    """
+    Test that `onyo mkdir --message msg` overwrites the default commit message
+    with one specified by the user containing different special characters.
+    """
+    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
+
+    # test `onyo mkdir --message msg`
+    ret = subprocess.run(['onyo', 'mkdir', '--message', msg, *directories], capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    # test that the onyo history does contain the user-defined message
+    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
+    assert msg in ret.stdout
+    repo.fsck()
+
+
 @pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
 def test_error_dir_exists(repo: Repo, directory: str) -> None:

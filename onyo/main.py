@@ -288,6 +288,14 @@ def setup_parser():
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
     cmd_mkdir.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_mkdir.add_argument(
         'directory',
         metavar='DIR',
         nargs='+',
