@@ -410,6 +410,36 @@ def test_unset_quiet_flag(repo: Repo, asset: str) -> None:
 
 
 @pytest.mark.repo_files(*assets)
+@pytest.mark.parametrize('asset', assets)
+def test_unset_message_flag(repo: Repo, asset: str) -> None:
+    """
+    Test that `onyo unset --message msg` overwrites the default commit message
+    with one specified by the user containing different special characters.
+    """
+    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
+    key_values = "key=quiet"
+
+    # first set values
+    ret = subprocess.run(['onyo', 'set', '--yes', '--quiet',
+                          '--keys', key_values, '--path', asset],
+                         capture_output=True, text=True)
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # test "unset values" with --message
+    ret = subprocess.run(['onyo', 'unset', '--yes', '--message', msg,
+                          '--keys', 'key', '--path', asset],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    # test that the onyo history does contain the user-defined message
+    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
+    assert msg in ret.stdout
+    repo.fsck()
+
+
+@pytest.mark.repo_files(*assets)
 def test_unset_dryrun_flag(repo: Repo) -> None:
     """
     Test that `onyo unset --dry-run KEY <asset>` displays correct diff-output
