@@ -421,6 +421,14 @@ def setup_parser():
     )
     cmd_rm.set_defaults(run=commands.rm)
     cmd_rm.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_rm.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,

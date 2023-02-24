@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
@@ -42,6 +41,7 @@ def rm(args, opdir: str) -> None:
 
     try:
         repo.rm(args.path)
-        repo.commit('rm: ' + ','.join(["'{}'".format(Path(opdir, x).resolve().relative_to(repo.root)) for x in args.path]))
+        repo.commit(repo.generate_commit_message(message=args.message,
+                                                 cmd="rm"))
     except (FileNotFoundError, OnyoProtectedPathError):
         sys.exit(1)
