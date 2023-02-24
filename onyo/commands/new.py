@@ -264,7 +264,8 @@ def new(args, opdir: str) -> None:
 
     # commit or discard changes
     if args.yes or request_user_response("Create assets? (y/n) "):
-        repo.commit("new asset(s)", changes)
+        repo.commit(repo.generate_commit_message(message=args.message,
+                                                 cmd="new"))
     else:
         repo._git(["rm", "-rf"] + [str(path) for path in changes])
         print('No new assets created.')

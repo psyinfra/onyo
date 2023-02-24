@@ -358,6 +358,14 @@ def setup_parser():
     )
     cmd_new.set_defaults(run=commands.new)
     cmd_new.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_new.add_argument(
         '-t', '--template',
         metavar='TEMPLATE',
         required=False,
