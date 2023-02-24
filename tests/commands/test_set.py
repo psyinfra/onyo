@@ -247,6 +247,27 @@ def test_set_yes_flag(repo: Repo, asset: str, set_values: list[str]) -> None:
     repo.fsck()
 
 
+@pytest.mark.repo_files(*assets)
+@pytest.mark.parametrize('asset', assets)
+@pytest.mark.parametrize('set_values', values)
+def test_set_message_flag(repo: Repo, asset: str, set_values: list[str]) -> None:
+    """
+    Test that `onyo set --message msg` overwrites the default commit message
+    with one specified by the user containing different special characters.
+    """
+    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
+    ret = subprocess.run(['onyo', 'set', '--yes', '--message', msg,
+                          '--keys', *set_values, '--path', asset],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    # test that the onyo history does contain the user-defined message
+    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
+    assert msg in ret.stdout
+    repo.fsck()
+
+
 asset = 'simple/laptop_apple_macbookpro.0'
 @pytest.mark.repo_files(asset)
 def test_set_quiet_without_yes_flag(repo: Repo) -> None:
