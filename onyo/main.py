@@ -12,47 +12,6 @@ log = logging.getLogger('onyo')
 log.setLevel(logging.INFO)
 
 
-# TODO: remove this class
-# This class is just currently relevant for `onyo new --set` and is to be
-# removed with the solving of issue #287.
-class StoreKeyValuePairsAndAssetsSeparately(argparse.Action):
-    def __init__(self, option_strings, dest, nargs=None, **kwargs):
-        self._nargs = nargs
-        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
-
-    def __call__(self, parser, namespace, values: list[str], option_string=None):
-        pairs = select_key_value(values)
-        paths = select_paths(values)
-        # onyo new has different parameter names
-        if parser.prog == "onyo new":
-            setattr(namespace, "set", pairs)
-            setattr(namespace, "asset", paths)
-        else:
-            setattr(namespace, "keys", pairs)
-            # use default path "." if no paths are given explicitly
-            if not paths:
-                setattr(namespace, "path", ["."])
-            else:
-                setattr(namespace, "path", paths)
-
-
-def select_key_value(arg_values: list[str]):
-    pairs = {}
-    for value in arg_values:
-        if "=" in value:
-            pair = value.split("=")
-            pairs[pair[0]] = pair[1]
-    return pairs
-
-
-def select_paths(arg_values: list[str]):
-    paths = []
-    for value in arg_values:
-        if "=" not in value:
-            paths.append(value)
-    return paths
-
-
 class StoreKeyValuePairs(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         self._nargs = nargs
@@ -376,9 +335,16 @@ def setup_parser():
         help='Open new assets to edit them before creation'
     )
     cmd_new.add_argument(
-        'asset',
+        '-k', '--keys',
+        required=False,
+        action=StoreKeyValuePairs,
+        metavar="KEYS",
+        nargs='+',
+        help='key-value pairs to set in assets; multiple pairs can be given (e.g. key=value key2=value2)'
+    )
+    cmd_new.add_argument(
+        '-p', '--path',
         metavar='ASSET',
-        action=StoreKeyValuePairsAndAssetsSeparately,
         type=path,
         nargs='*',
         help='add new assets'
