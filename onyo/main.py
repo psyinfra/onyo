@@ -197,6 +197,14 @@ def setup_parser():
     )
     cmd_edit.set_defaults(run=commands.edit)
     cmd_edit.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_edit.add_argument(
         'asset',
         metavar='ASSET',
         nargs='+',
