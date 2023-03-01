@@ -3,19 +3,19 @@ import subprocess
 from pathlib import Path
 
 from onyo.commands.edit import get_editor
+from onyo.lib import Repo
 import pytest
 
 assets = ['laptop_apple_macbookpro.0',
           'simple/laptop_apple_macbookpro.1',
-          's p a c e s/laptop_apple_macbookpro.2',
-          's p a/c e s/laptop_apple_macbookpro.3',
-          'very/very/very/deep/laptop_apple_macbookpro.4'
+          's p a/c e s/laptop_apple_macbookpro.2',
+          'very/very/very/deep/spe\"c_ial\\ch_ar\'ac.teஞrs'
           ]
 
 
 variants = ['local', 'onyo']
 @pytest.mark.parametrize('variant', variants)
-def test_get_editor_git(repo, variant):
+def test_get_editor_git(repo: Repo, variant: str) -> None:
     """
     Get the editor from git or onyo configs.
     """
@@ -26,7 +26,7 @@ def test_get_editor_git(repo, variant):
     assert editor == variant
 
 
-def test_get_editor_envvar(repo):
+def test_get_editor_envvar(repo: Repo) -> None:
     """
     Get the editor from $EDITOR.
     """
@@ -38,7 +38,7 @@ def test_get_editor_envvar(repo):
     assert get_editor(repo) == 'editor'
 
 
-def test_get_editor_fallback(repo):
+def test_get_editor_fallback(repo: Repo) -> None:
     """
     When no editor is set, nano is the fallback.
     """
@@ -53,7 +53,7 @@ def test_get_editor_fallback(repo):
     assert get_editor(repo) == 'nano'
 
 
-def test_get_editor_precedence(repo):
+def test_get_editor_precedence(repo: Repo) -> None:
     """
     The order of precedence should be git > onyo > $EDITOR.
     """
@@ -76,13 +76,9 @@ def test_get_editor_precedence(repo):
     assert get_editor(repo) == 'editor'
 
 
-@pytest.mark.repo_files('laptop_apple_macbookpro.0',
-                        'simple/laptop_apple_macbookpro.1',
-                        's p a c e s/laptop_apple_macbookpro.2',
-                        's p a/c e s/laptop_apple_macbookpro.3',
-                        'very/very/very/deep/laptop_apple_macbookpro.4')
+@pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_edit_single_asset(repo, asset):
+def test_edit_single_asset(repo: Repo, asset: str) -> None:
     """
     Test that for different paths it is possible to call `onyo edit` on a single
     asset file.
@@ -90,9 +86,8 @@ def test_edit_single_asset(repo, asset):
     os.environ['EDITOR'] = "printf 'key: single_asset' >"
 
     # test `onyo edit` on a single asset
-    ret = subprocess.run(['onyo', 'edit', asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--yes', asset], capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "Save changes?" in ret.stdout
     assert "+key: single_asset" in ret.stdout
     assert not ret.stderr
 
@@ -101,12 +96,8 @@ def test_edit_single_asset(repo, asset):
     repo.fsck()
 
 
-@pytest.mark.repo_files('laptop_apple_macbookpro.0',
-                        'simple/laptop_apple_macbookpro.1',
-                        's p a c e s/laptop_apple_macbookpro.2',
-                        's p a/c e s/laptop_apple_macbookpro.3',
-                        'very/very/very/deep/laptop_apple_macbookpro.4')
-def test_edit_multiple_assets(repo):
+@pytest.mark.repo_files(*assets)
+def test_edit_multiple_assets(repo: Repo) -> None:
     """
     Test that it is possible to call `onyo edit` with a list of multiple assets
     containing different file names at once.
@@ -115,10 +106,9 @@ def test_edit_multiple_assets(repo):
     repo_assets = repo.assets
 
     # test edit for a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit'] + list(repo_assets), input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--yes', *repo_assets], capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout.count("+key: multiple_assets") == len(repo_assets)
-    assert "Save changes?" in ret.stdout
     assert not ret.stderr
 
     # verify the changes were saved for all assets and the repository is clean
@@ -127,13 +117,69 @@ def test_edit_multiple_assets(repo):
     repo.fsck()
 
 
-@pytest.mark.repo_files('laptop_apple_macbookpro.0',
-                        'simple/laptop_apple_macbookpro.1',
-                        's p a c e s/laptop_apple_macbookpro.2',
-                        's p a/c e s/laptop_apple_macbookpro.3',
-                        'very/very/very/deep/laptop_apple_macbookpro.4')
+@pytest.mark.repo_files(*assets)
+def test_edit_with_user_response(repo: Repo) -> None:
+    """
+    Test that without the --yes flag, `onyo edit` requests a user response
+    before saving changes.
+    """
+    os.environ['EDITOR'] = "printf 'key: user_response' >"
+
+    # test edit for a list of assets all at once
+    ret = subprocess.run(['onyo', 'edit', *assets], input='y', capture_output=True, text=True)
+    assert ret.returncode == 0
+
+    # verify that the user response is requested
+    assert "Save changes?" in ret.stdout
+    assert not ret.stderr
+    repo.fsck()
+
+
+@pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_edit_discard(repo, asset):
+def test_edit_message_flag(repo: Repo, asset: str) -> None:
+    """
+    Test that `onyo edit --message msg` overwrites the default commit message
+    with one specified by the user containing different special characters.
+    """
+    os.environ['EDITOR'] = "printf 'key: value' >"
+    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
+
+    # test `onyo edit --message msg`
+    ret = subprocess.run(['onyo', 'edit', '--yes', '--message', msg, asset], capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    # test that the onyo history does contain the user-defined message
+    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
+    assert msg in ret.stdout
+    repo.fsck()
+
+
+@pytest.mark.repo_files(*assets)
+def test_quiet_flag(repo: Repo) -> None:
+    """
+    Test that `onyo edit --quiet` does not print anything.
+    """
+    os.environ['EDITOR'] = "printf 'key: quiet' >"
+
+    # edit a list of assets all at once
+    ret = subprocess.run(['onyo', 'edit', '--yes', '--quiet', *assets], capture_output=True, text=True)
+    assert ret.returncode == 0
+
+    # verify output is empty
+    assert not ret.stdout
+    assert not ret.stderr
+
+    # verify the changes were saved for all assets and the repository is clean
+    for asset in repo.assets:
+        assert 'key: quiet' in Path.read_text(asset)
+    repo.fsck()
+
+
+@pytest.mark.repo_files(*assets)
+@pytest.mark.parametrize('asset', assets)
+def test_edit_discard(repo: Repo, asset: str) -> None:
     """
     Test that if an asset got correctly changed, but the user answers to the
     "Save changes?" dialog with 'n', that the changes get discarded.
@@ -162,7 +208,7 @@ no_assets = ['simple/.anchor',
              ]
 @pytest.mark.repo_dirs('simple/', 's p a c e s/', 's p a/c e s/', 'very/very/very/deep/')
 @pytest.mark.parametrize('no_asset', no_assets)
-def test_edit_protected(repo, no_asset):
+def test_edit_protected(repo: Repo, no_asset: str) -> None:
     """
     Test the error behavior when called on protected files.
     """
@@ -184,7 +230,7 @@ no_assets = ["non_existing_asset.0",
 @pytest.mark.repo_files('simple/laptop_apple_macbookpro.1')
 @pytest.mark.repo_dirs('very/very/very/deep/')
 @pytest.mark.parametrize('no_asset', no_assets)
-def test_edit_non_existing_file(repo, no_asset):
+def test_edit_non_existing_file(repo: Repo, no_asset: str) -> None:
     """
     Test the error behavior when called on non-existing files, that Onyo does
     not create the files, and the repository stays valid.
@@ -199,13 +245,9 @@ def test_edit_non_existing_file(repo, no_asset):
     repo.fsck()
 
 
-@pytest.mark.repo_files('laptop_apple_macbookpro.0',
-                        'simple/laptop_apple_macbookpro.1',
-                        's p a c e s/laptop_apple_macbookpro.2',
-                        's p a/c e s/laptop_apple_macbookpro.3',
-                        'very/very/very/deep/laptop_apple_macbookpro.4')
+@pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_continue_edit_no(repo, asset):
+def test_continue_edit_no(repo: Repo, asset: str) -> None:
     """
     Test that Onyo detects yaml-errors, and responds correctly if the user
     answers the "continue edit?" dialog with 'n' to discard the changes
@@ -224,12 +266,8 @@ def test_continue_edit_no(repo, asset):
     repo.fsck()
 
 
-@pytest.mark.repo_files('laptop_apple_macbookpro.0',
-                        'simple/laptop_apple_macbookpro.1',
-                        's p a c e s/laptop_apple_macbookpro.2',
-                        's p a/c e s/laptop_apple_macbookpro.3',
-                        'very/very/very/deep/laptop_apple_macbookpro.4')
-def test_edit_without_changes(repo):
+@pytest.mark.repo_files(*assets)
+def test_edit_without_changes(repo: Repo) -> None:
     """
     Test that onyo not fails when no changes were made
     """
@@ -237,19 +275,15 @@ def test_edit_without_changes(repo):
 
     # open assets with `cat`, but do not change them
     assets = [str(asset) for asset in repo.assets]
-    ret = subprocess.run(['onyo', 'edit'] + assets, capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', *assets], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
     repo.fsck()
 
 
-@pytest.mark.repo_files('laptop_apple_macbookpro.0',
-                        'simple/laptop_apple_macbookpro.1',
-                        's p a c e s/laptop_apple_macbookpro.2',
-                        's p a/c e s/laptop_apple_macbookpro.3',
-                        'very/very/very/deep/laptop_apple_macbookpro.4')
+@pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_edit_with_dot_dot(repo, asset):
+def test_edit_with_dot_dot(repo: Repo, asset: str) -> None:
     """
     Check that in an onyo repository it is possible to call `onyo edit` on an
     asset path that contains ".." leading outside and back into the repository.
@@ -258,14 +292,13 @@ def test_edit_with_dot_dot(repo, asset):
 
     # check edit with a path containing a ".." that leads outside the onyo repo
     # and then inside again
-    asset = Path(f"../{repo.opdir.name}/{asset}")
-    assert asset.is_file()
-    ret = subprocess.run(['onyo', 'edit', str(asset)], input='y', capture_output=True, text=True)
+    path = Path(f"../{repo.opdir.name}/{asset}")
+    assert path.is_file()
+    ret = subprocess.run(['onyo', 'edit', '--yes', asset], capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "Save changes?" in ret.stdout
     assert "+key: dot_dot" in ret.stdout
     assert not ret.stderr
 
     # verify that the change did happen and the repository is clean afterwards
-    assert 'key: dot_dot' in Path.read_text(asset)
+    assert 'key: dot_dot' in Path.read_text(path)
     repo.fsck()
