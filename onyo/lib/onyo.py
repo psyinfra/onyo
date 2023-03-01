@@ -92,6 +92,97 @@ class Repo:
         self._gitfiles = None
         self._templates = None
 
+    def generate_commit_message(self, message: list[str] = [], cmd: str = "",
+                                keys: list[str] = [], destination: str = "",
+                                MAX_LEN: int = 80) -> str:
+        """
+        Generate a commit subject and body suitable for use with git commit.
+
+        If `message` is given, the function uses the first element of it to
+        generate a message subject, and the following ones are joined for the
+        message body.
+
+        If no `message` is given, generate a default commit message based on
+        the other parameters given, and the `files staged` in the repository.
+        The paths for the message are shortened if needed, so that the resulting
+        message subject does not exceed `MAX_LEN`.
+
+        Adds a list of `changed files` with their path relative to the root of
+        the repository to the body of all commit messages.
+        """
+        message_subject = ""
+        message_body = ""
+        message_appendix = ""
+
+        # staged files and directories (without ".anchor") in alphabetical order
+        staged_changes = [x if not x.name == ".anchor" else x.parent
+                          for x in sorted(self.files_staged)]
+
+        if message:
+            message_subject = message[0][0]
+            message_body = self._n_join([x[0] for x in message[1:]])
+        else:
+            # get variables for the begin of the commit message `msg_dummy`
+            dest = None
+            keys_str = ""
+            if keys:
+                keys_str = f" ({','.join(str(x.split('=')[0]) for x in sorted(keys))})"
+            if destination:
+                dest = Path(self.opdir, destination).relative_to(self.root)
+            if dest and dest.name == ".anchor":
+                dest = dest.parent
+
+            # the `msg_dummy` is the way all automatically generated commit
+            # message headers (independently of later adding/shortening of
+            # information) begin, for all commands.
+            msg_dummy = f"{cmd} [{len(staged_changes)}]{keys_str}"
+            message_subject = self._generate_commit_message_subject(msg_dummy,
+                                                                    staged_changes,
+                                                                    dest, MAX_LEN)
+
+        message_appendix = self._n_join([str(x) for x in staged_changes])
+        return f"{message_subject}\n\n{message_body}\n\n{message_appendix}"
+
+    def _generate_commit_message_subject(self, msg_dummy: str,
+                                         staged_changes: list[Path],
+                                         destination: Optional[Path],
+                                         MAX_LEN: int = 80) -> str:
+        """
+        Generates "commit message subject" with the `msg_dummy` and the paths
+        from `staged_changes` and `destination`, and shortens the paths if the
+        message length exceeds the `MAX_LEN`.
+        """
+
+        # long message: full paths (relative to repo-root)
+        paths_str = ','.join([f"'{x}'" for x in staged_changes])
+        msg = f"{msg_dummy}: {paths_str}"
+        if destination:
+            msg = f"{msg} -> '{destination}'"
+
+        if len(msg) < MAX_LEN:
+            return msg
+
+        # medium message: highest level (e.g. dir or asset name)
+        paths = [x.name for x in staged_changes]
+        paths_str = ','.join(["'{}'".format(x) for x in paths])
+        msg = f"{msg_dummy}: {paths_str}"
+        if destination:
+            msg = f"{msg} -> '{destination.relative_to(destination.parent)}'"
+
+        if len(msg) < MAX_LEN:
+            return msg
+
+        # short message: "type" of devices in summary (e.g.  "laptop (2)")
+        paths = [x.name.split('_')[0] for x in staged_changes]
+        paths_str = ','.join(sorted(["'{} ({})'".format(x, paths.count(x))
+                                     for x in set(paths)]))
+        msg = f"{msg_dummy}: {paths_str}"
+        if destination:
+            msg = f"{msg} -> '{destination.relative_to(destination.parent)}'"
+
+        # return the shortest possible version of the commit message as fallback
+        return msg
+
     def restore(self) -> None:
         """
         Restore all staged files with uncommitted changes in the repository.
