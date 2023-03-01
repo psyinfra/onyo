@@ -205,6 +205,20 @@ def setup_parser():
         help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_edit.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence messages to stdout (does not suppress interactive editors; requires the --yes flag)'
+    )
+    cmd_edit.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_edit.add_argument(
         'asset',
         metavar='ASSET',
         nargs='+',
