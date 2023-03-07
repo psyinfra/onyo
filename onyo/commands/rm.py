@@ -1,6 +1,7 @@
 import sys
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
+from onyo.commands.edit import request_user_response
 
 
 def rm(args, opdir: str) -> None:
@@ -33,11 +34,9 @@ def rm(args, opdir: str) -> None:
         print('The following will be deleted:\n' +
               '\n'.join(dryrun_list))
 
-        if not args.yes:
-            response = input('Delete assets? (y/N) ')
-            if response not in ['y', 'Y', 'yes']:
-                print('Nothing was deleted.')
-                sys.exit(0)
+        if not args.yes and not request_user_response("Save changes? No discards all changes. (y/n) "):
+            print('Nothing was deleted.')
+            sys.exit(0)
 
     try:
         repo.rm(args.path)

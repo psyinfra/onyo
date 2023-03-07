@@ -24,7 +24,7 @@ def test_mv_interactive_missing_y(repo: Repo) -> None:
     """
     ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'], capture_output=True, text=True)
     assert ret.returncode == 1
-    assert "Move assets? (y/N) " in ret.stdout
+    assert "Save changes? No discards all changes. (y/n) " in ret.stdout
     assert ret.stderr
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
@@ -39,7 +39,7 @@ def test_mv_interactive_abort(repo: Repo) -> None:
     """
     ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'], input='n', capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "Move assets? (y/N) " in ret.stdout
+    assert "Save changes? No discards all changes. (y/n) " in ret.stdout
     assert not ret.stderr
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
@@ -54,7 +54,7 @@ def test_mv_interactive(repo: Repo) -> None:
     """
     ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'], input='y', capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "Move assets? (y/N) " in ret.stdout
+    assert "Save changes? No discards all changes. (y/n) " in ret.stdout
     assert not ret.stderr
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
@@ -99,7 +99,7 @@ def test_mv_yes(repo: Repo) -> None:
     ret = subprocess.run(['onyo', 'mv', '--yes', 'subdir/laptop_apple_macbook.abc123', './'], capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be moved:" in ret.stdout
-    assert "Move assets? (y/N) " not in ret.stdout
+    assert "Save changes? No discards all changes. (y/n) " not in ret.stdout
     assert not ret.stderr
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()

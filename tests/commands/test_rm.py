@@ -24,7 +24,7 @@ def test_rm_interactive_missing_y(repo: Repo) -> None:
     """
     ret = subprocess.run(['onyo', 'rm', *assets], capture_output=True, text=True)
     assert ret.returncode == 1
-    assert "Delete assets? (y/N) " in ret.stdout
+    assert "Save changes? No discards all changes. (y/n) " in ret.stdout
     assert ret.stderr
 
     # verify no changes were made and the repository is in a clean state
@@ -40,7 +40,7 @@ def test_rm_interactive_abort(repo: Repo) -> None:
     """
     ret = subprocess.run(['onyo', 'rm', *assets], input='n', capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "Delete assets? (y/N) " in ret.stdout
+    assert "Save changes? No discards all changes. (y/n) " in ret.stdout
     assert not ret.stderr
 
     # verify no changes were made and the repository is in a clean state
@@ -57,7 +57,7 @@ def test_rm_interactive(repo: Repo, asset: str) -> None:
     """
     ret = subprocess.run(['onyo', 'rm', asset], input='y', capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "Delete assets? (y/N) " in ret.stdout
+    assert "Save changes? No discards all changes. (y/n) " in ret.stdout
     assert not ret.stderr
 
     # verify deleting was successful and the repository is in a clean state
