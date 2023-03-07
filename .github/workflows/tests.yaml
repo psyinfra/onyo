@@ -36,7 +36,9 @@ jobs:
         pyre --noninteractive check
     - name: Test with pytest and collect coverage
       run: |
+        mkdir /tmp/onyo-tmpfs
+        sudo mount -t tmpfs -o size=1G tmpfs /tmp/onyo-tmpfs
         export REPO_ROOT=$PWD
-        pytest -vv --cov
+        pytest -vv --cov --basetemp=/tmp/onyo-tmpfs/run
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
