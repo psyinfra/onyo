@@ -87,9 +87,9 @@ cd "$DEMO_DIR"
 onyo init
 
 # setup basic directory structure
-onyo mkdir warehouse
-onyo mkdir recycling
-onyo mkdir repair
+onyo mkdir --yes warehouse
+onyo mkdir --yes recycling
+onyo mkdir --yes repair
 
 # import some existing hardware
 # TSV files can be very useful when adding large amounts of assets
@@ -113,7 +113,7 @@ onyo new -y --path warehouse/headphones_JBL_pro.ph9527
 onyo rm -y warehouse/headphones_JBL_pro.ph9527
 
 # a few new users join
-onyo mkdir "ethics/Max Mustermann" "ethics/Achilles Book"
+onyo mkdir --yes "ethics/Max Mustermann" "ethics/Achilles Book"
 
 # assign equipment to Max and Achilles
 onyo mv -y warehouse/laptop_apple_macbook.9r32he "ethics/Max Mustermann"
@@ -139,7 +139,7 @@ onyo new -y --keys RAM=8GB display=13.3 USB_A=2 USB_C=1 \
     --path warehouse/laptop_apple_macbook.{uef82b3,9il2b4,73b2cn}
 
 # Bingo Bob was hired; and new hardware was purchased for him
-onyo mkdir "accounting/Bingo Bob"
+onyo mkdir --yes "accounting/Bingo Bob"
 onyo new -y --keys display=22.0 --path warehouse/monitor_dell_PH123.86JZho
 onyo new -y --keys RAM=8GB display=13.3 USB_A=2 --path warehouse/laptop_apple_macbook.oiw629
 onyo new -y --path warehouse/headphones_apple_airpods.uzl8e1
@@ -154,13 +154,13 @@ onyo mv -y ethics/Max\ Mustermann/laptop_apple_macbook.9r32he recycling
 onyo mv -y warehouse/laptop_apple_macbook.uef82b3 ethics/Max\ Mustermann/
 
 # a new group is created ("management"); transfer people to their new group
-onyo mkdir "management"
+onyo mkdir --yes "management"
 onyo mv -y "ethics/Max Mustermann" management
-onyo mkdir "management/Alice Wonder"
+onyo mkdir --yes "management/Alice Wonder"
 onyo new -y --keys RAM=8GB display=13.3 USB_A=2 --path "management/Alice Wonder/laptop_apple_macbook.83hd0"
 
 # Theo joins; assign them a laptop from the warehouse
-onyo mkdir "ethics/Theo Turtle"
+onyo mkdir --yes "ethics/Theo Turtle"
 onyo mv -y warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Theo Turtle"
 
 # Max retired; return all of his hardware and delete his directory

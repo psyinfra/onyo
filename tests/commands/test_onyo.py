@@ -11,7 +11,8 @@ variants = [
 @pytest.mark.repo_dirs('just-a-dir')
 @pytest.mark.parametrize('variant', variants)
 def test_onyo_debug(repo, variant):
-    ret = subprocess.run(['onyo', variant, 'mkdir', f'flag{variant}'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', variant, 'mkdir', '--yes', f'flag{variant}'],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert 'DEBUG:onyo' in ret.stderr
 

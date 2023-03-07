@@ -1,6 +1,7 @@
 import sys
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
+from onyo.commands.edit import request_user_response
 
 
 def mkdir(args, opdir):
@@ -22,7 +23,18 @@ def mkdir(args, opdir):
 
     try:
         repo.mkdir(args.directory)
-        repo.commit(repo.generate_commit_message(message=args.message,
-                                                 cmd="mkdir"))
     except (FileExistsError, OnyoProtectedPathError):
         sys.exit(1)
+
+    # commit changes
+    staged = sorted(repo.files_staged)
+    if not args.quiet:
+        print("The following directories will be created:")
+        print(repo._n_join(staged))
+    if args.yes or request_user_response("Save changes? No discards all changes. (y/n) "):
+        repo.commit(repo.generate_commit_message(message=args.message,
+                                                 cmd="mkdir"))
+    else:
+        repo.restore()
+        if not args.quiet:
+            print('No assets updated.')

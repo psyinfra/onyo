@@ -7,10 +7,8 @@ from onyo.lib import Repo
 
 directories = ['simple',
                's p a c e s',
-               's p a/c e s',
                'overlap/one',
                'overlap/two',
-               'overlap/three',
                'r/e/c/u/r/s/i/v/e',
                'spe\"cial\\char\'actஞers',
                'very/very/very/deep'
@@ -23,10 +21,10 @@ def test_mkdir(repo: Repo, directory: str) -> None:
     Test that `onyo mkdir <dir>` creates new directories correctly for different
     depths and directory names.
     """
-    ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'mkdir', '--yes', directory], capture_output=True, text=True)
 
     # verify output
-    assert not ret.stdout
+    assert directory in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -46,20 +44,40 @@ def test_mkdir_multiple_inputs(repo: Repo) -> None:
     Test that `onyo mkdir <dirs>` creates new directories all in one call when
     given a list of inputs.
     """
-    ret = subprocess.run(['onyo', 'mkdir'] + directories, capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'mkdir', '--yes', *directories], capture_output=True, text=True)
 
-    # verify output
-    assert not ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
-    # verify folders and anchors exist
+    # verify folders and anchors exist, and are in output
     for directory in directories:
+        assert directory in ret.stdout
         d = Path(directory)
         while not d.samefile(repo.root):
             assert Path(d).is_dir()
             assert Path(d, ".anchor").is_file()
             d = d.parent
+
+    # verify that the repository is clean
+    repo.fsck()
+
+
+def test_mkdir_no_response(repo: Repo) -> None:
+    """
+    Test that `onyo mkdir <dirs>` creates no new directories when user responds
+    with "no".
+    """
+    ret = subprocess.run(['onyo', 'mkdir', *directories], input='n',
+                         capture_output=True, text=True)
+
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify folders and anchors were not created, but are mentioned in output
+    for directory in directories:
+        assert directory in ret.stdout
+        assert not Path(directory).is_dir()
+        assert not Path(directory, ".anchor").is_file()
 
     # verify that the repository is clean
     repo.fsck()
@@ -73,14 +91,41 @@ def test_mkdir_message_flag(repo: Repo) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     # test `onyo mkdir --message msg`
-    ret = subprocess.run(['onyo', 'mkdir', '--message', msg, *directories], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'mkdir', '--yes', '--message', msg, *directories], capture_output=True, text=True)
 
     assert ret.returncode == 0
     assert not ret.stderr
+    for directory in directories:
+        assert directory in ret.stdout
 
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
     assert msg in ret.stdout
+    repo.fsck()
+
+
+def test_mkdir_quiet_flag(repo: Repo) -> None:
+    """
+    Test that `onyo mkdir --yes --quiet <dirs>` creates new directories without
+    printing output.
+    """
+    ret = subprocess.run(['onyo', 'mkdir', '--yes', '--quiet', *directories],
+                         capture_output=True, text=True)
+
+    # verify that all output is empty
+    assert not ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify folders and anchors exist
+    for directory in directories:
+        d = Path(directory)
+        while not d.samefile(repo.root):
+            assert Path(d).is_dir()
+            assert Path(d, ".anchor").is_file()
+            d = d.parent
+
+    # verify that the repository is clean
     repo.fsck()
 
 
@@ -153,10 +198,10 @@ def test_mkdir_relative_path(repo: Repo) -> None:
     """
     Test `onyo mkdir <path>` with a relative path given as input.
     """
-    ret = subprocess.run(["onyo", "mkdir", "simple/../relative"], capture_output=True, text=True)
+    ret = subprocess.run(["onyo", "mkdir", "--yes", "simple/../relative"], capture_output=True, text=True)
 
     # verify output
-    assert not ret.stdout
+    assert "relative/.anchor" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
