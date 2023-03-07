@@ -17,7 +17,8 @@ setup(
             'flake8',
             'pyre-check',
             'pytest',
-            'pytest-cov'
+            'pytest-cov',
+            'pytest-randomly'
         ],
         'docs': [
             'sphinx>=4.3.0',
