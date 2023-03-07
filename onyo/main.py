@@ -197,6 +197,28 @@ def setup_parser():
     )
     cmd_edit.set_defaults(run=commands.edit)
     cmd_edit.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_edit.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence messages to stdout (does not suppress interactive editors; requires the --yes flag)'
+    )
+    cmd_edit.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
+    )
+    cmd_edit.add_argument(
         'asset',
         metavar='ASSET',
         nargs='+',
@@ -266,6 +288,14 @@ def setup_parser():
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
     cmd_mkdir.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_mkdir.add_argument(
         'directory',
         metavar='DIR',
         nargs='+',
@@ -282,6 +312,14 @@ def setup_parser():
         help='move an asset'
     )
     cmd_mv.set_defaults(run=commands.mv)
+    cmd_mv.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
     cmd_mv.add_argument(
         '-q', '--quiet',
         required=False,
@@ -319,6 +357,14 @@ def setup_parser():
         help='create a new asset'
     )
     cmd_new.set_defaults(run=commands.new)
+    cmd_new.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
     cmd_new.add_argument(
         '-t', '--template',
         metavar='TEMPLATE',
@@ -375,6 +421,14 @@ def setup_parser():
     )
     cmd_rm.set_defaults(run=commands.rm)
     cmd_rm.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_rm.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,
@@ -412,6 +466,14 @@ def setup_parser():
         required=False,
         default=None,
         help='descend at most "N" levels of directories below the starting-point'
+    )
+    cmd_set.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_set.add_argument(
         '-n', "--dry-run",
@@ -510,6 +572,14 @@ def setup_parser():
         required=False,
         default=None,
         help='descend at most "N" levels of directories below the starting-point'
+    )
+    cmd_unset.add_argument(
+        '-m', '--message',
+        metavar='MESSAGE',
+        nargs=1,
+        action='append',
+        type=str,
+        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_unset.add_argument(
         '-n', "--dry-run",

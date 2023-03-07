@@ -108,6 +108,12 @@ def edit(args, opdir: str) -> None:
     and return to the original state.
     """
     repo = None
+
+    # check flags for conflicts
+    if args.quiet and not args.yes:
+        print('The --quiet flag requires --yes.', file=sys.stderr)
+        sys.exit(1)
+
     try:
         repo = Repo(opdir)
         # "onyo fsck" is intentionally not run here.
@@ -129,14 +135,18 @@ def edit(args, opdir: str) -> None:
             If user wants to discard changes, restore the asset's state
             """
             repo._git(['restore', str(asset)])
-            print(f"'{asset}' not updated.")
+            if not args.quiet:
+                print(f"'{asset}' not updated.")
 
     # commit changes
     staged = sorted(repo.files_staged)
     if staged:
-        print(repo._diff_changes())
-        if request_user_response("Save changes? No discards all changes. (y/n) "):
-            repo.commit('edit asset(s).', staged)
+        if not args.quiet:
+            print(repo._diff_changes())
+        if args.yes or request_user_response("Save changes? No discards all changes. (y/n) "):
+            repo.commit(repo.generate_commit_message(message=args.message,
+                                                     cmd="edit"))
         else:
             repo.restore()
-            print('No assets updated.')
+            if not args.quiet:
+                print('No assets updated.')

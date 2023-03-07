@@ -61,7 +61,9 @@ def unset(args, opdir: str) -> None:
     staged = sorted(repo.files_staged)
     if staged:
         if args.yes or request_user_response("Update assets? (y/n) "):
-            repo.commit('remove key(s)', staged)
+            repo.commit(repo.generate_commit_message(message=args.message,
+                                                     cmd="unset",
+                                                     keys=args.keys))
         else:
             repo.restore()
             # when names were changed, the first restoring just brings
