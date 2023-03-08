@@ -425,7 +425,7 @@ def test_Repo_opdir_child(tmp_path):
     ret = subprocess.run(['onyo', 'init', 'opdir-child'])
     assert ret.returncode == 0
     os.chdir('opdir-child')
-    ret = subprocess.run(['onyo', 'mkdir', '1/2/3/4/5/6'])
+    ret = subprocess.run(['onyo', 'mkdir', '--yes', '1/2/3/4/5/6'])
     assert ret.returncode == 0
 
     # test
@@ -480,7 +480,7 @@ def test_Repo_root_child(tmp_path):
     ret = subprocess.run(['onyo', 'init', 'root-child'])
     assert ret.returncode == 0
     os.chdir('root-child')
-    ret = subprocess.run(['onyo', 'mkdir', '1/2/3/4/5/6'])
+    ret = subprocess.run(['onyo', 'mkdir', '--yes', '1/2/3/4/5/6'])
     assert ret.returncode == 0
 
     # test

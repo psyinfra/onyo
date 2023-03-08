@@ -202,7 +202,7 @@ def setup_parser():
         nargs=1,
         action='append',
         type=str,
-        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_edit.add_argument(
         '-q', '--quiet',
@@ -293,7 +293,21 @@ def setup_parser():
         nargs=1,
         action='append',
         type=str,
-        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+    )
+    cmd_mkdir.add_argument(
+        '-q', '--quiet',
+        required=False,
+        default=False,
+        action='store_true',
+        help='silence messages to stdout; requires the --yes flag'
+    )
+    cmd_mkdir.add_argument(
+        '-y', '--yes',
+        required=False,
+        default=False,
+        action='store_true',
+        help='respond "yes" to any prompts'
     )
     cmd_mkdir.add_argument(
         'directory',
@@ -318,7 +332,7 @@ def setup_parser():
         nargs=1,
         action='append',
         type=str,
-        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_mv.add_argument(
         '-q', '--quiet',
@@ -363,7 +377,7 @@ def setup_parser():
         nargs=1,
         action='append',
         type=str,
-        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_new.add_argument(
         '-t', '--template',
@@ -426,7 +440,7 @@ def setup_parser():
         nargs=1,
         action='append',
         type=str,
-        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_rm.add_argument(
         '-q', '--quiet',
@@ -473,7 +487,7 @@ def setup_parser():
         nargs=1,
         action='append',
         type=str,
-        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_set.add_argument(
         '-n', "--dry-run",
@@ -579,7 +593,7 @@ def setup_parser():
         nargs=1,
         action='append',
         type=str,
-        help='Use the given <msg> as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
     )
     cmd_unset.add_argument(
         '-n', "--dry-run",

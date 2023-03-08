@@ -1,6 +1,7 @@
 import sys
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
+from onyo.commands.edit import request_user_response
 
 
 def mv(args, opdir: str) -> None:
@@ -33,11 +34,9 @@ def mv(args, opdir: str) -> None:
         print('The following will be moved:\n' +
               '\n'.join(f"'{x[0]}' -> '{x[1]}'" for x in dryrun_list))
 
-        if not args.yes:
-            response = input('Move assets? (y/N) ')
-            if response not in ['y', 'Y', 'yes']:
-                print('Nothing was moved.')
-                sys.exit(0)
+        if not args.yes and not request_user_response("Save changes? No discards all changes. (y/n) "):
+            print('Nothing was moved.')
+            sys.exit(0)
 
     try:
         repo.mv(args.source, args.destination)
