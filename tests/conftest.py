@@ -23,6 +23,7 @@ def repo(tmp_path, monkeypatch, request):
     repo_path = Path(tmp_path)
     dirs = set()
     files = set()
+    contents = list()
 
     # initialize repo
     repo_ = Repo(repo_path, init=True)
@@ -37,6 +38,14 @@ def repo(tmp_path, monkeypatch, request):
     if m:
         dirs = set(m.args)
 
+    # collect contents to populate the repo
+    m = request.node.get_closest_marker('repo_contents')
+    if m:
+        contents = list(m.args)
+
+    # collect files from contents list too
+    files |= {Path(repo_path, x[0]) for x in contents}
+
     # collect dirs from files list too
     dirs |= {x.parent for x in files if not x.parent.exists()}
 
@@ -49,6 +58,9 @@ def repo(tmp_path, monkeypatch, request):
         i.touch()
 
     if files:
+        if contents:
+            for file in contents:
+                Path(repo_path, file[0]).write_text(file[1])
         repo_.add(files)
         repo_.commit('populate files for tests', files)
 
