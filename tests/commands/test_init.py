@@ -36,4 +36,4 @@ def test_explicit(tmp_path):
     ret = subprocess.run(["onyo", "init", repo_path])
 
     assert ret.returncode == 0
-    assert fully_populated_dot_onyo()
+    assert fully_populated_dot_onyo(repo_path)
