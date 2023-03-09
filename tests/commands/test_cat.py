@@ -1,71 +1,63 @@
 import subprocess
-from pathlib import Path
-import pytest
-from onyo import OnyoInvalidRepoError
 
-variants = [
-    'file',
-    'dir/file',
-    's p a c e s',
-    'd i r/s p a c e s'
-]
-@pytest.mark.repo_dirs('dir', 'd i r')
-@pytest.mark.parametrize('variant', variants)
-def test_single(repo, variant):
+from onyo.lib import Repo, OnyoInvalidRepoError
+import pytest
+
+files = ['laptop_apple_macbookpro',
+         'lap top_ap ple_mac book pro']
+
+directories = ['.',
+               's p a c e s',
+               'r/e/c/u/r/s/i/v/e',
+               'overlap/one',
+               'overlap/two',
+               'very/very/very/deep'
+               ]
+
+assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+
+content_dict = {"one_key": "one_value",
+                "two_key": "two_value",
+                "three_key": "three_value"}
+
+content_str = "\n".join([f"{elem}: {content_dict.get(elem)}"
+                         for elem in content_dict]) + "\n"
+
+contents = [[x, content_str] for x in assets]
+
+
+@pytest.mark.repo_contents(*contents)
+@pytest.mark.parametrize('asset', assets)
+def test_cat(repo: Repo, asset: str) -> None:
     """
     Test that a single file is cat successfully, and that stdout matches file
     content.
     """
-    name = variant
-    content = "---\nRAM:\nSize:\nUSB:\n"
-
-    # add file
-    Path(name).write_text(content)
-    repo.add(name)
-    repo.commit('populate for tests')
-
-    # test
-    ret = subprocess.run(["onyo", "cat", name], capture_output=True, text=True)
+    ret = subprocess.run(["onyo", "cat", asset], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
-    assert ret.stdout == content
+    assert content_str == ret.stdout
 
 
-@pytest.mark.repo_dirs('dir')
-def test_multiple(repo):
+@pytest.mark.repo_contents(*contents)
+def test_cat_multiple_inputs(repo: Repo) -> None:
     """
     Test that multiple files are cat successfully, and that stdout matches file
     content.
     """
-    name_1 = "one"
-    content_1 = "---\nRAM: 1\nSize: 1\nUSB: 1\n"
-    name_2 = "dir/two"
-    content_2 = "---\nRAM: 2\nSize: 2\nUSB: 2\n"
-    name_3 = "t h r e e"
-    content_3 = "---\nRAM: 3\nSize: 3\nUSB: 3\n"
-
-    # add files
-    Path(name_1).write_text(content_1)
-    Path(name_2).write_text(content_2)
-    Path(name_3).write_text(content_3)
-    repo.add([name_1, name_2, name_3])
-    repo.commit('populate for tests')
-
-    # test
-    ret = subprocess.run(["onyo", "cat", name_1, name_2, name_3], capture_output=True, text=True)
+    ret = subprocess.run(["onyo", "cat", *assets], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
-    assert ret.stdout == content_1 + content_2 + content_3
+    assert ret.stdout.count(content_str) == len(assets)
 
 
-variants = [
-    'does-not-exist',
-    'dir/does-not-exist',
-    'does/not-exist'
-]
-@pytest.mark.repo_files('one', 'dir/two')
-@pytest.mark.parametrize('variant', variants)
-def test_absent_path(repo, variant):
+@pytest.mark.repo_contents(*contents)
+@pytest.mark.parametrize('variant', ['does_not_exist.test',
+                                     's p a c e s/does_not_exist.test',
+                                     'r/e/c/u/r/s/i/v/e/does_not_exist.test'
+                                     ]
+                         )
+def test_cat_non_existing_path(repo: Repo, variant: str) -> None:
     """
     Test that cat fails for a path that doesn't exist.
     """
@@ -75,92 +67,91 @@ def test_absent_path(repo, variant):
     assert ret.stderr
 
 
-variants = {  # pyre-ignore[9]
-    'first': ['does-not-exist', 'one', 'dir/two'],
-    'middle': ['one', 'does-not-exist', 'dir/two'],
-    'last': ['one', 'dir/two', 'does-not-exist'],
-}
-@pytest.mark.repo_files('one', 'dir/two')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_multiple_with_missing(repo, variant):
+@pytest.mark.repo_files('one_that_exists.test', 'dir/two_that_exists.test')
+@pytest.mark.parametrize('variant', [
+    ['does_not_exist.test', 'one_that_exists.test', 'dir/two_that_exists.test'],
+    ['one_that_exists.test', 'does_not_exist.test', 'dir/two_that_exists.test'],
+    ['one_that_exists.test', 'dir/two_that_exists.test', 'does_not_exist.test']]
+)
+def test_cat_multiple_paths_missing(repo: Repo, variant: list[str]) -> None:
     """
     Test that cat fails with multiple paths if at least one doesn't exist.
     """
-    ret = subprocess.run(['onyo', 'cat'] + variant, capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat', *variant], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
 
 
-@pytest.mark.repo_dirs('dir')
-def test_not_a_file(repo):
+@pytest.mark.repo_contents(*contents)
+@pytest.mark.parametrize('directory', directories)
+def test_cat_error_with_directory(repo: Repo, directory: str) -> None:
     """
     Test that cat fails if path provided not a file.
     """
-    ret = subprocess.run(['onyo', 'cat', 'dir'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat', directory], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
 
 
-def test_same_target(repo):
+@pytest.mark.repo_contents(*contents)
+@pytest.mark.parametrize('asset', assets)
+def test_same_target(repo: Repo, asset: str) -> None:
     """
     Test that cat succeeds if the same path is provided more than once.
     """
-    name = "same_target"
-    content = "---\nRAM:\nSize:\nUSB:\n"
-
-    # add file
-    Path(name).write_text(content)
-    repo.add(name)
-    repo.commit('populate for tests')
-
-    # test
-    ret = subprocess.run(['onyo', 'cat', name, name], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat', asset, asset], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
-    assert ret.stdout == content + content
+    assert ret.stdout == f"{content_str}{content_str}"
 
 
-def test_no_trailing_newline(repo):
+@pytest.mark.repo_contents(*[["no_trailing_newline.test",
+                              "---\nRAM:\nSize:\nUSB:"]])
+@pytest.mark.parametrize('variant', [["no_trailing_newline.test",
+                                      "---\nRAM:\nSize:\nUSB:"]])
+def test_no_trailing_newline(repo: Repo, variant: list[str]) -> None:
     """
-    Test that cat outputs the file content exactly, and doesn't add any newlines
-    or other characters.
+    Test that `onyo cat` outputs the file content exactly, and doesn't add any
+    newlines or other characters.
     """
-    name = "no_trailing_newline"
-    content = "---\nRAM:\nSize:\nUSB:"
-
-    # add file
-    Path(name).write_text(content)
-    repo.add(name)
-    repo.commit('populate for tests')
-
     # test
-    ret = subprocess.run(['onyo', 'cat', name], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat', variant[0]], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
-    assert ret.stdout == content
+    assert ret.stdout == variant[1]
 
 
-def test_invalid_yaml(repo):
+@pytest.mark.repo_files(*assets)
+def test_no_trailing_newline_with_many_empty_assets(repo: Repo) -> None:
     """
-    Test that cat fails for a file with invalid yaml content.
+    Test that `onyo cat ASSET ASSET [...]` does not print empty lines when given
+    a list of empty files.
+
+    Because `onyo cat` uses `print(path.read_text(), end='')` this test
+    verifies that empty assets do not print empty new lines.
     """
-    # create file with invalid yaml content
-    name = "bad_yaml"
-    content = "I: \nam:bad:\nbad:yaml\n"
+    ret = subprocess.run(['onyo', 'cat', *assets], capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    assert not ret.stdout
 
-    # add file
-    Path(name).write_text(content)
-    repo.add(name)
-    repo.commit('populate for tests')
 
+@pytest.mark.repo_contents(["bad_yaml_file.test", "I: \nam:bad:\nbad:yaml\n"])
+@pytest.mark.parametrize('variant',
+                         [["bad_yaml_file.test", "I: \nam:bad:\nbad:yaml\n"]])
+def test_invalid_yaml(repo: Repo, variant: list[str]) -> None:
+    """
+    Test that `onyo cat` fails for a file with invalid yaml content.
+    """
     # check that yaml is invalid
     with pytest.raises(OnyoInvalidRepoError):
         repo.fsck(['asset-yaml'])
 
     # test
-    ret = subprocess.run(['onyo', 'cat', name], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'cat', variant[0]],
+                         capture_output=True, text=True)
     assert ret.returncode == 1
     assert ret.stderr
     assert not ret.stdout
