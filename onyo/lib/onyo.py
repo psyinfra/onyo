@@ -435,6 +435,7 @@ class Repo:
         - "asset-yaml": loads each assets and checks if it's valid YAML
         - "asset-validity": loads each asset and validates the contents against
           the validation rulesets defined in ``.onyo/validation/``.
+        - "pseudo-keys": verifies that assets do not contain pseudo-key names
         """
         all_tests = {
             "clean-tree": self._fsck_clean_tree,
@@ -442,6 +443,7 @@ class Repo:
             "asset-unique": self._fsck_unique_assets,
             "asset-yaml": self._fsck_yaml,
             "asset-validity": self._fsck_validation,
+            "pseudo-keys": self._fsck_pseudo_keys,
         }
         if tests:
             # only known tests are accepted
@@ -505,6 +507,28 @@ class Repo:
                           self._n_join(untracked))
 
             log.error('Please commit all changes or add untracked files to .gitignore')
+
+            return False
+
+        return True
+
+    def _fsck_pseudo_keys(self) -> bool:
+        """
+        Check that no asset contains any pseudo-key names.
+        """
+        assets_failed = {}
+        pseudo_keys = ["type", "make", "model", "serial"]
+
+        for asset in self.assets:
+            violation_list = [x for x in pseudo_keys if x in self._read_asset(asset)]
+            if violation_list:
+                assets_failed[asset] = violation_list
+
+        if assets_failed:
+            log.error(f"Pseudo keys ({', '.join(pseudo_keys)}) are reserved for asset names, and are not allowed in asset files. The following assets contain pseudo keys:\n" +
+                      self._n_join([f'{asset}: ' +
+                                    ', '.join([k for k in assets_failed[asset]])
+                                    for asset in assets_failed]))
 
             return False
 

@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 
 import pytest
-from onyo import OnyoInvalidRepoError
-
+from onyo.lib import Repo, OnyoInvalidRepoError
 
 #
 # Generic
@@ -149,6 +148,62 @@ def test_fsck_yaml_invalid(caplog, repo):
     # TODO: assert 'asset-yaml' in caplog.text
     for i in files_to_mangle:
         assert i in caplog.text
+
+
+contents = ["type: value",
+            "make: value",
+            "model: value",
+            "serial: value",
+            "key: value\ntype: value\nfield: value"]
+@pytest.mark.parametrize('content', contents)
+def test_fsck_yaml_contains_pseudo_key(repo: Repo, caplog, content) -> None:
+    """
+    Test that the fsck fails when an asset contains a pseudo-key.
+    """
+    caplog.set_level(logging.INFO, logger='onyo')
+    test_asset = "laptop_apple_macbook.0"
+
+    # add an invalid pseudo key to an asset
+    Path(test_asset).write_text(content)
+    repo.add(test_asset)
+    repo.commit('Add asset with pseudo-key')
+
+    # test
+    with pytest.raises(OnyoInvalidRepoError):
+        repo.fsck(['pseudo-keys'])
+
+    # check log
+    assert test_asset in caplog.text
+    assert "contain pseudo keys" in caplog.text
+
+
+contents = ["key_one: type",
+            "key_two: make",
+            "key_three: model",
+            "key_four: serial",
+            "key_five: 'model: value'",
+            "key_type: key_six",
+            "key_serial: key_seven"]
+@pytest.mark.parametrize('content', contents)
+def test_fsck_yaml_allows_valid_keys(repo: Repo, caplog, content) -> None:
+    """
+    Test that the fsck does not fail when an asset contains a key, where a valid
+    key where just a part of it is a pseudo-key, and that pseudo-keys as values
+    are still allowed.
+    """
+    caplog.set_level(logging.INFO, logger='onyo')
+    test_asset = "laptop_apple_macbook.0"
+
+    # add an invalid pseudo key to an asset
+    Path(test_asset).write_text(content)
+    repo.add(test_asset)
+    repo.commit('Add asset with pseudo-key')
+
+    # test
+    repo.fsck(['pseudo-keys'])
+
+    # check log
+    assert not caplog.text
 
 
 #
