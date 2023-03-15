@@ -8,7 +8,7 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def sanitize_paths(paths, opdir):
+def sanitize_paths(paths: list[str], opdir: str) -> list[Path]:
     """
     Check and normalize a list of paths. If paths do not exist or are not files,
     print paths and exit with error.
@@ -48,11 +48,12 @@ def sanitize_paths(paths, opdir):
     return paths_to_cat
 
 
-def cat(args, opdir):
+def cat(args, opdir: str) -> None:
     """
     Print the contents of ``asset``\(s) to the terminal without parsing or
     validating the contents.
     """
+    repo = None
     try:
         repo = Repo(opdir)
         repo.fsck(['asset-yaml'])

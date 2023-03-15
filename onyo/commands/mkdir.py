@@ -4,7 +4,7 @@ from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 from onyo.commands.edit import request_user_response
 
 
-def mkdir(args, opdir):
+def mkdir(args, opdir: str) -> None:
     """
     Create ``directory``\(s). Intermediate directories will be created as needed
     (i.e. parent and child directories can be created in one call).
@@ -15,6 +15,7 @@ def mkdir(args, opdir):
     If the directory already exists, or the path is protected, Onyo will throw
     an error. All checks are performed before creating directories.
     """
+    repo = None
     try:
         repo = Repo(opdir)
         repo.fsck()
