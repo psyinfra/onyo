@@ -9,7 +9,7 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def sanitize_args(git_config_args):
+def sanitize_args(git_config_args: list[str]) -> list[str]:
     """
     Check the git config arguments against a list of conflicting options. If
     conflicts are present, the conflict list will be printed and will exit with
@@ -39,7 +39,7 @@ def sanitize_args(git_config_args):
     return git_config_args
 
 
-def config(args, opdir):
+def config(args, opdir: str) -> None:
     """
     Set, query, and unset Onyo repository configuration options. These options
     are stored in ``.onyo/config`` (which is tracked by git) and are shared with
@@ -70,6 +70,7 @@ def config(args, opdir):
 
         $ onyo config onyo.core.editor "vim"
     """
+    repo = None
     try:
         repo = Repo(opdir)
         repo.fsck(['asset-yaml'])

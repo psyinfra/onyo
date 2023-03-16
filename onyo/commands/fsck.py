@@ -3,7 +3,7 @@ import sys
 from onyo import Repo, OnyoInvalidRepoError
 
 
-def fsck(args, opdir):
+def fsck(args, opdir: str) -> None:
     """
     Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
@@ -19,6 +19,7 @@ def fsck(args, opdir):
     - "asset-validity": loads each asset and validates the contents against
       the validation rulesets defined in ``.onyo/validation/``.
     """
+    repo = None
     try:
         repo = Repo(opdir)
         repo.fsck()

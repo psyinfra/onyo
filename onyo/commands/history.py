@@ -11,7 +11,7 @@ logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def sanitize_path(path, opdir):
+def sanitize_path(path: str, opdir: str) -> Path:
     """
     Checks a path relative to opdir. If it does not exist, it will print an
     error and exit.
@@ -32,7 +32,7 @@ def sanitize_path(path, opdir):
     return full_path
 
 
-def get_history_cmd(interactive, repo: Repo):
+def get_history_cmd(interactive: bool, repo: Repo) -> str:
     """
     Get the command used to display history. The appropriate one is selected
     according to the interactive mode, and basic checks are performed for
@@ -61,7 +61,7 @@ def get_history_cmd(interactive, repo: Repo):
     return history_cmd
 
 
-def history(args, opdir):
+def history(args, opdir: str) -> None:
     """
     Display the history of an ``asset`` or ``directory``.
 
@@ -71,6 +71,7 @@ def history(args, opdir):
 
     The commands to display history are configurable using ``onyo config``.
     """
+    repo = None
     try:
         repo = Repo(opdir)
         repo.fsck(['asset-yaml'])
@@ -83,6 +84,7 @@ def history(args, opdir):
 
     # run it
     orig_cwd = os.getcwd()
+    status = 0
     try:
         os.chdir(opdir)
         status = os.system(f"{history_cmd} {quote(str(path))}")

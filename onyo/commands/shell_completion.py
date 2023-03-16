@@ -454,7 +454,7 @@ compdef _onyo onyo
         return case
 
 
-def shell_completion(args, opdir):
+def shell_completion(args, opdir: str) -> None:
     """
     Display a shell script for tab completion for Onyo.
 
