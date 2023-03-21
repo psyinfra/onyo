@@ -12,7 +12,7 @@ set -e
 ############
 readonly VERSION=1.0.0
 readonly SCRIPT_NAME=${0##*/}
-readonly SCRIPT_DIR=$(dirname $(realpath -e "$0"))
+readonly SCRIPT_DIR=$(dirname $(realpath "$0"))
 DEMO_DIR=''
 
 # set reproducible commit hashes
