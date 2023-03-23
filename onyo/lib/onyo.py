@@ -34,7 +34,6 @@ class Repo:
         self._assets = None
         self._dirs = None
         self._files = None
-        self._gitfiles = None
         self._templates = None
 
     @property
@@ -89,7 +88,6 @@ class Repo:
         self._assets = None
         self._dirs = None
         self._files = None
-        self._gitfiles = None
         self._templates = None
 
     def generate_commit_message(self, message: list[str] = [], cmd: str = "",
