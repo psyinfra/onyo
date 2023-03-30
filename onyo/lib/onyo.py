@@ -273,7 +273,8 @@ class Repo:
     #
     # HELPERS
     #
-    def _is_protected_path(self, path: Union[Path, str]) -> bool:
+    @staticmethod
+    def _is_protected_path(path: Union[Path, str]) -> bool:
         """
         Checks whether a path contains protected elements (.anchor, .git, .onyo).
         Returns True if it contains protected elements. Otherwise False.
@@ -287,7 +288,8 @@ class Repo:
 
         return False
 
-    def _n_join(self, to_join: Iterable) -> str:
+    @staticmethod
+    def _n_join(to_join: Iterable) -> str:
         """
         Convert an Iterable's contents to strings and join with newlines.
         """
@@ -629,7 +631,8 @@ class Repo:
 
         log.info(f'Initialized Onyo repository in {dot_onyo}/')
 
-    def _init_sanitize(self, directory: Union[Path, str]) -> Path:
+    @staticmethod
+    def _init_sanitize(directory: Union[Path, str]) -> Path:
         """
         Check the target path for viability as an init target.
 
@@ -1130,7 +1133,8 @@ class Repo:
 
         return "\n".join(diff).strip()
 
-    def _read_asset(self, asset: Path) -> dict:
+    @staticmethod
+    def _read_asset(asset: Path) -> dict:
         """
         Read and return the contents of an asset as a dictionary.
         """
@@ -1245,7 +1249,8 @@ class Repo:
 
             self._git(["mv", str(asset), str(new_name)])
 
-    def _write_asset(self, asset: Path, contents: dict) -> None:
+    @staticmethod
+    def _write_asset(asset: Path, contents: dict) -> None:
         """
         Write contents into an asset file.
         """
