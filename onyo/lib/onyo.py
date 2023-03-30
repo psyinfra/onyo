@@ -90,9 +90,10 @@ class Repo:
         self._files = None
         self._templates = None
 
-    def generate_commit_message(self, message: list[str] = [], cmd: str = "",
-                                keys: list[str] = [], destination: str = "",
-                                MAX_LEN: int = 80) -> str:
+    def generate_commit_message(
+            self, message: Union[list[str], None] = None, cmd: str = "",
+            keys: Union[list[str], None] = None, destination: str = "",
+            max_length: int = 80) -> str:
         """
         Generate a commit subject and body suitable for use with git commit.
 
@@ -108,6 +109,9 @@ class Repo:
         Adds a list of `changed files` with their path relative to the root of
         the repository to the body of all commit messages.
         """
+        message = [] if message is None else message
+        keys = [] if keys is None else keys
+
         message_subject = ""
         message_body = ""
         message_appendix = ""
@@ -134,17 +138,16 @@ class Repo:
             # message headers (independently of later adding/shortening of
             # information) begin, for all commands.
             msg_dummy = f"{cmd} [{len(staged_changes)}]{keys_str}"
-            message_subject = self._generate_commit_message_subject(msg_dummy,
-                                                                    staged_changes,
-                                                                    dest, MAX_LEN)
+            message_subject = self._generate_commit_message_subject(
+                msg_dummy, staged_changes, dest, max_length)
 
         message_appendix = self._n_join([str(x) for x in staged_changes])
         return f"{message_subject}\n\n{message_body}\n\n{message_appendix}"
 
-    def _generate_commit_message_subject(self, msg_dummy: str,
-                                         staged_changes: list[Path],
-                                         destination: Optional[Path],
-                                         MAX_LEN: int = 80) -> str:
+    @staticmethod
+    def _generate_commit_message_subject(
+            msg_dummy: str, staged_changes: list[Path],
+            destination: Optional[Path], max_length: int = 80) -> str:
         """
         Generates "commit message subject" with the `msg_dummy` and the paths
         from `staged_changes` and `destination`, and shortens the paths if the
@@ -157,7 +160,7 @@ class Repo:
         if destination:
             msg = f"{msg} -> '{destination}'"
 
-        if len(msg) < MAX_LEN:
+        if len(msg) < max_length:
             return msg
 
         # medium message: highest level (e.g. dir or asset name)
@@ -167,7 +170,7 @@ class Repo:
         if destination:
             msg = f"{msg} -> '{destination.relative_to(destination.parent)}'"
 
-        if len(msg) < MAX_LEN:
+        if len(msg) < max_length:
             return msg
 
         # short message: "type" of devices in summary (e.g.  "laptop (2)")
