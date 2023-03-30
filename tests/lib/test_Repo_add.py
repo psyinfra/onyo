@@ -1,19 +1,18 @@
 from pathlib import Path
+from typing import Collection, Dict, Iterable, List, Union
+
 import pytest
+from onyo import Repo
 
 
-variants = {
-    'str': 'single-file',
-    'Path': Path('single-file'),
-    'list-str': ['single-file'],
-    'list-Path': [Path('single-file')],
-    'set-str': {'single-file'},
-    'set-Path': {Path('single-file')},
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_args_single_file(repo, variant):
+@pytest.mark.parametrize('variant', [
+    'single-file', Path('single-file'), ['single-file'], [Path('single-file')],
+    {'single-file'}, {Path('single-file')}])
+def test_add_args_single_file(
+        repo: Repo,
+        variant: Union[Iterable[Union[Path, str]], Path, str]) -> None:
     """
-    Single file across types.
+    Test `Repo.add()` for a single file with different types.
     """
     Path('single-file').touch()
 
@@ -22,18 +21,16 @@ def test_add_args_single_file(repo, variant):
     assert Path('single-file') in repo.files_staged
 
 
-variants = {  # pyre-ignore[9]
-    'list-str': ['one', 'two', 'three'],
-    'list-Path': [Path('one'), Path('two'), Path('three')],
-    'list-mixed': ['one', Path('two'), 'three'],
-    'set-str': {'one', 'two', 'three'},
-    'set-Path': {Path('one'), Path('two'), Path('three')},
-    'set-mixed': {Path('one'), 'two', Path('three')},
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_args_multi_file(repo, variant):
+@pytest.mark.parametrize('variant', [
+    ['one', 'two', 'three'], [Path('one'), Path('two'), Path('three')],
+    ['one', Path('two'), 'three'], {'one', 'two', 'three'},
+    {Path('one'), Path('two'), Path('three')},
+    {Path('one'), 'two', Path('three')}])
+def test_add_args_multi_file(
+        repo: Repo,
+        variant: Union[Iterable[Union[Path, str]], Path, str]) -> None:
     """
-    Multiple files across types.
+    Test `Repo.add()` for multiple files with different types.
     """
     Path('one').touch()
     Path('two').touch()
@@ -46,19 +43,16 @@ def test_add_args_multi_file(repo, variant):
     assert Path('three') in repo.files_staged
 
 
-variants = {
-    'str': 'single-dir',
-    'Path': Path('single-dir'),
-    'list-str': ['single-dir'],
-    'list-Path': [Path('single-dir')],
-    'set-str': {'single-dir'},
-    'set-Path': {Path('single-dir')},
-}
 @pytest.mark.repo_dirs('single-dir')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_args_single_dir(repo, variant):
+@pytest.mark.parametrize('variant', [
+    'single-dir', Path('single-dir'), ['single-dir'], [Path('single-dir')],
+    {'single-dir'}, {Path('single-dir')}])
+def test_add_args_single_dir(
+        repo: Repo,
+        variant: Union[Iterable[Union[Path, str]], Path, str]) -> None:
     """
-    Single directory across types.
+    Test `Repo.add()` for a single directory containing files with different
+    types.
     """
     Path('single-dir/file').touch()
 
@@ -67,19 +61,17 @@ def test_add_args_single_dir(repo, variant):
     assert Path('single-dir/file') in repo.files_staged
 
 
-variants = {  # pyre-ignore[9]
-    'list-str': ['one', 'two', 'three'],
-    'list-Path': [Path('one'), Path('two'), Path('three')],
-    'list-mixed': ['one', Path('two'), 'three'],
-    'set-str': {'one', 'two', 'three'},
-    'set-Path': {Path('one'), Path('two'), Path('three')},
-    'set-mixed': {Path('one'), 'two', Path('three')},
-}
 @pytest.mark.repo_dirs('one', 'two', 'three')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_args_multi_dir(repo, variant):
+@pytest.mark.parametrize('variant', [
+    ['one', 'two', 'three'], [Path('one'), Path('two'), Path('three')],
+    ['one', Path('two'), 'three'], {'one', 'two', 'three'},
+    {Path('one'), Path('two'), Path('three')},
+    {Path('one'), 'two', Path('three')}])
+def test_add_args_multi_dir(
+        repo: Repo, variant: Collection[Union[Path, str]]) -> None:
     """
-    Multiple directories across types.
+    Test `Repo.add()` for multiple directories containing multiple files with
+    different types.
     """
     Path('one/file-one-A').touch()
     Path('one/file-one-B').touch()
@@ -97,17 +89,14 @@ def test_add_args_multi_dir(repo, variant):
     assert len(variant) * 2 == len(repo.files_staged)
 
 
-variants = {  # pyre-ignore[9]
-    'top': {'dirs': 'r', 'num': 4},
-    'deep': {'dirs': 'r/e/c/u/r/s/i/v/e', 'num': 2},
-    'overlap-same': {'dirs': ['r/e/c/u/r', 'r/e/c/u/r/s/i/v/e'], 'num': 2},
-    'overlap-more': {'dirs': ['r/e', 'r/e/c/u/r/s/i/v/e'], 'num': 4},
-}
 @pytest.mark.repo_dirs('r/e/c/u/r/s/i/v/e')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_dir_recursive(repo, variant):
+@pytest.mark.parametrize('variant', [
+    {'dirs': 'r', 'num': 4}, {'dirs': 'r/e/c/u/r/s/i/v/e', 'num': 2},
+    {'dirs': ['r/e/c/u/r', 'r/e/c/u/r/s/i/v/e'], 'num': 2},
+    {'dirs': ['r/e', 'r/e/c/u/r/s/i/v/e'], 'num': 4}])
+def test_add_dir_recursive(repo: Repo, variant: Dict) -> None:
     """
-    Recursive directories
+    Test `Repo.add()` for recursive directories.
     """
     Path('r/e/c/child-r-A').touch()
     Path('r/e/c/child-r-B').touch()
@@ -119,15 +108,12 @@ def test_add_dir_recursive(repo, variant):
     assert variant['num'] == len(repo.files_staged)
 
 
-variants = {
-    'single': ['o n e'],
-    'multi': ['o n e', 't w o', 'd i r/t h r e e'],
-}
 @pytest.mark.repo_dirs('d i r')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_spaces(repo, variant):
+@pytest.mark.parametrize('variant', [
+    ['o n e'], ['o n e', 't w o', 'd i r/t h r e e']])
+def test_add_spaces(repo: Repo, variant: Collection[Union[Path, str]]) -> None:
     """
-    Spaces.
+    Test `Repo.add()` for directories with spaces in their name.
     """
     Path('o n e').touch()
     Path('t w o').touch()
@@ -140,9 +126,9 @@ def test_add_spaces(repo, variant):
     assert len(variant) == len(repo.files_staged)
 
 
-def test_add_repeat(repo):
+def test_add_repeat(repo: Repo) -> None:
     """
-    Repeated target paths are OK.
+    Test that `Repo.add()` allows repeated adding of paths without failing.
     """
     Path('repeat-one').touch()
     Path('two').touch()
@@ -155,31 +141,26 @@ def test_add_repeat(repo):
     assert Path('three') in repo.files_staged
 
 
-variants = {
-    'file': 'unchanged-file',
-    'dir': 'unchanged-dir',
-    'mixed': ['unchanged-file', 'unchanged-dir'],
-}
 @pytest.mark.repo_dirs('unchanged-dir')
 @pytest.mark.repo_files('unchanged-file')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_unchanged(repo, variant):
+@pytest.mark.parametrize('variant', ['unchanged-file', 'unchanged-dir',
+                                     ['unchanged-file', 'unchanged-dir']])
+def test_add_unchanged(repo: Repo, variant: Union[str, List[str]]) -> None:
     """
-    Unchanged targets.
+    Test that `Repo.add()` does not fail on unchanged targets and
+    repo.files_staged does not wrongly contain those targets.
     """
     repo.add(variant)
     assert not repo.files_staged
 
 
-variants = {
-    'root': ['one', 'not-exist', 'dir/three'],
-    'subdir': ['one', 'two', 'dir/not-exist'],
-}
 @pytest.mark.repo_dirs('dir')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_add_not_exist(repo, variant):
+@pytest.mark.parametrize('variant', [
+    ['one', 'not-exist', 'dir/three'], ['one', 'two', 'dir/not-exist']])
+def test_add_not_exist(repo: Repo, variant: List[str]) -> None:
     """
-    Targets that don't exist.
+    Test that `Repo.add()` raises the correct exception on targets that don't
+    exist.
     """
     Path('one').touch()
     Path('two').touch()

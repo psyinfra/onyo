@@ -1,10 +1,11 @@
 from pathlib import Path
 
 import pytest
-from onyo import OnyoProtectedPathError
+from _pytest.logging import LogCaptureFixture
+from onyo import OnyoProtectedPathError, Repo
+from typing import List, Union
 
-
-def anchored_dir(directory):
+def anchored_dir(directory: str) -> bool:
     """
     Returns True if a directory exists and contains an .anchor file.
     Otherwise it returns False.
@@ -15,18 +16,13 @@ def anchored_dir(directory):
     return False
 
 
-variants = {
-    'str': 'one',
-    'Path': Path('one'),
-    'list-str': ['one'],
-    'list-Path': [Path('one')],
-    'set-str': {'one'},
-    'set-Path': {Path('one')},
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_mkdir_single(repo, variant):
+@pytest.mark.parametrize('variant', {
+    'str': 'one', 'Path': Path('one'), 'list-str': ['one'],
+    'list-Path': [Path('one')], 'set-str': {'one'}, 'set-Path': {Path('one')}
+}.values())
+def test_mkdir_single(repo: Repo, variant: Union[str, Path]) -> None:
     """
-    Single directory across types.
+    Test `Repo.mkdir()` with a single directory across types.
     """
     repo.mkdir(variant)
     assert anchored_dir('one')
@@ -40,18 +36,18 @@ def test_mkdir_single(repo, variant):
     repo.fsck(['anchors'])
 
 
-variants = {  # pyre-ignore[9]
+@pytest.mark.parametrize('variant', {
     'list-str': ['one', 'two', 'three'],
     'list-Path': [Path('one'), Path('two'), Path('three')],
     'list-mixed': ['one', Path('two'), 'three'],
     'set-str': {'one', 'two', 'three'},
     'set-Path': {Path('one'), Path('two'), Path('three')},
     'set-mixed': {Path('one'), 'two', Path('three')},
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_mkdir_multi(repo, variant):
+}.values())
+def test_mkdir_multiple_directories(repo: Repo,
+                                    variant: List[Union[str, Path]]) -> None:
     """
-    Multiple directories across types.
+    Test `Repo.mkdir()` with multiple directories at once across types.
     """
     repo.mkdir(variant)
     assert anchored_dir('one')
@@ -67,15 +63,11 @@ def test_mkdir_multi(repo, variant):
     repo.fsck(['anchors'])
 
 
-variants = {
-    'single': ['o n e'],
-    'multi': ['o n e', 't w o', 't h r e e'],
-    'subdir': ['s p a/c e s'],
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_mkdir_spaces(repo, variant):
+@pytest.mark.parametrize('variant', [
+    ['o n e'], ['o n e', 't w o', 't h r e e'], ['s p a/c e s']])
+def test_mkdir_spaces(repo: Repo, variant: List[str]) -> None:
     """
-    Spaces.
+    Test `Repo.mkdir()` with directories with spaces in their name.
     """
     repo.mkdir(variant)
     for i in variant:
@@ -90,9 +82,9 @@ def test_mkdir_spaces(repo, variant):
     repo.fsck(['anchors'])
 
 
-def test_mkdir_recursive(repo):
+def test_mkdir_recursive(repo: Repo) -> None:
     """
-    Recursive directories.
+    Test `Repo.mkdir()` with recursive directories.
     """
     repo.mkdir('r/e/c/u/r/s/i/v/e')
     assert anchored_dir('r')
@@ -114,12 +106,15 @@ def test_mkdir_recursive(repo):
     repo.fsck(['anchors'])
 
 
-variants = {
-    'implicit': ['overlap/one', 'overlap/two', 'overlap/three'],
-    'explicit': ['overlap', 'overlap/one', 'overlap/two', 'overlap/three']
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_mkdir_overlap(repo, variant):
+@pytest.mark.parametrize('variant', [
+    ['overlap/one', 'overlap/two', 'overlap/three'],
+    ['overlap', 'overlap/one', 'overlap/two', 'overlap/three']
+])
+def test_mkdir_overlap(repo: Repo, variant: List[str]) -> None:
+    """
+    Test that `Repo.mkdir()` correctly creates and anchors sub-directories when
+    some directories already exist.
+    """
     repo.mkdir(variant)
 
     assert anchored_dir('overlap')
@@ -140,17 +135,14 @@ def test_mkdir_overlap(repo, variant):
     repo.fsck(['anchors'])
 
 
-variants = [  # pyre-ignore[9]
-    '.onyo/protected',
-    '.git/protected',
-    'protected/.git',
-    'protected/.onyo',
-    'one/.anchor',
-]
-@pytest.mark.parametrize('variant', variants)
-def test_mkdir_protected(repo, variant):
+@pytest.mark.parametrize('variant', [
+    '.onyo/protected', '.git/protected', 'protected/.git', 'protected/.onyo',
+    'one/.anchor'
+])
+def test_mkdir_protected(repo: Repo, variant: str) -> None:
     """
-    Protected paths.
+    Test that `Repo.mkdir()` raises correct errors when called on
+    protected paths.
     """
     with pytest.raises(OnyoProtectedPathError):
         repo.mkdir(variant)
@@ -166,17 +158,15 @@ def test_mkdir_protected(repo, variant):
     repo.fsck(['anchors'])
 
 
-variants = [  # pyre-ignore[9]
-    '.onyo/protected',
-    '.git/protected',
-    'protected/.git',
-    'protected/.onyo',
-    'one/.anchor',
-]
-@pytest.mark.parametrize('variant', variants)
-def test_mkdir_protected_mixed(repo, variant, caplog):
+@pytest.mark.parametrize('variant', [
+    '.onyo/protected', '.git/protected', 'protected/.git', 'protected/.onyo',
+    'one/.anchor'
+])
+def test_mkdir_protected_mixed(caplog: LogCaptureFixture, repo: Repo,
+                               variant: str) -> None:
     """
-    Protected paths.
+    Test that `Repo.mkdir()` first checks all paths of a list and errors if some
+    are protected paths.
     """
     with pytest.raises(OnyoProtectedPathError):
         repo.mkdir(['valid-one', variant, 'valid-two'])
@@ -199,15 +189,12 @@ def test_mkdir_protected_mixed(repo, variant, caplog):
     repo.fsck(['anchors'])
 
 
-variants = [  # pyre-ignore[9]
-    'exists-dir',
-    'subdir/exists-dir',
-]
 @pytest.mark.repo_dirs('exists-dir', 'subdir/exists-dir')
-@pytest.mark.parametrize('variant', variants)
-def test_mkdir_exists_dir(repo, variant, caplog):
+@pytest.mark.parametrize('variant', ['exists-dir', 'subdir/exists-dir'])
+def test_mkdir_exists_dir(caplog: LogCaptureFixture, repo: Repo,
+                          variant: str) -> None:
     """
-    Cannot re-create an existing directory.
+    Test that `Repo.mkdir()` cannot re-create an existing directory.
     """
     with pytest.raises(FileExistsError):
         repo.mkdir(variant)
@@ -227,15 +214,12 @@ def test_mkdir_exists_dir(repo, variant, caplog):
     repo.fsck(['anchors'])
 
 
-variants = [  # pyre-ignore[9]
-    'exists-file',
-    'subdir/exists-subfile',
-]
 @pytest.mark.repo_files('exists-file', 'subdir/exists-subfile')
-@pytest.mark.parametrize('variant', variants)
-def test_mkdir_exists_file(repo, variant, caplog):
+@pytest.mark.parametrize('variant', ['exists-file', 'subdir/exists-subfile'])
+def test_mkdir_exists_file(caplog: LogCaptureFixture, repo: Repo,
+                           variant: str) -> None:
     """
-    Target directory cannot be a file.
+    Test that `Repo.mkdir()` does not except a file as target.
     """
     with pytest.raises(FileExistsError):
         repo.mkdir(variant)
@@ -254,16 +238,14 @@ def test_mkdir_exists_file(repo, variant, caplog):
     repo.fsck(['anchors'])
 
 
-variants = [  # pyre-ignore[9]
-    'exists-file',
-    'exists-dir',
-]
 @pytest.mark.repo_dirs('exists-dir')
 @pytest.mark.repo_files('exists-file')
-@pytest.mark.parametrize('variant', variants)
-def test_mkdir_exists_mixed(repo, variant, caplog):
+@pytest.mark.parametrize('variant', ['exists-file', 'exists-dir'])
+def test_mkdir_exists_mixed(caplog: LogCaptureFixture, repo: Repo,
+                            variant: str) -> None:
     """
-    Target directories must not exist.
+    Test that `Repo.mkdir()` raises the correct error if a target already
+    exists.
     """
     with pytest.raises(FileExistsError):
         repo.mkdir(['valid-one', variant, 'valid-two'])

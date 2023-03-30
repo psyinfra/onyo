@@ -1,6 +1,9 @@
 import subprocess
 from pathlib import Path
+from typing import Dict, List, Union
+
 import pytest
+from onyo import Repo
 
 
 def last_commit_message() -> str:
@@ -9,12 +12,11 @@ def last_commit_message() -> str:
     return ret.stdout
 
 
-variants = {
-    'str': 'normal title',
-    'int': 525600,
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_commit_title(repo, variant):
+@pytest.mark.parametrize('variant', {'normal title', 525600})
+def test_commit_title(repo: Repo, variant: Union[str, int]) -> None:
+    """
+    Test that `Repo.commit(<msg>)` works for commit messages of different types.
+    """
     Path('file').touch()
     repo.add('file')
 
@@ -23,21 +25,23 @@ def test_commit_title(repo, variant):
     msg = last_commit_message()
     assert f'{variant}\n' == msg
 
-
-variants = {  # pyre-ignore[9]
-    'str': {'args': ('title', 'a two line\ndescription'),
-            'output': 'title\n\n' + 'a two line\ndescription'},
-    'int': {'args': ('title', 525600),
-            'output': 'title\n\n' + '525600'},
-    'Path-rel': {'args': ('title', Path('file')),
-                 'output': 'title\n\n' + 'file'},
-    'Path-abs': {'args': ('title', Path('file').resolve()),
-                 'output': 'title\n\n' + str(Path('file').resolve())},
-    'multiple': {'args': ('title', 'paragraph one', 'paragraph two'),
-                 'output': 'title\n\n' + 'paragraph one\n\n' + 'paragraph two'},
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_commit_title_and_description(repo, variant):
+@pytest.mark.parametrize('variant', [
+    {'args': ('title', 'a two line\ndescription'),
+     'output': 'title\n\n' + 'a two line\ndescription'},
+    {'args': ('title', 525600),
+     'output': 'title\n\n' + '525600'},
+    {'args': ('title', Path('file')),
+     'output': 'title\n\n' + 'file'},
+    {'args': ('title', Path('file').resolve()),
+     'output': 'title\n\n' + str(Path('file').resolve())},
+    {'args': ('title', 'paragraph one', 'paragraph two'),
+     'output': 'title\n\n' + 'paragraph one\n\n' + 'paragraph two'},
+])
+def test_commit_title_and_description(repo: Repo, variant: Dict) -> None:
+    """
+    Test that `Repo.commit(<msg>)` works with different arguments of
+    different types.
+    """
     Path('file').touch()
     repo.add('file')
 
@@ -47,12 +51,12 @@ def test_commit_title_and_description(repo, variant):
     assert f"{variant['output']}\n" == msg
 
 
-variants = {  # pyre-ignore[9]
-    'list-str': ['one', 'two', 'three'],
-    'list-Path': [Path('one'), Path('two'), Path('three')],
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_commit_list(repo, variant):
+@pytest.mark.parametrize('variant', [['one', 'two', 'three'],
+                                     [Path('one'), Path('two'), Path('three')]])
+def test_commit_list(repo: Repo, variant: List[Union[str, Path]]) -> None:
+    """
+    Test that `Repo.commit()` excepts a list as input type.
+    """
     Path('file').touch()
     repo.add('file')
 
@@ -62,12 +66,12 @@ def test_commit_list(repo, variant):
     assert 'title\n\n' + 'List of things:\n\n' + 'one\ntwo\nthree\n' == msg
 
 
-variants = {  # pyre-ignore[9]
-    'set-str': {'one', 'two', 'three'},
-    'set-Path': {Path('one'), Path('two'), Path('three')},
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_commit_set(repo, variant):
+@pytest.mark.parametrize('variant', [{'one', 'two', 'three'},
+                                     {Path('one'), Path('two'), Path('three')}])
+def test_commit_set(repo: Repo, variant: Dict[str, Path]) -> None:
+    """
+    Test that `Repo.commit()` excepts a set as input type.
+    """
     Path('file').touch()
     repo.add('file')
 
@@ -79,26 +83,26 @@ def test_commit_set(repo, variant):
     assert 'three\n' in msg
 
 
-def test_commit_nothing_staged(repo):
+def test_commit_nothing_staged(repo: Repo) -> None:
+    """
+    Test that `Repo.commit()` raises the correct error when called while no
+    files are staged to commit.
+    """
     with pytest.raises(subprocess.CalledProcessError):
-        repo.commit('We believe in nothing Lebowski!')
+        repo.commit('We believe in nothing, Lebowski!')
 
     msg = last_commit_message()
-    assert 'We believe in nothing Lebowski!' not in msg
+    assert 'We believe in nothing, Lebowski!' not in msg
 
 
-variants = {  # pyre-ignore[9]
-    'empty': (),
-    'str': (''),
-    'list': ([]),
-    'set': (set()),
-    'title-None': ('title', None),
-    'title-str': ('title', ''),
-    'title-list': ('title', []),
-    'title-set': ('title', set()),
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_commit_empty_message(repo, variant):
+@pytest.mark.parametrize('variant', [
+    (), '', [], set(), ('title', None), ('title', ''), ('title', []),
+    ('title', set())])
+def test_commit_empty_message(repo: Repo, variant) -> None:
+    """
+    Test `Repo.commit()` raises the correct error when called with different
+    data types that would result in an empty commit message.
+    """
     Path('valid').touch()
     repo.add('valid')
     repo.commit('valid commit')

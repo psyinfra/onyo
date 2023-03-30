@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Dict
 
 import pytest
+from onyo import Repo
 
 
 # NOTE: configuration options can be set in multiple locations:
@@ -12,7 +14,7 @@ import pytest
 #
 # 'system` and 'global' are left untested, to not tamper with developer machines.
 
-variants = {
+@pytest.mark.parametrize('variant', {
     'default': {
         'args': ('onyo.test.set-config', 'default'),
         'file': '.onyo/config',
@@ -28,14 +30,13 @@ variants = {
     'onyo': {
         'args': ('onyo.test.set-config', 'onyo', 'onyo'),
         'file': '.onyo/config',
-    },
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_set_config(repo, variant):
+    }}.values())
+def test_set_config(repo: Repo, variant: Dict) -> None:
     """
     Set config in different locations.
 
-    NOTE: 'global' and 'system' are untested to not touch the user or system config.
+    NOTE: 'global' and 'system' are untested to not touch the user or
+    system config.
     """
     # set extensions.worktreeConfig (for the 'worktree' test)
     repo._git(['config', 'extensions.worktreeConfig', 'true'])
@@ -43,18 +44,20 @@ def test_set_config(repo, variant):
     # test
     repo.set_config(*variant['args'])
     value = variant['args'][1]
-    assert f'set-config = {value}' in Path(repo.root, variant['file']).read_text()
+    assert f'set-config = {value}' in Path(repo.root,
+                                           variant['file']).read_text()
 
 
-def test_set_config_invalid_location(repo):
+def test_set_config_invalid_location(repo: Repo) -> None:
     """
     Invalid location should throw an exception.
     """
     with pytest.raises(ValueError):
-        repo.set_config('onyo.test.set-config-invalid-location', 'valid-value', location='completely-invalid')
+        repo.set_config('onyo.test.set-config-invalid-location', 'valid-value',
+                        location='completely-invalid')
 
 
-variants = {  # pyre-ignore[9]
+@pytest.mark.parametrize('variant', {
     'wlo-worktree': {
         'set': ['worktree', 'local', 'onyo'],
         'answer': 'worktree',
@@ -83,13 +86,13 @@ variants = {  # pyre-ignore[9]
         'set': ['onyo'],
         'answer': 'onyo',
     },
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_get_config_precedence(repo, variant):
+}.values())
+def test_get_config_precedence(repo: Repo, variant: Dict) -> None:
     """
     The order of precedence is worktree > local > global > system > onyo.
 
-    NOTE: 'global' and 'system' are untested to not touch the user or system config.
+    NOTE: 'global' and 'system' are untested to not touch the user or
+    system config.
     """
     # enable worktreeConfig, so it doesn't save over "local"
     repo._git(['config', 'extensions.worktreeConfig', 'true'])
@@ -103,17 +106,17 @@ def test_get_config_precedence(repo, variant):
     assert ret == variant['answer']
 
 
-def test_get_config_name_not_exist(repo):
+def test_get_config_name_not_exist(repo: Repo) -> None:
     """
-    Missing values should return None
+    Missing values should return `None`.
     """
     ret = repo.get_config('onyo.test.get-config-name-does-not-exist')
     assert ret is None
 
 
-def test_get_config_empty_value(repo):
+def test_get_config_empty_value(repo: Repo) -> None:
     """
-
+    When a value exists, but is empty, it should return an empty string ''.
     """
     repo.set_config('onyo.test.get-config-empty-value', '')
 
