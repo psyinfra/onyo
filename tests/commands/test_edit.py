@@ -159,7 +159,7 @@ def test_edit_message_flag(repo: Repo, asset: str) -> None:
 @pytest.mark.repo_files(*assets)
 def test_quiet_flag(repo: Repo) -> None:
     """
-    Test that `onyo edit --quiet` does not print anything.
+    Test that `onyo edit --yes --quiet` does not print anything.
     """
     os.environ['EDITOR'] = "printf 'key: quiet' >"
 
@@ -174,6 +174,23 @@ def test_quiet_flag(repo: Repo) -> None:
     # verify the changes were saved for all assets and the repository is clean
     for asset in repo.assets:
         assert 'key: quiet' in Path.read_text(asset)
+    repo.fsck()
+
+
+@pytest.mark.repo_files(*assets)
+def test_quiet_errors_without_yes_flag(repo: Repo) -> None:
+    """
+    Test that `onyo edit --quiet` does error without --yes flag.
+    """
+    os.environ['EDITOR'] = "printf 'key: quiet' >"
+
+    # edit a list of assets all at once
+    ret = subprocess.run(['onyo', 'edit', '--quiet', *assets], capture_output=True, text=True)
+
+    # verify correct error.
+    assert not ret.stdout
+    assert ret.returncode == 1
+    assert 'The --quiet flag requires --yes.' in ret.stderr
     repo.fsck()
 
 

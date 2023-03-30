@@ -1,158 +1,192 @@
 import subprocess
 from pathlib import Path
+
+from onyo.lib import Repo
 import pytest
 
 
 # NOTE: the output of `onyo history` is not tested for formatting or content, as
 #       the commands called by `onyo history` are user-configurable. Instead, it
 #       is tested for whether the output of the underlying command is unaltered.
-variants = [
-    'file',
-    'dir',
-    'dir/subfile-1',
-    's p a c e s/subfile-2',
-    's p a/c e s/sub file 3',
-]
-@pytest.mark.repo_files('file', 'dir/subfile-1', 's p a c e s/subfile-2', 's p a/c e s/sub file 3')
-@pytest.mark.parametrize('variant', variants)
-def test_history_noninteractive(repo, variant):
-    ret = subprocess.run(['onyo', 'history', '-I', variant],
+
+
+files = ['laptop_apple_macbookpro',
+         'lap top_ap ple_mac book pro',
+         'spe\"c_ialch_ar\'ac.teஞrs']
+
+directories = ['.',
+               's p a c e s',
+               'very/very/very/deep',
+               ]
+
+assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+
+
+@pytest.mark.repo_files(*assets)
+@pytest.mark.parametrize('asset', assets)
+def test_history_noninteractive(repo: Repo, asset: str) -> None:
+    """
+    Test that the default `onyo history -I ASSET` command runs and print to
+    std.out, but not std.err.
+    """
+    ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout
     assert not ret.stderr
+    repo.fsck()
 
 
-variants = [
-    'does-not-exist',
-    'subdir/does-not-exist',
-]
-@pytest.mark.repo_dirs('subdir')
-@pytest.mark.parametrize('variant', variants)
-def test_history_noninteractive_not_exist(repo, variant):
-    ret = subprocess.run(['onyo', 'history', '-I', variant],
+@pytest.mark.repo_dirs(*assets)
+@pytest.mark.parametrize('asset', ['does_not_exist.test',
+                                   'subdir/does_not_exist.test'])
+def test_history_noninteractive_not_exist(repo: Repo, asset: str) -> None:
+    """
+    Test that `onyo history -I ASSET` when called on non-existing assets does
+    correctly print into ret.stderr.
+    """
+    ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
+    repo.fsck()
 
 
-variants = {  # pyre-ignore[9]
-    'both-exist': ['file', 'dir/subfile-1'],
-    'first-exist': ['file', 'does-not-exist'],
-    'second-exist': ['does-not-exist', 'file'],
-}
-@pytest.mark.repo_files('file', 'dir/subfile-1')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_history_noninteractive_too_many_args(repo, variant):
-    ret = subprocess.run(['onyo', 'history', '-I'] + variant,
+@pytest.mark.repo_files('file_does_exist.test', 'dir/file_in_subdir.test')
+@pytest.mark.parametrize('variant',
+                         [['file_does_exist.test', 'dir/file_in_subdir.test'],
+                          ['file_does_exist.test', 'does_not_exist.test'],
+                          ['does_not_exist.test', 'file_does_exist.test']]
+                         )
+def test_history_noninteractive_too_many_args(repo: Repo, variant: list[str]) -> None:
+    """
+    Test that `onyo history -I` does not allow multiple input arguments.
+    """
+    ret = subprocess.run(['onyo', 'history', '-I', *variant],
                          capture_output=True, text=True)
     assert ret.returncode != 0
     assert not ret.stdout
     assert ret.stderr
+    repo.fsck()
 
 
-# NOTE: interactive cannot be tested directly, as onyo detects whether it's
-#       connected to a TTY.
-@pytest.mark.repo_files('file')
-def test_history_interactive_fallback(repo):
-    ret = subprocess.run(['onyo', 'history', 'file'],
+@pytest.mark.repo_files(assets[0])
+def test_history_interactive_fallback(repo: Repo) -> None:
+    """
+    Test `onyo history` does work without the `-I` flag.
+
+    Note that the interactive mode cannot be tested directly, as onyo detects
+    whether it's connected to a TTY.
+    """
+    ret = subprocess.run(['onyo', 'history', assets[0]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout
     assert not ret.stderr
+    repo.fsck()
 
 
-# Error when no config flag is found
-@pytest.mark.repo_files('file')
-def test_history_config_unset(repo):
+@pytest.mark.repo_files(assets[0])
+def test_history_config_unset(repo: Repo) -> None:
     """
-    The command should error when no tool is configured.
+    Test that `onyo history` errors when no tool is configured.
     """
     # unset config for history tool
-    ret = subprocess.run(['onyo', 'config', '--unset', 'onyo.history.non-interactive'],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
+    repo.set_config('onyo.history.non-interactive', '')
+    repo.add(".onyo/config")
+    repo.commit("Unset in .onyo/config: 'onyo.history.non-interactive'")
+
+    # verify unset
     assert not repo.get_config('onyo.history.non-interactive')
 
     # test
-    ret = subprocess.run(['onyo', 'history', '-I', 'file'],
+    ret = subprocess.run(['onyo', 'history', '-I', assets[0]],
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
+    repo.fsck()
 
 
-@pytest.mark.repo_files('file')
-def test_history_config_invalid(repo):
+@pytest.mark.repo_files(assets[0])
+def test_history_config_invalid(repo: Repo) -> None:
+    """
+    Test that `onyo history -I` does error correctly when the history-tool does
+    not exist.
+    """
     # set to invalid
     repo.set_config('onyo.history.non-interactive', 'does-not-exist-in-path')
+    repo.add(".onyo/config")
+    repo.commit("Set non-existing: 'onyo.history.non-interactive'")
 
     # run history
-    ret = subprocess.run(['onyo', 'history', '-I', 'file'],
+    ret = subprocess.run(['onyo', 'history', '-I', assets[0]],
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert "'does-not-exist-in-path' was not found" in ret.stderr
+    repo.fsck()
 
 
-# Reconfigure the history command to tickle some other functionality we're
-# interested in.
-variants = [
-    'file',
-    'dir/subfile-1',
-    's p a/c e s/sub file 3',
-]
-@pytest.mark.repo_files('file', 'dir/subfile-1', 's p a c e s/subfile-2', 's p a/c e s/sub file 3')
-@pytest.mark.parametrize('variant', variants)
-def test_history_fake_noninteractive_stdout(repo, variant):
+@pytest.mark.repo_files(*assets)
+@pytest.mark.parametrize('asset', assets)
+def test_history_fake_noninteractive_stdout(repo: Repo, asset: str) -> None:
+    """
+    Test that the history tool can be reconfigured, so that `onyo history` can
+    run commands different from the default options.
+    """
     repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf')
+    repo.add(".onyo/config")
+    repo.commit("Update config: 'onyo.history.non-interactive'")
 
     # test
-    ret = subprocess.run(['onyo', 'history', '-I', variant],
+    ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert Path(ret.stdout).resolve() == Path(variant).resolve()
+    assert Path(ret.stdout).resolve() == Path(asset).resolve()
     assert not ret.stderr
+    repo.fsck()
 
 
-variants = [
-    'file',
-    'dir/subfile-1',
-    's p a/c e s/sub file 3',
-]
-@pytest.mark.repo_files('file', 'dir/subfile-1', 's p a c e s/subfile-2', 's p a/c e s/sub file 3')
-@pytest.mark.parametrize('variant', variants)
-def test_history_fake_noninteractive_stderr(repo, variant):
+@pytest.mark.repo_files(*assets)
+@pytest.mark.parametrize('asset', assets)
+def test_history_fake_noninteractive_stderr(repo: Repo, asset: str) -> None:
+    """
+    Test that the history tool can be so reconfigured, that it prints into
+    stderr instead of stdout.
+    """
     repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf >&2')
+    repo.add(".onyo/config")
+    repo.commit("Update config: 'onyo.history.non-interactive'")
 
     # test
-    ret = subprocess.run(['onyo', 'history', '-I', variant],
+    ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stdout
-    assert Path(ret.stderr).resolve() == Path(variant).resolve()
+    assert Path(ret.stderr).resolve() == Path(asset).resolve()
+    repo.fsck()
 
 
-variants = {  # pyre-ignore[9]
-    'success': {
-        'cmd': '/usr/bin/env true',
-        'retval': 0,
-    },
-    'error': {
-        'cmd': '/usr/bin/env false',
-        'retval': 1,
-    },
-    'error-129': {
-        'cmd': 'git config --invalid-flag-oopsies',
-        'retval': 129,
-    },
-}
-@pytest.mark.repo_files('file')
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_history_fake_noninteractive_bubble_exit_code(repo, variant):
+@pytest.mark.repo_files(assets[0])
+@pytest.mark.parametrize('variant',
+                         [{'cmd': '/usr/bin/env true', 'retval': 0},
+                          {'cmd': '/usr/bin/env false', 'retval': 1},
+                          {'cmd': 'git config --invalid-flag-oopsies',
+                           'retval': 129}
+                          ])
+def test_history_fake_noninteractive_bubble_exit_code(repo: Repo, variant: dict) -> None:
+    """
+    Test that `onyo history` does bubble up the different exit codes that the
+    tools configured return.
+    """
     repo.set_config('onyo.history.non-interactive', variant['cmd'])
+    repo.add(".onyo/config")
+    repo.commit("Update config: 'onyo.history.non-interactive'")
 
-    ret = subprocess.run(['onyo', 'history', '-I', 'file'],
+    # test
+    ret = subprocess.run(['onyo', 'history', '-I', assets[0]],
                          capture_output=True, text=True)
     assert ret.returncode == variant['retval']
+    repo.fsck()
