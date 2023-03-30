@@ -50,7 +50,7 @@ def sanitize_paths(paths: list[str], opdir: str) -> list[Path]:
 
 def cat(args, opdir: str) -> None:
     """
-    Print the contents of ``asset``\(s) to the terminal without parsing or
+    Print the contents of ``asset``\\(s) to the terminal without parsing or
     validating the contents.
     """
     repo = None

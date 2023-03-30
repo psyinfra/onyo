@@ -6,7 +6,7 @@ from onyo.commands.edit import request_user_response
 
 def mv(args, opdir: str) -> None:
     """
-    Move ``source``\(s) (assets or directories) to the ``destination``
+    Move ``source``\\(s) (assets or directories) to the ``destination``
     directory, or rename a ``source`` directory to ``destination``.
 
     Files cannot be renamed using ``onyo mv``. To do so, use ``onyo set``.

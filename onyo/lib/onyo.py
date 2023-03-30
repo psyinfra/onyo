@@ -663,11 +663,11 @@ class Repo:
     #
     def mkdir(self, directories: Union[Iterable[Union[Path, str]], Path, str]) -> None:
         """
-        Create ``directory``\(s). Intermediate directories will be created as
+        Create ``directory``\\(s). Intermediate directories will be created as
         needed (i.e. parent and child directories can be created in one call).
 
-        An empty ``.anchor`` file is added to each directory, to ensure that git
-        tracks it even when empty.
+        An empty ``.anchor`` file is added to each directory, to ensure that
+        git tracks it even when empty.
 
         If a directory already exists, or the path is protected, an exception
         will be raised. All checks are performed before creating directories.
@@ -738,7 +738,7 @@ class Repo:
     #
     def mv(self, sources: Union[Iterable[Union[Path, str]], Path, str], destination: Union[Path, str], dryrun: bool = False) -> list[tuple[str, str]]:
         """
-        Move ``source``\(s) (assets or directories) to the ``destination``
+        Move ``source``\\(s) (assets or directories) to the ``destination``
         directory, or rename a ``source`` directory to ``destination``.
 
         Files cannot be renamed using ``mv()``. To do so, use ``set()``.
@@ -1032,7 +1032,7 @@ class Repo:
         asset = Path(asset)
 
         try:
-            re.findall('(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset.name)[0]
+            re.findall(r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset.name)[0]
         except (ValueError, IndexError):
             log.info(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
             return False
@@ -1218,7 +1218,7 @@ class Repo:
 
         for asset in assets:
             # split old name into parts
-            [serial, model, make, type] = [field[::-1] for field in re.findall('(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]]
+            [serial, model, make, type] = [field[::-1] for field in re.findall(r'(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]]
             fields = name_values.keys()
 
             # update name fields and build new asset name
@@ -1265,7 +1265,7 @@ class Repo:
     #
     def rm(self, paths: Union[Iterable[Union[Path, str]], Path, str], dryrun: bool = False) -> list[str]:
         """
-        Delete ``asset``\(s) and ``directory``\(s).
+        Delete ``asset``\\(s) and ``directory``\\(s).
         """
         if not isinstance(paths, (list, set)):
             paths = [paths]

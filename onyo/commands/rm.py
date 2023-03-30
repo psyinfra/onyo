@@ -6,7 +6,7 @@ from onyo.commands.edit import request_user_response
 
 def rm(args, opdir: str) -> None:
     """
-    Delete ``asset``\(s) and ``directory``\(s).
+    Delete ``asset``\\(s) and ``directory``\\(s).
 
     A list of all files and directories to delete will be presented, and the
     user prompted for confirmation.
