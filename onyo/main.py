@@ -83,35 +83,35 @@ def parse_key_values(string):
     return results
 
 
-def directory(string):
+def directory(string: str):
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def file(string):
+def file(string: str):
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def git_config(string):
+def git_config(string: str):
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def path(string):
+def path(string: str):
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def template(string):
+def template(string: str):
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
