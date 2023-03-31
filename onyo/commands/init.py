@@ -1,9 +1,15 @@
+from __future__ import annotations
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 from onyo import Repo
 
+if TYPE_CHECKING:
+    import argparse
 
-def init(args, opdir: str) -> None:
+
+def init(args: argparse.Namespace, opdir: str) -> None:
     """
     Initialize an Onyo repository. The directory will be initialized as a git
     repository (if it is not one already), the ``.onyo/`` directory created and

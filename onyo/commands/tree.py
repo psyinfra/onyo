@@ -1,9 +1,14 @@
+from __future__ import annotations
 import logging
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -45,7 +50,7 @@ def sanitize_directories(repo: Repo, directories: list[str]) -> list[str]:
     return dirs
 
 
-def tree(args, opdir: str) -> None:
+def tree(args: argparse.Namespace, opdir: str) -> None:
     """
     List the assets and directories in ``directory`` using ``tree``.
     """

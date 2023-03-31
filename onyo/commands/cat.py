@@ -1,8 +1,13 @@
+from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -48,7 +53,7 @@ def sanitize_paths(paths: list[str], opdir: str) -> list[Path]:
     return paths_to_cat
 
 
-def cat(args, opdir: str) -> None:
+def cat(args: argparse.Namespace, opdir: str) -> None:
     """
     Print the contents of ``asset``\(s) to the terminal without parsing or
     validating the contents.

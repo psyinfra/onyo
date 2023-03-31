@@ -1,11 +1,16 @@
+from __future__ import annotations
 import logging
 import os
 import sys
 from pathlib import Path
 from shlex import quote
+from typing import TYPE_CHECKING
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 from onyo import Repo, OnyoInvalidRepoError
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -95,7 +100,7 @@ def sanitize_assets(assets: list[str], repo: Repo) -> list[Path]:
     return valid_assets
 
 
-def edit(args, opdir: str) -> None:
+def edit(args: argparse.Namespace, opdir: str) -> None:
     """
     Open the ``asset`` file(s) using the editor specified by "onyo.core.editor",
     the environment variable ``EDITOR``, or ``nano`` (as a final fallback).

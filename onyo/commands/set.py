@@ -1,14 +1,19 @@
+from __future__ import annotations
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import request_user_response
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def set(args, opdir: str) -> None:
+def set(args: argparse.Namespace, opdir: str) -> None:
     """
     Set the ``value`` of ``key`` for matching assets. If the key does not exist,
     it is added and set appropriately.

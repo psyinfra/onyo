@@ -1,10 +1,15 @@
+from __future__ import annotations
 import sys
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 from onyo.commands.edit import request_user_response
 
+if TYPE_CHECKING:
+    import argparse
 
-def mv(args, opdir: str) -> None:
+
+def mv(args: argparse.Namespace, opdir: str) -> None:
     """
     Move ``source``\(s) (assets or directories) to the ``destination``
     directory, or rename a ``source`` directory to ``destination``.
