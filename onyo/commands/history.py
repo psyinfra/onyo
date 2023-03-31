@@ -1,11 +1,16 @@
+from __future__ import annotations
 import logging
 import os
 import shutil
 import sys
 from pathlib import Path
 from shlex import quote
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -61,7 +66,7 @@ def get_history_cmd(interactive: bool, repo: Repo) -> str:
     return history_cmd
 
 
-def history(args, opdir: str) -> None:
+def history(args: argparse.Namespace, opdir: str) -> None:
     """
     Display the history of an ``asset`` or ``directory``.
 

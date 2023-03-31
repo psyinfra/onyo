@@ -1,9 +1,14 @@
+from __future__ import annotations
 import logging
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -39,7 +44,7 @@ def sanitize_args(git_config_args: list[str]) -> list[str]:
     return git_config_args
 
 
-def config(args, opdir: str) -> None:
+def config(args: argparse.Namespace, opdir: str) -> None:
     """
     Set, query, and unset Onyo repository configuration options. These options
     are stored in ``.onyo/config`` (which is tracked by git) and are shared with

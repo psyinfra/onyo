@@ -1,14 +1,19 @@
+from __future__ import annotations
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import request_user_response
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
 
 
-def unset(args, opdir: str) -> None:
+def unset(args: argparse.Namespace, opdir: str) -> None:
     """
     Remove the ``value`` of ``key`` for matching assets.
 

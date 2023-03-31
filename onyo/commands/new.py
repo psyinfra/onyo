@@ -1,10 +1,15 @@
+from __future__ import annotations
 import csv
 import logging
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import edit_asset, get_editor, request_user_response
+
+if TYPE_CHECKING:
+    import argparse
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
@@ -213,7 +218,7 @@ def check_against_argument_conflicts(args) -> None:
                 sys.exit(1)
 
 
-def new(args, opdir: str) -> None:
+def new(args: argparse.Namespace, opdir: str) -> None:
     """
     Create new ``<path>/asset``\(s) and add contents with ``--template``,
     ``--keys`` and ``--edit``. If the directories do not exist, they will be

@@ -1,10 +1,15 @@
+from __future__ import annotations
 import sys
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 from onyo.commands.edit import request_user_response
 
+if TYPE_CHECKING:
+    import argparse
 
-def mkdir(args, opdir: str) -> None:
+
+def mkdir(args: argparse.Namespace, opdir: str) -> None:
     """
     Create ``directory``\(s). Intermediate directories will be created as needed
     (i.e. parent and child directories can be created in one call).

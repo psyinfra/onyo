@@ -1,10 +1,15 @@
+from __future__ import annotations
 import sys
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 from onyo.commands.edit import request_user_response
 
+if TYPE_CHECKING:
+    import argparse
 
-def rm(args, opdir: str) -> None:
+
+def rm(args: argparse.Namespace, opdir: str) -> None:
     """
     Delete ``asset``\(s) and ``directory``\(s).
 

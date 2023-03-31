@@ -1,9 +1,14 @@
+from __future__ import annotations
 import sys
+from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
 
+if TYPE_CHECKING:
+    import argparse
 
-def fsck(args, opdir: str) -> None:
+
+def fsck(args: argparse.Namespace, opdir: str) -> None:
     """
     Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
