@@ -383,7 +383,7 @@ def setup_parser():
         '-t', '--template',
         metavar='TEMPLATE',
         required=False,
-        default=None,
+        default=[],
         type=template,
         help='the template to seed the new asset'
     )
@@ -527,7 +527,7 @@ def setup_parser():
     )
     cmd_set.add_argument(
         '-p', '--path',
-        default=".",
+        default=["."],
         metavar='PATH',
         nargs='*',
         type=path,
@@ -626,7 +626,7 @@ def setup_parser():
     )
     cmd_unset.add_argument(
         '-p', '--path',
-        default=".",
+        default=["."],
         metavar="PATH",
         nargs='*',
         type=path,
