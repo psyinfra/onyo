@@ -38,6 +38,15 @@ class Repo:
 
     @property
     def assets(self) -> set[Path]:  # pyre-ignore[11]
+        """
+        A `set` containing the `Path`s relative to `Repo.root` of all assets of
+        an Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._assets:
             self._assets = self._get_assets()
 
@@ -45,6 +54,15 @@ class Repo:
 
     @property
     def dirs(self) -> set[Path]:
+        """
+        A `set` containing the `Path`s relative to `Repo.root` of all directories
+        of an Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._dirs:
             self._dirs = self._get_dirs()
 
@@ -52,6 +70,15 @@ class Repo:
 
     @property
     def files(self) -> set[Path]:
+        """
+        A `set` containing the `Paths` relative to `Repo.root` of all files of an
+        Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._files:
             self._files = self._get_files()
 
@@ -59,36 +86,85 @@ class Repo:
 
     @property
     def files_changed(self) -> set[Path]:
+        """
+        Returns a `set` containing the `Path`s relative to `Repo.root` of all
+        changed files (according to git) of an Onyo repository.
+        """
         return self._get_files_changed()
 
     @property
     def files_staged(self) -> set[Path]:
+        """
+        Returns a `set` containing the `Path`s relative to `Repo.root` of all
+        staged files (according to git) of an Onyo repository.
+        """
         return self._get_files_staged()
 
     @property
     def files_untracked(self) -> set[Path]:
+        """
+        Returns a `set` containing the `Path`s relative to `Repo.root` of all
+        untracked files (according to git) of an Onyo repository
+        """
         return self._get_files_untracked()
 
     @property
     def opdir(self) -> Path:
+        """
+        Returns the absolute `Path` to the working directory where the
+        `Repo` object was instantiated.
+        """
         return self._opdir
 
     @property
     def root(self) -> Path:
+        """
+        Returns the absolute `Path` to the root of the `Repo` where the
+        directories `.git/` and `.onyo/` are located.
+        """
         return self._root
 
     @property
     def templates(self) -> set[Path]:
+        """
+        A `set` containing the `Path`s relative to `Repo.root` of all
+        template files of an Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._templates:
             self._templates = self._get_templates()
 
         return self._templates
 
-    def clear_caches(self) -> None:
-        self._assets = None
-        self._dirs = None
-        self._files = None
-        self._templates = None
+    def clear_caches(self, assets: bool = True, dirs: bool = True,
+                     files: bool = True, templates: bool = True) -> None:
+        """
+        Clear caches of the instance of the repository object.
+
+        Paths such as files, assets, and directories are cached, and can become
+        stale when the repository contents are modified. This function clears
+        the caches of the properties.
+
+        By default all caches are cleared, and arguments make it possible to
+        specify which caches which should remain set.
+
+        If the repository is exclusively modified via public API functions, the
+        caches of the `Repo` object are consistent. If the repository is
+        modified otherwise, this function clears the caches to ensure that the
+        caches do not contain stale information.
+        """
+        if assets:
+            self._assets = None
+        if dirs:
+            self._dirs = None
+        if files:
+            self._files = None
+        if templates:
+            self._templates = None
 
     def generate_commit_message(self, message: list[str] = [], cmd: str = "",
                                 keys: list[str] = [], destination: str = "",
@@ -187,6 +263,16 @@ class Repo:
         """
         self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
                   [str(file) for file in self.files_staged])
+        # `Repo.restore()` gets used by all most commands that might change the
+        # repository to revert changes, especially when users answer "no" to
+        # user dialogs. It might also be used by the API to reset the repository
+        # variable after doing some manual changes on files (e.g. with
+        # subprocess).
+        self.clear_caches(assets=True,  # revert e.g. `onyo set`
+                          dirs=True,  # revert e.g. `onyo mkdir`
+                          files=True,  # revert anchors of `onyo mkdir`
+                          templates=True  # revert `onyo edit` in `.onyo`
+                          )
 
     def _get_assets(self) -> set[Path]:
         """
@@ -326,6 +412,15 @@ class Repo:
                 raise FileNotFoundError(f"'{t}' does not exist.")
 
         self._git(['add'] + tgts)
+        # `Repo.add()` is used by most repo-changing commands, and it might be
+        # used often by the API to change the repository, before manually
+        # calling clear_cache() or after a file was changed with a subprocess
+        # call. To always secure the integrity of the caches, we reset them all.
+        self.clear_caches(assets=True,  # e.g. `onyo set` changes asset names
+                          dirs=True,  # e.g. `onyo mkdir` adds new dirs
+                          files=True,  # e.g. `onyo mkdir` adds new ".anchor"
+                          templates=True  # e.g. `onyo edit` in `.onyo/templates`
+                          )
 
     #
     # COMMIT
@@ -755,6 +850,11 @@ class Repo:
         log.debug('The following will be moved:\n' +
                   '\n'.join([str(x.relative_to(self.opdir)) for x in src_paths]))
 
+        self.clear_caches(assets=True,  # `onyo mv` can change the dir of assets
+                          dirs=True,  # might move directories
+                          files=True,  # might move anchors
+                          templates=True  # might move or rename templates
+                          )
         # return a list of mv-ed assets
         # TODO: is this relative to opdir or root? (should be opdir)
         return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
@@ -1064,9 +1164,7 @@ class Repo:
         if name_values:
             try:
                 self._update_names(assets_to_set, name_values)
-                self.clear_caches()
             except ValueError as e:
-                self.clear_caches()
                 if self.files_staged:
                     self.restore()
                 # reset renaming needs double-restoring
@@ -1079,6 +1177,11 @@ class Repo:
         if diff and dryrun:
             self.restore()
 
+        self.clear_caches(assets=True,  # `onyo set` can rename assets
+                          dirs=False,  # `set` cannot create, move, or remove directories
+                          files=True,  # might rename asset files
+                          templates=True  # might modify templates
+                          )
         return diff
 
     def _select_assets_from_directory(self, directory: Path,
@@ -1274,6 +1377,11 @@ class Repo:
         log.debug('The following will be deleted:\n' +
                   '\n'.join([str(x.relative_to(self.opdir)) for x in paths_to_rm]))
 
+        self.clear_caches(assets=True,  # `onyo rm` can delete assets
+                          dirs=True,  # can delete directories
+                          files=True,  # if used on dir, deletes also `.anchor`
+                          templates=True  # can delete templates
+                          )
         # return a list of rm-ed assets
         # TODO: should this also list the dirs?
         # TODO: is this relative to opdir or root? (should be opdir)
