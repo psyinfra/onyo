@@ -220,12 +220,13 @@ def check_against_argument_conflicts(args) -> None:
 
 def new(args: argparse.Namespace, opdir: str) -> None:
     """
-    Create new ``<path>/asset``\(s) and add contents with ``--template``,
+    Create new ``<path>/asset``\\(s) and add contents with ``--template``,
     ``--keys`` and ``--edit``. If the directories do not exist, they will be
     created.
 
-    After the contents are added, the new ``assets``\(s) will be checked for the
-    validity of its YAML syntax and based on the rules in ``.onyo/validation/``.
+    After the contents are added, the new ``assets``\\(s) will be checked for
+    the validity of its YAML syntax and based on the rules in
+    ``.onyo/validation/``.
     """
     repo = None
     try:

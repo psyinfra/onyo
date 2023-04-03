@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 def mkdir(args: argparse.Namespace, opdir: str) -> None:
     """
-    Create ``directory``\(s). Intermediate directories will be created as needed
-    (i.e. parent and child directories can be created in one call).
+    Create ``directory``\\(s). Intermediate directories will be created as
+    needed (i.e. parent and child directories can be created in one call).
 
     An empty ``.anchor`` file is added to each directory, to ensure that git
     tracks it even when empty.

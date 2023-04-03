@@ -166,9 +166,10 @@ class Repo:
         if templates:
             self._templates = None
 
-    def generate_commit_message(self, message: list[str] = [], cmd: str = "",
-                                keys: list[str] = [], destination: str = "",
-                                MAX_LEN: int = 80) -> str:
+    def generate_commit_message(
+            self, message: Union[list[str], None] = None, cmd: str = "",
+            keys: Union[list[str], None] = None, destination: str = "",
+            max_length: int = 80) -> str:
         """
         Generate a commit subject and body suitable for use with git commit.
 
@@ -184,6 +185,9 @@ class Repo:
         Adds a list of `changed files` with their path relative to the root of
         the repository to the body of all commit messages.
         """
+        message = [] if message is None else message
+        keys = [] if keys is None else keys
+
         message_subject = ""
         message_body = ""
         message_appendix = ""
@@ -210,17 +214,16 @@ class Repo:
             # message headers (independently of later adding/shortening of
             # information) begin, for all commands.
             msg_dummy = f"{cmd} [{len(staged_changes)}]{keys_str}"
-            message_subject = self._generate_commit_message_subject(msg_dummy,
-                                                                    staged_changes,
-                                                                    dest, MAX_LEN)
+            message_subject = self._generate_commit_message_subject(
+                msg_dummy, staged_changes, dest, max_length)
 
         message_appendix = self._n_join([str(x) for x in staged_changes])
         return f"{message_subject}\n\n{message_body}\n\n{message_appendix}"
 
-    def _generate_commit_message_subject(self, msg_dummy: str,
-                                         staged_changes: list[Path],
-                                         destination: Optional[Path],
-                                         MAX_LEN: int = 80) -> str:
+    @staticmethod
+    def _generate_commit_message_subject(
+            msg_dummy: str, staged_changes: list[Path],
+            destination: Optional[Path], max_length: int = 80) -> str:
         """
         Generates "commit message subject" with the `msg_dummy` and the paths
         from `staged_changes` and `destination`, and shortens the paths if the
@@ -233,7 +236,7 @@ class Repo:
         if destination:
             msg = f"{msg} -> '{destination}'"
 
-        if len(msg) < MAX_LEN:
+        if len(msg) < max_length:
             return msg
 
         # medium message: highest level (e.g. dir or asset name)
@@ -243,7 +246,7 @@ class Repo:
         if destination:
             msg = f"{msg} -> '{destination.relative_to(destination.parent)}'"
 
-        if len(msg) < MAX_LEN:
+        if len(msg) < max_length:
             return msg
 
         # short message: "type" of devices in summary (e.g.  "laptop (2)")
@@ -356,7 +359,8 @@ class Repo:
     #
     # HELPERS
     #
-    def _is_protected_path(self, path: Union[Path, str]) -> bool:
+    @staticmethod
+    def _is_protected_path(path: Union[Path, str]) -> bool:
         """
         Checks whether a path contains protected elements (.anchor, .git, .onyo).
         Returns True if it contains protected elements. Otherwise False.
@@ -370,7 +374,8 @@ class Repo:
 
         return False
 
-    def _n_join(self, to_join: Iterable) -> str:
+    @staticmethod
+    def _n_join(to_join: Iterable) -> str:
         """
         Convert an Iterable's contents to strings and join with newlines.
         """
@@ -721,7 +726,8 @@ class Repo:
 
         log.info(f'Initialized Onyo repository in {dot_onyo}/')
 
-    def _init_sanitize(self, directory: Union[Path, str]) -> Path:
+    @staticmethod
+    def _init_sanitize(directory: Union[Path, str]) -> Path:
         """
         Check the target path for viability as an init target.
 
@@ -752,11 +758,11 @@ class Repo:
     #
     def mkdir(self, directories: Union[Iterable[Union[Path, str]], Path, str]) -> None:
         """
-        Create ``directory``\(s). Intermediate directories will be created as
+        Create ``directory``\\(s). Intermediate directories will be created as
         needed (i.e. parent and child directories can be created in one call).
 
-        An empty ``.anchor`` file is added to each directory, to ensure that git
-        tracks it even when empty.
+        An empty ``.anchor`` file is added to each directory, to ensure that
+        git tracks it even when empty.
 
         If a directory already exists, or the path is protected, an exception
         will be raised. All checks are performed before creating directories.
@@ -827,7 +833,7 @@ class Repo:
     #
     def mv(self, sources: Union[Iterable[Union[Path, str]], Path, str], destination: Union[Path, str], dryrun: bool = False) -> list[tuple[str, str]]:
         """
-        Move ``source``\(s) (assets or directories) to the ``destination``
+        Move ``source``\\(s) (assets or directories) to the ``destination``
         directory, or rename a ``source`` directory to ``destination``.
 
         Files cannot be renamed using ``mv()``. To do so, use ``set()``.
@@ -1126,7 +1132,7 @@ class Repo:
         asset = Path(asset)
 
         try:
-            re.findall('(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset.name)[0]
+            re.findall(r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset.name)[0]
         except (ValueError, IndexError):
             log.info(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
             return False
@@ -1230,7 +1236,8 @@ class Repo:
 
         return "\n".join(diff).strip()
 
-    def _read_asset(self, asset: Path) -> dict:
+    @staticmethod
+    def _read_asset(asset: Path) -> dict:
         """
         Read and return the contents of an asset as a dictionary.
         """
@@ -1314,7 +1321,7 @@ class Repo:
 
         for asset in assets:
             # split old name into parts
-            [serial, model, make, type] = [field[::-1] for field in re.findall('(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]]
+            [serial, model, make, type] = [field[::-1] for field in re.findall(r'(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]]
             fields = name_values.keys()
 
             # update name fields and build new asset name
@@ -1345,7 +1352,8 @@ class Repo:
 
             self._git(["mv", str(asset), str(new_name)])
 
-    def _write_asset(self, asset: Path, contents: dict) -> None:
+    @staticmethod
+    def _write_asset(asset: Path, contents: dict) -> None:
         """
         Write contents into an asset file.
         """
@@ -1360,7 +1368,7 @@ class Repo:
     #
     def rm(self, paths: Union[Iterable[Union[Path, str]], Path, str], dryrun: bool = False) -> list[str]:
         """
-        Delete ``asset``\(s) and ``directory``\(s).
+        Delete ``asset``\\(s) and ``directory``\\(s).
         """
         if not isinstance(paths, (list, set)):
             paths = [paths]
