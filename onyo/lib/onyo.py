@@ -38,6 +38,15 @@ class Repo:
 
     @property
     def assets(self) -> set[Path]:  # pyre-ignore[11]
+        """
+        A `set` containing the `Path`s relative to `Repo.root` of all assets of
+        an Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._assets:
             self._assets = self._get_assets()
 
@@ -45,6 +54,15 @@ class Repo:
 
     @property
     def dirs(self) -> set[Path]:
+        """
+        A `set` containing the `Path`s relative to `Repo.root` of all directories
+        of an Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._dirs:
             self._dirs = self._get_dirs()
 
@@ -52,6 +70,15 @@ class Repo:
 
     @property
     def files(self) -> set[Path]:
+        """
+        A `set` containing the `Paths` relative to `Repo.root` of all files of an
+        Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._files:
             self._files = self._get_files()
 
@@ -59,26 +86,55 @@ class Repo:
 
     @property
     def files_changed(self) -> set[Path]:
+        """
+        Returns a `set` containing the `Path`s relative to `Repo.root` of all
+        changed files (according to git) of an Onyo repository.
+        """
         return self._get_files_changed()
 
     @property
     def files_staged(self) -> set[Path]:
+        """
+        Returns a `set` containing the `Path`s relative to `Repo.root` of all
+        staged files (according to git) of an Onyo repository.
+        """
         return self._get_files_staged()
 
     @property
     def files_untracked(self) -> set[Path]:
+        """
+        Returns a `set` containing the `Path`s relative to `Repo.root` of all
+        untracked files (according to git) of an Onyo repository
+        """
         return self._get_files_untracked()
 
     @property
     def opdir(self) -> Path:
+        """
+        Returns the absolute `Path` to the working directory where the
+        `Repo` object was instantiated.
+        """
         return self._opdir
 
     @property
     def root(self) -> Path:
+        """
+        Returns the absolute `Path` to the root of the `Repo` where the
+        directories `.git/` and `.onyo/` are located.
+        """
         return self._root
 
     @property
     def templates(self) -> set[Path]:
+        """
+        A `set` containing the `Path`s relative to `Repo.root` of all
+        template files of an Onyo repository.
+
+        This property is cached, and the cache is consistent with the state of
+        the repository when only `Repo`s public functions are used. Use of
+        private functions might require a manual reset of the caches, see
+        `Repo.clear_caches()`.
+        """
         if not self._templates:
             self._templates = self._get_templates()
 
