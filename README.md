@@ -14,17 +14,6 @@ be just a thin wrapper around git commands.
 See the documentation for [installation instructions](https://onyo.readthedocs.io/en/latest/installation.html)
 and general information about Onyo.
 
-## Demo
-An [example Onyo repository](https://github.com/psyinfra/onyo-demo/) is
-available. It's easier to get a feel for how Onyo works with a populated
-repository with actual history, rather than starting from scratch. Just install
-Onyo, clone the demo repo, and start poking around!
-
-## Report Issues
-For general feedback, bug reports, and comments, please [open an issue](https://github.com/psyinfra/onyo/issues/new).
-
-## Develop
-
 ### Installation
 
 #### Non-Python Dependencies:
@@ -46,7 +35,18 @@ python -m venv ~/.venvs/onyo
 source ~/.venvs/onyo/bin/activate
 ```
 
-#### Clone the repo and install package and dependencies for tests, documentation:
+## Demo
+An [example Onyo repository](https://github.com/psyinfra/onyo-demo/) is
+available. It's easier to get a feel for how Onyo works with a populated
+repository with actual history, rather than starting from scratch. Just install
+Onyo, clone the demo repo, and start poking around!
+
+## Report Issues
+For general feedback, bug reports, and comments, please [open an issue](https://github.com/psyinfra/onyo/issues/new).
+
+## Develop
+
+### Clone the repo and install package and dependencies for tests, documentation:
 ```
 git clone https://github.com/psyinfra/onyo.git
 cd onyo
