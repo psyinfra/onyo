@@ -3,6 +3,7 @@ from pathlib import Path
 
 from onyo.lib import Repo
 import pytest
+from typing import List
 
 
 # NOTE: the output of `onyo history` is not tested for formatting or content, as
@@ -19,7 +20,7 @@ directories = ['.',
                'very/very/very/deep',
                ]
 
-assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
 
 
 @pytest.mark.repo_files(*assets)

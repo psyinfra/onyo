@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
-log = logging.getLogger('onyo')
+log: logging.Logger = logging.getLogger('onyo')
 
 
 def set(args: argparse.Namespace, opdir: str) -> None:
