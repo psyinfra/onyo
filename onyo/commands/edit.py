@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
-log = logging.getLogger('onyo')
+log: logging.Logger = logging.getLogger('onyo')
 
 
 def get_editor(repo: Repo) -> str:

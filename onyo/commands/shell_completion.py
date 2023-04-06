@@ -39,7 +39,8 @@ class TabCompletion:
     completion_script
         Returns the completion script.
     """
-    def __init__(self, parser, *, type_to_action_map={}, epilogue=''):
+    def __init__(
+            self, parser, *, type_to_action_map={}, epilogue: str = '') -> None:
         self._cmd_tree = self._argparse_to_dict(parser)
         self._type_to_action_map = type_to_action_map
         self._completion_script = None
@@ -146,7 +147,7 @@ class TabCompletion:
         }
         return arg
 
-    def _get_arg_required(self, sp):
+    def _get_arg_required(self, sp) -> bool:
         """
         Return whether an argument is required.
         """
@@ -188,10 +189,10 @@ class TabCompletion:
 
 
 class Zsh(TabCompletion):
-    def _completion(self, cmd_tree):
+    def _completion(self, cmd_tree) -> str:
         return self._zsh_completion(cmd_tree)
 
-    def _zsh_completion(self, cmd_tree):
+    def _zsh_completion(self, cmd_tree) -> str:
         """
         Return a script for ZSH tab completion, suitable for use with the
         "source" command.
@@ -269,7 +270,7 @@ compdef _onyo onyo
 """
         return content
 
-    def _zsh_build_args_and_flags(self, cmd_tree, padding=0):
+    def _zsh_build_args_and_flags(self, cmd_tree, padding: int = 0) -> str:
         """
         Return a string (for use in a ZSH list) containing rules for flags (with
         their arguments) and standalone arguments.
@@ -285,7 +286,7 @@ compdef _onyo onyo
 
         return output
 
-    def _zsh_build_arg(self, arg, arg_tree):
+    def _zsh_build_arg(self, arg, arg_tree) -> str:
         """
         Build and return a string containing the ZSH completion rule for an
         argument.
@@ -419,7 +420,7 @@ compdef _onyo onyo
 
         return output
 
-    def _zsh_build_subcommands(self, cmd_tree):
+    def _zsh_build_subcommands(self, cmd_tree) -> str:
         """
         Return a string (for use in a ZSH list) containing subcommands and their
         help text in the format of:
@@ -432,7 +433,7 @@ compdef _onyo onyo
 
         return "\n".join(subcmd_list)
 
-    def _zsh_build_subcommands_case_statement(self, cmd_tree):
+    def _zsh_build_subcommands_case_statement(self, cmd_tree) -> str:
         """
         Return a ZSH case statement for subcommands. Within each is defined the
         flags and args for the appropriate command.

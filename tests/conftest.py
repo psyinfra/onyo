@@ -4,11 +4,12 @@ from itertools import chain, combinations
 from pathlib import Path
 
 from onyo import Repo
+from typing import Generator, List, Union
 import pytest
 
 
 @pytest.fixture(scope='function')
-def repo(tmp_path, monkeypatch, request):
+def repo(tmp_path: str, monkeypatch, request) -> Generator[Repo, None, None]:
     """
     This fixture:
     - creates a new repository in a temporary directory
@@ -72,7 +73,7 @@ def repo(tmp_path, monkeypatch, request):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def clean_env(request):
+def clean_env(request) -> None:
     """
     Ensure that $EDITOR is not inherited from the environment or other tests.
     """
@@ -97,13 +98,13 @@ class Helpers:
                 yield x
 
     @staticmethod
-    def onyo_flags():
+    def onyo_flags() -> List[Union[List[List[str]], List[str]]]:
         return [['-d', '--debug'],
                 [['-C', '/tmp'], ['--onyopath', '/tmp']],
                 ]
 
     @staticmethod
-    def powerset(iterable):
+    def powerset(iterable: Iterable):
         "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
         s = list(iterable)
         return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
