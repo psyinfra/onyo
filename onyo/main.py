@@ -14,12 +14,14 @@ log.setLevel(logging.INFO)
 
 
 class StoreKeyValuePairs(argparse.Action):
-    def __init__(self, option_strings: Sequence[str], dest: str, nargs: Union[None, int, str]=None, **kwargs) -> None:
+    def __init__(self, option_strings: Sequence[str], dest: str,
+                 nargs: Union[None, int, str] = None, **kwargs) -> None:
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
-    def __call__(self, parser: argparse.ArgumentParser, namespace: argparse.Namespace, key_values: list[str],
-                 option_string: Optional[str]=None) -> None:
+    def __call__(self, parser: argparse.ArgumentParser,
+                 namespace: argparse.Namespace, key_values: list[str],
+                 option_string: Optional[str] = None) -> None:
         results = {}
         for pair in key_values:
             k, v = pair.split('=', maxsplit=1)
