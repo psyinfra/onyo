@@ -6,7 +6,7 @@ import textwrap
 
 from onyo import commands
 from onyo._version import __version__
-from typing import Union
+from typing import Optional, Sequence, Union
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
@@ -14,12 +14,12 @@ log.setLevel(logging.INFO)
 
 
 class StoreKeyValuePairs(argparse.Action):
-    def __init__(self, option_strings, dest, nargs=None, **kwargs) -> None:
+    def __init__(self, option_strings: Sequence[str], dest: str, nargs: Union[None, int, str]=None, **kwargs) -> None:
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, key_values: list[str],
-                 option_string=None) -> None:
+    def __call__(self, parser: argparse.ArgumentParser, namespace: argparse.Namespace, key_values: list[str],
+                 option_string: Optional[str]=None) -> None:
         results = {}
         for pair in key_values:
             k, v = pair.split('=', maxsplit=1)
@@ -36,7 +36,7 @@ class StoreKeyValuePairs(argparse.Action):
 
 # credit: https://stackoverflow.com/a/13429281
 class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
-    def _format_action(self, action) -> str:
+    def _format_action(self, action: argparse.Action) -> str:
         parts = super()._format_action(action)
 
         # strip the first line (metavar) of the subcommands section
@@ -45,7 +45,7 @@ class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
         return parts
 
-    def _fill_text(self, text, width, indent) -> str:
+    def _fill_text(self, text: str, width: int, indent: str) -> str:
         """
         This is a very, very naive approach to stripping rst syntax from
         docstrings. Sadly, docutils does not have a plain-text writer. That

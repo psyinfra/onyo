@@ -4,7 +4,7 @@ from onyo.lib import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
 
 
 logging.basicConfig(level=logging.ERROR)  # external logging level
-log = logging.getLogger('onyo')  # internal logging level
+log: logging.Logger = logging.getLogger('onyo')  # internal logging level
 log.setLevel(level=logging.INFO)
 
 __all__ = [

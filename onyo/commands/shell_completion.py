@@ -1,4 +1,5 @@
 import argparse
+from typing import Optional
 
 
 class TabCompletion:
@@ -174,7 +175,7 @@ class TabCompletion:
 
         return sp.nargs
 
-    def _get_type(self, sp):
+    def _get_type(self, sp) -> Optional[str]:
         """
         Return the name of an argument's type.
         """
@@ -321,7 +322,7 @@ compdef _onyo onyo
 
         return output
 
-    def _zsh_build_flag(self, flag, flag_tree):
+    def _zsh_build_flag(self, flag: str, flag_tree) -> str:
         """
         Build and return a string containing the ZSH completion rule for a flag
         and its arguments.
