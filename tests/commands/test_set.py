@@ -16,7 +16,8 @@ directories = ['.',
                'very/very/very/deep'
                ]
 
-assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files
+                     for i, d in enumerate(directories)]
 
 values = [["mode=single"],
           ["mode=double"], ["key=space bar"]]
@@ -87,19 +88,22 @@ def test_set_multiple_assets(repo: Repo, set_values: list[str]) -> None:
     repo.fsck()
 
 
-non_existing_assets: List[List[str]] = [["single_non_existing.asset"],
-                       ["simple/single_non_existing.asset"],
-                       [assets[0], "single_non_existing.asset"]]
+non_existing_assets: List[List[str]] = [
+    ["single_non_existing.asset"],
+    ["simple/single_non_existing.asset"],
+    [assets[0], "single_non_existing.asset"]]
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('no_assets', non_existing_assets)
-def test_set_error_non_existing_assets(repo: Repo, no_assets: list[str]) -> None:
+def test_set_error_non_existing_assets(repo: Repo,
+                                       no_assets: list[str]) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` errors correctly for:
     - non-existing assets on root
     - non-existing assets in directories
     - one non-existing asset in a list of existing ones
     """
-    ret = subprocess.run(['onyo', 'set', '--keys', 'key=value', '--path', *no_assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--keys', 'key=value',
+                          '--path', *no_assets], capture_output=True, text=True)
 
     # verify output and the state of the repository
     assert not ret.stdout
@@ -115,7 +119,8 @@ def test_set_with_dot_recursive(repo: Repo, set_values: list[str]) -> None:
     Test that when `onyo set KEY=VALUE .` is called from the repository root,
     onyo selects all assets in the complete repo recursively.
     """
-    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', *set_values, '--path', "."], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--yes', '--keys', *set_values,
+                          '--path', "."], capture_output=True, text=True)
 
     # verify that output mentions every asset
     assert "The following assets will be changed:" in ret.stdout

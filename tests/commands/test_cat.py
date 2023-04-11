@@ -22,7 +22,7 @@ content_dict = {"one_key": "one_value",
                 "three_key": "three_value"}
 
 content_str: str = "\n".join([f"{elem}: {content_dict.get(elem)}"
-                         for elem in content_dict]) + "\n"
+                              for elem in content_dict]) + "\n"
 
 contents: List[List[str]] = [[x, content_str] for x in assets]
 

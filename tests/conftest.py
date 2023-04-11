@@ -83,11 +83,6 @@ def clean_env(request) -> None:
         pass
 
 
-@pytest.fixture
-def helpers() -> Type[Helpers]:
-    return Helpers
-
-
 class Helpers:
     @staticmethod
     def flatten(xs):
@@ -108,3 +103,8 @@ class Helpers:
         "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
         s = list(iterable)
         return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+
+@pytest.fixture
+def helpers() -> Type[Helpers]:
+    return Helpers

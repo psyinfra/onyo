@@ -16,14 +16,15 @@ directories = ['.',
                'very/very/very/deep',
                ]
 
-assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files
+                     for i, d in enumerate(directories)]
 
 content_dict = {"one_key": "one_value",
                 "two_key": "two_value",
                 "three_key": "three_value"}
 
 content_str: str = "\n".join([f"{elem}: {content_dict.get(elem)}"
-                         for elem in content_dict]) + "\n"
+                              for elem in content_dict]) + "\n"
 
 contents: List[List[str]] = [[x, content_str] for x in assets]
 
@@ -160,12 +161,14 @@ def test_unset_multiple_assets(repo: Repo) -> None:
     repo.fsck()
 
 
-non_existing_assets: List[List[str]] = [["single_non_existing.asset"],
-                       ["simple/single_non_existing.asset"],
-                       [assets[0], "single_non_existing.asset"]]
+non_existing_assets: List[List[str]] = [
+    ["single_non_existing.asset"],
+    ["simple/single_non_existing.asset"],
+    [assets[0], "single_non_existing.asset"]]
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('no_assets', non_existing_assets)
-def test_unset_error_non_existing_assets(repo: Repo, no_assets: list[str]) -> None:
+def test_unset_error_non_existing_assets(repo: Repo,
+                                         no_assets: list[str]) -> None:
     """
     Test that `onyo unset --keys KEY --path ASSET` errors correctly for
     non-existing assets on root, in directories, or if an invalid asset name is
