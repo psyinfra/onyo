@@ -5,6 +5,7 @@ from pathlib import Path
 
 from onyo import Repo
 import pytest
+from typing import List, Type, Union
 
 
 @pytest.fixture(scope='function')
@@ -72,7 +73,7 @@ def repo(tmp_path, monkeypatch, request):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def clean_env(request):
+def clean_env(request) -> None:
     """
     Ensure that $EDITOR is not inherited from the environment or other tests.
     """
@@ -83,7 +84,7 @@ def clean_env(request):
 
 
 @pytest.fixture
-def helpers():
+def helpers() -> Type[Helpers]:
     return Helpers
 
 
@@ -97,7 +98,7 @@ class Helpers:
                 yield x
 
     @staticmethod
-    def onyo_flags():
+    def onyo_flags() -> List[Union[List[List[str]], List[str]]]:
         return [['-d', '--debug'],
                 [['-C', '/tmp'], ['--onyopath', '/tmp']],
                 ]

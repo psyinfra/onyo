@@ -3,6 +3,7 @@ from pathlib import Path
 
 from onyo.lib import Repo
 import pytest
+from typing import List
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro',
@@ -16,7 +17,7 @@ directories = ['.',
                'very/very/very/deep'
                ]
 
-assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)

@@ -3,10 +3,10 @@ import pytest
 from pathlib import Path
 
 from onyo.lib import Repo
-from typing import List
+from typing import Dict, Tuple, List
 
 # generate 50 random pairings of length and num.
-variants = {f'{length} x {num}': (length, num) for length in random.sample(range(4, 20), 10) for num in random.sample(range(1, 10000), 5)}
+variants: Dict[str, Tuple[int, int]] = {f'{length} x {num}': (length, num) for length in random.sample(range(4, 20), 10) for num in random.sample(range(1, 10000), 5)}
 @pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
 def test_generate_faux_serials(repo: Repo, variant: List[int]) -> None:
     """
@@ -26,7 +26,7 @@ def test_generate_faux_serials(repo: Repo, variant: List[int]) -> None:
 
 
 # generate 30 invalid random pairings of length and num.
-variants = {f'{length} x {num}': (length, num) for length in range(-2, 4) for num in random.sample(range(1, 10000), 5)}
+variants: Dict[str, Tuple[int, int]] = {f'{length} x {num}': (length, num) for length in range(-2, 4) for num in random.sample(range(1, 10000), 5)}
 @pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
 def test_generate_faux_serials_invalid_length(repo: Repo,
                                               variant: List[int]) -> None:
@@ -38,7 +38,7 @@ def test_generate_faux_serials_invalid_length(repo: Repo,
 
 
 # generate 15 invalid random pairings of length and num.
-variants = {f'{length} x {num}': (length, num) for length in random.sample(range(4, 20), 5) for num in range(-2, 1)}
+variants: Dict[str, Tuple[int, int]] = {f'{length} x {num}': (length, num) for length in random.sample(range(4, 20), 5) for num in range(-2, 1)}
 @pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
 def test_generate_faux_serials_invalid_number(repo: Repo,
                                               variant: List[int]) -> None:
@@ -50,7 +50,7 @@ def test_generate_faux_serials_invalid_number(repo: Repo,
 
 
 # generate mutually invalid pairings of length and num.
-variants = {f'{length} x {num}': (length, num) for length in range(0, 4) for num in range(-2, 1)}
+variants: Dict[str, Tuple[int, int]] = {f'{length} x {num}': (length, num) for length in range(0, 4) for num in range(-2, 1)}
 @pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
 def test_generate_faux_serials_invalid_length_and_number(
         repo: Repo, variant: List[int]) -> None:

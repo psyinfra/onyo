@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from onyo.lib import Repo
+from typing import List
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro']
@@ -15,7 +16,7 @@ directories = ['.',
                'very/very/very/deep'
                ]
 
-assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
 
 
 @pytest.mark.repo_files(*assets)
@@ -74,7 +75,7 @@ def test_tree_multiple_inputs(repo: Repo) -> None:
         assert Path(a).name in ret.stdout
 
 
-no_directories = ["does_not_exist",
+no_directories: List[str] = ["does_not_exist",
                   ] + [d + "/subdir" for d in directories]
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('directory', no_directories)

@@ -3,6 +3,7 @@ from pathlib import Path
 
 from onyo.lib import Repo
 import pytest
+from typing import List
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro']
@@ -15,16 +16,16 @@ directories = ['.',
                'very/very/very/deep',
                ]
 
-assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
 
 content_dict = {"one_key": "one_value",
                 "two_key": "two_value",
                 "three_key": "three_value"}
 
-content_str = "\n".join([f"{elem}: {content_dict.get(elem)}"
+content_str: str = "\n".join([f"{elem}: {content_dict.get(elem)}"
                          for elem in content_dict]) + "\n"
 
-contents = [[x, content_str] for x in assets]
+contents: List[List[str]] = [[x, content_str] for x in assets]
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
@@ -159,7 +160,7 @@ def test_unset_multiple_assets(repo: Repo) -> None:
     repo.fsck()
 
 
-non_existing_assets = [["single_non_existing.asset"],
+non_existing_assets: List[List[str]] = [["single_non_existing.asset"],
                        ["simple/single_non_existing.asset"],
                        [assets[0], "single_non_existing.asset"]]
 @pytest.mark.repo_files(*assets)
@@ -403,7 +404,7 @@ depth_assets = ["laptop_macbook_pro.0",
                 "dir1/dir2/dir3/dir4/laptop_macbook_pro.4",
                 "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
                 "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6"]
-depth_contents = [[x, content_str] for x in depth_assets]
+depth_contents: List[List[str]] = [[x, content_str] for x in depth_assets]
 @pytest.mark.repo_contents(*depth_contents)
 def test_unset_depth_flag(repo: Repo) -> None:
     """

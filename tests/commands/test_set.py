@@ -3,6 +3,7 @@ from pathlib import Path
 
 from onyo.lib import Repo
 import pytest
+from typing import List
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro']
@@ -15,7 +16,7 @@ directories = ['.',
                'very/very/very/deep'
                ]
 
-assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
 
 values = [["mode=single"],
           ["mode=double"], ["key=space bar"]]
@@ -86,7 +87,7 @@ def test_set_multiple_assets(repo: Repo, set_values: list[str]) -> None:
     repo.fsck()
 
 
-non_existing_assets = [["single_non_existing.asset"],
+non_existing_assets: List[List[str]] = [["single_non_existing.asset"],
                        ["simple/single_non_existing.asset"],
                        [assets[0], "single_non_existing.asset"]]
 @pytest.mark.repo_files(*assets)
