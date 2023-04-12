@@ -26,6 +26,7 @@ content_str = "\n".join([f"{elem}: {content_dict.get(elem)}"
 
 contents = [[x, content_str] for x in assets]
 
+
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 def test_unset(repo: Repo, asset: str) -> None:
@@ -429,7 +430,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     # verify output for --depth 0
     assert "laptop_macbook_pro.0" in ret.stdout
     assert f"-{key}" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" not in ret.stdout
+    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" in ret.stdout
     # I think a value of zero should be allowed without error. It has no
     # additional functionality, but is logically consistent, and might help
     # while scripting with onyo.
@@ -440,9 +441,9 @@ def test_unset_depth_flag(repo: Repo) -> None:
     ret = subprocess.run(['onyo', 'unset', '--depth', '1', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 1
     assert "laptop_macbook_pro.0" in ret.stdout
-    assert ret.stdout.count(f"-{key}") == 2
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" not in ret.stdout
+    assert ret.stdout.count(f"-{key}") == 1
+    assert "laptop_macbook_pro.0" in ret.stdout
+    assert "dir1/laptop_macbook_pro.1" not in ret.stdout
     assert "--depth must be bigger than 0" not in ret.stderr
     assert ret.returncode == 0
     repo.fsck()
@@ -452,9 +453,8 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" in ret.stdout
     assert "dir1/dir2/laptop_macbook_pro.2" in ret.stdout
-    assert "dir1/dir2/dir3/laptop_macbook_pro.3" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" not in ret.stdout
-    assert ret.stdout.count(f"-{key}") == 4
+    assert "dir1/dir2/dir3/laptop_macbook_pro.3" not in ret.stdout
+    assert ret.stdout.count(f"-{key}") == 3
     assert ret.returncode == 0
     repo.fsck()
 
@@ -466,8 +466,8 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert "dir1/dir2/dir3/laptop_macbook_pro.3" in ret.stdout
     assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" in ret.stdout
     assert "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" in ret.stdout
-    assert ret.stdout.count(f"-{key}") == len(repo.assets)
+    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" not in ret.stdout
+    assert ret.stdout.count(f"-{key}") == 6
     assert ret.returncode == 0
     repo.fsck()
 

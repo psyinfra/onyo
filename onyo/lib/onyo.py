@@ -1151,7 +1151,7 @@ class Repo:
         A flag enable to limit the depth of recursion for setting values in
         directories.
         """
-        assets_to_set = self._set_sanitize(paths, depth)
+        assets_to_set = self._get_assets_by_path(paths, depth)
 
         content_values = dict((field, values[field]) for field in values.keys() if field not in ["type", "make", "model", "serial"])
         name_values = dict((field, values[field]) for field in values.keys() if field in ["type", "make", "model", "serial"])
@@ -1190,40 +1190,6 @@ class Repo:
                           )
         return diff
 
-    def _select_assets_from_directory(self, directory: Path,
-                                      depth: Union[int, None]) -> list[Path]:
-        """
-        Select all assets from `directory` and return them as a list.
-
-        TODO: Enable this with changing the Repo.assets and Repo._get_assets()
-              etc. for other attributes. See also #259
-        """
-        assets = []
-
-        for path in directory.iterdir():
-            # ignore .anchor and others
-            if self._is_protected_path(path):
-                continue
-
-            # add files
-            if path.is_file():
-                assets.append(path)
-
-            # add files from a directory recursively until depth is 0
-            elif path.is_dir():
-                # if flag --depth is used, but the max depth is reached, it
-                # should skip folders and just care about the files anymore
-                if depth is not None and depth == 0:
-                    continue
-                # before max depth is reached, go down one level more
-                elif depth is not None and depth > 0:
-                    assets += self._select_assets_from_directory(path, depth - 1)
-                # flag is not set, so use infinite depth
-                elif not depth:
-                    assets += self._select_assets_from_directory(path, depth)
-
-        return assets
-
     def _diff_changes(self) -> str:
         """
         Return a diff of all uncommitted changes. The format is a simplified
@@ -1252,57 +1218,31 @@ class Repo:
 
         return contents
 
-    def _set_sanitize(self, paths: Iterable[Union[Path, str]],
-                      depth: Union[int, None]) -> list[Path]:
+    def _get_assets_by_path(
+            self, paths: Iterable[Union[Path, str]],
+            depth: Union[int, None]) -> list[Path]:
         """
-        Check and normalize a list of paths. Traverse directories and select all
-        assets from `paths` and return them as a list of absolute Paths.
+        Check and normalize a list of paths. Select all assets in the
+        repository that are relative to the given `paths` descending at most
+        `depth` directories. A `depth` of 0 descends without a limit.
         """
-        error_path_absent = []
-        error_path_protected = []
-        paths_to_set = []
-
         if depth and depth < 0:
             log.error(f"depth values must be positive, but is {depth}.")
             raise ValueError(f"depth values must be positive, but is {depth}.")
 
-        for p in paths:
-            full_path = Path(self.opdir, p).resolve()
+        paths = {Path(p) for p in paths}
+        assets = [
+            a for a in self.assets if any([
+                a.is_relative_to(p) and
+                (len(a.parents) - len(p.parents) <= depth if depth else True)
+                for p in paths])]
 
-            # paths must exist
-            if not full_path.exists():
-                error_path_absent.append(p)
-                continue
+        if not assets:
+            msg = 'No assets selected.'
+            log.error(msg)
+            raise ValueError(msg)
 
-            # protected paths
-            if self._is_protected_path(full_path):
-                error_path_protected.append(p)
-                continue
-
-            if full_path.is_dir():
-                paths_to_set += self._select_assets_from_directory(full_path, depth)
-            else:
-                paths_to_set.append(full_path)
-
-        if error_path_absent:
-            log.error('The following paths do not exist:\n' +
-                      self._n_join(error_path_absent) + '\n' +
-                      'Nothing was deleted.')
-            raise FileNotFoundError('The following paths do not exist:\n' +
-                                    self._n_join(error_path_absent))
-
-        if error_path_protected:
-            log.error('The following paths are protected by onyo:\n' +
-                      self._n_join(error_path_protected) + '\n' +
-                      'No directories were created.')
-            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         self._n_join(error_path_protected))
-
-        if len(paths_to_set) == 0:
-            log.error("No assets selected.")
-            raise ValueError("No assets selected.")
-
-        return paths_to_set
+        return assets
 
     def _update_names(self, assets: list[Path], name_values: dict) -> None:
         """
@@ -1443,7 +1383,7 @@ class Repo:
               dryrun: bool, quiet: bool, depth: Union[int]) -> str:
 
         # set and unset should select assets exactly the same way
-        assets_to_unset = self._set_sanitize(paths, depth)
+        assets_to_unset = self._get_assets_by_path(paths, depth)
 
         if any([key in ["type", "make", "model", "serial"] for key in keys]):
             log.error("Can't unset pseudo keys (name fields are required).")

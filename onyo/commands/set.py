@@ -1,7 +1,8 @@
 from __future__ import annotations
 import logging
 import sys
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Set
 
 from onyo import Repo, OnyoInvalidRepoError
 from onyo.commands.edit import request_user_response
@@ -11,6 +12,28 @@ if TYPE_CHECKING:
 
 logging.basicConfig()
 log = logging.getLogger('onyo')
+
+
+def _sanitize_paths(repo: Repo, paths: list[str]) -> Set[Path]:
+    """Validate paths, returning an error if paths are invalid"""
+    formatted_paths = {Path(p) for p in paths}
+    nonexistent = {p for p in formatted_paths if not p.exists()}
+    if nonexistent:
+        print(
+            ('The following paths do not exist:\n{0}\nNothing was '
+             'set.').format('\n'.join(map(str, nonexistent))),
+            file=sys.stderr)
+        sys.exit(1)
+
+    protected = {p for p in formatted_paths if repo._is_protected_path(p)}
+    if protected:
+        print(
+            ('The following paths are protected by onyo:\n{0}\nNothing was '
+             'set.').format('\n'.join(map(str, protected))),
+            file=sys.stderr)
+        sys.exit(1)
+
+    return formatted_paths
 
 
 def set(args: argparse.Namespace, opdir: str) -> None:
@@ -52,8 +75,10 @@ def set(args: argparse.Namespace, opdir: str) -> None:
         sys.exit(1)
 
     diff = ""
+    paths = _sanitize_paths(repo, args.path)
     try:
-        diff = repo.set(args.path, args.keys, args.dry_run, args.rename, args.depth)
+        diff = repo.set(
+            paths, args.keys, args.dry_run, args.rename, args.depth)
     except ValueError:
         sys.exit(1)
 
