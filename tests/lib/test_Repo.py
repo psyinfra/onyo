@@ -5,17 +5,22 @@ from pathlib import Path
 
 import pytest
 from onyo import Repo, OnyoInvalidRepoError
+from tests.conftest import params
 
 
 #
 # instantiation
 #
-variants = {
-    'str': 'the-repo',
-    'Path': Path('the-repo'),
-}
-@pytest.mark.parametrize('variant', variants.values(), ids=variants.keys())
-def test_Repo_instantiate_types(tmp_path, variant):
+@params({
+    "Path": {"variant": Path("the-repo")},
+    "str": {"variant": "the-repo"},
+})
+def test_Repo_instantiate_types(
+        tmp_path: str, variant: Union[str, Path]) -> None:
+    """
+    The Repo class must instantiate correctly for different data types for
+    paths to existing repositories.
+    """
     os.chdir(tmp_path)
     ret = subprocess.run(['onyo', 'init', 'the-repo'])
     assert ret.returncode == 0
@@ -24,20 +29,32 @@ def test_Repo_instantiate_types(tmp_path, variant):
     Repo(variant)
 
 
-def test_Repo_instantiate_invalid_path(tmp_path):
+def test_Repo_instantiate_invalid_path(tmp_path: str) -> None:
+    """
+    The Repo class must raise a `FileNotFoundError` if instantiated with a
+    non-existing path.
+    """
     repo_path = Path(tmp_path, 'does-not-exist')
 
     with pytest.raises(FileNotFoundError):
         Repo(repo_path)
 
 
-def test_Repo_instantiate_empty_dir(tmp_path):
+def test_Repo_instantiate_empty_dir(tmp_path: str) -> None:
+    """
+    The Repo class must raise a `OnyoInvalidRepoError` if instantiated with a
+    path that is not an Onyo repository.
+    """
     repo_path = Path(tmp_path)
     with pytest.raises(OnyoInvalidRepoError):
         Repo(repo_path)
 
 
-def test_Repo_instantiate_git_no_onyo(tmp_path):
+def test_Repo_instantiate_git_no_onyo(tmp_path: str) -> None:
+    """
+    The Repo class must raise a `OnyoInvalidRepoError` if instantiated on a
+    git repository that is not an Onyo repository.
+    """
     repo_path = Path(tmp_path)
     ret = subprocess.run(['git', 'init', str(repo_path)])
     assert ret.returncode == 0
@@ -47,7 +64,11 @@ def test_Repo_instantiate_git_no_onyo(tmp_path):
         Repo(repo_path)
 
 
-def test_Repo_instantiate_onyo_no_git(tmp_path):
+def test_Repo_instantiate_onyo_no_git(tmp_path: str) -> None:
+    """
+    The Repo class must raise a `OnyoInvalidRepoError` if instantiated with a
+    path that contains a `.onyo/` that is not a git repository.
+    """
     repo_path = Path(tmp_path)
     Path(repo_path, '.onyo').mkdir()
 
@@ -77,14 +98,14 @@ def fully_populated_dot_onyo(directory: Union[Path, str]) -> bool:
     return True
 
 
-variants = {
-    'string': 'dir',
-    'Path': Path('dir'),
-}
-@pytest.mark.parametrize('variant', variants)
-def test_init_types(tmp_path, variant):
+@params({
+    "Path": {"variant": Path("dir")},
+    "str": {"variant": "dir"},
+})
+def test_init_types(tmp_path: str, variant: Union[str, Path]) -> None:
     """
-    Init an existing, empty directory.
+    Test that `Repo(<directory>, init=True)` initializes an Onyo Repository for
+    an existing, empty directory.
     """
     os.chdir(tmp_path)
 
@@ -93,22 +114,18 @@ def test_init_types(tmp_path, variant):
     assert fully_populated_dot_onyo(variant)
 
 
-def test_init_False(tmp_path):
+def test_init_False(tmp_path: str) -> None:
     """
-    False does not init.
+    `Repo(<directory>, init=False)` must not create onyo-files when it is
+    initialized a path that is not already an Onyo Repository.
     """
-    # test
     with pytest.raises(OnyoInvalidRepoError):
         Repo(tmp_path, init=False)
     assert not fully_populated_dot_onyo(tmp_path)
 
 
-variants = [  # pyre-ignore[9]
-    'dir',
-    's p a c e s',
-]
-@pytest.mark.parametrize('variant', variants)
-def test_init_not_exist_dir(tmp_path, variant):
+@pytest.mark.parametrize('variant', ['dir', 's p a c e s'])
+def test_init_not_exist_dir(tmp_path: str, variant: str) -> None:
     """
     Init a non-existent directory.
     """
@@ -119,16 +136,10 @@ def test_init_not_exist_dir(tmp_path, variant):
     assert fully_populated_dot_onyo(repo_path)
 
 
-variants = [  # pyre-ignore[9]
-    '',
-    './',
-    'dir',
-    's p a c e s',
-]
-@pytest.mark.parametrize('variant', variants)
-def test_init_exist_dir(tmp_path, variant):
+@pytest.mark.parametrize('variant', ['', './', 'dir', 's p a c e s'])
+def test_init_exist_dir(tmp_path: str, variant: str) -> None:
     """
-    Init an existing, empty directory.
+    Test init for an existing, empty directory.
     """
     os.chdir(tmp_path)
     repo_path = Path(tmp_path, variant)
@@ -139,15 +150,11 @@ def test_init_exist_dir(tmp_path, variant):
     assert fully_populated_dot_onyo(repo_path)
 
 
-variants = [  # pyre-ignore[9]
-    './',
-    'dir',
-    's p a c e s',
-]
-@pytest.mark.parametrize('variant', variants)
-def test_init_reinit(tmp_path, variant):
+@pytest.mark.parametrize('variant', ['./', 'dir', 's p a c e s'])
+def test_init_reinit(tmp_path: str, variant: str) -> None:
     """
-    Cannot re-init an Onyo repo.
+    `Repo(<directory>, init=True)` must raise a `FileExistsError` on a path that
+    is already an Onyo repository.
     """
     os.chdir(tmp_path)
     repo_path = Path(tmp_path, variant)
@@ -163,9 +170,9 @@ def test_init_reinit(tmp_path, variant):
     assert not Path(repo_path, '.onyo/', '.onyo/').exists()
 
 
-def test_init_file(tmp_path):
+def test_init_file(tmp_path: str) -> None:
     """
-    Target must be a directory.
+    Instantiation of Repo() on a file must raise a `FileExistsError`.
     """
     repo_path = Path(tmp_path, 'file').resolve()
     repo_path.touch()
@@ -175,7 +182,7 @@ def test_init_file(tmp_path):
         Repo(repo_path, init=True)
 
 
-def test_init_missing_parent_dir(tmp_path):
+def test_init_missing_parent_dir(tmp_path: str) -> None:
     """
     Parent directories must exist.
     """
@@ -190,7 +197,7 @@ def test_init_missing_parent_dir(tmp_path):
         assert not fully_populated_dot_onyo(i)
 
 
-def test_init_already_git(tmp_path):
+def test_init_already_git(tmp_path: str) -> None:
     """
     Init-ing a git repo is allowed.
     """
@@ -203,7 +210,7 @@ def test_init_already_git(tmp_path):
     assert fully_populated_dot_onyo(repo_path)
 
 
-def test_init_with_cruft(tmp_path):
+def test_init_with_cruft(tmp_path: str) -> None:
     """
     Init-ing a directory with content is allowed, and should not commit anything
     other than the newly created .onyo dir.
@@ -221,8 +228,13 @@ def test_init_with_cruft(tmp_path):
 #
 # Repo.assets
 #
-@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
-def test_Repo_assets(repo):
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6',
+                        'd/7', 'd/8')
+def test_Repo_assets(repo: Repo) -> None:
+    """
+    On instantiation the property Repo.assets must contain the assets of an
+    existing repository.
+    """
     assets = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
 
     # test
@@ -252,8 +264,13 @@ def test_Repo_assets(repo):
 #
 # Repo.dirs
 #
-@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
-def test_Repo_dirs(repo):
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6',
+                        'd/7', 'd/8')
+def test_Repo_dirs(repo: Repo) -> None:
+    """
+    On instantiation the property Repo.dirs must contain the directories of an
+    existing repository.
+    """
     dirs = ['a', 'b', 'c', 'd']
 
     # test
@@ -277,8 +294,13 @@ def test_Repo_dirs(repo):
 #
 # Repo.files
 #
-@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
-def test_Repo_files(repo):
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6',
+                        'd/7', 'd/8')
+def test_Repo_files(repo: Repo) -> None:
+    """
+    On instantiation the property Repo.files must contain the files of an
+    existing repository.
+    """
     files = ['README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8']
 
     # test
@@ -304,8 +326,13 @@ def test_Repo_files(repo):
 #
 # Repo.files_changed
 #
-@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
-def test_Repo_files_changed(repo):
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6',
+                        'd/7', 'd/8')
+def test_Repo_files_changed(repo: Repo) -> None:
+    """
+    On instantiation the property Repo.files_changed must contain the changed
+    files of an existing repository.
+    """
     files_to_change = ['a/1', 'b/3']
     # change files
     for i in files_to_change:
@@ -328,8 +355,13 @@ def test_Repo_files_changed(repo):
 #
 # Repo.files_staged
 #
-@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
-def test_Repo_files_staged(repo):
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6',
+                        'd/7', 'd/8')
+def test_Repo_files_staged(repo: Repo) -> None:
+    """
+    On instantiation the property Repo.files_staged must contain the
+    staged files of an existing repository.
+    """
     files_to_stage = ['a/1', 'b/3']
 
     # change and stage files
@@ -355,8 +387,14 @@ def test_Repo_files_staged(repo):
 #
 # Repo.files_untracked
 #
-@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6', 'd/7', 'd/8')
-def test_Repo_files_untracked(repo):
+@pytest.mark.repo_files('README', 'a/1', 'a/2', 'b/3', 'b/4', 'c/5', 'c/6',
+                        'd/7', 'd/8')
+def test_Repo_files_untracked(repo: Repo) -> None:
+    """
+    On instantiation the property Repo.files_untracked must contain the
+    untracked files of an existing repository.
+    """
+
     files_to_be_untracked = ['LICENSE', 'd/9']
 
     # create untracked files
@@ -380,7 +418,11 @@ def test_Repo_files_untracked(repo):
 #
 # Repo.opdir
 #
-def test_Repo_opdir(tmp_path):
+def test_Repo_opdir(tmp_path: str) -> None:
+    """
+    On instantiation the property Repo.opdir must contain the
+    operating directory of an existing repository.
+    """
     os.chdir(tmp_path)
 
     # setup repo
@@ -390,21 +432,14 @@ def test_Repo_opdir(tmp_path):
     # test
     repo = Repo('opdir-repo')
     assert isinstance(repo.opdir, Path)
+    assert Path('opdir-repo').samefile(repo.opdir)
 
 
-def test_Repo_opdir_parent(tmp_path):
-    os.chdir(tmp_path)
-
-    # setup repo
-    ret = subprocess.run(['onyo', 'init', 'opdir-parent'])
-    assert ret.returncode == 0
-
-    # test
-    repo = Repo('opdir-parent')
-    assert Path('opdir-parent').samefile(repo.opdir)
-
-
-def test_Repo_opdir_root(tmp_path):
+def test_Repo_opdir_root(tmp_path: str) -> None:
+    """
+    When instantiated with '.' as the path, the property Repo.opdir must contain
+    the operating directory as a Path.
+    """
     os.chdir(tmp_path)
 
     # setup repo
@@ -418,7 +453,11 @@ def test_Repo_opdir_root(tmp_path):
     assert repo.root.samefile(repo.opdir)
 
 
-def test_Repo_opdir_child(tmp_path):
+def test_Repo_opdir_child(tmp_path: str) -> None:
+    """
+    When instantiating the Repo with the cwd being inside a folder, the property
+    repo.opdir must be the cwd.
+    """
     os.chdir(tmp_path)
 
     # setup repo
@@ -437,7 +476,10 @@ def test_Repo_opdir_child(tmp_path):
 #
 # Repo.root
 #
-def test_Repo_root(tmp_path):
+def test_Repo_root(tmp_path: str) -> None:
+    """
+    The property `repo.root` must be set correctly.
+    """
     os.chdir(tmp_path)
 
     # setup repo
@@ -448,7 +490,10 @@ def test_Repo_root(tmp_path):
     assert isinstance(repo.root, Path)
 
 
-def test_Repo_root_parent(tmp_path):
+def test_Repo_root_parent(tmp_path: str) -> None:
+    """
+    The property `repo.root` must be set correctly.
+    """
     os.chdir(tmp_path)
 
     # setup repo
@@ -460,7 +505,11 @@ def test_Repo_root_parent(tmp_path):
     assert Path('root-parent').samefile(repo.root)
 
 
-def test_Repo_root_root(tmp_path):
+def test_Repo_root_root(tmp_path: str) -> None:
+    """
+    The property `repo.root` must be set correctly when Repo(".") is
+    instantiated with a "." as path.
+    """
     os.chdir(tmp_path)
 
     # setup repo
@@ -473,7 +522,11 @@ def test_Repo_root_root(tmp_path):
     assert Path('.').samefile(repo.root)
 
 
-def test_Repo_root_child(tmp_path):
+def test_Repo_root_child(tmp_path: str) -> None:
+    """
+    The property repo.root must be set to the real root of the repository, when
+    Repo() is instantiated in a sub-directory of a repository.
+    """
     os.chdir(tmp_path)
 
     # setup repo
@@ -494,8 +547,8 @@ def test_Repo_root_child(tmp_path):
 #
 def test_Repo_templates(repo: Repo) -> None:
     """
-    Test that the property repo.templates is a set of Paths to templates with
-    the right location without containing unwanted files.
+    The property repo.templates must be a set of Paths to templates with the
+    right location without containing unwanted files.
     """
     # test
     assert repo.templates
@@ -516,10 +569,8 @@ def test_Repo_templates(repo: Repo) -> None:
 
 def test_Repo_get_template(repo: Repo) -> None:
     """
-    Test that the function repo.get_template() can request all templates
-    contained in repo.templates when called with a string or a path.
-    repo.get_template() should always return a Path and can get a string or a
-    Path.
+    The function `repo.get_template()` must be able to return a Path for all
+    templates in `repo.templates` when called with a string or a Path.
     """
     for i in repo.templates:
         template = repo.get_template(i)
@@ -539,7 +590,7 @@ def test_Repo_get_template(repo: Repo) -> None:
 
 def test_Repo_get_template_default(repo: Repo) -> None:
     """
-    Test that the function repo.get_template() gets the default template when
+    The function `repo.get_template()` must get the default template when
     called without argument.
     """
     template = repo.get_template()

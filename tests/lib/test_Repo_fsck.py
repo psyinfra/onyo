@@ -2,19 +2,19 @@ import logging
 from pathlib import Path
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 from onyo.lib import Repo, OnyoInvalidRepoError
 
 #
 # Generic
 #
-variants = [
-    'anchors',
-    'asset-unique',
-    'asset-yaml',
-    'clean-tree',
-]
-@pytest.mark.parametrize('variant', variants)
-def test_fsck_empty(caplog, repo, variant):
+@pytest.mark.parametrize('variant', ['anchors', 'asset-unique',
+                                     'asset-yaml', 'clean-tree'])
+def test_fsck_empty(
+        caplog: LogCaptureFixture, repo: Repo, variant: str) -> None:
+    """
+    Run different types of fsck on a clean and empty repository without error.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
 
     # test
@@ -24,15 +24,16 @@ def test_fsck_empty(caplog, repo, variant):
     # TODO: assert variant in caplog.text
 
 
-variants = [
-    'anchors',
-    'asset-unique',
-    'asset-yaml',
-    'clean-tree',
-]
-@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8')
-@pytest.mark.parametrize('variant', variants)
-def test_fsck_populated(caplog, repo, variant):
+@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5',
+                        'c/f_6', 'd/f_7', 'd/f_8')
+@pytest.mark.parametrize('variant', ['anchors', 'asset-unique',
+                                     'asset-yaml', 'clean-tree'])
+def test_fsck_populated(caplog: LogCaptureFixture,
+                        repo: Repo, variant: str) -> None:
+    """
+    Run different types of fsck on an non-empty but clean repository without
+    error.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
 
     # test
@@ -42,12 +43,13 @@ def test_fsck_populated(caplog, repo, variant):
     # TODO: assert variant in caplog.text
 
 
-variants = [
-    '',
-    'does-not-exist'
-]
-@pytest.mark.parametrize('variant', variants)
-def test_fsck_invalid_test(caplog, repo, variant):
+@pytest.mark.parametrize('variant', ['', 'does-not-exist'])
+def test_fsck_invalid_test(caplog: LogCaptureFixture,
+                           repo: Repo, variant: str) -> None:
+    """
+    Test that when `Repo.fsck()` is called with an non-existing fsck the correct
+    error gets raised.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
 
     # test
@@ -58,9 +60,9 @@ def test_fsck_invalid_test(caplog, repo, variant):
     # TODO: assert variant in caplog.text
 
 
-def test_fsck_all(caplog, repo):
+def test_fsck_all(caplog: LogCaptureFixture, repo: Repo) -> None:
     """
-    Default is to run all tests.
+    Test that `repo.fsck()` runs per default all tests.
     """
     caplog.set_level(logging.INFO, logger='onyo')
 
@@ -79,8 +81,12 @@ def test_fsck_all(caplog, repo):
 # Anchors
 #
 @pytest.mark.repo_dirs('r/e/c/u/r/s/i/v/e')
-@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8')
-def test_fsck_anchors_missing(caplog, repo):
+@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5',
+                        'c/f_6', 'd/f_7', 'd/f_8')
+def test_fsck_anchors_missing(caplog: LogCaptureFixture, repo: Repo) -> None:
+    """
+    Test that `Repo.fsck()` fails when `.anchor` files are missing.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
     anchors_to_remove = ['a/.anchor', 'r/e/c/.anchor', 'r/e/c/u/r/s/i/v/.anchor']
 
@@ -102,8 +108,13 @@ def test_fsck_anchors_missing(caplog, repo):
 #
 # Asset-Unique
 #
-@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'r/e/c/f_5', 'r/e/c/u/r/f_6', 'r/e/c/u/r/s/i/v/e/f_7')
-def test_fsck_unique_assets_conflict(caplog, repo):
+@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4',
+                        'r/e/c/f_5', 'r/e/c/u/r/f_6', 'r/e/c/u/r/s/i/v/e/f_7')
+def test_fsck_unique_assets_conflict(caplog: LogCaptureFixture,
+                                     repo: Repo) -> None:
+    """
+    Test that `Repo.fsck()` fails if multiple assets with the same name exist.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
     assets_to_conflict = ['b/f_1', 'r/e/c/f_3', 'r/e/c/u/r/s/i/v/e/f_5']
 
@@ -128,17 +139,19 @@ def test_fsck_unique_assets_conflict(caplog, repo):
 #
 # Asset-YAML
 #
-@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'r/e/c/f_5', 'r/e/c/u/r/f_6', 'r/e/c/u/r/s/i/v/e/f_7')
-def test_fsck_yaml_invalid(caplog, repo):
+@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4',
+                        'r/e/c/f_5', 'r/e/c/u/r/f_6', 'r/e/c/u/r/s/i/v/e/f_7')
+@pytest.mark.repo_contents(['a/f_1', 'dsfs: sdf: sdf:dd ad123e'],
+                           ['r/e/c/f_5', 'dsfs: sdf: sdf:dd ad123e'],
+                           ['r/e/c/u/r/s/i/v/e/f_7',
+                            'dsfs: sdf: sdf:dd ad123e'])
+def test_fsck_yaml_invalid(caplog: LogCaptureFixture, repo: Repo) -> None:
+    """
+    Test that `Repo.fsck()` identifies files with invalid YAML syntax inside of
+    a populated repository.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
     files_to_mangle = ['a/f_1', 'r/e/c/f_5', 'r/e/c/u/r/s/i/v/e/f_7']
-
-    # mangle files
-    for i in files_to_mangle:
-        Path(i).write_text('dsfs: sdf: sdf:dd ad123e')
-
-    repo.add(files_to_mangle)
-    repo.commit('mangle files')
 
     # test
     with pytest.raises(OnyoInvalidRepoError):
@@ -150,13 +163,11 @@ def test_fsck_yaml_invalid(caplog, repo):
         assert i in caplog.text
 
 
-contents = ["type: value",
-            "make: value",
-            "model: value",
-            "serial: value",
-            "key: value\ntype: value\nfield: value"]
-@pytest.mark.parametrize('content', contents)
-def test_fsck_yaml_contains_pseudo_key(repo: Repo, caplog, content) -> None:
+@pytest.mark.parametrize('content', [
+    "type: value", "make: value", "model: value", "serial: value",
+    "key: value\ntype: value\nfield: value"])
+def test_fsck_yaml_contains_pseudo_key(caplog: LogCaptureFixture,
+                                       repo: Repo, content: str) -> None:
     """
     Test that the fsck fails when an asset contains a pseudo-key.
     """
@@ -177,15 +188,11 @@ def test_fsck_yaml_contains_pseudo_key(repo: Repo, caplog, content) -> None:
     assert "contain pseudo keys" in caplog.text
 
 
-contents = ["key_one: type",
-            "key_two: make",
-            "key_three: model",
-            "key_four: serial",
-            "key_five: 'model: value'",
-            "key_type: key_six",
-            "key_serial: key_seven"]
-@pytest.mark.parametrize('content', contents)
-def test_fsck_yaml_allows_valid_keys(repo: Repo, caplog, content) -> None:
+@pytest.mark.parametrize('content', [
+    "key_one: type", "key_two: make", "key_three: model", "key_four: serial",
+    "key_five: 'model: value'", "key_type: key_six", "key_serial: key_seven"])
+def test_fsck_yaml_allows_valid_keys(caplog: LogCaptureFixture, repo: Repo,
+                                     content: str) -> None:
     """
     Test that the fsck does not fail when an asset contains a key, where a valid
     key where just a part of it is a pseudo-key, and that pseudo-keys as values
@@ -209,8 +216,12 @@ def test_fsck_yaml_allows_valid_keys(repo: Repo, caplog, content) -> None:
 #
 # Clean-Tree
 #
-@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8')
-def test_fsck_clean_tree_changed(caplog, repo):
+@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5',
+                        'c/f_6', 'd/f_7', 'd/f_8')
+def test_fsck_clean_tree_changed(caplog: LogCaptureFixture, repo: Repo) -> None:
+    """
+    Test that `Repo.fsck()` fails if the git tree contains changed files.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
     files_to_change = ['a/f_1', 'b/f_3']
 
@@ -228,8 +239,12 @@ def test_fsck_clean_tree_changed(caplog, repo):
         assert i in caplog.text
 
 
-@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8')
-def test_fsck_clean_tree_staged(caplog, repo):
+@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5',
+                        'c/f_6', 'd/f_7', 'd/f_8')
+def test_fsck_clean_tree_staged(caplog: LogCaptureFixture, repo: Repo) -> None:
+    """
+    Test that `Repo.fsck()` fails if the git tree contains staged files.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
     files_to_stage = ['a/f_1', 'b/f_3']
 
@@ -249,8 +264,13 @@ def test_fsck_clean_tree_staged(caplog, repo):
         assert i in caplog.text
 
 
-@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5', 'c/f_6', 'd/f_7', 'd/f_8')
-def test_fsck_clean_tree_untracked(caplog, repo):
+@pytest.mark.repo_files('README', 'a/f_1', 'a/f_2', 'b/f_3', 'b/f_4', 'c/f_5',
+                        'c/f_6', 'd/f_7', 'd/f_8')
+def test_fsck_clean_tree_untracked(caplog: LogCaptureFixture,
+                                   repo: Repo) -> None:
+    """
+    Test that `Repo.fsck()` fails if the git tree contains untracked files.
+    """
     caplog.set_level(logging.INFO, logger='onyo')
     files_to_be_untracked = ['LICENSE', 'd/f_9']
 

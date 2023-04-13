@@ -6,6 +6,24 @@ from pathlib import Path
 from onyo import Repo
 from typing import Generator, List, Type, Union
 import pytest
+from _pytest.mark.structures import MarkDecorator
+
+
+def params(d: dict) -> MarkDecorator:
+    """
+    Parameterizes a dictionary of the form:
+    {
+        "<ids>": {"variant": <variable>},
+        ...
+    }
+    to run tests with a variable `variant` with the value <variable> and
+    <ids> as the test ID.
+    """
+    return pytest.mark.parametrize(
+        argnames=(argnames := sorted({k for v in d.values() for k in v.keys()})),
+        argvalues=[[v.get(k) for k in argnames] for v in d.values()],
+        ids=d.keys(),
+    )
 
 
 @pytest.fixture(scope='function')
