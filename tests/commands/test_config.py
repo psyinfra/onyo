@@ -16,7 +16,8 @@ def test_config_set(repo: Repo) -> None:
 
 def test_config_get_onyo(repo: Repo) -> None:
     # set
-    ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo", "get-onyo-test"],
+    ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo",
+                          "get-onyo-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -33,12 +34,14 @@ def test_config_get_pristine(repo: Repo) -> None:
     """
     onyo should not alter git config's output (newline, etc)
     """
-    ret = subprocess.run(["onyo", "config", "onyo.test.get-pristine", "get-pristine-test"],
+    ret = subprocess.run(["onyo", "config", "onyo.test.get-pristine",
+                          "get-pristine-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
     # git config's output
-    ret = subprocess.run(["git", "config", "-f", ".onyo/config", "onyo.test.get-pristine"],
+    ret = subprocess.run(["git", "config", "-f", ".onyo/config",
+                          "onyo.test.get-pristine"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout == 'get-pristine-test\n'
@@ -106,7 +109,8 @@ def test_config_forbidden_flags(repo: Repo) -> None:
     """
     Flags that change the source of values are not allowed.
     """
-    for flag in ['--system', '--global', '--local', '--worktree', '--file', '--blob']:
+    for flag in ['--system', '--global', '--local', '--worktree', '--file',
+                 '--blob']:
         ret = subprocess.run(["onyo", "config", flag],
                              capture_output=True, text=True)
         assert ret.returncode == 1
@@ -132,7 +136,8 @@ def test_config_bubble_stderr(repo: Repo) -> None:
     """
     Bubble up git-config printing to stderr.
     """
-    ret = subprocess.run(["onyo", "config", "--invalid-flag-oopsies", "such-an-oops"],
+    ret = subprocess.run(["onyo", "config", "--invalid-flag-oopsies",
+                          "such-an-oops"],
                          capture_output=True, text=True)
     assert ret.returncode == 129
     assert not ret.stdout

@@ -65,7 +65,8 @@ def test_tree_multiple_inputs(repo: Repo) -> None:
     Test that `onyo tree <dirs>` displays all directories when given a list of
     paths in one call.
     """
-    ret = subprocess.run(['onyo', 'tree', *directories], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'tree', *directories],
+                         capture_output=True, text=True)
 
     # verify output
     assert not ret.stderr
@@ -76,10 +77,9 @@ def test_tree_multiple_inputs(repo: Repo) -> None:
         assert Path(a).name in ret.stdout
 
 
-no_directories: List[str] = ["does_not_exist"] + [d + "/subdir"
-                                                  for d in directories]
 @pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('directory', no_directories)
+@pytest.mark.parametrize('directory', ["does_not_exist"] + [
+    d + "/subdir" for d in directories])
 def test_tree_error_dir_does_not_exist(repo: Repo, directory: str) -> None:
     """
     Test the correct error behavior when `onyo tree <path>` is called on
