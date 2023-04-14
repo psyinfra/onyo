@@ -10,7 +10,8 @@ setup(
     packages=find_packages(),
     license='ISC',
     install_requires=[
-        'ruamel.yaml'
+        'ruamel.yaml',
+        'rich',
     ],
     extras_require={
         'tests': [

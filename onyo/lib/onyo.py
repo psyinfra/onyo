@@ -5,9 +5,11 @@ import shutil
 import string
 import subprocess
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Union, Generator, Set
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
+
+from .filters import Filter
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
@@ -115,6 +117,10 @@ class Repo:
         `Repo` object was instantiated.
         """
         return self._opdir
+
+    @property
+    def pseudo_keys(self) -> list[str]:
+        return ['type', 'make', 'model', 'serial']
 
     @property
     def root(self) -> Path:
@@ -1411,3 +1417,32 @@ class Repo:
             self.restore()
 
         return diff
+
+    def get(
+            self, keys: Set[str], paths: Set[Path],
+            depth: Union[int, None] = None,
+            filters: Union[list[Filter], None] = None) -> Generator:
+        """
+        Get keys from assets matching paths and filters.
+        """
+        # filter assets by path and depth relative to paths
+        assets = self._get_assets_by_path(paths, depth) or []
+
+        if filters:
+            # Filters that do not require loading an asset are applied first
+            filters.sort(key=lambda x: x.is_pseudo, reverse=True)
+
+            # Remove assets that do not match all filters
+            for f in filters:
+                assets[:] = filter(f.match, assets)
+
+        # Obtain keys from remaining assets
+        assets = ((a, {
+            k: v
+            for k, v in (self._read_asset(a) | dict(zip(
+                self.pseudo_keys, re.findall(
+                    r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)',
+                    a.name)[0]))).items()
+            if k in keys}) for a in assets)
+
+        return assets
