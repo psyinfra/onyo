@@ -5,12 +5,12 @@ import shutil
 import string
 import subprocess
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Union
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 logging.basicConfig()
-log = logging.getLogger('onyo')
+log: logging.Logger = logging.getLogger('onyo')
 
 
 class OnyoInvalidRepoError(Exception):
@@ -28,13 +28,13 @@ class Repo:
         if init:
             self._init(path)
 
-        self._opdir = Path(path).resolve()
-        self._root = self._get_root()
+        self._opdir: Path = Path(path).resolve()
+        self._root: Path = self._get_root()
         # caches
-        self._assets = None
-        self._dirs = None
-        self._files = None
-        self._templates = None
+        self._assets: Union[set[Path], None] = None
+        self._dirs: Union[set[Path], None] = None
+        self._files: Union[set[Path], None] = None
+        self._templates: Union[set[Path], None] = None
 
     @property
     def assets(self) -> set[Path]:  # pyre-ignore[11]
@@ -375,7 +375,7 @@ class Repo:
         return False
 
     @staticmethod
-    def _n_join(to_join: Iterable) -> str:
+    def _n_join(to_join: Iterable[Union[Path, str]]) -> str:
         """
         Convert an Iterable's contents to strings and join with newlines.
         """
@@ -1142,7 +1142,8 @@ class Repo:
     #
     # SET
     #
-    def set(self, paths: Iterable[Union[Path, str]], values: dict, dryrun: bool,
+    def set(self, paths: Iterable[Union[Path, str]],
+            values: Dict[str, Union[str, int, float]], dryrun: bool,
             rename: bool, depth: Union[int]) -> str:
         """
         Set values for a list of assets (or directories), or rename assets
@@ -1237,7 +1238,7 @@ class Repo:
         return "\n".join(diff).strip()
 
     @staticmethod
-    def _read_asset(asset: Path) -> dict:
+    def _read_asset(asset: Path) -> Dict[str, Union[str, int, float]]:
         """
         Read and return the contents of an asset as a dictionary.
         """
@@ -1304,7 +1305,8 @@ class Repo:
 
         return paths_to_set
 
-    def _update_names(self, assets: list[Path], name_values: dict) -> None:
+    def _update_names(self, assets: list[Path],
+                      name_values: Dict[str, Union[float, int, str]]) -> None:
         """
         Set the pseudo key fields of an assets name (rename an asset file) from
         values of a dictionary and test that the new name is valid and
@@ -1353,7 +1355,8 @@ class Repo:
             self._git(["mv", str(asset), str(new_name)])
 
     @staticmethod
-    def _write_asset(asset: Path, contents: dict) -> None:
+    def _write_asset(asset: Path,
+                     contents: Dict[str, Union[float, int, str]]) -> None:
         """
         Write contents into an asset file.
         """

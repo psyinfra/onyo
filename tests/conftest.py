@@ -4,11 +4,30 @@ from itertools import chain, combinations
 from pathlib import Path
 
 from onyo import Repo
+from typing import Generator, List, Type, Union
 import pytest
+from _pytest.mark.structures import MarkDecorator
+
+
+def params(d: dict) -> MarkDecorator:
+    """
+    Parameterizes a dictionary of the form:
+    {
+        "<ids>": {"variant": <variable>},
+        ...
+    }
+    to run tests with a variable `variant` with the value <variable> and
+    <ids> as the test ID.
+    """
+    return pytest.mark.parametrize(
+        argnames=(argnames := sorted({k for v in d.values() for k in v.keys()})),
+        argvalues=[[v.get(k) for k in argnames] for v in d.values()],
+        ids=d.keys(),
+    )
 
 
 @pytest.fixture(scope='function')
-def repo(tmp_path, monkeypatch, request):
+def repo(tmp_path: str, monkeypatch, request) -> Generator[Repo, None, None]:
     """
     This fixture:
     - creates a new repository in a temporary directory
@@ -72,7 +91,7 @@ def repo(tmp_path, monkeypatch, request):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def clean_env(request):
+def clean_env(request) -> None:
     """
     Ensure that $EDITOR is not inherited from the environment or other tests.
     """
@@ -80,11 +99,6 @@ def clean_env(request):
         del os.environ['EDITOR']
     except KeyError:
         pass
-
-
-@pytest.fixture
-def helpers():
-    return Helpers
 
 
 class Helpers:
@@ -97,13 +111,18 @@ class Helpers:
                 yield x
 
     @staticmethod
-    def onyo_flags():
+    def onyo_flags() -> List[Union[List[List[str]], List[str]]]:
         return [['-d', '--debug'],
                 [['-C', '/tmp'], ['--onyopath', '/tmp']],
                 ]
 
     @staticmethod
-    def powerset(iterable):
+    def powerset(iterable: Iterable):
         "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
         s = list(iterable)
         return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+
+@pytest.fixture
+def helpers() -> Type[Helpers]:
+    return Helpers

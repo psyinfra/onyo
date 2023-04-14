@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
-log = logging.getLogger('onyo')
+log: logging.Logger = logging.getLogger('onyo')
 
 
 def sanitize_directories(repo: Repo, directories: list[str]) -> list[str]:

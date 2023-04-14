@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
-log = logging.getLogger('onyo')
+log: logging.Logger = logging.getLogger('onyo')
 
 
 def sanitize_args(git_config_args: list[str]) -> list[str]:

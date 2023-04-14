@@ -13,8 +13,7 @@ assets = ['laptop_apple_macbookpro.0',
           ]
 
 
-variants = ['local', 'onyo']
-@pytest.mark.parametrize('variant', variants)
+@pytest.mark.parametrize('variant', ['local', 'onyo'])
 def test_get_editor_git(repo: Repo, variant: str) -> None:
     """
     Get the editor from git or onyo configs.
@@ -86,7 +85,8 @@ def test_edit_single_asset(repo: Repo, asset: str) -> None:
     os.environ['EDITOR'] = "printf 'key: single_asset' >"
 
     # test `onyo edit` on a single asset
-    ret = subprocess.run(['onyo', 'edit', '--yes', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--yes', asset],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert "+key: single_asset" in ret.stdout
     assert not ret.stderr
@@ -106,7 +106,8 @@ def test_edit_multiple_assets(repo: Repo) -> None:
     repo_assets = repo.assets
 
     # test edit for a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', '--yes', *repo_assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--yes', *repo_assets],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout.count("+key: multiple_assets") == len(repo_assets)
     assert not ret.stderr
@@ -126,7 +127,8 @@ def test_edit_with_user_response(repo: Repo) -> None:
     os.environ['EDITOR'] = "printf 'key: user_response' >"
 
     # test edit for a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', *assets], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', *assets],
+                         input='y', capture_output=True, text=True)
     assert ret.returncode == 0
 
     # verify that the user response is requested
@@ -146,12 +148,14 @@ def test_edit_message_flag(repo: Repo, asset: str) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     # test `onyo edit --message msg`
-    ret = subprocess.run(['onyo', 'edit', '--yes', '--message', msg, asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--yes', '--message', msg, asset],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
 
     # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'history', '-I'],
+                         capture_output=True, text=True)
     assert msg in ret.stdout
     repo.fsck()
 
@@ -164,7 +168,8 @@ def test_quiet_flag(repo: Repo) -> None:
     os.environ['EDITOR'] = "printf 'key: quiet' >"
 
     # edit a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', '--yes', '--quiet', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--yes', '--quiet', *assets],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
 
     # verify output is empty
@@ -185,7 +190,8 @@ def test_quiet_errors_without_yes_flag(repo: Repo) -> None:
     os.environ['EDITOR'] = "printf 'key: quiet' >"
 
     # edit a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', '--quiet', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--quiet', *assets],
+                         capture_output=True, text=True)
 
     # verify correct error.
     assert not ret.stdout
@@ -204,7 +210,8 @@ def test_edit_discard(repo: Repo, asset: str) -> None:
     os.environ['EDITOR'] = "printf 'key: discard' >"
 
     # change asset with `onyo edit` but don't save it
-    ret = subprocess.run(['onyo', 'edit', asset], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', asset],
+                         input='n', capture_output=True, text=True)
     assert ret.returncode == 0
     assert "Save changes?" in ret.stdout
     assert "+key: discard" in ret.stdout
@@ -216,22 +223,24 @@ def test_edit_discard(repo: Repo, asset: str) -> None:
     repo.fsck()
 
 
-no_assets = ['simple/.anchor',
-             's p a c e s/.anchor',
-             's p a/c e s/.anchor',
-             'very/very/very/deep/.anchor',
-             '.onyo/config',
-             '.git/index'
-             ]
-@pytest.mark.repo_dirs('simple/', 's p a c e s/', 's p a/c e s/', 'very/very/very/deep/')
-@pytest.mark.parametrize('no_asset', no_assets)
+@pytest.mark.repo_dirs('simple/', 's p a c e s/', 's p a/c e s/',
+                       'very/very/very/deep/')
+@pytest.mark.parametrize('no_asset', [
+    'simple/.anchor',
+    's p a c e s/.anchor',
+    's p a/c e s/.anchor',
+    'very/very/very/deep/.anchor',
+    '.onyo/config',
+    '.git/index'
+])
 def test_edit_protected(repo: Repo, no_asset: str) -> None:
     """
     Test the error behavior when called on protected files.
     """
     os.environ['EDITOR'] = "printf 'key: NOT_USED' >"
 
-    ret = subprocess.run(['onyo', 'edit', no_asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', no_asset],
+                         capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert "is not an asset" in ret.stderr
@@ -239,14 +248,14 @@ def test_edit_protected(repo: Repo, no_asset: str) -> None:
     repo.fsck()
 
 
-no_assets = ["non_existing_asset.0",
-             "simple/laptop_apple_",
-             "simple/non_existing_asset.0",
-             "very/very/very/deep/non_existing_asset.0"
-             ]
 @pytest.mark.repo_files('simple/laptop_apple_macbookpro.1')
 @pytest.mark.repo_dirs('very/very/very/deep/')
-@pytest.mark.parametrize('no_asset', no_assets)
+@pytest.mark.parametrize('no_asset', [
+    "non_existing_asset.0",
+    "simple/laptop_apple_",
+    "simple/non_existing_asset.0",
+    "very/very/very/deep/non_existing_asset.0"
+])
 def test_edit_non_existing_file(repo: Repo, no_asset: str) -> None:
     """
     Test the error behavior when called on non-existing files, that Onyo does
@@ -254,7 +263,8 @@ def test_edit_non_existing_file(repo: Repo, no_asset: str) -> None:
     """
     os.environ['EDITOR'] = "printf 'key: DOES_NOT_EXIST' >"
 
-    ret = subprocess.run(['onyo', 'edit', no_asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', no_asset],
+                         capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert "is not an asset" in ret.stderr
@@ -272,7 +282,8 @@ def test_continue_edit_no(repo: Repo, asset: str) -> None:
     os.environ['EDITOR'] = "printf 'key: YAML: ERROR' >"
 
     # Change the asset to invalid yaml, and respond 'n' to "further edit" dialog
-    ret = subprocess.run(['onyo', 'edit', asset], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', asset],
+                         input='n', capture_output=True, text=True)
     assert ret.returncode == 0
     assert "not updated" in ret.stdout
     assert "has invalid YAML syntax" in ret.stderr
@@ -292,7 +303,8 @@ def test_edit_without_changes(repo: Repo) -> None:
 
     # open assets with `cat`, but do not change them
     assets = [str(asset) for asset in repo.assets]
-    ret = subprocess.run(['onyo', 'edit', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', *assets],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
     repo.fsck()
@@ -311,7 +323,8 @@ def test_edit_with_dot_dot(repo: Repo, asset: str) -> None:
     # and then inside again
     path = Path(f"../{repo.opdir.name}/{asset}")
     assert path.is_file()
-    ret = subprocess.run(['onyo', 'edit', '--yes', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'edit', '--yes', asset],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert "+key: dot_dot" in ret.stdout
     assert not ret.stderr

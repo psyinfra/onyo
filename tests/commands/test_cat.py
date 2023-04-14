@@ -2,6 +2,7 @@ import subprocess
 
 from onyo.lib import Repo, OnyoInvalidRepoError
 import pytest
+from typing import List
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro']
@@ -14,16 +15,16 @@ directories = ['.',
                'very/very/very/deep'
                ]
 
-assets = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
+assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
 
 content_dict = {"one_key": "one_value",
                 "two_key": "two_value",
                 "three_key": "three_value"}
 
-content_str = "\n".join([f"{elem}: {content_dict.get(elem)}"
-                         for elem in content_dict]) + "\n"
+content_str: str = "\n".join([f"{elem}: {content_dict.get(elem)}"
+                              for elem in content_dict]) + "\n"
 
-contents = [[x, content_str] for x in assets]
+contents: List[List[str]] = [[x, content_str] for x in assets]
 
 
 @pytest.mark.repo_contents(*contents)

@@ -1,9 +1,9 @@
 from itertools import product
 
 from onyo import main
+from tests.conftest import Helpers
 
-
-def test_get_subcmd_index_missing(helpers):
+def test_get_subcmd_index_missing(helpers: Helpers) -> None:
     """
     All combinations of flags for onyo, without any subcommand.
     """
@@ -15,7 +15,7 @@ def test_get_subcmd_index_missing(helpers):
             assert idx is None
 
 
-def test_get_subcmd_index_valid(helpers):
+def test_get_subcmd_index_valid(helpers: Helpers) -> None:
     """
     All combinations of flags for onyo, with a subcommand.
     """
@@ -27,7 +27,7 @@ def test_get_subcmd_index_valid(helpers):
             assert idx == full_cmd.index('config')
 
 
-def test_get_subcmd_index_overlap(helpers):
+def test_get_subcmd_index_overlap(helpers: Helpers) -> None:
     """
     Arg values overlap with onyo or its subcommands. Borderline pathological.
     """

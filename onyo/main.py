@@ -6,18 +6,22 @@ import textwrap
 
 from onyo import commands
 from onyo._version import __version__
+from typing import Optional, Sequence, Union
 
 logging.basicConfig()
-log = logging.getLogger('onyo')
+log: logging.Logger = logging.getLogger('onyo')
 log.setLevel(logging.INFO)
 
 
 class StoreKeyValuePairs(argparse.Action):
-    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+    def __init__(self, option_strings: Sequence[str], dest: str,
+                 nargs: Union[None, int, str] = None, **kwargs) -> None:
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, key_values: list[str], option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser,
+                 namespace: argparse.Namespace, key_values: list[str],
+                 option_string: Optional[str] = None) -> None:
         results = {}
         for pair in key_values:
             k, v = pair.split('=', maxsplit=1)
@@ -34,7 +38,7 @@ class StoreKeyValuePairs(argparse.Action):
 
 # credit: https://stackoverflow.com/a/13429281
 class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
-    def _format_action(self, action):
+    def _format_action(self, action: argparse.Action) -> str:
         parts = super()._format_action(action)
 
         # strip the first line (metavar) of the subcommands section
@@ -43,7 +47,7 @@ class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
         return parts
 
-    def _fill_text(self, text, width, indent):
+    def _fill_text(self, text: str, width: int, indent: str) -> str:
         """
         This is a very, very naive approach to stripping rst syntax from
         docstrings. Sadly, docutils does not have a plain-text writer. That
@@ -83,42 +87,42 @@ def parse_key_values(string):
     return results
 
 
-def directory(string: str):
+def directory(string: str) -> str:
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def file(string: str):
+def file(string: str) -> str:
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def git_config(string: str):
+def git_config(string: str) -> str:
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def path(string: str):
+def path(string: str) -> str:
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def template(string: str):
+def template(string: str) -> str:
     """
     A no-op type-check for ArgParse. Used to hint for shell tab-completion.
     """
     return string
 
 
-def setup_parser():
+def setup_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
         formatter_class=SubcommandHelpFormatter
@@ -635,7 +639,7 @@ def setup_parser():
     return parser
 
 
-def get_subcmd_index(arglist, start=1):
+def get_subcmd_index(arglist, start: int = 1) -> Union[int, None]:
     """
     Get the index of the subcommand from a provided list of arguments (usually sys.argv).
 
@@ -659,7 +663,7 @@ def get_subcmd_index(arglist, start=1):
     return index
 
 
-def main():
+def main() -> None:
     # NOTE: this unfortunately-located-hack is to pass uninterpreted args to
     # "onyo config".
     # nargs=argparse.REMAINDER is supposed to do this, but did not work for our

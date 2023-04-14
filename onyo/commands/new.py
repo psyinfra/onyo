@@ -10,12 +10,15 @@ from onyo.commands.edit import edit_asset, get_editor, request_user_response
 
 if TYPE_CHECKING:
     import argparse
+    from typing import Dict, Union
 
 logging.basicConfig()
-log = logging.getLogger('onyo')
+log: logging.Logger = logging.getLogger('onyo')
 
 
-def create_assets_in_destination(assets: dict, repo: Repo) -> None:
+def create_assets_in_destination(
+        assets: Dict[Path, Dict[str, Union[float, int, str]]],
+        repo: Repo) -> None:
     """
     Create and populate assets. Parent directories are created if necessary.
     """
@@ -29,7 +32,9 @@ def create_assets_in_destination(assets: dict, repo: Repo) -> None:
     repo.add(list(assets.keys()))
 
 
-def read_assets_from_tsv(tsv: str, template_name: str, key_values: dict, repo: Repo) -> dict:
+def read_assets_from_tsv(
+        tsv: str, template_name: str, key_values: Dict[str, str],
+        repo: Repo) -> Dict[Path, Dict[str, Union[float, int, str]]]:
     """
     Read a tsv table with a header row and one row for each new asset to
     create. Check the information (e.g. filenames correct and unique), and add
@@ -114,7 +119,9 @@ def read_assets_from_tsv(tsv: str, template_name: str, key_values: dict, repo: R
     return new_assets
 
 
-def read_assets_from_CLI(assets: list[str], template_name: str, key_values: dict, repo: Repo) -> dict:
+def read_assets_from_CLI(
+        assets: list[str], template_name: str, key_values: Dict[str, str],
+        repo: Repo) -> Dict[Path, Dict[str, Union[float, int, str]]]:
     """
     Read information from `assets`, with a new asset file for each entry.
     Check the information (e.g. filename correct and unique), and add
@@ -163,8 +170,9 @@ def read_assets_from_CLI(assets: list[str], template_name: str, key_values: dict
     return new_assets
 
 
-def sanitize_asset_information(assets: list[str], template: str,
-                               tsv: str, key_values: dict, repo: Repo) -> dict:
+def sanitize_asset_information(
+        assets: list[str], template: str, tsv: str, key_values: Dict[str, str],
+        repo: Repo) -> Dict[Path, Dict[str, Union[float, int, str]]]:
     """
     Collect and normalize information from TSV and CLI for the creation of
     new assets.
@@ -184,7 +192,7 @@ def sanitize_asset_information(assets: list[str], template: str,
     return new_assets
 
 
-def check_against_argument_conflicts(args) -> None:
+def check_against_argument_conflicts(args: argparse.Namespace) -> None:
     """
     Some arguments conflict with each other, e.g. it has to be checked that the
     information from a tsv table does not conflict with the information from
