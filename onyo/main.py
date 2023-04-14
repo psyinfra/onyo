@@ -482,9 +482,10 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar='N',
         type=int,
         required=False,
-        default=None,
-        help='descend at most "N" levels of directories below the starting-point'
-    )
+        default=0,
+        help=(
+            'descend at most N levels of directories below the '
+            'starting-point, with an N value of 0 for infinite'))
     cmd_set.add_argument(
         '-m', '--message',
         metavar='MESSAGE',
@@ -588,9 +589,10 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar='N',
         type=int,
         required=False,
-        default=None,
-        help='descend at most "N" levels of directories below the starting-point'
-    )
+        default=0,
+        help=(
+            'descend at most N levels of directories below the '
+            'starting-point, with an N value of 0 for infinite'))
     cmd_unset.add_argument(
         '-m', '--message',
         metavar='MESSAGE',

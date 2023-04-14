@@ -345,81 +345,72 @@ def test_set_dryrun_flag(repo: Repo, set_values: list[str]) -> None:
     repo.fsck()
 
 
-@pytest.mark.repo_files("laptop_macbook_pro.0",
-                        "dir1/laptop_macbook_pro.1",
-                        "dir1/dir2/laptop_macbook_pro.2",
-                        "dir1/dir2/dir3/laptop_macbook_pro.3",
-                        "dir1/dir2/dir3/dir4/laptop_macbook_pro.4",
-                        "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
-                        "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6",)
+@pytest.mark.repo_files(
+    "laptop_macbook_pro.0",
+    "dir1/laptop_macbook_pro.1",
+    "dir1/dir2/laptop_macbook_pro.2",
+    "dir1/dir2/dir3/laptop_macbook_pro.3",
+    "dir1/dir2/dir3/dir4/laptop_macbook_pro.4",
+    "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
+    "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6",)
 @pytest.mark.parametrize('set_values', values)
-def test_set_depth_flag(repo: Repo, set_values: list[str]) -> None:
+@pytest.mark.parametrize('depth,expected', [
+    ('0', 7), ('1', 1), ('3', 3), ('6', 6), ('10', 7)
+])
+def test_set_depth_flag(
+        repo: Repo, set_values: list[str], depth: str, expected: int) -> None:
     """
     Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` for
-    different values for `--depth N`:
-    - correct error for values smaller then 0
-    - changing correct just assets in same dir for --depth 0
-    - changing assets until sub-dir is --depth N deep
-    - changing all assets if --depth is deeper then deepest sub-directory
-      without error (e.g. deepest folder is 6, but --depth 8 is called)
+    different values for `--depth N`.
+
+    The test searches through the output to find returned assets and ensures
+    the number of returned assets matches the expected number, and the
+    returned assets do not have more parents than the specified depth.
     """
-    ret = subprocess.run(['onyo', 'set', '--depth', '-1', '--keys', *set_values], capture_output=True, text=True)
-    # verify output for invalid --depth
+    cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
+    ret = subprocess.run(cmd, input='n', capture_output=True, text=True)
+    output = [output for output in ret.stdout.split('\n')]
+    asset_paths = [str(a) for a in repo.assets]
+    n_assets = 0
+
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    for line in output:
+        if line not in asset_paths:
+            continue
+
+        n_assets += 1
+
+        if depth != '0':
+            assert len(Path(line).parents) <= int(depth)
+
+    assert n_assets == expected
+
+
+@pytest.mark.repo_files(
+    "laptop_macbook_pro.0",
+    "dir1/laptop_macbook_pro.1",
+    "dir1/dir2/laptop_macbook_pro.2",
+    "dir1/dir2/dir3/laptop_macbook_pro.3",
+    "dir1/dir2/dir3/dir4/laptop_macbook_pro.4",
+    "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
+    "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6",)
+@pytest.mark.parametrize('set_values', values)
+@pytest.mark.parametrize('depth,expected', [
+    ('-1', 'depth values must be positive, but is -1'),
+])
+def test_set_depth_flag_error(
+        repo: Repo, set_values: list[str], depth: str, expected: str) -> None:
+    """
+    Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` when an
+    invalid depth value is given.
+    """
+    cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
+    ret = subprocess.run(cmd, capture_output=True, text=True)
     assert not ret.stdout
-    assert "depth values must be positive, but is -1" in ret.stderr
+    assert expected in ret.stderr
     assert ret.returncode == 1
-    repo.fsck()
-
-    ret = subprocess.run(['onyo', 'set', '--depth', '0', '--keys', *set_values], input='n', capture_output=True, text=True)
-    # verify output for --depth 0
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" not in ret.stdout
-    assert "depth values must be positive" not in ret.stderr
-    assert ret.returncode == 0
-    repo.fsck()
-
-    ret = subprocess.run(['onyo', 'set', '--depth', '1', '--keys', *set_values], input='n', capture_output=True, text=True)
-    # verify output for --depth 1
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" not in ret.stdout
-    assert "depth values must be positive" not in ret.stderr
-    assert ret.returncode == 0
-    repo.fsck()
-
-    ret = subprocess.run(['onyo', 'set', '--depth', '3', '--keys', *set_values], input='n', capture_output=True, text=True)
-    # verify output for --depth 3
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" in ret.stdout
-    assert "dir1/dir2/dir3/laptop_macbook_pro.3" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" not in ret.stdout
-    assert ret.returncode == 0
-    repo.fsck()
-
-    ret = subprocess.run(['onyo', 'set', '--depth', '6', '--keys', *set_values], input='n', capture_output=True, text=True)
-    # verify output for --depth 6 (maximum depth) contains all files
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" in ret.stdout
-    assert "dir1/dir2/dir3/laptop_macbook_pro.3" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" in ret.stdout
-    assert ret.returncode == 0
-    repo.fsck()
-
-    ret = subprocess.run(['onyo', 'set', '--depth', '10', '--keys', *set_values], input='n', capture_output=True, text=True)
-    # verify output for --depth bigger then folder depth without error
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" in ret.stdout
-    assert "dir1/dir2/dir3/laptop_macbook_pro.3" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" in ret.stdout
-    assert ret.returncode == 0
-    repo.fsck()
 
 
 @pytest.mark.repo_files(*assets)
