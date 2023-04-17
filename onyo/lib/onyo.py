@@ -204,7 +204,7 @@ class Repo:
 
         if message:
             message_subject = message[0][0]
-            message_body = self._n_join([x[0] for x in message[1:]])
+            message_body = '\n'.join(map(str, [x[0] for x in message[1:]]))
         else:
             # get variables for the begin of the commit message `msg_dummy`
             dest = None
@@ -223,7 +223,7 @@ class Repo:
             message_subject = self._generate_commit_message_subject(
                 msg_dummy, staged_changes, dest, max_length)
 
-        message_appendix = self._n_join([str(x) for x in staged_changes])
+        message_appendix = '\n'.join(map(str, staged_changes))
         return f"{message_subject}\n\n{message_body}\n\n{message_appendix}"
 
     @staticmethod
@@ -380,13 +380,6 @@ class Repo:
 
         return False
 
-    @staticmethod
-    def _n_join(to_join: Iterable[Union[Path, str]]) -> str:
-        """
-        Convert an Iterable's contents to strings and join with newlines.
-        """
-        return '\n'.join([str(x) for x in to_join])
-
     #
     # _git
     #
@@ -452,7 +445,7 @@ class Repo:
 
             messages.append('-m')
             if isinstance(i, (list, set)):
-                messages.append(self._n_join(i))
+                messages.append('\n'.join(map(str, i)))
             else:
                 messages.append(str(i))
 
@@ -578,9 +571,12 @@ class Repo:
         difference = anchors_expected.difference(anchors_exist)
 
         if difference:
-            log.warning('The following .anchor files are missing:\n' +
-                        self._n_join(difference))
-            log.warning("Likely 'mkdir' was used to create the directory. Use 'onyo mkdir' instead.")
+            log.warning(
+                'The following .anchor files are missing:\n'
+                '{0}'.format('\n'.join(map(str, difference))))
+            log.warning(
+                "Likely 'mkdir' was used to create the directory. Use "
+                "'onyo mkdir' instead.")
             # TODO: Prompt the user if they want Onyo to fix it.
 
             return False
@@ -599,18 +595,20 @@ class Repo:
             log.error('The working tree is not clean.')
 
             if changed:
-                log.error('Changes not staged for commit:\n' +
-                          self._n_join(changed))
+                log.error('Changes not staged for commit:\n{}'.format(
+                    '\n'.join(map(str, changed))))
 
             if staged:
-                log.error('Changes to be committed:\n' +
-                          self._n_join(staged))
+                log.error('Changes to be committed:\n{}'.format(
+                    '\n'.join(map(str, staged))))
 
             if untracked:
-                log.error('Untracked files:\n' +
-                          self._n_join(untracked))
+                log.error('Untracked files:\n{}'.format(
+                    '\n'.join(map(str, untracked))))
 
-            log.error('Please commit all changes or add untracked files to .gitignore')
+            log.error(
+                'Please commit all changes or add untracked files to '
+                '.gitignore')
 
             return False
 
@@ -624,36 +622,34 @@ class Repo:
         pseudo_keys = ["type", "make", "model", "serial"]
 
         for asset in self.assets:
-            violation_list = [x for x in pseudo_keys if x in self._read_asset(asset)]
+            violation_list = [
+                x for x in pseudo_keys if x in self._read_asset(asset)]
             if violation_list:
                 assets_failed[asset] = violation_list
 
         if assets_failed:
-            log.error(f"Pseudo keys ({', '.join(pseudo_keys)}) are reserved for asset names, and are not allowed in asset files. The following assets contain pseudo keys:\n" +
-                      self._n_join([f'{asset}: ' +
-                                    ', '.join([k for k in assets_failed[asset]])
-                                    for asset in assets_failed]))
+            log.error(
+                "Pseudo keys {0} are reserved for asset file names, and are "
+                "not allowed in the asset's contents. The following assets "
+                "contain pseudo keys:\n{1}".format(
+                    tuple(pseudo_keys),
+                    '\n'.join(
+                        f'{k}: {", ".join(v)}'
+                        for k, v in assets_failed.items())))
 
             return False
 
         return True
 
     def _fsck_unique_assets(self) -> bool:
-        """
-        Check if all files have unique names. Returns True or False.
-        """
-        names = {}
-        for f in self.assets:
-            try:
-                names[f.name].append(f)
-            except KeyError:
-                names[f.name] = [f]
+        """Check if all asset files have unique names."""
+        asset_names = [a.name for a in self.assets]
+        duplicates = [a for a in self.assets if asset_names.count(a.name) > 1]
+        duplicates.sort(key=lambda x: x.name)
 
-        if len(self.assets) != len(names):
-            log.error('The following file names are not unique:\n' +
-                      '\n'.join([str(y) for x in names for y in names[x]
-                                 if len(names[x]) > 1]))
-
+        if duplicates:
+            log.error('The following file names are not unique:\n{}'.format(
+                '\n'.join(map(str, duplicates))))
             return False
 
         return True
@@ -668,8 +664,10 @@ class Repo:
             pass
 
         if invalid:
-            log.error('The contents of the following files fail validation:\n' +
-                      '\n'.join([f'{x}\n{invalid[x]}' for x in invalid]))
+            log.error(
+                'The contents of the following files fail validation:\n'
+                '{}'.format(
+                    '\n'.join([f'{k}\n{v}' for k, v in invalid.items()])))
 
             return False
 
@@ -689,8 +687,8 @@ class Repo:
                 invalid_yaml.append(str(asset))
 
         if invalid_yaml:
-            log.error('The following files fail YAML validation:\n' +
-                      self._n_join(invalid_yaml))
+            log.error('The following files fail YAML validation:\n{}'.format(
+                '\n'.join(invalid_yaml)))
 
             return False
 
@@ -819,25 +817,31 @@ class Repo:
 
         # errors
         if error_exist:
-            log.error('The following paths already exist:\n' +
-                      self._n_join(error_exist) + '\n' +
-                      'No directories were created.')
-            raise FileExistsError('The following paths already exist:\n' +
-                                  self._n_join(error_exist))
+            log.error(
+                'The following paths already exist:\n{}\nNo directories were '
+                'created.'.format('\n'.join(map(str, error_exist))))
+            raise FileExistsError(
+                'The following paths already exist:\n{}'.format(
+                    '\n'.join(map(str, error_exist))))
 
         if error_path_protected:
-            log.error('The following paths are protected by onyo:\n' +
-                      self._n_join(error_path_protected) + '\n' +
-                      'No directories were created.')
-            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         self._n_join(error_path_protected))
+            log.error(
+                'The following paths are protected by onyo:\n{}\nNo '
+                'directories were created.'.format(
+                    '\n'.join(map(str, error_path_protected))))
+            raise OnyoProtectedPathError(
+                'The following paths are protected by onyo:\n{}'.format(
+                    '\n'.join(map(str, error_path_protected))))
 
         return dirs_to_create
 
     #
     # MV
     #
-    def mv(self, sources: Union[Iterable[Union[Path, str]], Path, str], destination: Union[Path, str], dryrun: bool = False) -> list[tuple[str, str]]:
+    def mv(
+            self, sources: Union[Iterable[Union[Path, str]], Path, str],
+            destination: Union[Path, str],
+            dryrun: bool = False) -> list[tuple[str, str]]:
         """
         Move ``source``\\(s) (assets or directories) to the ``destination``
         directory, or rename a ``source`` directory to ``destination``.
@@ -854,19 +858,21 @@ class Repo:
         dest_path = self._mv_sanitize_destination(sources, destination)
 
         if dryrun:
-            ret = self._git(['mv', '--dry-run'] + [str(x) for x in src_paths] + [str(dest_path)])
+            ret = self._git(
+                ['mv', '--dry-run', *map(str, src_paths), str(dest_path)])
         else:
-            ret = self._git(['mv'] + [str(x) for x in src_paths] + [str(dest_path)])
+            ret = self._git(['mv', *map(str, src_paths), str(dest_path)])
 
         # TODO: change this to info
-        log.debug('The following will be moved:\n' +
-                  '\n'.join([str(x.relative_to(self.opdir)) for x in src_paths]))
+        log.debug('The following will be moved:\n{}'.format('\n'.join(
+            map(lambda x: str(x.relative_to(self.opdir)), src_paths))))
 
-        self.clear_caches(assets=True,  # `onyo mv` can change the dir of assets
-                          dirs=True,  # might move directories
-                          files=True,  # might move anchors
-                          templates=True  # might move or rename templates
-                          )
+        self.clear_caches(
+            assets=True,  # `onyo mv` can change the dir of assets
+            dirs=True,  # might move directories
+            files=True,  # might move anchors
+            templates=True)  # might move or rename templates
+
         # return a list of mv-ed assets
         # TODO: is this relative to opdir or root? (should be opdir)
         return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
@@ -952,19 +958,23 @@ class Repo:
                 continue
 
         if error_path_conflict:
-            log.error('The following destinations exist and would conflict:\n' +
-                      self._n_join(error_path_conflict) + '\n' +
-                      'Nothing was moved.')
-            raise FileExistsError('The following destination paths exist and would conflict.\n' +
-                                  self._n_join(error_path_conflict) + '\n' +
-                                  'Nothing was moved.')
+            log.error(
+                'The following destinations exist and would conflict:\n{}\n'
+                'Nothing was moved.'.format(
+                    '\n'.join(map(str, error_path_conflict))))
+            raise FileExistsError(
+                'The following destination paths exist and would conflict:\n{}'
+                '\nNothing was moved.'.format(
+                    '\n'.join(map(str, error_path_conflict))))
 
         # parent must exist
         if not dest_path.parent.exists():
-            log.error(f"The destination '{dest_path.parent}' does not exist.\n" +
-                      "Nothing was moved.")
-            raise FileNotFoundError(f"The destination '{dest_path.parent}' does not exist.\n" +
-                                    "Nothing was moved.")
+            log.error(
+                f"The destination '{dest_path.parent}' does not exist.\n"
+                f"Nothing was moved.")
+            raise FileNotFoundError(
+                f"The destination '{dest_path.parent}' does not exist.\n"
+                f"Nothing was moved.")
 
         if self._mv_rename_mode(sources, destination):
             """
@@ -974,19 +984,23 @@ class Repo:
             # renaming files is not allowed
             src_path = Path(self.opdir, sources[0]).resolve()
             if src_path.is_file() and src_path.name != dest_path.name:
-                log.error(f"Cannot rename asset '{src_path.name}' to '{dest_path.name}'.\n" +
-                          "Use 'set()' to rename assets.\n" +
-                          "Nothing was moved.")
-                raise ValueError(f"Cannot rename asset '{src_path.name}' to '{dest_path.name}'.\n" +
-                                 "Use 'set()' to rename assets.\n" +
-                                 "Nothing was moved.")
+                log.error(
+                    f"Cannot rename asset '{src_path.name}' to "
+                    f"'{dest_path.name}'.\nUse 'set()' to rename assets.\n"
+                    f"Nothing was moved.")
+                raise ValueError(
+                    f"Cannot rename asset '{src_path.name}' to "
+                    f"'{dest_path.name}'.\nUse 'set()' to rename assets.\n"
+                    f"Nothing was moved.")
 
             # target cannot already exist
             if dest_path.exists():
-                log.error(f"The destination '{dest_path}' exists and would conflict.\n" +
-                          "Nothing was moved.")
-                raise FileExistsError(f"The destination '{dest_path}' exists and would conflict.\n" +
-                                      "Nothing was moved.")
+                log.error(
+                    f"The destination '{dest_path}' exists and would "
+                    f"conflict.\nNothing was moved.")
+                raise FileExistsError(
+                    f"The destination '{dest_path}' exists and would "
+                    f"conflict.\nNothing was moved.")
         else:
             """
             Move mode checks
@@ -998,10 +1012,12 @@ class Repo:
             if src_path.name != dest_path.name:
                 # dest must exist
                 if not dest_path.exists():
-                    log.error(f"The destination '{destination}' does not exist.\n" +
-                              "Nothing was moved.")
-                    raise FileNotFoundError(f"The destination '{destination}' does not exist.\n" +
-                                            "Nothing was moved.")
+                    log.error(
+                        f"The destination '{destination}' does not exist.\n"
+                        f"Nothing was moved.")
+                    raise FileNotFoundError(
+                        f"The destination '{destination}' does not exist.\n"
+                        f"Nothing was moved.")
 
             # cannot move onto self
             if src_path.is_file() and dest_path.is_file() and src_path.samefile(dest_path):
@@ -1041,18 +1057,20 @@ class Repo:
             paths_to_mv.append(full_path)
 
         if error_path_absent:
-            log.error('The following source paths do not exist:\n' +
-                      self._n_join(error_path_absent) + '\n' +
-                      'Nothing was moved.')
-            raise FileNotFoundError('The following paths do not exist:\n' +
-                                    self._n_join(error_path_absent))
+            log.error(
+                'The following source paths do not exist:\n{}\nNothing was '
+                'moved.'.format('\n'.join(map(str, error_path_absent))))
+            raise FileNotFoundError(
+                'The following source paths do not exist:\n{}'.format(
+                    '\n'.join(map(str, error_path_absent))))
 
         if error_path_protected:
-            log.error('The following paths are protected by onyo:\n' +
-                      self._n_join(error_path_protected) + '\n' +
-                      'Nothing was moved.')
-            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         self._n_join(error_path_protected))
+            log.error(
+                'The following paths are protected by onyo:\n{}\nNothing was '
+                'moved.'.format('\n'.join(map(str, error_path_protected))))
+            raise OnyoProtectedPathError(
+                'The following paths are protected by onyo:\n{}'.format(
+                    '\n'.join(map(str, error_path_protected))))
 
         return paths_to_mv
 
@@ -1370,18 +1388,22 @@ class Repo:
             paths_to_rm.append(full_path)
 
         if error_path_absent:
-            log.error('The following paths do not exist:\n' +
-                      self._n_join(error_path_absent) + '\n' +
-                      'Nothing was deleted.')
-            raise FileNotFoundError('The following paths do not exist:\n' +
-                                    self._n_join(error_path_absent))
+            log.error(
+                'The following paths do not exist:\n{}\nNothing was '
+                'deleted.'.format('\n'.join(map(str, error_path_absent))))
+
+            raise FileNotFoundError(
+                'The following paths do not exist:\n{}'.format(
+                    '\n'.join(map(str, error_path_absent))))
 
         if error_path_protected:
-            log.error('The following paths are protected by onyo:\n' +
-                      self._n_join(error_path_protected) + '\n' +
-                      'No directories were created.')
-            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         self._n_join(error_path_protected))
+            log.error(
+                'The following paths are protected by onyo:\n{}\nNo '
+                'directories were created.'.format(
+                    '\n'.join(map(str, error_path_protected))))
+            raise OnyoProtectedPathError(
+                'The following paths are protected by onyo:\n{}'.format(
+                    '\n'.join(map(str, error_path_protected))))
 
         return paths_to_rm
 

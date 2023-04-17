@@ -14,7 +14,7 @@ logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
 
-def sanitize_directories(repo: Repo, directories: list[str]) -> list[str]:
+def sanitize_directories(repo: Repo, directories: list[str]) -> list[Path]:
     """
     Check a list of directories. If any do not exist or are a file, and error
     will be printed.
@@ -37,14 +37,20 @@ def sanitize_directories(repo: Repo, directories: list[str]) -> list[str]:
             error_path_not_dir.append(d)
 
     if error_path_not_in_repo or error_path_not_dir:
-        print("All paths must be directories inside the repository.",
-              file=sys.stderr)
+        print(
+            'All paths must be directories inside the repository.',
+            file=sys.stderr)
+
         if error_path_not_in_repo:
-            print('The following paths are not inside the repository:\n' +
-                  repo._n_join(error_path_not_in_repo), file=sys.stderr)
+            print(
+                'The following paths are not inside the repository: ',
+                *map(str, error_path_not_in_repo), sep='\n', file=sys.stderr)
+
         if error_path_not_dir:
-            print('The following paths are not directories:\n' +
-                  repo._n_join(error_path_not_dir), file=sys.stderr)
+            print(
+                'The following paths are not directories:',
+                *map(str, error_path_not_dir), sep='\n', file=sys.stderr)
+
         sys.exit(1)
 
     return dirs
@@ -65,7 +71,8 @@ def tree(args: argparse.Namespace, opdir: str) -> None:
     dirs = sanitize_directories(repo, args.directory)
 
     # run it
-    ret = subprocess.run(['tree'] + dirs, capture_output=True, text=True)
+    ret = subprocess.run(
+        ['tree', *map(str, dirs)], capture_output=True, text=True)
 
     # check for errors
     if ret.stderr:

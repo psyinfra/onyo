@@ -35,11 +35,14 @@ def mkdir(args: argparse.Namespace, opdir: str) -> None:
     # commit changes
     staged = sorted(repo.files_staged)
     if not args.quiet:
-        print("The following directories will be created:")
-        print(repo._n_join(staged))
-    if args.yes or request_user_response("Save changes? No discards all changes. (y/n) "):
-        repo.commit(repo.generate_commit_message(message=args.message,
-                                                 cmd="mkdir"))
+        print(
+            'The following directories will be created:',
+            *map(str, staged), sep='\n')
+
+    if args.yes or request_user_response(
+            "Save changes? No discards all changes. (y/n) "):
+        repo.commit(repo.generate_commit_message(
+            message=args.message, cmd="mkdir"))
     else:
         repo.restore()
         if not args.quiet:
