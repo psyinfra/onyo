@@ -639,21 +639,14 @@ class Repo:
         return True
 
     def _fsck_unique_assets(self) -> bool:
-        """
-        Check if all files have unique names. Returns True or False.
-        """
-        names = {}
-        for f in self.assets:
-            try:
-                names[f.name].append(f)
-            except KeyError:
-                names[f.name] = [f]
+        """Check if all asset files have unique names."""
+        asset_names = [a.name for a in self.assets]
+        duplicates = [a for a in self.assets if asset_names.count(a.name) > 1]
+        duplicates.sort(key=lambda x: x.name)
 
-        if len(self.assets) != len(names):
-            log.error('The following file names are not unique:\n' +
-                      '\n'.join([str(y) for x in names for y in names[x]
-                                 if len(names[x]) > 1]))
-
+        if duplicates:
+            log.error('The following file names are not unique:\n{}'.format(
+                '\n'.join(map(str, duplicates))))
             return False
 
         return True
