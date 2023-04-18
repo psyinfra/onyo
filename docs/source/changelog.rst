@@ -8,6 +8,122 @@ Changes listed here will be part of the next release.
 
 --------------------------------------------------------------------------------
 
+0.4.0 (2023.04.17)
+******************
+
+With this release the Onyo commands allow to add and find information inside a
+repository. The ``get`` command extracts data from assets, and with ``new``,
+``set`` and ``unset`` it is easy to manage an inventory.
+Many flags (``--keys``, ``--message``, ``--depth``, ``--yes``) and
+functionalities across all commands are added or normalized to give a smooth and
+predictable user experience.
+A `demo repository <https://github.com/psyinfra/onyo-demo>`__ shows how an
+inventory created and managed with Onyo looks like.
+The code-base and tests use a lot of new features and are uplifted to reflect
+current standards across the project.
+
+The highlights are:
+
+New Commands
+------------
+- add command ``onyo unset``: remove key/value pairs from assets
+- add command ``onyo get``: query the onyo repository
+
+Command Changes
+---------------
+- overhaul of ``onyo new``:
+    - expect full asset path and name as an argument, instead of reading
+      name fields via TUI
+    - allow creation of multiple assets in one call
+    - verify validity of asset name
+    - do not open new assets with an editor by default
+    - add diff-like output after reading/combining all information
+    - add flags:
+        - ``--edit``: open new asset(s) in editor
+        - ``--keys``: set key/value(s) to new asset(s)
+        - ``--path``: list paths for newly created asset(s)
+        - ``--tsv``: read information from table instead of TUI
+        - ``--yes``: answer yes to all prompts
+- normalize flags ``--path`` and ``--keys`` for commands ``get``, ``new``,
+  ``set``, ``unset``
+- add ``onyo set --rename``: allows renaming assets (update pseudo-keys), which
+  was formerly done with ``onyo mv --rename``
+- add ``--message`` flag to all committing commands
+- add to ``onyo edit`` flags ``--yes`` and ``--quiet``
+- add to ``onyo mkdir`` flags ``--yes`` and ``--quiet``
+- remove flag ``onyo set --recursive`` (set and unset operate recursively by
+  default)
+- key/value pairs are now space-separated (rather than comma-separated)
+- normalize user-facing texts ("Update assets? (y/n)") and behavior (remove
+  default options, the user has to explicitly answer) across commands
+- rename template "standard" -> "empty"
+- retire ``.onyo/temp/``, assets are changed in place and changes reverted when
+  needed
+
+API
+---
+- add property ``Repo.templates``: the templates in ``.onyo/`templates``
+- remove unused property ``Repo.gitfiles``
+- the following public methods are added to ``Repo``:
+    - ``validate_name_scheme()``: test that an asset name matches the
+      asset name scheme
+    - ``get_template()``: return a template path
+    - ``clean_caches()``: reset properties of ``Repo``
+    - ``restore()``: restore uncommitted changes
+    - ``generate_commit_message()``: build the most explicit commit message
+      which fits into the character limit with information about the command
+      used and assets and directories changed
+- add ``fsck`` check for pseudo-key names in asset file(s)
+- add doc strings to properties
+
+Bugs
+----
+- clear caches of properties after modifying the repository to remove stale
+  information
+- allow special characters in asset and directory names
+- order files/dirs in commit messages alphabetically
+- enable shell completion when using multiple arguments for the same flag
+- tab completion stops listing short/long flag names when the other version was
+  already used (e.g. ``--yes`` and ``-y``)
+- ``onyo tree`` displays just paths in an onyo repository instead of allowing
+  paths to lead outside of the repository
+- fix "tests badge"
+
+Docs
+----
+- add "Code Conventions" to readme
+- add badge for demo deploy status
+
+Tests
+-----
+- run tests in random order
+- add fixture ``repo_contents`` for setting asset contents
+- add/expand tests for changed behavior of ``onyo new``
+- add tests for ``onyo unset``
+- add tests for ``onyo tree``
+- add tests for ``Repo.valid_name()``
+- expand tests for ``onyo set``
+- modernize/normalize all tests under ``tests/``
+    - fixtures, doc-strings, parameterization, type hints
+    - add special character tests
+    - test single/list of path arguments as input
+- remove ``test_invoking.py`` and ``reference_output/``
+
+Demo
+----
+- add ``demo.sh``
+    - runs a list of commands to create an example repository
+    - deploy example repository at https://github.com/psyinfra/onyo-demo
+- add demo information to docs and readme
+
+Authors
+-------
+- Tobias Kadelka (`@TobiasKadelka <https://github.com/TobiasKadelka>`__)
+- Alex Waite (`@aqw <https://github.com/aqw>`__)
+- Niels Reuter (`@nhjjr <https://github.com/nhjjr>`__)
+
+--------------------------------------------------------------------------------
+
 0.3.0 (2022.11.02)
 ******************
 This release introduces an Onyo API and contains general code modernization,
