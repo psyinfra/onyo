@@ -279,6 +279,36 @@ class Repo:
         # return the shortest possible version of the commit message as fallback
         return msg
 
+    def sanitize_path(self, path: Union[Path, str]) -> Path:
+        """
+        Expects a relative or absolute path inside inside the repository.
+        These paths do not have to exist, just lead into the repo, so that the
+        function can be used to get paths to create new assets or move to
+        another location.
+
+        Returns an absolute `Path`.
+        """
+        onyo_path = Path(path).resolve()
+
+        # TODO: raise a more reasonable error
+        if not onyo_path.is_relative_to(self.root):
+            raise ValueError(f"path {path} outside repository at {self.root}.")
+        return onyo_path
+
+    def relative_to_root(self, paths: set[Path]) -> set[Path]:
+        """
+        Expects a list or set of absolute paths in the repository and returns a
+        set of paths relative to the repository root.
+        """
+        return {x.relative_to(self.root) for x in paths}
+
+    def relative_to_opdir(self, paths: set[Path]) -> set[Path]:
+        """
+        Expects a list or set of absolute paths in the repository and returns a
+        set of paths relative to the operating directory.
+        """
+        return {x.relative_to(self.opdir) for x in paths}
+
     def restore(self) -> None:
         """
         Restore all staged files with uncommitted changes in the repository.
@@ -298,17 +328,18 @@ class Repo:
 
     def _get_assets(self) -> set[Path]:
         """
-        Return a set of all assets in the repository.
+        Return a set of all absolute `Path`s to assets in the repository.
         """
         from .utils import get_assets
         return get_assets(self)
 
     def _get_dirs(self) -> set[Path]:
         """
-        Return a set of all directories in the repository (except under .git).
+        Return a set of all absolute `Path`s to directories in the repository
+        (except under .git).
         """
         log.debug('Acquiring list of directories')
-        dirs = {x.relative_to(self.root) for x in Path(self.root).glob('**/')
+        dirs = {self.sanitize_path(x) for x in Path(self.root).glob('**/')
                 if '.git' not in x.parts and
                 not x.samefile(self.root)}
 
