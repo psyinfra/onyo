@@ -327,19 +327,29 @@ class Repo:
         untracked = {Path(x) for x in self._git(['ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
         return untracked
 
-    def _get_root(self) -> Path:
+    @staticmethod
+    def _find_root(directory: Path) -> Path:
         """
-        """
-        try:
-            root = self._git(['rev-parse', '--show-toplevel'], cwd=self._opdir).strip()
-        except subprocess.CalledProcessError:
-            log.error(f"'{self._opdir}' is not a Git repository.")
-            raise OnyoInvalidRepoError(f"'{self._opdir}' is not a Git repository.")
+        Find and return the root of an Onyo repository (containing `.git/` and
+        `.onyo/`) for a given `Path` inside of an existing repository.
 
-        root = Path(root)
+        If the `directory` is not inside an existing repository, an error is
+        raised.
+        """
+        root = None
+
+        try:
+            ret = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                                 cwd=directory, check=True,
+                                 capture_output=True, text=True)
+            root = Path(ret.stdout.strip()).resolve()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            log.error(f"'{directory}' is not a Git repository.")
+            raise OnyoInvalidRepoError(f"'{directory}' is not a Git repository.")
+
         if not Path(root, '.onyo').is_dir():
             log.error(f"'{root}' is not an Onyo repository.")
-            raise OnyoInvalidRepoError(f"'{self._opdir}' is not an Onyo repository.")
+            raise OnyoInvalidRepoError(f"'{directory}' is not an Onyo repository.")
 
         # TODO: check .onyo/config, etc
 
