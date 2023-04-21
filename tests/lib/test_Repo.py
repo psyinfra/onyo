@@ -31,12 +31,12 @@ def test_Repo_instantiate_types(
 
 def test_Repo_instantiate_invalid_path(tmp_path: str) -> None:
     """
-    The Repo class must raise a `FileNotFoundError` if instantiated with a
+    The Repo class must raise a `OnyoInvalidRepoError` if instantiated with a
     non-existing path.
     """
     repo_path = Path(tmp_path, 'does-not-exist')
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(OnyoInvalidRepoError):
         Repo(repo_path)
 
 
@@ -453,24 +453,17 @@ def test_Repo_opdir_root(tmp_path: str) -> None:
     assert repo.root.samefile(repo.opdir)
 
 
-def test_Repo_opdir_child(tmp_path: str) -> None:
+@pytest.mark.repo_dirs('1/2/3/4/5/6')
+def test_Repo_opdir_child(repo: Repo, tmp_path: str) -> None:
     """
-    When instantiating the Repo with the cwd being inside a folder, the property
-    repo.opdir must be the cwd.
+    An existing Repo must be instantiated with the root of a repository,
+    otherwise an error is raised.
     """
-    os.chdir(tmp_path)
+    os.chdir(Path(repo.root, '1/2/3/4/5/6'))
 
-    # setup repo
-    ret = subprocess.run(['onyo', 'init', 'opdir-child'])
-    assert ret.returncode == 0
-    os.chdir('opdir-child')
-    ret = subprocess.run(['onyo', 'mkdir', '--yes', '1/2/3/4/5/6'])
-    assert ret.returncode == 0
-
-    # test
-    os.chdir('1/2/3/4/5/6')
-    repo = Repo('.')
-    assert Path('.').samefile(repo.opdir)
+    # test error response
+    with pytest.raises(OnyoInvalidRepoError):
+        repo = Repo('.')
 
 
 #
