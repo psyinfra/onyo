@@ -20,12 +20,29 @@ class OnyoProtectedPathError(Exception):
 class Repo:
     """
     """
-    def __init__(self, path: Union[Path, str], init: bool = False) -> None:
+    def __init__(self, path: Union[Path, str], find_root: bool = False,
+                 init: bool = False) -> None:
+        """
+        Instantiates a `Repo` object with `path` as the root directory.
+
+        If `find_root=True` searches the root of a repository from `path`.
+
+        If `init=True`, the `path` will be initialized as a git repo and a
+        `.onyo/` directory will be created.
+        Otherwise the validity of the onyo repository is verified, and if the
+        path is invalid a `OnyoInvalidRepoError` is raised.
+        """
+        path = Path(path)
+        path = self._find_root(path) if find_root else path.resolve()
+
         if init:
             self._init(path)
+        elif not Repo._is_onyo_root(path):
+            log.error(f"'{path}' is no valid Onyo Repository.")
+            raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
 
-        self._opdir: Path = Path(path).resolve()
-        self._root: Path = self._get_root()
+        self._opdir: Path = path
+        self._root: Path = path
         # caches
         self._assets: Union[set[Path], None] = None
         self._dirs: Union[set[Path], None] = None
@@ -349,8 +366,7 @@ class Repo:
 
         if not Path(root, '.onyo').is_dir():
             log.error(f"'{root}' is not an Onyo repository.")
-            raise OnyoInvalidRepoError(f"'{directory}' is not an Onyo repository.")
-
+            raise OnyoInvalidRepoError(f"'{root / '.onyo'}' is missing or not a directory.")
         # TODO: check .onyo/config, etc
 
         log.debug(f"Onyo repo found at '{root}'")
@@ -573,7 +589,7 @@ class Repo:
     #
     # INIT
     #
-    def _init(self, directory: Union[Path, str]) -> None:
+    def _init(self, directory: Path) -> None:
         """
         Initialize an Onyo repository. The directory will be initialized as a
         git repository (if it is not one already), ``.onyo/`` directory created
@@ -585,6 +601,29 @@ class Repo:
         """
         from .command_utils import init_onyo
         return init_onyo(self, directory)
+
+    @staticmethod
+    def _is_onyo_root(directory: Path) -> bool:
+        """
+        Assert whether a directory is the root of a repository and has a fully
+        populated `.onyo/` directory.
+        """
+        dot_onyo = Path(directory, '.onyo')
+
+        if not dot_onyo.is_dir() or \
+                not Path(dot_onyo, "templates").is_dir() or \
+                not Path(dot_onyo, "validation").is_dir() or \
+                not Path(dot_onyo, "config").is_file() or \
+                not Path(dot_onyo, ".anchor").is_file() or \
+                not Path(dot_onyo, "templates/.anchor").is_file() or \
+                not Path(dot_onyo, "validation/.anchor").is_file():
+            return False  # noqa: E111, E117
+
+        if subprocess.run(["git", "rev-parse"], cwd=directory,
+                          stdout=subprocess.DEVNULL).returncode != 0:
+            return False
+
+        return True
 
     @staticmethod
     def _init_sanitize(directory: Union[Path, str]) -> Path:
