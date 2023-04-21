@@ -465,6 +465,10 @@ def test_Repo_opdir_child(repo: Repo, tmp_path: str) -> None:
     with pytest.raises(OnyoInvalidRepoError):
         repo = Repo('.')
 
+    # test
+    repo = Repo('.', find_root=True)
+    assert Path(tmp_path).samefile(repo.root)
+
 
 #
 # Repo.root
@@ -514,25 +518,48 @@ def test_Repo_root_root(tmp_path: str) -> None:
     repo = Repo('.')
     assert Path('.').samefile(repo.root)
 
+#
+# Repo._find_root()
+#
 
-def test_Repo_root_child(tmp_path: str) -> None:
+@pytest.mark.repo_dirs('1/2/3/4/5/6')
+def test_Repo_find_root_opdir_root(repo: Repo) -> None:
     """
-    The property repo.root must be set to the real root of the repository, when
-    Repo() is instantiated in a sub-directory of a repository.
+    When the cwd is in the repo root, `Repo._find_root()` just returns the root.
+    a `Repo` can be instantiated with `Repo(<opdir>, find_root=True)`.
     """
-    os.chdir(tmp_path)
+    os.chdir(repo.root)
+    new_repo = Repo(repo.root, find_root=True)
+    assert new_repo.root.samefile(repo.root)
 
-    # setup repo
-    ret = subprocess.run(['onyo', 'init', 'root-child'])
-    assert ret.returncode == 0
-    os.chdir('root-child')
-    ret = subprocess.run(['onyo', 'mkdir', '--yes', '1/2/3/4/5/6'])
-    assert ret.returncode == 0
 
-    # test
-    os.chdir('1/2/3/4/5/6')
-    repo = Repo('.')
-    assert Path('../../../../../../').samefile(repo.root)
+@pytest.mark.repo_dirs('1/2/3/4/5/6')
+def test_Repo_find_root_opdir_child(repo: Repo) -> None:
+    """
+    When the cwd is inside an existing repo, a `Repo` can be instantiated with
+    `Repo(<opdir>, find_root=True)`.
+    """
+    os.chdir(Path(repo.root, '1/2/3/4/5/6'))
+    new_repo = Repo(Path(repo.root, '1/2/3/4/5/6'), find_root=True)
+    assert new_repo.root.samefile(repo.root)
+
+
+def test_Repo_find_root_with_no_repository_path(tmp_path: str) -> None:
+    """
+    If `Repo._find_root()` is called on an existing path that is not a
+    repository, it has to raise a `OnyoInvalidRepoError`
+    """
+    with pytest.raises(OnyoInvalidRepoError):
+        Repo._find_root(Path(tmp_path))
+
+
+def test_Repo_find_root_with_non_existing_path(tmp_path: str) -> None:
+    """
+    If `Repo._find_root()` is called on a path that does not exist, it has to
+    raise a `OnyoInvalidRepoError`
+    """
+    with pytest.raises(OnyoInvalidRepoError):
+        Repo._find_root(Path(tmp_path, "does_not_exist"))
 
 
 #
