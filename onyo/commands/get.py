@@ -127,14 +127,24 @@ def get(args: argparse.Namespace, opdir: str) -> None:
     except OnyoInvalidRepoError:
         sys.exit(1)
 
-    # validate arguments
-    paths = set(Path(p) for p in args.path) or {Path('.')}
-    invalid_paths = {p for p in paths if not p.exists()}
-    paths -= invalid_paths
-    if any(invalid_paths):
-        for path in invalid_paths:
-            print(
-                f"cannot access '{path}': No such directory", file=sys.stderr)
+    # validate path arguments
+    paths = set()
+    invalid_paths = set()
+    for path in args.path:
+        try:
+            onyo_path = repo.sanitize_path(path)
+            if onyo_path.exists():
+                paths.add(onyo_path)
+            else:
+                invalid_paths.add(path)
+        except ValueError:
+            invalid_paths.add(path)
+    if invalid_paths:
+        err_str = '\n'.join([str(x) for x in invalid_paths])
+        print(f"The following paths do not exist:\n{err_str}", file=sys.stderr)
+        sys.exit(1)
+    if not paths:
+        print("No assets selected.", file=sys.stderr)
         sys.exit(1)
 
     if args.depth < 0:
@@ -160,7 +170,7 @@ def get(args: argparse.Namespace, opdir: str) -> None:
         sep = '\t'  # column separator
         for asset, data in results:
             values = sep.join([str(value) for value in data.values()])
-            print(f'{values}{sep}{asset}')
+            print(f'{values}{sep}{asset.relative_to(opdir)}')
     else:
         console = Console()
         table = Table(
@@ -175,7 +185,7 @@ def get(args: argparse.Namespace, opdir: str) -> None:
         if results:
             for asset, data in results:
                 values = [str(value) for value in data.values()]
-                table.add_row(*values, str(asset))
+                table.add_row(*values, str(asset.relative_to(opdir)))
 
             console.print(table)
         else:
