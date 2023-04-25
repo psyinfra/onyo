@@ -370,7 +370,7 @@ def test_set_depth_flag(
     cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
     ret = subprocess.run(cmd, input='n', capture_output=True, text=True)
     output = [output for output in ret.stdout.split('\n')]
-    asset_paths = [str(a) for a in repo.assets]
+    asset_paths = [str(a) for a in repo.relative_to_root(repo.assets)]
     n_assets = 0
 
     assert not ret.stderr

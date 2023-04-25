@@ -102,8 +102,8 @@ def test_folder_creation_with_new(repo: Repo, directory: str) -> None:
 
     # verify that the new assets exist and the repository is in a clean state
     repo_assets = repo.assets
-    assert Path(asset).is_file()
-    assert Path(asset) in repo_assets
+    assert Path(repo.root / asset).is_file()
+    assert Path(repo.root / asset) in repo_assets
     assert len(repo_assets) == 1
     repo.fsck()
 
@@ -150,8 +150,8 @@ def test_new_assets_in_multiple_directories_at_once(repo: Repo) -> None:
     # verify that the new assets exist and the repository is in a clean state
     repo_assets = repo.assets
     for asset in assets:
-        assert Path(asset).is_file()
-        assert Path(asset) in repo_assets
+        assert Path(repo.root / asset).is_file()
+        assert Path(repo.root / asset) in repo_assets
     assert len(repo_assets) == len(directories)
     repo.fsck()
 
@@ -177,7 +177,7 @@ def test_yes_flag(repo: Repo, directory: str) -> None:
     # verify that the new asset exists and the repository is in a clean state
     assert Path(asset).is_file()
     repo_assets = repo.assets
-    assert Path(asset) in repo_assets
+    assert Path(repo.root / asset) in repo_assets
     assert len(repo_assets) == 1
     repo.fsck()
 
@@ -202,8 +202,8 @@ def test_keys_flag(repo: Repo, directory: str) -> None:
     assert ret.returncode == 0
 
     # verify that asset exists, the content is set, and the repository is clean
-    assert Path(asset) in repo.assets
-    assert 'mode: keys_flag' in Path.read_text(Path(asset))
+    assert Path(repo.root / asset) in repo.assets
+    assert 'mode: keys_flag' in Path.read_text(Path(repo.root / asset))
     repo.fsck()
 
 
@@ -247,8 +247,8 @@ def test_discard_changes(repo: Repo, directory: str) -> None:
 
     # verify that no new asset was created and the repository is still clean
     repo_assets = repo.assets
-    assert not Path(asset).is_file()
-    assert Path(asset) not in repo_assets
+    assert not Path(repo.root / asset).is_file()
+    assert Path(repo.root / asset) not in repo_assets
     assert len(repo_assets) == 0
     repo.fsck()
 
@@ -302,7 +302,7 @@ def test_new_with_flags_edit_keys_template(repo: Repo, directory: str) -> None:
     assert ret.returncode == 0
 
     # verify that new asset exists and that the content is added.
-    assert asset in repo.assets
+    assert Path(repo.root / asset) in repo.assets
     contents = Path.read_text(asset)
     # value from --template:
     assert 'RAM:' in contents
@@ -338,7 +338,7 @@ def test_new_with_keys_overwrite_template(repo: Repo, directory: str) -> None:
     assert ret.returncode == 0
 
     # verify that new asset exists and that the content is added.
-    assert asset in repo.assets
+    assert Path(repo.root / asset) in repo.assets
     contents = Path.read_text(asset)
 
     # verify values from --keys are set
@@ -492,7 +492,7 @@ def test_tsv_with_value_columns(repo: Repo) -> None:
     repo_assets = repo.assets
     assert len(repo_assets) > 0
     for asset in repo_assets:
-        contents = Path.read_text(asset)
+        contents = Path.read_text(repo.root / asset)
         assert "group: " in contents
         assert "age: " in contents
     repo.fsck()
@@ -528,7 +528,7 @@ def test_tsv_with_flags_template_keys_edit(repo: Repo) -> None:
     repo_assets = repo.assets
     assert len(repo_assets) > 0
     for asset in repo_assets:
-        contents = Path.read_text(asset)
+        contents = Path.read_text(repo.root / asset)
         # from --template:
         assert "RAM:" in contents
         # from --edit:

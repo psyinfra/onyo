@@ -24,7 +24,7 @@ def test_add_args_single_file(
 
     # test
     repo.add(variant)
-    assert Path('single-file') in repo.files_staged
+    assert Path(repo.root / 'single-file') in repo.files_staged
 
 
 @params({
@@ -47,9 +47,9 @@ def test_add_args_multi_file(
 
     # test
     repo.add(variant)
-    assert Path('one') in repo.files_staged
-    assert Path('two') in repo.files_staged
-    assert Path('three') in repo.files_staged
+    assert Path(repo.root / 'one') in repo.files_staged
+    assert Path(repo.root / 'two') in repo.files_staged
+    assert Path(repo.root / 'three') in repo.files_staged
 
 
 @pytest.mark.repo_dirs('single-dir')
@@ -72,7 +72,7 @@ def test_add_args_single_dir(
 
     # test
     repo.add(variant)
-    assert Path('single-dir/file') in repo.files_staged
+    assert Path(repo.root / 'single-dir/file') in repo.files_staged
 
 
 @pytest.mark.repo_dirs('one', 'two', 'three')
@@ -100,8 +100,8 @@ def test_add_args_multi_dir(
     # test
     repo.add(variant)
     for i in variant:
-        assert Path(f'{i}/file-{i}-A') in repo.files_staged
-        assert Path(f'{i}/file-{i}-B') in repo.files_staged
+        assert Path(repo.root / f'{i}/file-{i}-A') in repo.files_staged
+        assert Path(repo.root / f'{i}/file-{i}-B') in repo.files_staged
 
     assert len(variant) * 2 == len(repo.files_staged)
 
@@ -145,7 +145,7 @@ def test_add_spaces(repo: Repo, variant: Collection[Union[Path, str]]) -> None:
     # test
     repo.add(variant)
     for i in variant:
-        assert Path(i) in repo.files_staged
+        assert Path(repo.root / i) in repo.files_staged
     assert len(variant) == len(repo.files_staged)
 
 
@@ -159,9 +159,9 @@ def test_add_repeat(repo: Repo) -> None:
 
     # test
     repo.add(['repeat-one', 'two', 'repeat-one', 'three'])
-    assert Path('repeat-one') in repo.files_staged
-    assert Path('two') in repo.files_staged
-    assert Path('three') in repo.files_staged
+    assert Path(repo.root / 'repeat-one') in repo.files_staged
+    assert Path(repo.root / 'two') in repo.files_staged
+    assert Path(repo.root / 'three') in repo.files_staged
 
 
 @pytest.mark.repo_dirs('unchanged-dir')

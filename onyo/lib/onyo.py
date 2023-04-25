@@ -213,7 +213,7 @@ class Repo:
 
         # staged files and directories (without ".anchor") in alphabetical order
         staged_changes = [x if not x.name == ".anchor" else x.parent
-                          for x in sorted(self.files_staged)]
+                          for x in sorted(self.relative_to_root(self.files_staged))]
 
         if message:
             message_subject = message[0][0]
