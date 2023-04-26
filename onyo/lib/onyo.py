@@ -1,13 +1,7 @@
 import logging
-import random
-import re
-import shutil
-import string
 import subprocess
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Union, Generator, Set
-
-from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from .filters import Filter
 
@@ -287,12 +281,8 @@ class Repo:
         """
         Return a set of all assets in the repository.
         """
-        assets = {x for x in self.files if not self._is_protected_path(x)}
-
-        # TODO: make if asset-style name (i.e. README won't match)
-        # TODO: check for .onyoignore
-
-        return assets
+        from .utils import get_assets
+        return get_assets(self)
 
     def _get_dirs(self) -> set[Path]:
         """
@@ -357,10 +347,8 @@ class Repo:
         return root
 
     def _get_templates(self) -> set[Path]:
-        templates = {Path(file) for file in Path(self.root, ".onyo", "templates").glob('*') if
-                     Path(file).is_file() and not Path(file).name == ".anchor"}
-
-        return templates
+        from .utils import get_templates
+        return get_templates(self)
 
     #
     # HELPERS
@@ -371,14 +359,8 @@ class Repo:
         Checks whether a path contains protected elements (.anchor, .git, .onyo).
         Returns True if it contains protected elements. Otherwise False.
         """
-        full_path = Path(path).resolve()
-
-        # protected paths
-        for p in full_path.parts:
-            if p in ['.anchor', '.git', '.onyo']:
-                return True
-
-        return False
+        from .utils import is_protected_path
+        return is_protected_path(path)
 
     #
     # _git
@@ -534,165 +516,49 @@ class Repo:
           the validation rulesets defined in ``.onyo/validation/``.
         - "pseudo-keys": verifies that assets do not contain pseudo-key names
         """
-        all_tests = {
-            "clean-tree": self._fsck_clean_tree,
-            "anchors": self._fsck_anchors,
-            "asset-unique": self._fsck_unique_assets,
-            "asset-yaml": self._fsck_yaml,
-            "asset-validity": self._fsck_validation,
-            "pseudo-keys": self._fsck_pseudo_keys,
-        }
-        if tests:
-            # only known tests are accepted
-            if [x for x in tests if x not in all_tests.keys()]:
-                raise ValueError("Invalid test requested. Valid tests are: {}".format(', '.join(all_tests.keys())))
-        else:
-            tests = list(all_tests.keys())
-
-        # run the selected tests
-        for key in tests:
-            # TODO: these should be INFO
-            log.debug(f"'{key}' starting")
-
-            if not all_tests[key]():
-                log.debug(f"'{key}' failed")
-                raise OnyoInvalidRepoError(f"'{self._opdir}' failed fsck test '{key}'")
-
-            log.debug(f"'{key}' succeeded")
+        from .command_utils import fsck as utils_fsck
+        utils_fsck(self, tests)
 
     def _fsck_anchors(self) -> bool:
         """
         Check if all dirs (except those in .onyo) contain an .anchor file.
         Returns True or False.
         """
-        anchors_exist = {x for x in self.files if x.name == '.anchor' and '.onyo' not in x.parts}
-        anchors_expected = {x.joinpath('.anchor') for x in self.dirs
-                            if not self._is_protected_path(x)}
-        difference = anchors_expected.difference(anchors_exist)
-
-        if difference:
-            log.warning(
-                'The following .anchor files are missing:\n'
-                '{0}'.format('\n'.join(map(str, difference))))
-            log.warning(
-                "Likely 'mkdir' was used to create the directory. Use "
-                "'onyo mkdir' instead.")
-            # TODO: Prompt the user if they want Onyo to fix it.
-
-            return False
-
-        return True
+        from .command_utils import fsck_anchors
+        return fsck_anchors(self)
 
     def _fsck_clean_tree(self) -> bool:
         """
         Check if the working tree for git is clean. Returns True or False.
         """
-        changed = {str(x) for x in self.files_changed}
-        staged = {str(x) for x in self.files_staged}
-        untracked = {str(x) for x in self.files_untracked}
-
-        if changed or staged or untracked:
-            log.error('The working tree is not clean.')
-
-            if changed:
-                log.error('Changes not staged for commit:\n{}'.format(
-                    '\n'.join(map(str, changed))))
-
-            if staged:
-                log.error('Changes to be committed:\n{}'.format(
-                    '\n'.join(map(str, staged))))
-
-            if untracked:
-                log.error('Untracked files:\n{}'.format(
-                    '\n'.join(map(str, untracked))))
-
-            log.error(
-                'Please commit all changes or add untracked files to '
-                '.gitignore')
-
-            return False
-
-        return True
+        from .command_utils import fsck_clean_tree
+        return fsck_clean_tree(self)
 
     def _fsck_pseudo_keys(self) -> bool:
         """
         Check that no asset contains any pseudo-key names.
         """
-        assets_failed = {}
-        pseudo_keys = ["type", "make", "model", "serial"]
-
-        for asset in self.assets:
-            violation_list = [
-                x for x in pseudo_keys if x in self._read_asset(asset)]
-            if violation_list:
-                assets_failed[asset] = violation_list
-
-        if assets_failed:
-            log.error(
-                "Pseudo keys {0} are reserved for asset file names, and are "
-                "not allowed in the asset's contents. The following assets "
-                "contain pseudo keys:\n{1}".format(
-                    tuple(pseudo_keys),
-                    '\n'.join(
-                        f'{k}: {", ".join(v)}'
-                        for k, v in assets_failed.items())))
-
-            return False
-
-        return True
+        from .command_utils import fsck_pseudo_keys
+        return fsck_pseudo_keys(self)
 
     def _fsck_unique_assets(self) -> bool:
         """Check if all asset files have unique names."""
-        asset_names = [a.name for a in self.assets]
-        duplicates = [a for a in self.assets if asset_names.count(a.name) > 1]
-        duplicates.sort(key=lambda x: x.name)
-
-        if duplicates:
-            log.error('The following file names are not unique:\n{}'.format(
-                '\n'.join(map(str, duplicates))))
-            return False
-
-        return True
+        from .command_utils import fsck_unique_assets
+        return fsck_unique_assets(self)
 
     def _fsck_validation(self) -> bool:
         """
         Check if all assets pass validation. Returns True or False.
         """
-        invalid = {}
-        for asset in self.assets:
-            # TODO: validate assets
-            pass
-
-        if invalid:
-            log.error(
-                'The contents of the following files fail validation:\n'
-                '{}'.format(
-                    '\n'.join([f'{k}\n{v}' for k, v in invalid.items()])))
-
-            return False
-
-        return True
+        from .command_utils import fsck_validation
+        return fsck_validation(self)
 
     def _fsck_yaml(self) -> bool:
         """
         Check if all assets have valid YAML. Returns True or False.
         """
-        invalid_yaml = []
-
-        for asset in self.assets:
-            # TODO: use valid_yaml()
-            try:
-                YAML(typ='rt').load(Path(self.root, asset))
-            except scanner.ScannerError:
-                invalid_yaml.append(str(asset))
-
-        if invalid_yaml:
-            log.error('The following files fail YAML validation:\n{}'.format(
-                '\n'.join(invalid_yaml)))
-
-            return False
-
-        return True
+        from .command_utils import fsck_yaml
+        return fsck_yaml(self)
 
     #
     # INIT
@@ -707,28 +573,8 @@ class Repo:
         Re-init-ing an existing repository is safe. It will not overwrite
         anything; it will raise an exception.
         """
-        target_dir = self._init_sanitize(directory)
-        skel_dir = Path(Path(__file__).resolve().parent.parent, 'skel')
-        dot_onyo = Path(target_dir, '.onyo')
-
-        # create target if it doesn't already exist
-        target_dir.mkdir(exist_ok=True)
-
-        # git init (if needed)
-        if Path(target_dir, '.git').exists():
-            log.info(f"'{target_dir}' is already a git repository.")
-        else:
-            ret = self._git(['init'], cwd=target_dir)
-            log.info(ret.strip())
-
-        # populate .onyo dir
-        shutil.copytree(skel_dir, dot_onyo)
-
-        # add and commit
-        self._git(['add', '.onyo/'], cwd=target_dir)
-        self._git(['commit', '-m', 'Initialize as an Onyo repository'], cwd=target_dir)
-
-        log.info(f'Initialized Onyo repository in {dot_onyo}/')
+        from .command_utils import init_onyo
+        return init_onyo(self, directory)
 
     @staticmethod
     def _init_sanitize(directory: Union[Path, str]) -> Path:
@@ -737,25 +583,8 @@ class Repo:
 
         Returns an absolute Path on success.
         """
-        full_path = Path(directory).resolve()
-
-        # target must be a directory
-        if full_path.exists() and not full_path.is_dir():
-            log.error(f"'{full_path}' exists but is not a directory.")
-            raise FileExistsError(f"'{full_path}' exists but is not a directory.")
-
-        # parent must exist
-        if not full_path.parent.exists():
-            log.error(f"'{full_path.parent}' does not exist.")
-            raise FileNotFoundError(f"'{full_path.parent}' does not exist.")
-
-        # cannot already be an .onyo repo
-        dot_onyo = Path(full_path, '.onyo')
-        if dot_onyo.exists():
-            log.error(f"'{dot_onyo}' already exists.")
-            raise FileExistsError(f"'{dot_onyo}' already exists.")
-
-        return full_path
+        from .command_utils import init_sanitize
+        return init_sanitize(directory)
 
     #
     # MKDIR
@@ -771,23 +600,8 @@ class Repo:
         If a directory already exists, or the path is protected, an exception
         will be raised. All checks are performed before creating directories.
         """
-        if not isinstance(directories, (list, set)):
-            directories = [directories]
-
-        dirs = self._mkdir_sanitize(directories)
-        # make dirs
-        for d in dirs:
-            d.mkdir(parents=True, exist_ok=True)
-
-        # anchors
-        anchors = {Path(i, '.anchor') for d in dirs
-                   for i in [d] + list(d.parents)
-                   if i.is_relative_to(self.root) and
-                   not i.samefile(self.root)}
-        for a in anchors:
-            a.touch(exist_ok=True)
-
-        self.add(anchors)
+        from .command_utils import mk_onyo_dir
+        mk_onyo_dir(self, directories)
 
     def _mkdir_sanitize(self, dirs: Iterable[Union[Path, str]]) -> set[Path]:
         """
@@ -795,45 +609,8 @@ class Repo:
 
         Returns a list of absolute Paths.
         """
-        error_exist = []
-        error_path_protected = []
-        dirs_to_create = set()
-        # TODO: the set() neatly avoids creating the same dir twice. Intentional?
-
-        for d in dirs:
-            full_dir = Path(self.opdir, d).resolve()
-
-            # check if it exists
-            if full_dir.exists():
-                error_exist.append(d)
-                continue
-
-            # protected paths
-            if self._is_protected_path(full_dir):
-                error_path_protected.append(d)
-                continue
-
-            dirs_to_create.add(full_dir)
-
-        # errors
-        if error_exist:
-            log.error(
-                'The following paths already exist:\n{}\nNo directories were '
-                'created.'.format('\n'.join(map(str, error_exist))))
-            raise FileExistsError(
-                'The following paths already exist:\n{}'.format(
-                    '\n'.join(map(str, error_exist))))
-
-        if error_path_protected:
-            log.error(
-                'The following paths are protected by onyo:\n{}\nNo '
-                'directories were created.'.format(
-                    '\n'.join(map(str, error_path_protected))))
-            raise OnyoProtectedPathError(
-                'The following paths are protected by onyo:\n{}'.format(
-                    '\n'.join(map(str, error_path_protected))))
-
-        return dirs_to_create
+        from .command_utils import mkdir_sanitize
+        return mkdir_sanitize(self, dirs)
 
     #
     # MV
@@ -848,34 +625,8 @@ class Repo:
 
         Files cannot be renamed using ``mv()``. To do so, use ``set()``.
         """
-        if not isinstance(sources, (list, set)):
-            sources = [sources]
-        elif not isinstance(sources, list):
-            sources = list(sources)
-
-        # sanitize and validate arguments
-        src_paths = self._mv_sanitize_sources(sources)
-        dest_path = self._mv_sanitize_destination(sources, destination)
-
-        if dryrun:
-            ret = self._git(
-                ['mv', '--dry-run', *map(str, src_paths), str(dest_path)])
-        else:
-            ret = self._git(['mv', *map(str, src_paths), str(dest_path)])
-
-        # TODO: change this to info
-        log.debug('The following will be moved:\n{}'.format('\n'.join(
-            map(lambda x: str(x.relative_to(self.opdir)), src_paths))))
-
-        self.clear_caches(
-            assets=True,  # `onyo mv` can change the dir of assets
-            dirs=True,  # might move directories
-            files=True,  # might move anchors
-            templates=True)  # might move or rename templates
-
-        # return a list of mv-ed assets
-        # TODO: is this relative to opdir or root? (should be opdir)
-        return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
+        from .command_utils import mv
+        return mv(self, sources, destination, dryrun)
 
     def _mv_move_mode(self, sources: list[Union[Path, str]], destination: Union[Path, str]) -> bool:
         """
@@ -885,18 +636,8 @@ class Repo:
 
         Returns True if "move" mode and False if not.
         """
-        # can only rename one item
-        if len(sources) > 1:
-            return True
-
-        if Path(self.opdir, destination).resolve().is_dir():
-            return True
-
-        # explicitly restating the source name at the destination is a move
-        if Path(sources[0]).name == Path(destination).name and not Path(self.opdir, destination).resolve().exists():
-            return True
-
-        return False
+        from .command_utils import mv_move_mode
+        return mv_move_mode(self, sources, destination)
 
     def _mv_rename_mode(self, sources: list[Union[Path, str]], destination: Union[Path, str]) -> bool:
         """
@@ -904,7 +645,8 @@ class Repo:
 
         The inverse of `move_mode()`. See its docstring for more information.
         """
-        return not self._mv_move_mode(sources, destination)
+        from .command_utils import mv_rename_mode
+        return mv_rename_mode(self, sources, destination)
 
     def _mv_sanitize_destination(self, sources: list[Union[Path, str]], destination: Union[Path, str]) -> Path:
         """
@@ -913,120 +655,8 @@ class Repo:
 
         Returns an absolute Path on success.
         """
-        error_path_conflict = []
-        dest_path = Path(self.opdir, destination).resolve()
-
-        """
-        Common checks
-        """
-        # protected paths
-        if self._is_protected_path(dest_path):
-            log.error('The following paths are protected by onyo:\n' +
-                      f'{dest_path}\n' +
-                      'Nothing was moved.')
-            raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                         f'{dest_path}')
-
-        # destination cannot be a file
-        if dest_path.is_file():
-            # This intentionally raises FileExistsError rather than NotADirectoryError.
-            # It reduces the number of different exceptions that can be raised
-            # by `mv()`, and keeps the exception type unified with other similar
-            # situations (such as implicit conflict with the destination).
-            log.error(f"The destination '{dest_path}' cannot be a file.\n" +
-                      'Nothing was moved.')
-            raise FileExistsError(f"The destination '{dest_path}' cannot be a file.\n" +
-                                  'Nothing was moved.')
-
-        # check for conflicts and general insanity
-        for src in sources:
-            src_path = Path(self.opdir, src).resolve()
-            new_path = Path(dest_path, src_path.name).resolve()
-            if not dest_path.exists:
-                new_path = Path(dest_path).resolve()
-
-            # cannot rename/move into self
-            if src_path in new_path.parents:
-                log.error(f"Cannot move '{src}' into itself.\n" +
-                          "Nothing was moved.")
-                raise ValueError(f"Cannot move '{src}' into itself.\n" +
-                                 "Nothing was moved.")
-
-            # target paths cannot already exist
-            if new_path.exists():
-                error_path_conflict.append(new_path)
-                continue
-
-        if error_path_conflict:
-            log.error(
-                'The following destinations exist and would conflict:\n{}\n'
-                'Nothing was moved.'.format(
-                    '\n'.join(map(str, error_path_conflict))))
-            raise FileExistsError(
-                'The following destination paths exist and would conflict:\n{}'
-                '\nNothing was moved.'.format(
-                    '\n'.join(map(str, error_path_conflict))))
-
-        # parent must exist
-        if not dest_path.parent.exists():
-            log.error(
-                f"The destination '{dest_path.parent}' does not exist.\n"
-                f"Nothing was moved.")
-            raise FileNotFoundError(
-                f"The destination '{dest_path.parent}' does not exist.\n"
-                f"Nothing was moved.")
-
-        if self._mv_rename_mode(sources, destination):
-            """
-            Rename mode checks
-            """
-            log.debug("'mv' in rename mode")
-            # renaming files is not allowed
-            src_path = Path(self.opdir, sources[0]).resolve()
-            if src_path.is_file() and src_path.name != dest_path.name:
-                log.error(
-                    f"Cannot rename asset '{src_path.name}' to "
-                    f"'{dest_path.name}'.\nUse 'set()' to rename assets.\n"
-                    f"Nothing was moved.")
-                raise ValueError(
-                    f"Cannot rename asset '{src_path.name}' to "
-                    f"'{dest_path.name}'.\nUse 'set()' to rename assets.\n"
-                    f"Nothing was moved.")
-
-            # target cannot already exist
-            if dest_path.exists():
-                log.error(
-                    f"The destination '{dest_path}' exists and would "
-                    f"conflict.\nNothing was moved.")
-                raise FileExistsError(
-                    f"The destination '{dest_path}' exists and would "
-                    f"conflict.\nNothing was moved.")
-        else:
-            """
-            Move mode checks
-            """
-            log.debug("'mv' in move mode")
-
-            # check if same name is specified as the destination
-            # (e.g. rename to same name is a move)
-            if src_path.name != dest_path.name:
-                # dest must exist
-                if not dest_path.exists():
-                    log.error(
-                        f"The destination '{destination}' does not exist.\n"
-                        f"Nothing was moved.")
-                    raise FileNotFoundError(
-                        f"The destination '{destination}' does not exist.\n"
-                        f"Nothing was moved.")
-
-            # cannot move onto self
-            if src_path.is_file() and dest_path.is_file() and src_path.samefile(dest_path):
-                log.error(f"Cannot move '{src}' onto itself.\n" +
-                          "Nothing was moved.")
-                raise FileExistsError(f"Cannot move '{src}' onto itself.\n" +
-                                      "Nothing was moved.")
-
-        return dest_path
+        from .command_utils import mv_sanitize_destination
+        return mv_sanitize_destination(self, sources, destination)
 
     def _mv_sanitize_sources(self, sources: list[Union[Path, str]]) -> list[Path]:
         """
@@ -1036,43 +666,8 @@ class Repo:
 
         Returns a list of absolute Paths.
         """
-        paths_to_mv = []
-        error_path_absent = []
-        error_path_protected = []
-
-        # validate sources
-        for src in sources:
-            full_path = Path(self.opdir, src).resolve()
-
-            # paths must exist
-            if not full_path.exists():
-                error_path_absent.append(src)
-                continue
-
-            # protected paths
-            if self._is_protected_path(full_path):
-                error_path_protected.append(src)
-                continue
-
-            paths_to_mv.append(full_path)
-
-        if error_path_absent:
-            log.error(
-                'The following source paths do not exist:\n{}\nNothing was '
-                'moved.'.format('\n'.join(map(str, error_path_absent))))
-            raise FileNotFoundError(
-                'The following source paths do not exist:\n{}'.format(
-                    '\n'.join(map(str, error_path_absent))))
-
-        if error_path_protected:
-            log.error(
-                'The following paths are protected by onyo:\n{}\nNothing was '
-                'moved.'.format('\n'.join(map(str, error_path_protected))))
-            raise OnyoProtectedPathError(
-                'The following paths are protected by onyo:\n{}'.format(
-                    '\n'.join(map(str, error_path_protected))))
-
-        return paths_to_mv
+        from .command_utils import mv_sanitize_sources
+        return mv_sanitize_sources(self, sources)
 
     #
     # NEW
@@ -1085,24 +680,8 @@ class Repo:
 
         Returns a set of unique faux serials.
         """
-        if length < 4:
-            # 62^4 is ~14.7 million combinations. Which is the lowest acceptable
-            # risk of collisions between independent checkouts of a repo.
-            raise ValueError('The length of faux serial numbers must be >= 4.')
-
-        if num < 1:
-            raise ValueError('The length of faux serial numbers must be >= 1.')
-
-        alphanum = string.ascii_letters + string.digits
-        faux_serials = set()
-        repo_faux_serials = {str(x.name).split('faux')[-1] for x in self.assets}
-
-        while len(faux_serials) < num:
-            serial = ''.join(random.choices(alphanum, k=length))
-            if serial not in repo_faux_serials:
-                faux_serials.add(f'faux{serial}')
-
-        return faux_serials
+        from .command_utils import generate_faux_serials
+        return generate_faux_serials(self, length, num)
 
     def get_template(self, template_name: Union[Path, str, None] = None) -> Path:
         """
@@ -1111,38 +690,15 @@ class Repo:
 
         Returns the template path on success, or exits with error.
         """
-        if not template_name:
-            template_name = self.get_config('onyo.new.template')
-            if template_name is None:
-                log.error("Either --template must be given or 'onyo.new.template' must be set.")
-                raise ValueError("Either --template must be given or 'onyo.new.template' must be set.")
-
-        template_name = Path(template_name)
-        for template in self.templates:
-            if template.name == template_name.name:
-                return template
-            elif template_name.is_file() and template.samefile(template_name):
-                return template
-
-        log.error(f"Template {template_name} does not exist.")
-        raise ValueError(f"Template {template_name} does not exist.")
+        from .command_utils import get_template
+        return get_template(self, template_name)
 
     def valid_asset_path_and_name_available(self, asset: Path, new_assets: list[Path]) -> None:
         """
         Test for an assets path and name if it can be used to create a new asset.
         """
-        if not self.valid_name(asset):
-            log.error(f"'{asset}' is not a valid asset name.")
-            raise ValueError(f"'{asset}' is not a valid asset name.")
-        if file := [file for file in self.assets if asset.name == file.name]:
-            log.error(f"Filename '{asset.name}' already exists as '{file[0]}'.")
-            raise ValueError(f"Filename '{asset.name}' already exists as '{file[0]}'.")
-        elif file := [file for file in new_assets if asset.name == file.name]:
-            log.error(f"Input contains multiple '{file[0].name}'")
-            raise ValueError(f"Input contains multiple '{file[0].name}'")
-        if self._is_protected_path(asset):
-            log.error(f"The path is protected by onyo: '{asset}'")
-            raise ValueError(f"Input contains multiple '{file[0].name}'")
+        from .command_utils import valid_asset_path_and_name_available
+        valid_asset_path_and_name_available(self, asset, new_assets)
 
     def valid_name(self, asset: Union[Path, str]) -> bool:
         """
@@ -1153,15 +709,8 @@ class Repo:
 
         Returns True for valid asset names, and False if invalid.
         """
-        asset = Path(asset)
-
-        try:
-            re.findall(r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset.name)[0]
-        except (ValueError, IndexError):
-            log.info(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
-            return False
-
-        return True
+        from .command_utils import valid_name
+        return valid_name(asset)
 
     #
     # SET
@@ -1176,44 +725,8 @@ class Repo:
         A flag enable to limit the depth of recursion for setting values in
         directories.
         """
-        assets_to_set = self._get_assets_by_path(paths, depth)
-
-        content_values = dict((field, values[field]) for field in values.keys() if field not in ["type", "make", "model", "serial"])
-        name_values = dict((field, values[field]) for field in values.keys() if field in ["type", "make", "model", "serial"])
-
-        if name_values and not rename:
-            log.error("Can't change pseudo keys without --rename.")
-            raise ValueError("Can't change pseudo keys without --rename.")
-
-        if content_values:
-            for asset in assets_to_set:
-                contents = self._read_asset(asset)
-                contents.update(content_values)
-                self._write_asset(asset, contents)
-                self.add(asset)
-
-        if name_values:
-            try:
-                self._update_names(assets_to_set, name_values)
-            except ValueError as e:
-                if self.files_staged:
-                    self.restore()
-                # reset renaming needs double-restoring
-                if self.files_staged:
-                    self.restore()
-                raise ValueError(e)
-
-        # generate diff, and restore changes for dry-runs
-        diff = self._diff_changes()
-        if diff and dryrun:
-            self.restore()
-
-        self.clear_caches(assets=True,  # `onyo set` can rename assets
-                          dirs=False,  # `set` cannot create, move, or remove directories
-                          files=True,  # might rename asset files
-                          templates=True  # might modify templates
-                          )
-        return diff
+        from .command_utils import set_assets
+        return set_assets(self, paths, values, dryrun, rename, depth)
 
     def _diff_changes(self) -> str:
         """
@@ -1232,16 +745,8 @@ class Repo:
         """
         Read and return the contents of an asset as a dictionary.
         """
-        yaml = YAML(typ='rt', pure=True)
-        contents = dict()
-        try:
-            contents = yaml.load(asset)
-        except scanner.ScannerError as e:
-            print(e)
-        if contents is None:
-            return dict()
-
-        return contents
+        from .utils import read_asset
+        return read_asset(asset)
 
     def _get_assets_by_path(
             self, paths: Iterable[Union[Path, str]],
@@ -1251,23 +756,8 @@ class Repo:
         repository that are relative to the given `paths` descending at most
         `depth` directories. A `depth` of 0 descends without a limit.
         """
-        if depth and depth < 0:
-            log.error(f"depth values must be positive, but is {depth}.")
-            raise ValueError(f"depth values must be positive, but is {depth}.")
-
-        paths = {Path(p) for p in paths}
-        assets = [
-            a for a in self.assets if any([
-                a.is_relative_to(p) and
-                (len(a.parents) - len(p.parents) <= depth if depth else True)
-                for p in paths])]
-
-        if not assets:
-            msg = 'No assets selected.'
-            log.error(msg)
-            raise ValueError(msg)
-
-        return assets
+        from .utils import get_assets_by_path
+        return get_assets_by_path(self, paths=paths, depth=depth)
 
     def _update_names(self, assets: list[Path],
                       name_values: Dict[str, Union[float, int, str]]) -> None:
@@ -1276,47 +766,8 @@ class Repo:
         values of a dictionary and test that the new name is valid and
         available.
         """
-        new_assets = []
-
-        # count and request the needed faux serial numbers
-        faux_serial_list = []
-        if 'serial' in name_values.keys() and name_values['serial'] == 'faux':
-            faux_number = len(assets)
-            if faux_number > 0:
-                faux_serial_list = self.generate_faux_serials(num=faux_number)
-
-        for asset in assets:
-            # split old name into parts
-            [serial, model, make, type] = [field[::-1] for field in re.findall(r'(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]]
-            fields = name_values.keys()
-
-            # update name fields and build new asset name
-            if "serial" in fields:
-                if name_values["serial"] == "faux":
-                    serial = faux_serial_list.pop()
-                else:
-                    serial = name_values["serial"]
-            if "model" in fields:
-                model = name_values["model"]
-            if "make" in fields:
-                make = name_values["make"]
-            if "type" in fields:
-                type = name_values["type"]
-            new_name = Path(asset.parent, f"{type}_{make}_{model}.{serial}")
-
-            # Check validity of the new asset name
-            if new_name == asset.name:
-                log.error(f"New asset names must be different than old names: '{new_name}'")
-                raise ValueError(f"New asset names must be different than old names: '{new_name}'")
-
-            if not self.valid_name(new_name):
-                log.error(f"New asset name is not valid: '{new_name}'")
-                raise ValueError(f"New asset name is not valid: '{new_name}'")
-
-            self.valid_asset_path_and_name_available(new_name, new_assets)
-            new_assets.append(new_name)
-
-            self._git(["mv", str(asset), str(new_name)])
+        from .command_utils import update_names
+        update_names(self, assets, name_values)
 
     @staticmethod
     def _write_asset(asset: Path,
@@ -1324,11 +775,8 @@ class Repo:
         """
         Write contents into an asset file.
         """
-        if contents == {}:
-            asset.open('w').write("")
-        else:
-            yaml = YAML(typ='rt')
-            yaml.dump(contents, asset)
+        from .utils import write_asset
+        write_asset(asset, contents)
 
     #
     # RM
@@ -1337,30 +785,8 @@ class Repo:
         """
         Delete ``asset``\\(s) and ``directory``\\(s).
         """
-        if not isinstance(paths, (list, set)):
-            paths = [paths]
-
-        paths_to_rm = self._rm_sanitize(paths)
-
-        if dryrun:
-            ret = self._git(['rm', '-r', '--dry-run'] + [str(x) for x in paths_to_rm])
-        else:
-            # rm and commit
-            ret = self._git(['rm', '-r'] + [str(x) for x in paths_to_rm])
-
-        # TODO: change this to info
-        log.debug('The following will be deleted:\n' +
-                  '\n'.join([str(x.relative_to(self.opdir)) for x in paths_to_rm]))
-
-        self.clear_caches(assets=True,  # `onyo rm` can delete assets
-                          dirs=True,  # can delete directories
-                          files=True,  # if used on dir, deletes also `.anchor`
-                          templates=True  # can delete templates
-                          )
-        # return a list of rm-ed assets
-        # TODO: should this also list the dirs?
-        # TODO: is this relative to opdir or root? (should be opdir)
-        return [r for r in re.findall("rm '(.*)'", ret)]
+        from .command_utils import rm
+        return rm(self, paths, dryrun)
 
     def _rm_sanitize(self, paths: Iterable[Union[Path, str]]) -> list[Path]:
         """
@@ -1368,44 +794,8 @@ class Repo:
 
         Returns a list of absolute Paths.
         """
-        error_path_absent = []
-        error_path_protected = []
-        paths_to_rm = []
-
-        for p in paths:
-            full_path = Path(self.opdir, p).resolve()
-
-            # paths must exist
-            if not full_path.exists():
-                error_path_absent.append(p)
-                continue
-
-            # protected paths
-            if self._is_protected_path(full_path):
-                error_path_protected.append(p)
-                continue
-
-            paths_to_rm.append(full_path)
-
-        if error_path_absent:
-            log.error(
-                'The following paths do not exist:\n{}\nNothing was '
-                'deleted.'.format('\n'.join(map(str, error_path_absent))))
-
-            raise FileNotFoundError(
-                'The following paths do not exist:\n{}'.format(
-                    '\n'.join(map(str, error_path_absent))))
-
-        if error_path_protected:
-            log.error(
-                'The following paths are protected by onyo:\n{}\nNo '
-                'directories were created.'.format(
-                    '\n'.join(map(str, error_path_protected))))
-            raise OnyoProtectedPathError(
-                'The following paths are protected by onyo:\n{}'.format(
-                    '\n'.join(map(str, error_path_protected))))
-
-        return paths_to_rm
+        from .command_utils import rm_sanitize
+        return rm_sanitize(self, paths)
 
     #
     # UNSET
@@ -1413,32 +803,8 @@ class Repo:
     def unset(self, paths: Iterable[Union[Path, str]], keys: list[str],
               dryrun: bool, quiet: bool, depth: Union[int]) -> str:
 
-        # set and unset should select assets exactly the same way
-        assets_to_unset = self._get_assets_by_path(paths, depth)
-
-        if any([key in ["type", "make", "model", "serial"] for key in keys]):
-            log.error("Can't unset pseudo keys (name fields are required).")
-            raise ValueError("Can't unset pseudo keys (name fields are required).")
-
-        for asset in assets_to_unset:
-            contents = self._read_asset(asset)
-
-            for field in keys:
-                try:
-                    del contents[field]
-                except KeyError:
-                    if not quiet:
-                        log.info(f"Field {field} does not exist in {asset}")
-
-            self._write_asset(asset, contents)
-            self.add(asset)
-
-        # generate diff, and restore changes for dry-runs
-        diff = self._diff_changes()
-        if diff and dryrun:
-            self.restore()
-
-        return diff
+        from .command_utils import unset
+        return unset(self, paths, keys, dryrun, quiet, depth)
 
     def get(
             self, keys: Set[str], paths: Set[Path],
@@ -1447,24 +813,5 @@ class Repo:
         """
         Get keys from assets matching paths and filters.
         """
-        # filter assets by path and depth relative to paths
-        assets = self._get_assets_by_path(paths, depth) or []
-
-        if filters:
-            # Filters that do not require loading an asset are applied first
-            filters.sort(key=lambda x: x.is_pseudo, reverse=True)
-
-            # Remove assets that do not match all filters
-            for f in filters:
-                assets[:] = filter(f.match, assets)
-
-        # Obtain keys from remaining assets
-        assets = ((a, {
-            k: v
-            for k, v in (self._read_asset(a) | dict(zip(
-                self.pseudo_keys, re.findall(
-                    r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)',
-                    a.name)[0]))).items()
-            if k in keys}) for a in assets)
-
-        return assets
+        from .command_utils import get
+        return get(self, keys, paths, depth, filters)
