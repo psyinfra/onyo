@@ -252,6 +252,7 @@ def test_Repo_assets(repo: Repo) -> None:
     for i in repo.assets:
         assert isinstance(i, Path)
         assert i.is_file()
+        assert i.is_absolute()
         # nothing from .git
         assert '.git' not in i.parts
         # nothing from .onyo
@@ -285,6 +286,7 @@ def test_Repo_dirs(repo: Repo) -> None:
     for i in repo.dirs:
         assert isinstance(i, Path)
         assert i.is_dir()
+        assert i.is_absolute()
         # nothing from .git
         assert '.git' not in i.parts
 
@@ -315,6 +317,7 @@ def test_Repo_files(repo: Repo) -> None:
     for i in repo.files:
         assert isinstance(i, Path)
         assert i.is_file()
+        assert i.is_absolute()
         # nothing from .git
         assert '.git' not in i.parts
 
@@ -351,6 +354,7 @@ def test_Repo_files_changed(repo: Repo) -> None:
     for i in repo.files_changed:
         assert isinstance(i, Path)
         assert i.is_file()
+        assert i.is_absolute()
 
     # make sure all changed files are returned
     for i in files_to_change:
@@ -383,6 +387,7 @@ def test_Repo_files_staged(repo: Repo) -> None:
     for i in repo.files_staged:
         assert isinstance(i, Path)
         assert i.is_file()
+        assert i.is_absolute()
 
     # make sure all staged files are returned
     for i in files_to_stage:
@@ -414,6 +419,7 @@ def test_Repo_files_untracked(repo: Repo) -> None:
     for i in repo.files_untracked:
         assert isinstance(i, Path)
         assert i.is_file()
+        assert i.is_absolute()
 
     # make sure all untracked files are returned
     for i in files_to_be_untracked:
@@ -437,6 +443,7 @@ def test_Repo_opdir(tmp_path: Path) -> None:
     # test
     repo = Repo('opdir-repo')
     assert isinstance(repo.opdir, Path)
+    assert repo.opdir.is_absolute()
     assert Path('opdir-repo').samefile(repo.opdir)
 
 
@@ -455,6 +462,7 @@ def test_Repo_opdir_root(tmp_path: Path) -> None:
     os.chdir('opdir-root')
     repo = Repo('.')
     assert Path('.').samefile(repo.opdir)
+    assert repo.opdir.is_absolute()
     assert repo.root.samefile(repo.opdir)
 
 
@@ -470,9 +478,9 @@ def test_Repo_opdir_child(repo: Repo, tmp_path: Path) -> None:
     with pytest.raises(OnyoInvalidRepoError):
         repo = Repo('.')
 
-    # test
     repo = Repo('.', find_root=True)
     assert tmp_path.samefile(repo.root)
+    assert repo.opdir.is_absolute()
 
 
 #
@@ -489,6 +497,7 @@ def test_Repo_root(tmp_path: Path) -> None:
     assert ret.returncode == 0
 
     repo = Repo('root-repo')
+    assert repo.root.is_absolute()
     assert isinstance(repo.root, Path)
 
 
@@ -504,6 +513,7 @@ def test_Repo_root_parent(tmp_path: Path) -> None:
 
     # test
     repo = Repo('root-parent')
+    assert repo.root.is_absolute()
     assert Path('root-parent').samefile(repo.root)
 
 
@@ -521,6 +531,7 @@ def test_Repo_root_root(tmp_path: Path) -> None:
     # test
     os.chdir('root-root')
     repo = Repo('.')
+    assert repo.root.is_absolute()
     assert Path('.').samefile(repo.root)
 
 #
@@ -586,6 +597,7 @@ def test_Repo_templates(repo: Repo) -> None:
     for i in repo.templates:
         assert isinstance(i, Path)
         assert i.is_file()
+        assert i.is_absolute()
         assert '.onyo' in i.parts and 'templates' in i.parts
         # nothing from .git
         assert '.git' not in i.parts
@@ -607,6 +619,7 @@ def test_Repo_get_template(repo: Repo) -> None:
         assert isinstance(template, Path)
 
         assert template.is_file()
+        assert template.is_absolute()
         assert '.onyo' in template.parts and 'templates' in template.parts
         # nothing from .git
         assert '.git' not in template.parts
@@ -623,6 +636,7 @@ def test_Repo_get_template_default(repo: Repo) -> None:
     assert isinstance(template, Path)
 
     assert template.is_file()
+    assert template.is_absolute()
     assert '.onyo' in template.parts and 'templates' in template.parts
     # nothing from .git
     assert '.git' not in template.parts
