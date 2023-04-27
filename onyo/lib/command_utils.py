@@ -10,16 +10,17 @@ from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 from onyo import OnyoInvalidRepoError, OnyoProtectedPathError
 from .onyo import Repo, log
 from .filters import Filter
+from .utils import is_protected_path, read_asset, get_assets_by_path, write_asset
 
 
 def fsck(repo: Repo, tests: Optional[list[str]] = None) -> None:
     all_tests = {
-        "clean-tree": repo._fsck_clean_tree,
-        "anchors": repo._fsck_anchors,
-        "asset-unique": repo._fsck_unique_assets,
-        "asset-yaml": repo._fsck_yaml,
-        "asset-validity": repo._fsck_validation,
-        "pseudo-keys": repo._fsck_pseudo_keys,
+        "clean-tree": fsck_clean_tree,
+        "anchors": fsck_anchors,
+        "asset-unique": fsck_unique_assets,
+        "asset-yaml": fsck_yaml,
+        "asset-validity": fsck_validation,
+        "pseudo-keys": fsck_pseudo_keys,
     }
     if tests:
         # only known tests are accepted
@@ -33,7 +34,7 @@ def fsck(repo: Repo, tests: Optional[list[str]] = None) -> None:
         # TODO: these should be INFO
         log.debug(f"'{key}' starting")
 
-        if not all_tests[key]():
+        if not all_tests[key](repo):
             log.debug(f"'{key}' failed")
             raise OnyoInvalidRepoError(f"'{repo._opdir}' failed fsck test '{key}'")
 
@@ -43,7 +44,7 @@ def fsck(repo: Repo, tests: Optional[list[str]] = None) -> None:
 def fsck_anchors(repo: Repo) -> bool:
     anchors_exist = {x for x in repo.files if x.name == '.anchor' and '.onyo' not in x.parts}
     anchors_expected = {x.joinpath('.anchor') for x in repo.dirs
-                        if not repo._is_protected_path(x)}
+                        if not is_protected_path(x)}
     difference = anchors_expected.difference(anchors_exist)
 
     if difference:
@@ -95,7 +96,7 @@ def fsck_pseudo_keys(repo: Repo) -> bool:
 
     for asset in repo.assets:
         violation_list = [
-            x for x in pseudo_keys if x in repo._read_asset(asset)]
+            x for x in pseudo_keys if x in read_asset(asset)]
         if violation_list:
             assets_failed[asset] = violation_list
 
@@ -164,7 +165,7 @@ def fsck_yaml(repo: Repo) -> bool:
 
 
 def init_onyo(repo: Repo, directory: Union[Path, str]) -> None:
-    target_dir = repo._init_sanitize(directory)
+    target_dir = init_sanitize(directory)
     skel_dir = Path(Path(__file__).resolve().parent.parent, 'skel')
     dot_onyo = Path(target_dir, '.onyo')
 
@@ -214,7 +215,7 @@ def mk_onyo_dir(repo: Repo, directories: Union[Iterable[Union[Path, str]], Path,
     if not isinstance(directories, (list, set)):
         directories = [directories]
 
-    dirs = repo._mkdir_sanitize(directories)
+    dirs = mkdir_sanitize(repo, directories)
     # make dirs
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
@@ -245,7 +246,7 @@ def mkdir_sanitize(repo: Repo, dirs: Iterable[Union[Path, str]]) -> set[Path]:
             continue
 
         # protected paths
-        if repo._is_protected_path(full_dir):
+        if is_protected_path(full_dir):
             error_path_protected.append(d)
             continue
 
@@ -283,8 +284,8 @@ def mv(repo: Repo,
         sources = list(sources)
 
     # sanitize and validate arguments
-    src_paths = repo._mv_sanitize_sources(sources)
-    dest_path = repo._mv_sanitize_destination(sources, destination)
+    src_paths = mv_sanitize_sources(repo, sources)
+    dest_path = mv_sanitize_destination(repo, sources, destination)
 
     if dryrun:
         ret = repo._git(
@@ -334,7 +335,7 @@ def mv_sanitize_destination(repo: Repo,
     Common checks
     """
     # protected paths
-    if repo._is_protected_path(dest_path):
+    if is_protected_path(dest_path):
         log.error('The following paths are protected by onyo:\n' +
                   f'{dest_path}\n' +
                   'Nothing was moved.')
@@ -390,7 +391,7 @@ def mv_sanitize_destination(repo: Repo,
             f"The destination '{dest_path.parent}' does not exist.\n"
             f"Nothing was moved.")
 
-    if repo._mv_rename_mode(sources, destination):
+    if mv_rename_mode(repo, sources, destination):
         """
         Rename mode checks
         """
@@ -446,7 +447,7 @@ def mv_sanitize_destination(repo: Repo,
 def mv_rename_mode(repo: Repo,
                    sources: list[Union[Path, str]],
                    destination: Union[Path, str]) -> bool:
-    return not repo._mv_move_mode(sources, destination)
+    return not mv_move_mode(repo, sources, destination)
 
 
 def mv_sanitize_sources(repo: Repo, sources: list[Union[Path, str]]) -> list[Path]:
@@ -464,7 +465,7 @@ def mv_sanitize_sources(repo: Repo, sources: list[Union[Path, str]]) -> list[Pat
             continue
 
         # protected paths
-        if repo._is_protected_path(full_path):
+        if is_protected_path(full_path):
             error_path_protected.append(src)
             continue
 
@@ -534,7 +535,7 @@ def get_template(repo: Repo,
 def valid_asset_path_and_name_available(repo: Repo,
                                         asset: Path,
                                         new_assets: list[Path]) -> None:
-    if not repo.valid_name(asset):
+    if not valid_name(asset):
         log.error(f"'{asset}' is not a valid asset name.")
         raise ValueError(f"'{asset}' is not a valid asset name.")
     if file := [file for file in repo.assets if asset.name == file.name]:
@@ -543,7 +544,7 @@ def valid_asset_path_and_name_available(repo: Repo,
     elif file := [file for file in new_assets if asset.name == file.name]:
         log.error(f"Input contains multiple '{file[0].name}'")
         raise ValueError(f"Input contains multiple '{file[0].name}'")
-    if repo._is_protected_path(asset):
+    if is_protected_path(asset):
         log.error(f"The path is protected by onyo: '{asset}'")
         raise ValueError(f"Input contains multiple '{file[0].name}'")
 
@@ -566,7 +567,7 @@ def set_assets(repo: Repo,
                dryrun: bool,
                rename: bool,
                depth: Union[int]) -> str:
-    assets_to_set = repo._get_assets_by_path(paths, depth)
+    assets_to_set = get_assets_by_path(repo, paths, depth)
 
     content_values = dict((field, values[field]) for field in values.keys() if field not in ["type", "make", "model", "serial"])
     name_values = dict((field, values[field]) for field in values.keys() if field in ["type", "make", "model", "serial"])
@@ -577,14 +578,14 @@ def set_assets(repo: Repo,
 
     if content_values:
         for asset in assets_to_set:
-            contents = repo._read_asset(asset)
+            contents = read_asset(asset)
             contents.update(content_values)
-            repo._write_asset(asset, contents)
+            write_asset(asset, contents)
             repo.add(asset)
 
     if name_values:
         try:
-            repo._update_names(assets_to_set, name_values)
+            update_names(repo, assets_to_set, name_values)
         except ValueError as e:
             if repo.files_staged:
                 repo.restore()
@@ -616,7 +617,7 @@ def update_names(repo: Repo,
     if 'serial' in name_values.keys() and name_values['serial'] == 'faux':
         faux_number = len(assets)
         if faux_number > 0:
-            faux_serial_list = repo.generate_faux_serials(num=faux_number)
+            faux_serial_list = generate_faux_serials(repo, num=faux_number)
 
     for asset in assets:
         # split old name into parts
@@ -642,11 +643,11 @@ def update_names(repo: Repo,
             log.error(f"New asset names must be different than old names: '{new_name}'")
             raise ValueError(f"New asset names must be different than old names: '{new_name}'")
 
-        if not repo.valid_name(new_name):
+        if not valid_name(new_name):
             log.error(f"New asset name is not valid: '{new_name}'")
             raise ValueError(f"New asset name is not valid: '{new_name}'")
 
-        repo.valid_asset_path_and_name_available(new_name, new_assets)
+        valid_asset_path_and_name_available(repo, new_name, new_assets)
         new_assets.append(new_name)
 
         repo._git(["mv", str(asset), str(new_name)])
@@ -659,7 +660,7 @@ def rm(repo: Repo,
     if not isinstance(paths, (list, set)):
         paths = [paths]
 
-    paths_to_rm = repo._rm_sanitize(paths)
+    paths_to_rm = rm_sanitize(repo, paths)
 
     if dryrun:
         ret = repo._git(['rm', '-r', '--dry-run'] + [str(x) for x in paths_to_rm])
@@ -696,7 +697,7 @@ def rm_sanitize(repo: Repo, paths: Iterable[Union[Path, str]]) -> list[Path]:
             continue
 
         # protected paths
-        if repo._is_protected_path(full_path):
+        if is_protected_path(full_path):
             error_path_protected.append(p)
             continue
 
@@ -730,14 +731,14 @@ def unset(repo: Repo,
           quiet: bool,
           depth: Union[int]) -> str:
     # set and unset should select assets exactly the same way
-    assets_to_unset = repo._get_assets_by_path(paths, depth)
+    assets_to_unset = get_assets_by_path(repo, paths, depth)
 
     if any([key in ["type", "make", "model", "serial"] for key in keys]):
         log.error("Can't unset pseudo keys (name fields are required).")
         raise ValueError("Can't unset pseudo keys (name fields are required).")
 
     for asset in assets_to_unset:
-        contents = repo._read_asset(asset)
+        contents = read_asset(asset)
 
         for field in keys:
             try:
@@ -746,7 +747,7 @@ def unset(repo: Repo,
                 if not quiet:
                     log.info(f"Field {field} does not exist in {asset}")
 
-        repo._write_asset(asset, contents)
+        write_asset(asset, contents)
         repo.add(asset)
 
     # generate diff, and restore changes for dry-runs
@@ -763,7 +764,7 @@ def get(repo: Repo,
         depth: Union[int, None] = None,
         filters: Union[list[Filter], None] = None) -> Generator:
     # filter assets by path and depth relative to paths
-    assets = repo._get_assets_by_path(paths, depth) or []
+    assets = get_assets_by_path(repo, paths, depth) or []
 
     if filters:
         # Filters that do not require loading an asset are applied first
@@ -776,7 +777,7 @@ def get(repo: Repo,
     # Obtain keys from remaining assets
     assets = ((a, {
         k: v
-        for k, v in (repo._read_asset(a) | dict(zip(
+        for k, v in (read_asset(a) | dict(zip(
             repo.pseudo_keys, re.findall(
                 r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)',
                 a.name)[0]))).items()
