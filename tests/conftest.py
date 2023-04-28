@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
 
-from onyo import Repo
+from onyo import OnyoRepo
 from typing import Generator, List, Type, Union
 import pytest
 from _pytest.mark.structures import MarkDecorator
@@ -27,7 +27,7 @@ def params(d: dict) -> MarkDecorator:
 
 
 @pytest.fixture(scope='function')
-def repo(tmp_path: str, monkeypatch, request) -> Generator[Repo, None, None]:
+def repo(tmp_path: str, monkeypatch, request) -> Generator[OnyoRepo, None, None]:
     """
     This fixture:
     - creates a new repository in a temporary directory
@@ -45,7 +45,7 @@ def repo(tmp_path: str, monkeypatch, request) -> Generator[Repo, None, None]:
     contents = list()
 
     # initialize repo
-    repo_ = Repo(repo_path, init=True)
+    repo_ = OnyoRepo(repo_path, init=True)
 
     # collect files to populate the repo
     m = request.node.get_closest_marker('repo_files')
@@ -70,8 +70,8 @@ def repo(tmp_path: str, monkeypatch, request) -> Generator[Repo, None, None]:
 
     # populate the repo
     if dirs:
-        repo_.mkdir(dirs)
-        repo_.commit('populate dirs for tests', dirs)
+        repo_.mk_inventory_dirs([repo_path / d for d in dirs])
+        repo_.git.commit('populate dirs for tests', dirs)
 
     for i in files:
         i.touch()
@@ -80,8 +80,8 @@ def repo(tmp_path: str, monkeypatch, request) -> Generator[Repo, None, None]:
         if contents:
             for file in contents:
                 Path(repo_path, file[0]).write_text(file[1])
-        repo_.add(files)
-        repo_.commit('populate files for tests', files)
+        repo_.git.add(files)
+        repo_.git.commit('populate files for tests', files)
 
     # cd into repo; to ease testing
     monkeypatch.chdir(repo_path)

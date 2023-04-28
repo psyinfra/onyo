@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from onyo.lib import Repo
+from onyo.lib import OnyoRepo
 from typing import List
 
 files = ['laptop_apple_macbookpro',
@@ -21,7 +21,7 @@ assets: List[str] = [f"{d}/{f}.{i}" for f in files
 
 
 @pytest.mark.repo_files(*assets)
-def test_tree(repo: Repo) -> None:
+def test_tree(repo: OnyoRepo) -> None:
     """
     Test that `onyo tree` works without input paths.
     """
@@ -39,7 +39,7 @@ def test_tree(repo: Repo) -> None:
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('directory', directories)
-def test_tree_with_directory(repo: Repo, directory: str) -> None:
+def test_tree_with_directory(repo: OnyoRepo, directory: str) -> None:
     """
     Test that `onyo tree DIRECTORY` displays directories correctly.
     """
@@ -60,7 +60,7 @@ def test_tree_with_directory(repo: Repo, directory: str) -> None:
 
 
 @pytest.mark.repo_files(*assets)
-def test_tree_multiple_inputs(repo: Repo) -> None:
+def test_tree_multiple_inputs(repo: OnyoRepo) -> None:
     """
     Test that `onyo tree <dirs>` displays all directories when given a list of
     paths in one call.
@@ -80,7 +80,7 @@ def test_tree_multiple_inputs(repo: Repo) -> None:
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('directory', ["does_not_exist"] + [
     d + "/subdir" for d in directories])
-def test_tree_error_dir_does_not_exist(repo: Repo, directory: str) -> None:
+def test_tree_error_dir_does_not_exist(repo: OnyoRepo, directory: str) -> None:
     """
     Test the correct error behavior when `onyo tree <path>` is called on
     non-existing directories and sub-directories.
@@ -89,14 +89,14 @@ def test_tree_error_dir_does_not_exist(repo: Repo, directory: str) -> None:
 
     # verify output
     assert not ret.stdout
-    assert "The following paths are not directories:" in ret.stderr
-    assert directory in ret.stderr
+    assert "The following paths are not inventory directories:" in ret.stderr
+    assert str(repo.git.root / directory) in ret.stderr
     assert ret.returncode == 1
 
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_tree_error_is_file(repo: Repo, asset: str) -> None:
+def test_tree_error_is_file(repo: OnyoRepo, asset: str) -> None:
     """
     Test the correct error behavior when `onyo tree ASSET` is called on assets.
     """
@@ -104,13 +104,13 @@ def test_tree_error_is_file(repo: Repo, asset: str) -> None:
 
     # verify output
     assert not ret.stdout
-    assert "The following paths are not directories:" in ret.stderr
-    assert asset in ret.stderr
+    assert "The following paths are not inventory directories:" in ret.stderr
+    assert str(repo.git.root / asset) in ret.stderr
     assert ret.returncode == 1
 
 
 @pytest.mark.repo_files(*assets)
-def test_tree_relative_path(repo: Repo) -> None:
+def test_tree_relative_path(repo: OnyoRepo) -> None:
     """
     Test `onyo tree <path>` with a relative path given as input.
     """
@@ -123,7 +123,7 @@ def test_tree_relative_path(repo: Repo) -> None:
 
 
 @pytest.mark.repo_files(*assets)
-def test_tree_error_relative_path_outside_repo(repo: Repo) -> None:
+def test_tree_error_relative_path_outside_repo(repo: OnyoRepo) -> None:
     """
     Test `onyo tree <path>` gives error with a relative path that leads outside
     of the repository.
@@ -132,5 +132,5 @@ def test_tree_error_relative_path_outside_repo(repo: Repo) -> None:
 
     # verify output
     assert not ret.stdout
-    assert "The following paths are not inside the repository:" in ret.stderr
+    assert "The following paths are not inventory directories:" in ret.stderr
     assert ret.returncode == 1

@@ -1,10 +1,9 @@
 from __future__ import annotations
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
-from onyo.commands.edit import request_user_response
+from onyo import OnyoRepo
+from onyo.lib.commands import fsck, mkdir as mkdir_cmd
 
 if TYPE_CHECKING:
     import argparse
@@ -21,30 +20,7 @@ def mkdir(args: argparse.Namespace) -> None:
     If the directory already exists, or the path is protected, Onyo will throw
     an error. All checks are performed before creating directories.
     """
-    repo = None
-    try:
-        repo = Repo(Path.cwd(), find_root=True)
-        repo.fsck()
-    except OnyoInvalidRepoError:
-        sys.exit(1)
-
-    try:
-        repo.mkdir(args.directory)
-    except (FileExistsError, OnyoProtectedPathError):
-        sys.exit(1)
-
-    # commit changes
-    staged = sorted(repo.files_staged)
-    if not args.quiet:
-        print(
-            'The following directories will be created:',
-            *map(str, staged), sep='\n')
-
-    if args.yes or request_user_response(
-            "Save changes? No discards all changes. (y/n) "):
-        repo.commit(repo.generate_commit_message(
-            message=args.message, cmd="mkdir"))
-    else:
-        repo.restore()
-        if not args.quiet:
-            print('No assets updated.')
+    dirs = [Path(d).resolve() for d in args.directory]
+    repo = OnyoRepo(Path.cwd(), find_root=True)
+    fsck(repo)
+    mkdir_cmd(repo, dirs, args.quiet, args.yes, args.message)

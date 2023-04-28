@@ -2,7 +2,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from onyo.lib import Repo
+from onyo.lib import OnyoRepo
+from onyo.lib.commands import fsck
 
 
 def fully_populated_dot_onyo(directory: str = '') -> bool:
@@ -20,7 +21,7 @@ def fully_populated_dot_onyo(directory: str = '') -> bool:
        not Path(dot_onyo, "validation/.anchor").is_file():
            return False  # noqa: E111, E117
 
-    Repo(directory).fsck()
+    fsck(OnyoRepo(Path(directory)))
     return True
 
 
@@ -36,9 +37,9 @@ def test_init_cwd(tmp_path: str) -> None:
     assert "Initialized Onyo repository in" in ret.stderr
     assert ret.returncode == 0
     assert fully_populated_dot_onyo(tmp_path)
-    repo = Repo(tmp_path)
-    assert repo.root == tmp_path
-    repo.fsck()
+    repo = OnyoRepo(Path(tmp_path))
+    assert repo.git.root == tmp_path
+    fsck(repo)
 
 
 def test_init_with_path(tmp_path: str) -> None:
@@ -53,9 +54,9 @@ def test_init_with_path(tmp_path: str) -> None:
     assert ret.returncode == 0
     assert fully_populated_dot_onyo(tmp_path)
     assert "Initialized Onyo repository in" in ret.stderr
-    repo = Repo(repo_path)
-    assert repo.root == repo_path
-    repo.fsck()
+    repo = OnyoRepo(repo_path)
+    assert repo.git.root == repo_path
+    fsck(repo)
 
 
 def test_init_error_on_existing_repository(tmp_path: str) -> None:
@@ -74,6 +75,6 @@ def test_init_error_on_existing_repository(tmp_path: str) -> None:
     assert "already exists." in ret.stderr
 
     assert fully_populated_dot_onyo(tmp_path)
-    repo = Repo(repo_path)
-    assert repo.root == repo_path
-    repo.fsck()
+    repo = OnyoRepo(repo_path)
+    assert repo.git.root == repo_path
+    fsck(repo)

@@ -1,8 +1,8 @@
 import logging
 from onyo._version import __version__
 from onyo.lib import (
-    Filter, Repo, OnyoInvalidFilterError, OnyoInvalidRepoError,
-    OnyoProtectedPathError)
+    Filter, OnyoRepo, OnyoInvalidRepoError,
+    OnyoProtectedPathError, OnyoInvalidFilterError)
 
 
 logging.basicConfig(level=logging.ERROR)  # external logging level
@@ -13,8 +13,8 @@ __all__ = [
     'log',
     '__version__',
     'Filter',
-    'OnyoInvalidFilterError',
     'OnyoInvalidRepoError',
     'OnyoProtectedPathError',
-    'Repo',
+    'OnyoInvalidFilterError',
+    'OnyoRepo',
 ]

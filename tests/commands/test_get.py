@@ -1,12 +1,14 @@
 import re
 import subprocess
+import pytest
+
 from pathlib import Path
 from typing import Any, Generator, Union
 
-from onyo.commands.get import (
-    natural_sort, fill_unset, set_filters, sanitize_keys)
-from onyo.lib import Repo, Filter
-import pytest
+from onyo.lib.command_utils import sanitize_keys, set_filters, fill_unset, natural_sort
+from onyo.lib.assets import PSEUDO_KEYS
+from onyo.lib.exceptions import OnyoInvalidFilterError
+from onyo.lib import OnyoRepo, Filter
 
 
 def convert_contents(
@@ -30,7 +32,7 @@ def convert_contents(
      {'num': '16', 'str': 'bar', 'bool': False}),
     ('one/two/headphones_apple_pro.3',
      {'num': '8', 'str': 'bar', 'bool': 'True'})]))
-def test_get_defaults(repo: Repo) -> None:
+def test_get_defaults(repo: OnyoRepo) -> None:
     """Test `onyo get` using default values"""
     cmd = ['onyo', 'get']
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -59,13 +61,13 @@ def test_get_defaults(repo: Repo) -> None:
 @pytest.mark.parametrize('machine_readable', ['-H', None])
 @pytest.mark.parametrize('sort', ['-s', None])
 def test_get_all(
-        repo: Repo, filters: list[str], depth: str, keys: list[str],
+        repo: OnyoRepo, filters: list[str], depth: str, keys: list[str],
         paths: list[str], machine_readable: Union[str, None],
         sort: Union[str, None]) -> None:
     """
     Test `onyo get` with a combination of arguments.
     """
-    keys = keys if keys else repo.pseudo_keys
+    keys = keys if keys else PSEUDO_KEYS
     cmd = ['onyo', 'get', '--path', *paths, '--depth', depth]
     cmd += ['--keys', *keys] if keys else []
     cmd += ['--filter', *filters] if filters else []
@@ -113,12 +115,12 @@ def test_get_all(
     (['str=foo=bar'], 1),
     ([], 4)])
 def test_get_filter(
-        repo: Repo, filters: list[str], expected: int) -> None:
+        repo: OnyoRepo, filters: list[str], expected: int) -> None:
     """
     Test that `onyo get --filter KEY=VALUE` retrieves the expected
     files.
     """
-    keys = repo.pseudo_keys + ['num', 'str', 'bool', 'unset']
+    keys = PSEUDO_KEYS + ['num', 'str', 'bool', 'unset']
     cmd = ['onyo', 'get', '--keys', *keys, '-H']
     cmd += ['--filter', *filters] if filters else []
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -147,12 +149,12 @@ def test_get_filter(
     (['str=foo.*'], 2),
     ([r'num=9\d*|\d{1,}'], 2)])
 def test_get_filter_regex(
-        repo: Repo, filters: list[str], expected: int) -> None:
+        repo: OnyoRepo, filters: list[str], expected: int) -> None:
     """
     Test that `onyo get --filter KEY=VALUE` retrieves the expected
     files using a regular expression as value
     """
-    keys = repo.pseudo_keys + ['num', 'str', 'bool', 'unset']
+    keys = PSEUDO_KEYS + ['num', 'str', 'bool', 'unset']
     cmd = ['onyo', 'get', '--filter', *filters, '--keys', *keys, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     output = [output.split('\t') for output in ret.stdout.split('\n')][:-1]
@@ -182,7 +184,7 @@ def test_get_filter_regex(
     ['num=8.*', 'num=16.*'],
     ['num'],
     ['']])
-def test_get_filter_errors(repo: Repo, filters: list[str]) -> None:
+def test_get_filter_errors(repo: OnyoRepo, filters: list[str]) -> None:
     """
     Test that `onyo get --filter KEY=VALUE` returns an error when using
     duplicate filter keys or missing a value
@@ -210,7 +212,7 @@ def test_get_filter_errors(repo: Repo, filters: list[str]) -> None:
     ['TyPe', 'MAKE', 'moDEL', 'NuM', 'STR'],
     []])
 def test_get_keys(
-        repo: Repo, raw_assets: list[tuple[str, dict[str, Any]]],
+        repo: OnyoRepo, raw_assets: list[tuple[str, dict[str, Any]]],
         keys: list) -> None:
     """
     Test that `onyo get --keys x y z` retrieves the expected keys.
@@ -222,7 +224,7 @@ def test_get_keys(
 
     # Pseudo keys returned if no keys were specified
     if not keys:
-        keys = repo.pseudo_keys
+        keys = PSEUDO_KEYS
 
     # Get all the key values and make sure they match
     for line in output:
@@ -237,7 +239,7 @@ def test_get_keys(
             # convert raw asset values to str because output type is str
             assert str(asset.get(key, '<unset>')) == line[i]
 
-    assert len(output) == len(repo.assets)
+    assert len(output) == len(repo.asset_paths)
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -250,7 +252,7 @@ def test_get_keys(
     ('one/two/three/four/headphones_apple_pro.5', {})]))
 @pytest.mark.parametrize('depth,expected', [
     ('0', 5), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('999', 5)])
-def test_get_depth(repo: Repo, depth: str, expected: int) -> None:
+def test_get_depth(repo: OnyoRepo, depth: str, expected: int) -> None:
     """
     Test that `onyo get --depth x` retrieves the expected assets.
     """
@@ -275,7 +277,7 @@ def test_get_depth(repo: Repo, depth: str, expected: int) -> None:
     ('one/two/headphones_apple_pro.3', {}),
     ('one/two/three/headphones_apple_pro.4', {}),
     ('one/two/three/four/headphones_apple_pro.5', {})]))
-def test_get_depth_error(repo: Repo) -> None:
+def test_get_depth_error(repo: OnyoRepo) -> None:
     """
     Test that `onyo get --depth x` when a negative integer is used returns the
     expected exception
@@ -309,7 +311,7 @@ def test_get_depth_error(repo: Repo) -> None:
     (['./one/two/three/four', './another/dir'], None, 2),
     ([], None, 6)])
 def test_get_path_at_depth(
-        repo: Repo, paths: str, depth: Union[str, None],
+        repo: OnyoRepo, paths: str, depth: Union[str, None],
         expected: int) -> None:
     """
     Test that `onyo get --path x --depth y` retrieves the expected assets by
@@ -349,14 +351,14 @@ def test_get_path_at_depth(
     '/path/that/does/not/exist/and/does/not/start/with/dot',
     'path/that/does/not/exist/and/does/not/start/with/dot/slash',
     'def/ghi'])
-def test_get_path_error(repo: Repo, path: str) -> None:
+def test_get_path_error(repo: OnyoRepo, path: str) -> None:
     """
     Test that `onyo get --path x --depth y` returns an exception if an invalid
     path is being used
     """
     cmd = ['onyo', 'get', '--path', path, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
-    assert f"The following paths do not exist:\n{path}" in ret.stderr
+    assert f"The following paths do not exist:\n{repo.git.root / path}" in ret.stderr
     assert ret.returncode == 1
 
 
@@ -373,7 +375,7 @@ def test_get_path_error(repo: Repo, path: str) -> None:
     (['unset', 'type'], ['a2cd', 'a13bc', 'a36ab']),
     ([], ['a2cd', 'a13bc', 'a36ab'])])
 def test_get_sort(
-        repo: Repo, sort: Union[str, None], keys: list[str],
+        repo: OnyoRepo, sort: Union[str, None], keys: list[str],
         expected: list[str], default: Union[int, None]) -> None:
     """
     Test that `onyo get --keys x y z` with `-s` (ascending) or `-S`
@@ -396,7 +398,7 @@ def test_get_sort(
     assert ret.returncode == 0
 
 
-def test_get_sort_error(repo: Repo) -> None:
+def test_get_sort_error(repo: OnyoRepo) -> None:
     """
     Test that when using -s and -S simultaneously the appropriate error is
     returned.
@@ -460,7 +462,7 @@ def test_fill_unset(
 
 @pytest.mark.parametrize('filters', [
     ['type=laptop'], ['type=laptop', 'make=foo', 'bar=1']])
-def test_set_filters(repo: Repo, filters: list[str]) -> None:
+def test_set_filters(repo: OnyoRepo, filters: list[str]) -> None:
     """
     Test that the `set_filters()` function creates Filter objects with
     the expected properties
@@ -480,19 +482,18 @@ def test_set_filters(repo: Repo, filters: list[str]) -> None:
         (['type=laptop', 'type=laptop'], 'Duplicate filter keys: ')])
 @pytest.mark.parametrize('rich', [True, False])
 def test_set_filters_error(
-        capsys, repo: Repo, filters: list[str], expected: str,
+        capsys, repo: OnyoRepo, filters: list[str], expected: str,
         rich: bool) -> None:
     """
     Test that when invalid filters (i.e., not conforming to the `key=value`
     format) or duplicate filters are passed to `set_filters()` the
     appropriate error response is returned.
     """
-    with pytest.raises(SystemExit) as exc:
+    with pytest.raises((ValueError, OnyoInvalidFilterError)):
         _ = set_filters(filters, repo=repo, rich=rich)
 
     captured = capsys.readouterr()
     assert expected in captured.err
-    assert str(exc.value) == '1'
 
 
 def test_sanitize_keys() -> None:

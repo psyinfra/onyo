@@ -1,31 +1,32 @@
 import subprocess
 from itertools import product
 
-from onyo.lib import Repo
+from onyo.lib import OnyoRepo
+from onyo.lib.commands import fsck
 import pytest
 
 
 @pytest.mark.repo_dirs('just-a-dir')
 @pytest.mark.parametrize('variant', ['-d', '--debug'])
-def test_onyo_debug(repo: Repo, variant: str) -> None:
+def test_onyo_debug(repo: OnyoRepo, variant: str) -> None:
     ret = subprocess.run(['onyo', variant, 'mkdir', '--yes', f'flag{variant}'],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert 'DEBUG:onyo' in ret.stderr
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.parametrize('variant', ['-h', '--help'])
-def test_onyo_help(repo: Repo, variant: str) -> None:
+def test_onyo_help(repo: OnyoRepo, variant: str) -> None:
     ret = subprocess.run(['onyo', variant], capture_output=True, text=True)
     assert ret.returncode == 0
     assert 'usage: onyo [-h]' in ret.stdout
     assert not ret.stderr
-    repo.fsck()
+    fsck(repo)
 
 
 # TODO: this would be better if parametrized
-def test_onyo_without_subcommand(repo: Repo, helpers) -> None:
+def test_onyo_without_subcommand(repo: OnyoRepo, helpers) -> None:
     """
     Test all possible combinations of flags for onyo, without any subcommand.
     """
@@ -38,4 +39,4 @@ def test_onyo_without_subcommand(repo: Repo, helpers) -> None:
             assert ret.returncode == 1
             assert 'usage: onyo [-h]' in ret.stdout
             assert not ret.stderr
-    repo.fsck()
+    fsck(repo)

@@ -1,41 +1,16 @@
 from __future__ import annotations
 import logging
-import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING
 
-from onyo import Repo, OnyoInvalidRepoError
-from onyo.commands.edit import request_user_response
+from onyo import OnyoRepo
+from onyo.lib.commands import fsck, set_ as set_cmd
 
 if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
-
-
-def sanitize_paths(repo: Repo, paths: list[str]) -> Set[Path]:
-    """
-    Validate paths, returning an error if paths are invalid.
-    """
-    formatted_paths = {Path(path).resolve() for path in paths}
-    nonexistent = {p for p in formatted_paths if not p.exists()}
-    if nonexistent:
-        print(
-            ('The following paths do not exist:\n{0}\nNothing was '
-             'set.').format('\n'.join(map(str, nonexistent))),
-            file=sys.stderr)
-        sys.exit(1)
-
-    protected = {p for p in formatted_paths if repo._is_protected_path(p)}
-    if protected:
-        print(
-            ('The following paths are protected by onyo:\n{0}\nNothing was '
-             'set.').format('\n'.join(map(str, protected))),
-            file=sys.stderr)
-        sys.exit(1)
-
-    return formatted_paths
 
 
 def set(args: argparse.Namespace) -> None:
@@ -63,47 +38,8 @@ def set(args: argparse.Namespace) -> None:
     error encountered while writing a file will cause Onyo to error and exit
     immediately.
     """
-    repo = None
 
-    # check flags for conflicts
-    if args.quiet and not args.yes:
-        print('The --quiet flag requires --yes.', file=sys.stderr)
-        sys.exit(1)
-
-    try:
-        repo = Repo(Path.cwd(), find_root=True)
-        repo.fsck()
-    except OnyoInvalidRepoError:
-        sys.exit(1)
-
-    diff = ""
-    paths = sanitize_paths(repo, args.path)
-    try:
-        diff = repo.set(paths, args.keys, args.dry_run, args.rename, args.depth)
-    except ValueError:
-        sys.exit(1)
-
-    # display changes
-    if not args.quiet and diff:
-        print("The following assets will be changed:")
-        print(diff)
-    elif args.quiet:
-        pass
-    else:
-        print("The values are already set. No assets updated.")
-        sys.exit(0)
-
-    # commit or discard changes
-    staged = sorted(repo.files_staged)
-    if staged:
-        if args.yes or request_user_response("Update assets? (y/n) "):
-            repo.commit(repo.generate_commit_message(message=args.message,
-                                                     cmd="set", keys=args.keys))
-        else:
-            repo.restore()
-            # when names were changed, the first restoring just brings
-            # back the name, but leaves working-tree unclean
-            if repo.files_staged:
-                repo.restore()
-            if not args.quiet:
-                print("No assets updated.")
+    repo = OnyoRepo(Path.cwd(), find_root=True)
+    fsck(repo)
+    paths = [Path(p).resolve() for p in args.path]
+    set_cmd(repo, paths, args.keys, args.dry_run, args.rename, args.depth, args.quiet, args.yes, args.message)
