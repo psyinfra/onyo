@@ -33,13 +33,15 @@ class Repo:
         path is invalid a `OnyoInvalidRepoError` is raised.
         """
         path = Path(path)
-        path = self._find_root(path) if find_root else path.resolve()
 
         if init:
+            path = path.resolve()
             self._init(path)
-        elif not Repo._is_onyo_root(path):
-            log.error(f"'{path}' is no valid Onyo Repository.")
-            raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
+        else:
+            path = self._find_root(path) if find_root else path.resolve()
+            if not Repo._is_onyo_root(path):
+                log.error(f"'{path}' is no valid Onyo Repository.")
+                raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
 
         self._opdir: Path = path
         self._root: Path = path

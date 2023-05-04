@@ -133,6 +133,16 @@ def test_init_not_exist_dir(tmp_path: Path, variant: str) -> None:
     assert fully_populated_dot_onyo(repo_path)
 
 
+def test_init_and_find_root_true(tmp_path: Path) -> None:
+    """
+    `Repo(<directory>, init=True, find_root=True)` must init the directory and
+    use it as a root.
+    """
+    repo = Repo(tmp_path, init=True, find_root=True)
+    assert fully_populated_dot_onyo(tmp_path)
+    assert tmp_path.samefile(repo.root)
+
+
 @pytest.mark.parametrize('variant', ['', './', 'dir', 's p a c e s'])
 def test_init_exist_dir(tmp_path: Path, variant: str) -> None:
     """
