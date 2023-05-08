@@ -135,12 +135,10 @@ def test_init_not_exist_dir(tmp_path: Path, variant: str) -> None:
 
 def test_init_and_find_root_true(tmp_path: Path) -> None:
     """
-    `Repo(<directory>, init=True, find_root=True)` must init the directory and
-    use it as a root.
+    `Repo(<directory>, init=True, find_root=True)` is ambiguous and disallowed.
     """
-    repo = Repo(tmp_path, init=True, find_root=True)
-    assert fully_populated_dot_onyo(tmp_path)
-    assert tmp_path.samefile(repo.root)
+    with pytest.raises(ValueError):
+        Repo(tmp_path, init=True, find_root=True)
 
 
 @pytest.mark.parametrize('variant', ['', './', 'dir', 's p a c e s'])
@@ -466,7 +464,7 @@ def test_Repo_opdir_child(repo: Repo, tmp_path: Path) -> None:
     An existing Repo must be instantiated with the root of a repository,
     otherwise an error is raised.
     """
-    os.chdir(Path(repo.root, '1/2/3/4/5/6'))
+    os.chdir(repo.root / '1' / '2' / '3' / '4' / '5' / '6')
 
     # test error response
     with pytest.raises(OnyoInvalidRepoError):
@@ -546,8 +544,9 @@ def test_Repo_find_root_opdir_child(repo: Repo) -> None:
     When the cwd is inside an existing repo, a `Repo` can be instantiated with
     `Repo(<opdir>, find_root=True)`.
     """
-    os.chdir(Path(repo.root, '1/2/3/4/5/6'))
-    new_repo = Repo(Path(repo.root, '1/2/3/4/5/6'), find_root=True)
+    path_deep_within = repo.root / '1' / '2' / '3' / '4' / '5' / '6'
+    os.chdir(path_deep_within)
+    new_repo = Repo(path_deep_within, find_root=True)
     assert new_repo.root.samefile(repo.root)
 
 

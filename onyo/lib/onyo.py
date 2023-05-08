@@ -28,13 +28,16 @@ class Repo:
         If `find_root=True` searches the root of a repository from `path`.
 
         If `init=True`, the `path` will be initialized as a git repo and a
-        `.onyo/` directory will be created.
+        `.onyo/` directory will be created. `find_root=True` must not be used
+        in combination with `init=True`.
         Otherwise the validity of the onyo repository is verified, and if the
         path is invalid a `OnyoInvalidRepoError` is raised.
         """
         path = Path(path)
 
         if init:
+            if find_root:
+                raise ValueError("`find_root=True` must not be used with `init=True`")
             path = path.resolve()
             self._init(path)
         else:
@@ -611,15 +614,10 @@ class Repo:
         populated `.onyo/` directory.
         """
         dot_onyo = Path(directory, '.onyo')
+        files = ['config', '.anchor', 'templates/.anchor', 'validation/.anchor']
 
-        if not dot_onyo.is_dir() or \
-                not Path(dot_onyo, "templates").is_dir() or \
-                not Path(dot_onyo, "validation").is_dir() or \
-                not Path(dot_onyo, "config").is_file() or \
-                not Path(dot_onyo, ".anchor").is_file() or \
-                not Path(dot_onyo, "templates/.anchor").is_file() or \
-                not Path(dot_onyo, "validation/.anchor").is_file():
-            return False  # noqa: E111, E117
+        if not all(x.is_file() for x in [dot_onyo / f for f in files]):
+            return False
 
         if subprocess.run(["git", "rev-parse"], cwd=directory,
                           stdout=subprocess.DEVNULL).returncode != 0:
