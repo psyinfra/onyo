@@ -20,12 +20,34 @@ class OnyoProtectedPathError(Exception):
 class Repo:
     """
     """
-    def __init__(self, path: Union[Path, str], init: bool = False) -> None:
-        if init:
-            self._init(path)
+    def __init__(self, path: Union[Path, str], find_root: bool = False,
+                 init: bool = False) -> None:
+        """
+        Instantiates a `Repo` object with `path` as the root directory.
 
-        self._opdir: Path = Path(path).resolve()
-        self._root: Path = self._get_root()
+        If `find_root=True` searches the root of a repository from `path`.
+
+        If `init=True`, the `path` will be initialized as a git repo and a
+        `.onyo/` directory will be created. `find_root=True` must not be used
+        in combination with `init=True`.
+        Otherwise the validity of the onyo repository is verified, and if the
+        path is invalid a `OnyoInvalidRepoError` is raised.
+        """
+        path = Path(path)
+
+        if init:
+            if find_root:
+                raise ValueError("`find_root=True` must not be used with `init=True`")
+            path = path.resolve()
+            self._init(path)
+        else:
+            path = self._find_root(path) if find_root else path.resolve()
+            if not Repo._is_onyo_root(path):
+                log.error(f"'{path}' is no valid Onyo Repository.")
+                raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
+
+        self._opdir: Path = path
+        self._root: Path = path
         # caches
         self._assets: Union[set[Path], None] = None
         self._dirs: Union[set[Path], None] = None
@@ -327,20 +349,29 @@ class Repo:
         untracked = {Path(x) for x in self._git(['ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
         return untracked
 
-    def _get_root(self) -> Path:
+    @staticmethod
+    def _find_root(directory: Path) -> Path:
         """
-        """
-        try:
-            root = self._git(['rev-parse', '--show-toplevel'], cwd=self._opdir).strip()
-        except subprocess.CalledProcessError:
-            log.error(f"'{self._opdir}' is not a Git repository.")
-            raise OnyoInvalidRepoError(f"'{self._opdir}' is not a Git repository.")
+        Find and return the root of an Onyo repository (containing `.git/` and
+        `.onyo/`) for a given `Path` inside of an existing repository.
 
-        root = Path(root)
+        If the `directory` is not inside an existing repository, an error is
+        raised.
+        """
+        root = None
+
+        try:
+            ret = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                                 cwd=directory, check=True,
+                                 capture_output=True, text=True)
+            root = Path(ret.stdout.strip()).resolve()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            log.error(f"'{directory}' is not a Git repository.")
+            raise OnyoInvalidRepoError(f"'{directory}' is not a Git repository.")
+
         if not Path(root, '.onyo').is_dir():
             log.error(f"'{root}' is not an Onyo repository.")
-            raise OnyoInvalidRepoError(f"'{self._opdir}' is not an Onyo repository.")
-
+            raise OnyoInvalidRepoError(f"'{root / '.onyo'}' is missing or not a directory.")
         # TODO: check .onyo/config, etc
 
         log.debug(f"Onyo repo found at '{root}'")
@@ -563,7 +594,7 @@ class Repo:
     #
     # INIT
     #
-    def _init(self, directory: Union[Path, str]) -> None:
+    def _init(self, directory: Path) -> None:
         """
         Initialize an Onyo repository. The directory will be initialized as a
         git repository (if it is not one already), ``.onyo/`` directory created
@@ -575,6 +606,24 @@ class Repo:
         """
         from .command_utils import init_onyo
         return init_onyo(self, directory)
+
+    @staticmethod
+    def _is_onyo_root(directory: Path) -> bool:
+        """
+        Assert whether a directory is the root of a repository and has a fully
+        populated `.onyo/` directory.
+        """
+        dot_onyo = Path(directory, '.onyo')
+        files = ['config', '.anchor', 'templates/.anchor', 'validation/.anchor']
+
+        if not all(x.is_file() for x in [dot_onyo / f for f in files]):
+            return False
+
+        if subprocess.run(["git", "rev-parse"], cwd=directory,
+                          stdout=subprocess.DEVNULL).returncode != 0:
+            return False
+
+        return True
 
     @staticmethod
     def _init_sanitize(directory: Union[Path, str]) -> Path:

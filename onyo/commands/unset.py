@@ -64,7 +64,7 @@ def unset(args: argparse.Namespace, opdir: str) -> None:
 
     repo = None
     try:
-        repo = Repo(opdir)
+        repo = Repo(opdir, find_root=True)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)

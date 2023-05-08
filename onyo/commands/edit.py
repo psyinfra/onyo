@@ -120,7 +120,7 @@ def edit(args: argparse.Namespace, opdir: str) -> None:
         sys.exit(1)
 
     try:
-        repo = Repo(opdir)
+        repo = Repo(opdir, find_root=True)
         # "onyo fsck" is intentionally not run here.
         # This is so "onyo edit" can be used to fix an existing problem. This has
         # benefits over just simply using `vim`, etc directly, as "onyo edit" will

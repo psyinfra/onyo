@@ -24,7 +24,7 @@ def rm(args: argparse.Namespace, opdir: str) -> None:
         sys.exit(1)
 
     try:
-        repo = Repo(opdir)
+        repo = Repo(opdir, find_root=True)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)
