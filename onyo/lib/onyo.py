@@ -57,8 +57,7 @@ class Repo:
     @property
     def assets(self) -> set[Path]:  # pyre-ignore[11]
         """
-        A `set` containing the `Path`s relative to `Repo.root` of all assets of
-        an Onyo repository.
+        A `set` containing the absolute `Path`s of all assets of a repository.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
@@ -73,8 +72,7 @@ class Repo:
     @property
     def dirs(self) -> set[Path]:
         """
-        A `set` containing the `Path`s relative to `Repo.root` of all directories
-        of an Onyo repository.
+        A `set` containing the absolute `Path`s of all directories a repository.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
@@ -89,8 +87,7 @@ class Repo:
     @property
     def files(self) -> set[Path]:
         """
-        A `set` containing the `Paths` relative to `Repo.root` of all files of an
-        Onyo repository.
+        A `set` containing the absolute `Paths` of all files of a repository.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
@@ -105,24 +102,24 @@ class Repo:
     @property
     def files_changed(self) -> set[Path]:
         """
-        Returns a `set` containing the `Path`s relative to `Repo.root` of all
-        changed files (according to git) of an Onyo repository.
+        Returns a `set` containing the absolute `Path`s of all changed files
+        (according to git) of a repository.
         """
         return self._get_files_changed()
 
     @property
     def files_staged(self) -> set[Path]:
         """
-        Returns a `set` containing the `Path`s relative to `Repo.root` of all
-        staged files (according to git) of an Onyo repository.
+        Returns a `set` containing the absolute `Path`s of all staged files
+        (according to git) of a repository.
         """
         return self._get_files_staged()
 
     @property
     def files_untracked(self) -> set[Path]:
         """
-        Returns a `set` containing the `Path`s relative to `Repo.root` of all
-        untracked files (according to git) of an Onyo repository
+        Returns a `set` containing the absolute `Path`s of all untracked files
+        (according to git) of a repository.
         """
         return self._get_files_untracked()
 
@@ -149,8 +146,8 @@ class Repo:
     @property
     def templates(self) -> set[Path]:
         """
-        A `set` containing the `Path`s relative to `Repo.root` of all
-        template files of an Onyo repository.
+        A `set` containing the absolute `Path`s of all template files of an
+        Onyo repository.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
@@ -216,7 +213,7 @@ class Repo:
 
         # staged files and directories (without ".anchor") in alphabetical order
         staged_changes = [x if not x.name == ".anchor" else x.parent
-                          for x in sorted(self.files_staged)]
+                          for x in sorted(self.relative_to_root(self.files_staged))]
 
         if message:
             message_subject = message[0][0]
@@ -282,6 +279,36 @@ class Repo:
         # return the shortest possible version of the commit message as fallback
         return msg
 
+    def sanitize_path(self, path: Union[Path, str]) -> Path:
+        """
+        Expects a relative or absolute path inside inside the repository.
+        These paths do not have to exist, just lead into the repo, so that the
+        function can be used to get paths to create new assets or move to
+        another location.
+
+        Returns an absolute `Path`.
+        """
+        onyo_path = Path(path).resolve()
+
+        # TODO: raise a more reasonable error
+        if not onyo_path.is_relative_to(self.root):
+            raise ValueError(f"path {path} outside repository at {self.root}.")
+        return onyo_path
+
+    def relative_to_root(self, paths: set[Path]) -> set[Path]:
+        """
+        Expects a list or set of absolute paths in the repository and returns a
+        set of paths relative to the repository root.
+        """
+        return {x.relative_to(self.root) for x in paths}
+
+    def relative_to_opdir(self, paths: set[Path]) -> set[Path]:
+        """
+        Expects a list or set of absolute paths in the repository and returns a
+        set of paths relative to the operating directory.
+        """
+        return {x.relative_to(self.opdir) for x in paths}
+
     def restore(self) -> None:
         """
         Restore all staged files with uncommitted changes in the repository.
@@ -301,17 +328,18 @@ class Repo:
 
     def _get_assets(self) -> set[Path]:
         """
-        Return a set of all assets in the repository.
+        Return a set of all absolute `Path`s to assets in the repository.
         """
         from .utils import get_assets
         return get_assets(self)
 
     def _get_dirs(self) -> set[Path]:
         """
-        Return a set of all directories in the repository (except under .git).
+        Return a set of all absolute `Path`s to directories in the repository
+        (except under .git).
         """
         log.debug('Acquiring list of directories')
-        dirs = {x.relative_to(self.root) for x in Path(self.root).glob('**/')
+        dirs = {self.sanitize_path(x) for x in Path(self.root).glob('**/')
                 if '.git' not in x.parts and
                 not x.samefile(self.root)}
 
@@ -319,34 +347,38 @@ class Repo:
 
     def _get_files(self) -> set[Path]:
         """
-        Return a set of all files in the repository (except under .git).
+        Return a set of all absolute `Path`s to files in the repository
+        (except under .git).
         """
         log.debug('Acquiring list of files')
-        files = {Path(x) for x in self._git(['ls-files', '-z']).split('\0') if x}
+        files = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'ls-files', '-z']).split('\0') if x}
         return files
 
     def _get_files_changed(self) -> set[Path]:
         """
-        Return a set of all unstaged changes in the repository.
+        Return a set of all absolute `Path`s to unstaged changes in the
+        repository.
         """
         log.debug('Acquiring list of changed files')
-        changed = {Path(x) for x in self._git(['diff', '-z', '--name-only']).split('\0') if x}
+        changed = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'diff', '-z', '--name-only']).split('\0') if x}
         return changed
 
     def _get_files_staged(self) -> set[Path]:
         """
-        Return a set of all staged changes in the repository.
+        Return a set of all absolute `Path`s to staged changes in the
+        repository.
         """
         log.debug('Acquiring list of staged files')
-        staged = {Path(x) for x in self._git(['diff', '--name-only', '-z', '--staged']).split('\0') if x}
+        staged = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'diff', '--name-only', '-z', '--staged']).split('\0') if x}
         return staged
 
     def _get_files_untracked(self) -> set[Path]:
         """
-        Return a set of all untracked files in the repository.
+        Return a set of all absolute `Path`s to untracked files in the
+        repository.
         """
         log.debug('Acquiring list of untracked files')
-        untracked = {Path(x) for x in self._git(['ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
+        untracked = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
         return untracked
 
     @staticmethod

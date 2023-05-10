@@ -88,7 +88,7 @@ def sanitize_assets(assets: list[str], repo: Repo) -> list[Path]:
     valid_assets = []
 
     for asset in assets:
-        asset = Path(asset).resolve().relative_to(repo.root)
+        asset = repo.sanitize_path(asset)
         if asset not in repo.assets:
             print(f"\n{asset} is not an asset.", file=sys.stderr)
         else:

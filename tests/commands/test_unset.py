@@ -151,8 +151,8 @@ def test_unset_multiple_assets(repo: Repo) -> None:
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    for asset in repo.assets:
-        assert str(Path(asset)) in ret.stdout
+    for asset in repo.relative_to_root(repo.assets):
+        assert str(asset) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 

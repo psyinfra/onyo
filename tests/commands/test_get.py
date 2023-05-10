@@ -356,8 +356,7 @@ def test_get_path_error(repo: Repo, path: str) -> None:
     """
     cmd = ['onyo', 'get', '--path', path, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
-    eval_path = Path(path)
-    assert f"cannot access '{str(eval_path)}': No such directory" in ret.stderr
+    assert f"The following paths do not exist:\n{path}" in ret.stderr
     assert ret.returncode == 1
 
 
