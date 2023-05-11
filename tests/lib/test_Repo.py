@@ -427,63 +427,6 @@ def test_Repo_files_untracked(repo: Repo) -> None:
 
 
 #
-# Repo.opdir
-#
-def test_Repo_opdir(tmp_path: Path) -> None:
-    """
-    On instantiation the property Repo.opdir must contain the
-    operating directory of an existing repository.
-    """
-    os.chdir(tmp_path)
-
-    # setup repo
-    ret = subprocess.run(['onyo', 'init', 'opdir-repo'])
-    assert ret.returncode == 0
-
-    # test
-    repo = Repo('opdir-repo')
-    assert isinstance(repo.opdir, Path)
-    assert repo.opdir.is_absolute()
-    assert Path('opdir-repo').samefile(repo.opdir)
-
-
-def test_Repo_opdir_root(tmp_path: Path) -> None:
-    """
-    When instantiated with '.' as the path, the property Repo.opdir must contain
-    the operating directory as a Path.
-    """
-    os.chdir(tmp_path)
-
-    # setup repo
-    ret = subprocess.run(['onyo', 'init', 'opdir-root'])
-    assert ret.returncode == 0
-
-    # test
-    os.chdir('opdir-root')
-    repo = Repo('.')
-    assert Path('.').samefile(repo.opdir)
-    assert repo.opdir.is_absolute()
-    assert repo.root.samefile(repo.opdir)
-
-
-@pytest.mark.repo_dirs('1/2/3/4/5/6')
-def test_Repo_opdir_child(repo: Repo, tmp_path: Path) -> None:
-    """
-    An existing Repo must be instantiated with the root of a repository,
-    otherwise an error is raised.
-    """
-    os.chdir(repo.root / '1' / '2' / '3' / '4' / '5' / '6')
-
-    # test error response
-    with pytest.raises(OnyoInvalidRepoError):
-        repo = Repo('.')
-
-    repo = Repo('.', find_root=True)
-    assert tmp_path.samefile(repo.root)
-    assert repo.opdir.is_absolute()
-
-
-#
 # Repo.root
 #
 def test_Repo_root(tmp_path: Path) -> None:
@@ -537,28 +480,6 @@ def test_Repo_root_root(tmp_path: Path) -> None:
 #
 # Repo._find_root()
 #
-
-@pytest.mark.repo_dirs('1/2/3/4/5/6')
-def test_Repo_find_root_opdir_root(repo: Repo) -> None:
-    """
-    When the cwd is in the repo root, `Repo._find_root()` just returns the root.
-    a `Repo` can be instantiated with `Repo(<opdir>, find_root=True)`.
-    """
-    os.chdir(repo.root)
-    new_repo = Repo(repo.root, find_root=True)
-    assert new_repo.root.samefile(repo.root)
-
-
-@pytest.mark.repo_dirs('1/2/3/4/5/6')
-def test_Repo_find_root_opdir_child(repo: Repo) -> None:
-    """
-    When the cwd is inside an existing repo, a `Repo` can be instantiated with
-    `Repo(<opdir>, find_root=True)`.
-    """
-    path_deep_within = repo.root / '1' / '2' / '3' / '4' / '5' / '6'
-    os.chdir(path_deep_within)
-    new_repo = Repo(path_deep_within, find_root=True)
-    assert new_repo.root.samefile(repo.root)
 
 
 def test_Repo_find_root_with_no_repository_path(tmp_path: Path) -> None:

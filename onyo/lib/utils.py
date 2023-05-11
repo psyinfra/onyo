@@ -29,7 +29,7 @@ def get_assets(repo: Repo) -> set[Path]:
 
 
 def get_templates(repo: Repo) -> set[Path]:
-    return {repo.sanitize_path(file)
+    return {repo.root / file
             for file in Path(repo.root, ".onyo", "templates").glob('*')
             if Path(file).is_file() and not Path(file).name == ".anchor"}
 

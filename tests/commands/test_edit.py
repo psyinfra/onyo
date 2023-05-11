@@ -321,7 +321,7 @@ def test_edit_with_dot_dot(repo: Repo, asset: str) -> None:
 
     # check edit with a path containing a ".." that leads outside the onyo repo
     # and then inside again
-    path = Path(f"../{repo.opdir.name}/{asset}")
+    path = Path(f"../{repo.root.name}/{asset}")
     assert path.is_file()
     ret = subprocess.run(['onyo', 'edit', '--yes', asset],
                          capture_output=True, text=True)
