@@ -52,7 +52,7 @@ def get_assets_by_path(repo: Repo, paths: Iterable[Union[Path, str]],
         log.error(f"depth values must be positive, but is {depth}.")
         raise ValueError(f"depth values must be positive, but is {depth}.")
 
-    paths = {repo.sanitize_path(p) for p in paths}
+    paths = {Path(p).resolve() for p in paths}
     assets = [
         a for a in repo.assets if any([
             a.is_relative_to(p) and

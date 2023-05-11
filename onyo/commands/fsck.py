@@ -1,5 +1,6 @@
 from __future__ import annotations
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
     import argparse
 
 
-def fsck(args: argparse.Namespace, opdir: str) -> None:
+def fsck(args: argparse.Namespace) -> None:
     """
     Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
@@ -26,7 +27,7 @@ def fsck(args: argparse.Namespace, opdir: str) -> None:
     """
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)

@@ -44,7 +44,7 @@ def sanitize_args(git_config_args: list[str]) -> list[str]:
     return git_config_args
 
 
-def config(args: argparse.Namespace, opdir: str) -> None:
+def config(args: argparse.Namespace) -> None:
     """
     Set, query, and unset Onyo repository configuration options. These options
     are stored in ``.onyo/config`` (which is tracked by git) and are shared with
@@ -77,7 +77,7 @@ def config(args: argparse.Namespace, opdir: str) -> None:
     """
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck(['asset-yaml'])
     except OnyoInvalidRepoError:
         sys.exit(1)

@@ -13,7 +13,7 @@ logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
 
-def sanitize_paths(paths: list[str], opdir: str) -> list[Path]:
+def sanitize_paths(paths: list[str]) -> list[Path]:
     """
     Check and normalize a list of paths. If paths do not exist or are not files,
     print paths and exit with error.
@@ -23,8 +23,7 @@ def sanitize_paths(paths: list[str], opdir: str) -> list[Path]:
     error_path_not_file = []
 
     for p in paths:
-        # TODO: This is wrong when an absolute path is provided
-        full_path = Path(opdir, p).resolve()
+        full_path = Path(p).resolve()
 
         # path must exist
         if not full_path.exists():
@@ -53,19 +52,19 @@ def sanitize_paths(paths: list[str], opdir: str) -> list[Path]:
     return paths_to_cat
 
 
-def cat(args: argparse.Namespace, opdir: str) -> None:
+def cat(args: argparse.Namespace) -> None:
     """
     Print the contents of ``asset``\\(s) to the terminal without parsing or
     validating the contents.
     """
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck(['asset-yaml'])
     except OnyoInvalidRepoError:
         sys.exit(1)
 
-    paths_to_cat = sanitize_paths(args.asset, opdir)
+    paths_to_cat = sanitize_paths(args.asset)
 
     # open file and print to stdout
     for path in paths_to_cat:

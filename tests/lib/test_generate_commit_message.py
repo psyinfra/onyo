@@ -34,9 +34,8 @@ def test_Repo_generate_commit_message(repo: Repo) -> None:
     to the root of the repository.
     """
     # modify the repository with some different commands:
-    repo.mkdir(repo.sanitize_path("a/new/folder"))
-    repo.mv(repo.sanitize_path("s p a c e s"),
-            repo.sanitize_path("a/new/folder"))
+    repo.mkdir(repo.root / 'a' / 'new' / 'folder')
+    repo.mv(repo.root / "s p a c e s", repo.root / "a/new/folder")
     repo.set([repo.root], {"one_key": "new_value"},
              dryrun=False, rename=False, depth=0)
     repo.unset([repo.root], ["two_key", "three_key"],

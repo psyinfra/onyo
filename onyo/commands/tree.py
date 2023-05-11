@@ -19,20 +19,21 @@ def sanitize_directories(repo: Repo, directories: list[str]) -> list[Path]:
     Check a list of directories. If any do not exist or are a file, and error
     will be printed.
 
-    Returns a string of the valid directories relative to opdir.
+    Returns a string of the valid directories.
     """
     dirs = []
     error_path_not_in_repo = []
     error_path_not_dir = []
 
     for d in directories:
-        full_path = Path(repo.opdir, d).resolve()
-        if not full_path.is_relative_to(repo.root):
-            error_path_not_in_repo.append(d)
-            continue
+        full_path = Path(d).resolve()
 
         if full_path.is_dir():
-            dirs.append(full_path.relative_to(repo.opdir))
+            try:
+                dirs.append(full_path.relative_to(repo.root))
+            except ValueError:
+                error_path_not_in_repo.append(d)
+                continue
         else:
             error_path_not_dir.append(d)
 
@@ -56,13 +57,13 @@ def sanitize_directories(repo: Repo, directories: list[str]) -> list[Path]:
     return dirs
 
 
-def tree(args: argparse.Namespace, opdir: str) -> None:
+def tree(args: argparse.Namespace) -> None:
     """
     List the assets and directories in ``directory`` using ``tree``.
     """
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck(['asset-yaml'])
     except OnyoInvalidRepoError:
         sys.exit(1)

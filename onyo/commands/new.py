@@ -72,7 +72,7 @@ def read_assets_from_tsv(
                 row['serial'] = faux_serial_list.pop()
             filename = f"{row['type']}_{row['make']}_{row['model']}.{row['serial']}"
             directory = row['directory']
-            new_path = Path(repo.root, directory, filename).resolve()
+            new_path = Path(directory, filename).resolve()
 
             # verify that the asset name is valid and unique in repo and table
             try:
@@ -144,7 +144,7 @@ def read_assets_from_CLI(
         # set paths
         if asset[-5:] == ".faux":
             asset = asset[:-5] + asset[-5:].replace("faux", faux_serial_list.pop())
-        new_path = Path(repo.opdir, asset).resolve()
+        new_path = Path(asset).resolve()
 
         # verify that the asset name is valid and unique in repo and table
         try:
@@ -226,7 +226,7 @@ def check_against_argument_conflicts(args: argparse.Namespace) -> None:
                 sys.exit(1)
 
 
-def new(args: argparse.Namespace, opdir: str) -> None:
+def new(args: argparse.Namespace) -> None:
     """
     Create new ``<path>/asset``\\(s) and add contents with ``--template``,
     ``--keys`` and ``--edit``. If the directories do not exist, they will be
@@ -238,7 +238,7 @@ def new(args: argparse.Namespace, opdir: str) -> None:
     """
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)

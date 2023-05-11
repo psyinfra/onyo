@@ -270,22 +270,6 @@ class Repo:
         # return the shortest possible version of the commit message as fallback
         return msg
 
-    def sanitize_path(self, path: Union[Path, str]) -> Path:
-        """
-        Expects a relative or absolute path inside inside the repository.
-        These paths do not have to exist, just lead into the repo, so that the
-        function can be used to get paths to create new assets or move to
-        another location.
-
-        Returns an absolute `Path`.
-        """
-        onyo_path = Path(path).resolve()
-
-        # TODO: raise a more reasonable error
-        if not onyo_path.is_relative_to(self.root):
-            raise ValueError(f"path {path} outside repository at {self.root}.")
-        return onyo_path
-
     def relative_to_root(self, paths: set[Path]) -> set[Path]:
         """
         Expects a list or set of absolute paths in the repository and returns a

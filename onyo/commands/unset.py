@@ -14,9 +14,11 @@ logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
 
-def _sanitize_paths(repo: Repo, paths: list[str]) -> set[Path]:
-    """Validate paths, returning an error if paths are invalid"""
-    formatted_paths = {Path(p) for p in paths}
+def sanitize_paths(repo: Repo, paths: list[str]) -> set[Path]:
+    """
+    Validate paths, returning an error if paths are invalid.
+    """
+    formatted_paths = {Path(p).resolve() for p in paths}
     nonexistent = {p for p in formatted_paths if not p.exists()}
     if nonexistent:
         print(
@@ -36,7 +38,7 @@ def _sanitize_paths(repo: Repo, paths: list[str]) -> set[Path]:
     return formatted_paths
 
 
-def unset(args: argparse.Namespace, opdir: str) -> None:
+def unset(args: argparse.Namespace) -> None:
     """
     Remove the ``value`` of ``key`` for matching assets.
 
@@ -64,13 +66,13 @@ def unset(args: argparse.Namespace, opdir: str) -> None:
 
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)
 
     diff = ""
-    paths = _sanitize_paths(repo, args.path)
+    paths = sanitize_paths(repo, args.path)
     try:
         diff = repo.unset(
             paths, args.keys, args.dry_run, args.quiet, args.depth)

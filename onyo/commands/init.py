@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     import argparse
 
 
-def init(args: argparse.Namespace, opdir: str) -> None:
+def init(args: argparse.Namespace) -> None:
     """
     Initialize an Onyo repository. The directory will be initialized as a git
     repository (if it is not one already), the ``.onyo/`` directory created and
@@ -21,12 +21,7 @@ def init(args: argparse.Namespace, opdir: str) -> None:
     Running ``onyo init`` on an existing repository is safe. It will not
     overwrite anything; it will exit with an error.
     """
-    target_dir = Path(opdir)
-    if args.directory:
-        if Path(args.directory).is_absolute():
-            target_dir = Path(args.directory)
-        else:
-            target_dir = Path(opdir, args.directory)
+    target_dir = Path(args.directory).resolve() if args.directory else Path.cwd()
 
     try:
         Repo(target_dir, init=True)

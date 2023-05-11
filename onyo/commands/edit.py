@@ -88,7 +88,7 @@ def sanitize_assets(assets: list[str], repo: Repo) -> list[Path]:
     valid_assets = []
 
     for asset in assets:
-        asset = repo.sanitize_path(asset)
+        asset = Path(asset).resolve()
         if asset not in repo.assets:
             print(f"\n{asset} is not an asset.", file=sys.stderr)
         else:
@@ -100,7 +100,7 @@ def sanitize_assets(assets: list[str], repo: Repo) -> list[Path]:
     return valid_assets
 
 
-def edit(args: argparse.Namespace, opdir: str) -> None:
+def edit(args: argparse.Namespace) -> None:
     """
     Open the ``asset`` file(s) using the editor specified by "onyo.core.editor",
     the environment variable ``EDITOR``, or ``nano`` (as a final fallback).
@@ -120,7 +120,7 @@ def edit(args: argparse.Namespace, opdir: str) -> None:
         sys.exit(1)
 
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         # "onyo fsck" is intentionally not run here.
         # This is so "onyo edit" can be used to fix an existing problem. This has
         # benefits over just simply using `vim`, etc directly, as "onyo edit" will
