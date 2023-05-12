@@ -545,7 +545,7 @@ def valid_asset_path_and_name_available(repo: Repo,
         raise ValueError(f"Input contains multiple '{file[0].name}'")
     if is_protected_path(asset):
         log.error(f"The path is protected by onyo: '{asset}'")
-        raise ValueError(f"Input contains multiple '{file[0].name}'")
+        raise ValueError(f"The path is protected by onyo: '{asset}'")
 
 
 def valid_name(asset: Union[Path, str]) -> bool:
