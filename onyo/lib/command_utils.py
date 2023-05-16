@@ -36,7 +36,7 @@ def fsck(repo: Repo, tests: Optional[list[str]] = None) -> None:
 
         if not all_tests[key](repo):
             log.debug(f"'{key}' failed")
-            raise OnyoInvalidRepoError(f"'{repo._opdir}' failed fsck test '{key}'")
+            raise OnyoInvalidRepoError(f"'{repo.root}' failed fsck test '{key}'")
 
         log.debug(f"'{key}' succeeded")
 
@@ -238,7 +238,7 @@ def mkdir_sanitize(repo: Repo, dirs: Iterable[Union[Path, str]]) -> set[Path]:
     # TODO: the set() neatly avoids creating the same dir twice. Intentional?
 
     for d in dirs:
-        full_dir = Path(repo.opdir, d).resolve()
+        full_dir = Path(repo.root, d).resolve()
 
         # check if it exists
         if full_dir.exists():
@@ -295,7 +295,7 @@ def mv(repo: Repo,
 
     # TODO: change this to info
     log.debug('The following will be moved:\n{}'.format('\n'.join(
-        map(lambda x: str(x.relative_to(repo.opdir)), src_paths))))
+        map(lambda x: str(x.relative_to(repo.root)), src_paths))))
 
     repo.clear_caches(
         assets=True,  # `onyo mv` can change the dir of assets
@@ -304,7 +304,6 @@ def mv(repo: Repo,
         templates=True)  # might move or rename templates
 
     # return a list of mv-ed assets
-    # TODO: is this relative to opdir or root? (should be opdir)
     return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
 
 
@@ -315,11 +314,11 @@ def mv_move_mode(repo: Repo,
     if len(sources) > 1:
         return True
 
-    if Path(repo.opdir, destination).resolve().is_dir():
+    if Path(repo.root, destination).resolve().is_dir():
         return True
 
     # explicitly restating the source name at the destination is a move
-    if Path(sources[0]).name == Path(destination).name and not Path(repo.opdir, destination).resolve().exists():
+    if Path(sources[0]).name == Path(destination).name and not Path(repo.root, destination).resolve().exists():
         return True
 
     return False
@@ -329,7 +328,7 @@ def mv_sanitize_destination(repo: Repo,
                             sources: list[Union[Path, str]],
                             destination: Union[Path, str]) -> Path:
     error_path_conflict = []
-    dest_path = Path(repo.opdir, destination).resolve()
+    dest_path = Path(repo.root, destination).resolve()
 
     """
     Common checks
@@ -355,7 +354,7 @@ def mv_sanitize_destination(repo: Repo,
 
     # check for conflicts and general insanity
     for src in sources:
-        src_path = Path(repo.opdir, src).resolve()
+        src_path = Path(repo.root, src).resolve()
         new_path = Path(dest_path, src_path.name).resolve()
         if not dest_path.exists:
             new_path = Path(dest_path).resolve()
@@ -397,7 +396,7 @@ def mv_sanitize_destination(repo: Repo,
         """
         log.debug("'mv' in rename mode")
         # renaming files is not allowed
-        src_path = Path(repo.opdir, sources[0]).resolve()
+        src_path = Path(repo.root, sources[0]).resolve()
         if src_path.is_file() and src_path.name != dest_path.name:
             log.error(
                 f"Cannot rename asset '{src_path.name}' to "
@@ -457,7 +456,7 @@ def mv_sanitize_sources(repo: Repo, sources: list[Union[Path, str]]) -> list[Pat
 
     # validate sources
     for src in sources:
-        full_path = Path(repo.opdir, src).resolve()
+        full_path = Path(repo.root, src).resolve()
 
         # paths must exist
         if not full_path.exists():
@@ -546,7 +545,7 @@ def valid_asset_path_and_name_available(repo: Repo,
         raise ValueError(f"Input contains multiple '{file[0].name}'")
     if is_protected_path(asset):
         log.error(f"The path is protected by onyo: '{asset}'")
-        raise ValueError(f"Input contains multiple '{file[0].name}'")
+        raise ValueError(f"The path is protected by onyo: '{asset}'")
 
 
 def valid_name(asset: Union[Path, str]) -> bool:
@@ -670,7 +669,7 @@ def rm(repo: Repo,
 
     # TODO: change this to info
     log.debug('The following will be deleted:\n' +
-              '\n'.join([str(x.relative_to(repo.opdir)) for x in paths_to_rm]))
+              '\n'.join([str(x.relative_to(repo.root)) for x in paths_to_rm]))
 
     repo.clear_caches(assets=True,  # `onyo rm` can delete assets
                       dirs=True,  # can delete directories
@@ -679,7 +678,6 @@ def rm(repo: Repo,
                       )
     # return a list of rm-ed assets
     # TODO: should this also list the dirs?
-    # TODO: is this relative to opdir or root? (should be opdir)
     return [r for r in re.findall("rm '(.*)'", ret)]
 
 
@@ -689,7 +687,7 @@ def rm_sanitize(repo: Repo, paths: Iterable[Union[Path, str]]) -> list[Path]:
     paths_to_rm = []
 
     for p in paths:
-        full_path = Path(repo.opdir, p).resolve()
+        full_path = Path(repo.root, p).resolve()
 
         # paths must exist
         if not full_path.exists():

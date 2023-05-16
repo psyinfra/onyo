@@ -16,17 +16,17 @@ logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
 
-def sanitize_path(path: str, opdir: str) -> Path:
+def sanitize_path(path: str) -> Path:
     """
-    Checks a path relative to opdir. If it does not exist, it will print an
-    error and exit.
+    Checks and resolves a path. If it does not exist, it will print an error and
+    exit.
 
     Returns an absolute path on success.
     """
     if not path:
         path = './'
 
-    full_path = Path(opdir, path).resolve()
+    full_path = Path(path).resolve()
 
     # check if path exists
     if not full_path.exists():
@@ -66,7 +66,7 @@ def get_history_cmd(interactive: bool, repo: Repo) -> str:
     return history_cmd
 
 
-def history(args: argparse.Namespace, opdir: str) -> None:
+def history(args: argparse.Namespace) -> None:
     """
     Display the history of an ``asset`` or ``directory``.
 
@@ -78,25 +78,21 @@ def history(args: argparse.Namespace, opdir: str) -> None:
     """
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck(['asset-yaml'])
     except OnyoInvalidRepoError:
         sys.exit(1)
 
     # get the command and path
-    path = sanitize_path(args.path, opdir)
+    path = sanitize_path(args.path)
     history_cmd = get_history_cmd(args.interactive, repo)
 
     # run it
-    orig_cwd = os.getcwd()
     status = 0
     try:
-        os.chdir(opdir)
         status = os.system(f"{history_cmd} {quote(str(path))}")
     except:  # noqa: E722
         pass
-    finally:
-        os.chdir(orig_cwd)
 
     # covert the return status into a return code
     returncode = os.waitstatus_to_exitcode(status)

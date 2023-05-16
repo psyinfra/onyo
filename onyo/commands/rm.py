@@ -1,5 +1,6 @@
 from __future__ import annotations
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
     import argparse
 
 
-def rm(args: argparse.Namespace, opdir: str) -> None:
+def rm(args: argparse.Namespace) -> None:
     """
     Delete ``asset``\\(s) and ``directory``\\(s).
 
@@ -24,7 +25,7 @@ def rm(args: argparse.Namespace, opdir: str) -> None:
         sys.exit(1)
 
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck()
     except OnyoInvalidRepoError:
         sys.exit(1)

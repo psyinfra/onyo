@@ -46,7 +46,6 @@ class Repo:
                 log.error(f"'{path}' is no valid Onyo Repository.")
                 raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
 
-        self._opdir: Path = path
         self._root: Path = path
         # caches
         self._assets: Union[set[Path], None] = None
@@ -122,14 +121,6 @@ class Repo:
         (according to git) of a repository.
         """
         return self._get_files_untracked()
-
-    @property
-    def opdir(self) -> Path:
-        """
-        Returns the absolute `Path` to the working directory where the
-        `Repo` object was instantiated.
-        """
-        return self._opdir
 
     @property
     def pseudo_keys(self) -> list[str]:
@@ -225,7 +216,7 @@ class Repo:
             if keys:
                 keys_str = f" ({','.join(str(x.split('=')[0]) for x in sorted(keys))})"
             if destination:
-                dest = Path(self.opdir, destination).relative_to(self.root)
+                dest = Path(self.root, destination).relative_to(self.root)
             if dest and dest.name == ".anchor":
                 dest = dest.parent
 
@@ -279,35 +270,12 @@ class Repo:
         # return the shortest possible version of the commit message as fallback
         return msg
 
-    def sanitize_path(self, path: Union[Path, str]) -> Path:
-        """
-        Expects a relative or absolute path inside inside the repository.
-        These paths do not have to exist, just lead into the repo, so that the
-        function can be used to get paths to create new assets or move to
-        another location.
-
-        Returns an absolute `Path`.
-        """
-        onyo_path = Path(path).resolve()
-
-        # TODO: raise a more reasonable error
-        if not onyo_path.is_relative_to(self.root):
-            raise ValueError(f"path {path} outside repository at {self.root}.")
-        return onyo_path
-
     def relative_to_root(self, paths: set[Path]) -> set[Path]:
         """
         Expects a list or set of absolute paths in the repository and returns a
         set of paths relative to the repository root.
         """
         return {x.relative_to(self.root) for x in paths}
-
-    def relative_to_opdir(self, paths: set[Path]) -> set[Path]:
-        """
-        Expects a list or set of absolute paths in the repository and returns a
-        set of paths relative to the operating directory.
-        """
-        return {x.relative_to(self.opdir) for x in paths}
 
     def restore(self) -> None:
         """
@@ -339,9 +307,8 @@ class Repo:
         (except under .git).
         """
         log.debug('Acquiring list of directories')
-        dirs = {self.sanitize_path(x) for x in Path(self.root).glob('**/')
-                if '.git' not in x.parts and
-                not x.samefile(self.root)}
+        dirs = {self.root / x for x in Path(self.root).glob('**/')
+                if '.git' not in x.parts and not x.samefile(self.root)}
 
         return dirs
 
@@ -351,7 +318,7 @@ class Repo:
         (except under .git).
         """
         log.debug('Acquiring list of files')
-        files = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'ls-files', '-z']).split('\0') if x}
+        files = {self.root / x for x in self._git(['-C', str(self.root), 'ls-files', '-z']).split('\0') if x}
         return files
 
     def _get_files_changed(self) -> set[Path]:
@@ -360,7 +327,7 @@ class Repo:
         repository.
         """
         log.debug('Acquiring list of changed files')
-        changed = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'diff', '-z', '--name-only']).split('\0') if x}
+        changed = {self.root / x for x in self._git(['-C', str(self.root), 'diff', '-z', '--name-only']).split('\0') if x}
         return changed
 
     def _get_files_staged(self) -> set[Path]:
@@ -369,7 +336,7 @@ class Repo:
         repository.
         """
         log.debug('Acquiring list of staged files')
-        staged = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'diff', '--name-only', '-z', '--staged']).split('\0') if x}
+        staged = {self.root / x for x in self._git(['-C', str(self.root), 'diff', '--name-only', '-z', '--staged']).split('\0') if x}
         return staged
 
     def _get_files_untracked(self) -> set[Path]:
@@ -378,7 +345,7 @@ class Repo:
         repository.
         """
         log.debug('Acquiring list of untracked files')
-        untracked = {Path(self.root, x) for x in self._git(['-C', str(self.root), 'ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
+        untracked = {self.root / x for x in self._git(['-C', str(self.root), 'ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
         return untracked
 
     @staticmethod
@@ -432,7 +399,7 @@ class Repo:
         """
         """
         if cwd is None:
-            cwd = self.opdir
+            cwd = self.root
 
         log.debug(f"Running 'git {args}'")
         ret = subprocess.run(["git"] + args,
@@ -448,7 +415,7 @@ class Repo:
         """
         Perform ``git add`` to stage files.
 
-        Paths are relative to ``root.opdir``.
+        Paths are relative to ``repo.root``.
         """
         if isinstance(targets, (list, set)):
             tgts = [str(x) for x in targets]
@@ -456,7 +423,7 @@ class Repo:
             tgts = [str(targets)]
 
         for t in tgts:
-            if not Path(self.opdir, t).exists():
+            if not Path(self.root, t).exists():
                 log.error(f"'{t}' does not exist.")
                 raise FileNotFoundError(f"'{t}' does not exist.")
 

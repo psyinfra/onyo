@@ -96,7 +96,7 @@ def sanitize_keys(k: list[str], defaults: list) -> list[str]:
     return k if k else defaults
 
 
-def get(args: argparse.Namespace, opdir: str) -> None:
+def get(args: argparse.Namespace) -> None:
     """
     Return matching asset(s) and values corresponding to the requested key(s).
     If no key(s) are given, the pseudo-keys are returned instead.
@@ -122,7 +122,7 @@ def get(args: argparse.Namespace, opdir: str) -> None:
 
     repo = None
     try:
-        repo = Repo(opdir, find_root=True)
+        repo = Repo(Path.cwd(), find_root=True)
         repo.fsck(['asset-yaml'])
     except OnyoInvalidRepoError:
         sys.exit(1)
@@ -132,7 +132,7 @@ def get(args: argparse.Namespace, opdir: str) -> None:
     invalid_paths = set()
     for path in args.path:
         try:
-            onyo_path = repo.sanitize_path(path)
+            onyo_path = Path(path).resolve()
             if onyo_path.exists():
                 paths.add(onyo_path)
             else:
@@ -170,7 +170,7 @@ def get(args: argparse.Namespace, opdir: str) -> None:
         sep = '\t'  # column separator
         for asset, data in results:
             values = sep.join([str(value) for value in data.values()])
-            print(f'{values}{sep}{asset.relative_to(opdir)}')
+            print(f'{values}{sep}{asset.relative_to(Path.cwd())}')
     else:
         console = Console()
         table = Table(
@@ -185,7 +185,7 @@ def get(args: argparse.Namespace, opdir: str) -> None:
         if results:
             for asset, data in results:
                 values = [str(value) for value in data.values()]
-                table.add_row(*values, str(asset.relative_to(opdir)))
+                table.add_row(*values, str(asset.relative_to(Path.cwd())))
 
             console.print(table)
         else:

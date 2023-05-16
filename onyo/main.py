@@ -6,6 +6,7 @@ import textwrap
 
 from onyo import commands
 from onyo._version import __version__
+from pathlib import Path
 from typing import Optional, Sequence, Union
 
 logging.basicConfig()
@@ -758,7 +759,13 @@ def main() -> None:
 
     # run the subcommand
     if subcmd_index:
-        args.run(args, args.opdir)
+        old_cwd = Path.cwd()
+        os.chdir(args.opdir)
+        try:
+            args.run(args)
+        finally:
+            os.chdir(old_cwd)
+
     else:
         parser.print_help()
         exit(1)

@@ -29,7 +29,7 @@ def get_assets(repo: Repo) -> set[Path]:
 
 
 def get_templates(repo: Repo) -> set[Path]:
-    return {repo.sanitize_path(file)
+    return {repo.root / file
             for file in Path(repo.root, ".onyo", "templates").glob('*')
             if Path(file).is_file() and not Path(file).name == ".anchor"}
 
@@ -52,7 +52,7 @@ def get_assets_by_path(repo: Repo, paths: Iterable[Union[Path, str]],
         log.error(f"depth values must be positive, but is {depth}.")
         raise ValueError(f"depth values must be positive, but is {depth}.")
 
-    paths = {repo.sanitize_path(p) for p in paths}
+    paths = {Path(p).resolve() for p in paths}
     assets = [
         a for a in repo.assets if any([
             a.is_relative_to(p) and
