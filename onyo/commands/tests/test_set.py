@@ -94,6 +94,8 @@ non_existing_assets: List[List[str]] = [
     ["single_non_existing.asset"],
     ["simple/single_non_existing.asset"],
     [assets[0], "single_non_existing.asset"]]
+
+
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('no_assets', non_existing_assets)
 def test_set_error_non_existing_assets(repo: OnyoRepo,
@@ -277,6 +279,8 @@ def test_set_message_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> 
 
 
 asset = 'simple/laptop_apple_macbookpro.0'
+
+
 @pytest.mark.repo_files(asset)
 def test_set_quiet_without_yes_flag(repo: OnyoRepo) -> None:
     """
@@ -570,6 +574,8 @@ name_fields = [["type=desktop"],
                ["type=surface"], ["make=microsoft"], ["model=go"], ["serial=666"],
                ["key=value"], ["type=server"], ["other=content"], ["serial=777"],
                ["serial=faux"], ["different=value"]]
+
+
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 @pytest.mark.parametrize('set_values', name_fields)

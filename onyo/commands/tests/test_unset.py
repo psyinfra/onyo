@@ -167,6 +167,8 @@ non_existing_assets: List[List[str]] = [
     ["single_non_existing.asset"],
     ["simple/single_non_existing.asset"],
     [assets[0], "single_non_existing.asset"]]
+
+
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('no_assets', non_existing_assets)
 def test_unset_error_non_existing_assets(repo: OnyoRepo,
@@ -310,6 +312,8 @@ def test_unset_yes_flag(repo: OnyoRepo, asset: str) -> None:
 
 
 asset = 'simple/laptop_apple_macbookpro.0'
+
+
 @pytest.mark.repo_files(asset)
 def test_unset_quiet_without_yes_flag(repo: OnyoRepo) -> None:
     """
@@ -410,6 +414,8 @@ depth_assets = ["laptop_macbook_pro.0",
                 "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
                 "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6"]
 depth_contents: List[List[str]] = [[x, content_str] for x in depth_assets]
+
+
 @pytest.mark.repo_contents(*depth_contents)
 def test_unset_depth_flag(repo: OnyoRepo) -> None:
     """
@@ -495,6 +501,8 @@ name_fields = [["type"],
                ["model"],
                ["serial"],
                ["one", "type"]]
+
+
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 @pytest.mark.parametrize('name_field', name_fields)

@@ -7,7 +7,7 @@ def test_generate_demo_repo(tmp_path, request) -> None:
     Generate an Onyo demo repository, and compare it against the git log of
     another known-good-demo-repo.
     """
-    script = Path(request.path.parent.parent.parent, 'demo/', 'generate_demo_repo.sh')
+    script = Path(request.path.parent.parent.parent.parent, 'demo/', 'generate_demo_repo.sh')
 
     ret = subprocess.run([script, tmp_path],
                          capture_output=True, text=True)

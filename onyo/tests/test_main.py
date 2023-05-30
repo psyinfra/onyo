@@ -1,7 +1,8 @@
 from itertools import product
 
 from onyo import main
-from tests.conftest import Helpers
+from onyo.conftest import Helpers
+
 
 def test_get_subcmd_index_missing(helpers: Helpers) -> None:
     """
