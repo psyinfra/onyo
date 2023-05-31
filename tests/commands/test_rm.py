@@ -1,7 +1,8 @@
 import subprocess
 from pathlib import Path
 
-from onyo.lib import Repo
+from onyo.lib import OnyoRepo
+from onyo.lib.commands import fsck
 import pytest
 from typing import List
 
@@ -19,9 +20,10 @@ directories = ['.',
 
 assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directories)]
 
+
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_rm(repo: Repo, asset: str) -> None:
+def test_rm(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo rm ASSET` deletes assets and leaves the repository in a
     clean state.
@@ -34,11 +36,11 @@ def test_rm(repo: Repo, asset: str) -> None:
 
     # verify deleting was successful and the repository is in a clean state
     assert not Path(asset).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
-def test_rm_multiple_inputs(repo: Repo) -> None:
+def test_rm_multiple_inputs(repo: OnyoRepo) -> None:
     """
     Test that `onyo rm ASSET` deletes a list of assets all at once and leaves
     the repository in a clean state.
@@ -52,12 +54,12 @@ def test_rm_multiple_inputs(repo: Repo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for asset in assets:
         assert not Path(asset).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('directory', directories[1:])  # do not use "." as dir
-def test_rm_single_dirs_with_files(repo: Repo, directory: str) -> None:
+def test_rm_single_dirs_with_files(repo: OnyoRepo, directory: str) -> None:
     """
     Test that `onyo rm DIRECTORY` deletes directories successfully and leaves
     the repository in a clean state.
@@ -70,11 +72,11 @@ def test_rm_single_dirs_with_files(repo: Repo, directory: str) -> None:
 
     # verify deleting was successful and the repository is in a clean state
     assert not Path(directory).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
-def test_rm_multiple_directories(repo: Repo) -> None:
+def test_rm_multiple_directories(repo: OnyoRepo) -> None:
     """
     Test that `onyo rm DIRECTORY` deletes a list of directories all at once and
     leaves the repository in a clean state.
@@ -88,11 +90,11 @@ def test_rm_multiple_directories(repo: Repo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for directory in directories[1:]:
         assert not Path(directory).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_dirs(*directories[1:])  # skip "." for directory creation
-def test_rm_empty_directories(repo: Repo) -> None:
+def test_rm_empty_directories(repo: OnyoRepo) -> None:
     """
     Test that `onyo rm DIRECTORY` deletes empty directories and leaves the
     repository in a clean state.
@@ -106,11 +108,11 @@ def test_rm_empty_directories(repo: Repo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for directory in directories[1:]:
         assert not Path(directory).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
-def test_rm_interactive_missing_y(repo: Repo) -> None:
+def test_rm_interactive_missing_y(repo: OnyoRepo) -> None:
     """
     Default mode is interactive. It requires a "y" to approve.
     """
@@ -122,11 +124,11 @@ def test_rm_interactive_missing_y(repo: Repo) -> None:
     # verify no changes were made and the repository is in a clean state
     for asset in assets:
         assert Path(asset).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
-def test_rm_interactive_abort(repo: Repo) -> None:
+def test_rm_interactive_abort(repo: OnyoRepo) -> None:
     """
     Test that `onyo rm ASSET` does not delete any asset, when the user provides
     "n" as response in interactive mode.
@@ -139,12 +141,12 @@ def test_rm_interactive_abort(repo: Repo) -> None:
     # verify no changes were made and the repository is in a clean state
     for asset in assets:
         assert Path(asset).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_rm_interactive(repo: Repo, asset: str) -> None:
+def test_rm_interactive(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo rm ASSET` deletes ASSET successfully, when the user provides
     "y" as the response in interactive mode.
@@ -156,11 +158,11 @@ def test_rm_interactive(repo: Repo, asset: str) -> None:
 
     # verify deleting was successful and the repository is in a clean state
     assert not Path(asset).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
-def test_rm_quiet_missing_yes(repo: Repo) -> None:
+def test_rm_quiet_missing_yes(repo: OnyoRepo) -> None:
     """
     Test that `onyo rm --quiet` errors correctly, when the required flag
     `--yes` is missing.
@@ -173,11 +175,11 @@ def test_rm_quiet_missing_yes(repo: Repo) -> None:
     # verify no changes were made and the repository is in a clean state
     for asset in assets:
         assert Path(asset).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
-def test_rm_quiet_flag(repo: Repo) -> None:
+def test_rm_quiet_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo rm --quiet --yes` deletes a list of assets successfully
     without printing any output or error.
@@ -190,12 +192,12 @@ def test_rm_quiet_flag(repo: Repo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for asset in assets:
         assert not Path(asset).exists()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_rm_message_flag(repo: Repo, asset: str) -> None:
+def test_rm_message_flag(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo rm --message MESSAGE` overwrites the default commit message
     with one specified by the user containing different special characters.
@@ -207,6 +209,6 @@ def test_rm_message_flag(repo: Repo, asset: str) -> None:
     assert not ret.stderr
 
     # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'history', '-I', '.'], capture_output=True, text=True)
     assert msg in ret.stdout
-    repo.fsck()
+    fsck(repo)

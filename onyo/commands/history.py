@@ -1,69 +1,20 @@
 from __future__ import annotations
 import logging
 import os
-import shutil
 import sys
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING
 
-from onyo import Repo, OnyoInvalidRepoError
+from onyo import OnyoRepo
+from onyo.lib.command_utils import get_history_cmd
+from onyo.lib.commands import fsck
 
 if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
-
-
-def sanitize_path(path: str) -> Path:
-    """
-    Checks and resolves a path. If it does not exist, it will print an error and
-    exit.
-
-    Returns an absolute path on success.
-    """
-    if not path:
-        path = './'
-
-    full_path = Path(path).resolve()
-
-    # check if path exists
-    if not full_path.exists():
-        print(f"Cannot display the history of '{full_path}'. It does not exist.", file=sys.stderr)
-        print("Exiting.", file=sys.stderr)
-        sys.exit(1)
-
-    return full_path
-
-
-def get_history_cmd(interactive: bool, repo: Repo) -> str:
-    """
-    Get the command used to display history. The appropriate one is selected
-    according to the interactive mode, and basic checks are performed for
-    validity.
-
-    Returns the command on success.
-    """
-    history_cmd = None
-    config_name = 'onyo.history.interactive'
-
-    if not interactive or not sys.stdout.isatty():
-        config_name = 'onyo.history.non-interactive'
-
-    history_cmd = repo.get_config(config_name)
-    if not history_cmd:
-        print(f"'{config_name}' is unset and is required to display history.", file=sys.stderr)
-        print("Please see 'onyo config --help' for information about how to set it. Exiting.", file=sys.stderr)
-        sys.exit(1)
-
-    history_program = history_cmd.split()[0]
-    if not shutil.which(history_program):
-        print(f"'{history_cmd}' acquired from '{config_name}'.", file=sys.stderr)
-        print(f"The program '{history_program}' was not found. Exiting.", file=sys.stderr)
-        sys.exit(1)
-
-    return history_cmd
 
 
 def history(args: argparse.Namespace) -> None:
@@ -76,21 +27,34 @@ def history(args: argparse.Namespace) -> None:
 
     The commands to display history are configurable using ``onyo config``.
     """
-    repo = None
-    try:
-        repo = Repo(Path.cwd(), find_root=True)
-        repo.fsck(['asset-yaml'])
-    except OnyoInvalidRepoError:
-        sys.exit(1)
+
+    # Note: Currently exceptional command in that it's not a function in lib/commands, because of exit code handling.
+    #       Need to enhance error handling in main.py first.
+
+    # TODO: Not sure about args.path not given. Doesn't necessarily work with any all history commands.
+
+    repo = OnyoRepo(Path.cwd(), find_root=True)
+    fsck(repo, ['asset-yaml'])
 
     # get the command and path
-    path = sanitize_path(args.path)
+    path = Path(args.path).resolve() if args.path else Path.cwd()
+
+    # check if path exists
+    # Note: This is a strange criterion. Can you "display the history" of a file whenever it exists?
+    #       No. What's relevant is whether it's tracked in git. However, why check upfront at all? We fail, if the
+    #       history cmd fails. Whatever history command one is using it needs to figure that same thing out again one
+    #       way or another. Nothing gained here.
+    if path and not path.exists():
+        print(f"Cannot display the history of '{path}'. It does not exist.", file=sys.stderr)
+        print("Exiting.", file=sys.stderr)
+        sys.exit(1)
+
     history_cmd = get_history_cmd(args.interactive, repo)
 
     # run it
     status = 0
     try:
-        status = os.system(f"{history_cmd} {quote(str(path))}")
+        status = os.system(f"{history_cmd} {quote(str(path if path else repo.git.root))}")
     except:  # noqa: E722
         pass
 
@@ -99,4 +63,4 @@ def history(args: argparse.Namespace) -> None:
 
     # bubble up error retval
     if returncode != 0:
-        exit(returncode)
+        sys.exit(returncode)

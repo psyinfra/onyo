@@ -763,12 +763,17 @@ def main() -> None:
         os.chdir(args.opdir)
         try:
             args.run(args)
+        except Exception as e:
+            # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
+            #       non-zero here, in order to have this generic last catcher.
+            log.error(str(e))
+            sys.exit(1)
         finally:
             os.chdir(old_cwd)
 
     else:
         parser.print_help()
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

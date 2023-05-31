@@ -1,9 +1,8 @@
 from __future__ import annotations
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import Repo
+from onyo.lib.onyo import OnyoRepo
 
 if TYPE_CHECKING:
     import argparse
@@ -22,8 +21,4 @@ def init(args: argparse.Namespace) -> None:
     overwrite anything; it will exit with an error.
     """
     target_dir = Path(args.directory).resolve() if args.directory else Path.cwd()
-
-    try:
-        Repo(target_dir, init=True)
-    except (FileExistsError, FileNotFoundError):
-        sys.exit(1)
+    OnyoRepo(target_dir, init=True)

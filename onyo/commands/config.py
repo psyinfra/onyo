@@ -1,47 +1,16 @@
 from __future__ import annotations
 import logging
-import subprocess
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import Repo, OnyoInvalidRepoError
+from onyo import OnyoRepo
+from onyo.lib.commands import config as config_cmd, fsck
 
 if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
-
-
-def sanitize_args(git_config_args: list[str]) -> list[str]:
-    """
-    Check the git config arguments against a list of conflicting options. If
-    conflicts are present, the conflict list will be printed and will exit with
-    error.
-
-    Returns the unmodified  git config args on success.
-    """
-    # git-config supports multiple layers of git configuration. Onyo uses
-    # ``--file`` to write to .onyo/config. Other options are excluded.
-    forbidden_flags = ['--system',
-                       '--global',
-                       '--local',
-                       '--worktree',
-                       '--file',
-                       '--blob',
-                       '--help',
-                       '-h',
-                       ]
-
-    for a in git_config_args:
-        if a in forbidden_flags:
-            log.error("The following options cannot be used with onyo config:")
-            log.error('\n'.join(forbidden_flags))
-            log.error("\nExiting. Nothing was set.")
-            sys.exit(1)
-
-    return git_config_args
 
 
 def config(args: argparse.Namespace) -> None:
@@ -75,33 +44,7 @@ def config(args: argparse.Namespace) -> None:
 
         $ onyo config onyo.core.editor "vim"
     """
-    repo = None
-    try:
-        repo = Repo(Path.cwd(), find_root=True)
-        repo.fsck(['asset-yaml'])
-    except OnyoInvalidRepoError:
-        sys.exit(1)
 
-    git_config_args = sanitize_args(args.git_config_args)
-
-    # NOTE: streaming stdout and stderr directly to the terminal seems to be
-    # non-trivial with "subprocess". Here we capture them separately. They
-    # won't be interwoven, but will be output to the correct destinations.
-    ret = subprocess.run(["git", 'config', '-f', '.onyo/config'] + git_config_args,
-                         cwd=repo.root, capture_output=True, text=True)
-
-    # print any output gathered
-    if ret.stdout:
-        print(ret.stdout, end='')
-    if ret.stderr:
-        print(ret.stderr, file=sys.stderr, end='')
-
-    # bubble up error retval
-    if ret.returncode != 0:
-        exit(ret.returncode)
-
-    # commit, if there's anything to commit
-    if repo.files_changed:
-        dot_onyo_config = Path(repo.root, '.onyo/config')
-        repo.add(dot_onyo_config)
-        repo.commit('config: modify repository config')
+    repo = OnyoRepo(Path.cwd(), find_root=True)
+    fsck(repo, ['asset-yaml'])
+    config_cmd(repo, args.git_config_args)

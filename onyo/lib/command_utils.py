@@ -1,366 +1,509 @@
-import random
+from __future__ import annotations
+
+import csv
+import logging
+import os
 import re
 import shutil
-import string
+import sys
+from collections import Counter
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Union, Generator, Set
+from shlex import quote
+from typing import Dict, Union, Generator, Iterable, Optional
 
+from rich.console import Console
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
-from onyo import OnyoInvalidRepoError, OnyoProtectedPathError
-from .onyo import Repo, log
-from .filters import Filter
-from .utils import is_protected_path, read_asset, get_assets_by_path, write_asset
+from .onyo import OnyoRepo
+from .exceptions import OnyoProtectedPathError, OnyoInvalidFilterError
+from .filters import Filter, UNSET_VALUE
 
 
-def fsck(repo: Repo, tests: Optional[list[str]] = None) -> None:
-    all_tests = {
-        "clean-tree": fsck_clean_tree,
-        "anchors": fsck_anchors,
-        "asset-unique": fsck_unique_assets,
-        "asset-yaml": fsck_yaml,
-        "asset-validity": fsck_validation,
-        "pseudo-keys": fsck_pseudo_keys,
-    }
-    if tests:
-        # only known tests are accepted
-        if [x for x in tests if x not in all_tests.keys()]:
-            raise ValueError("Invalid test requested. Valid tests are: {}".format(', '.join(all_tests.keys())))
-    else:
-        tests = list(all_tests.keys())
+log: logging.Logger = logging.getLogger('onyo.command_utils')
 
-    # run the selected tests
-    for key in tests:
-        # TODO: these should be INFO
-        log.debug(f"'{key}' starting")
+# Note: Several functions only stage changes. Implies: This function somewhat
+# assumes commit to be called later, which is out of its own control.
+# May be better to only do the modification and have the caller take care of
+# what to do with those modifications.
+# Related: Staging probably not necessary. We can commit directly. Saves
+# overhead for git-calls and would only have a different effect if changes were
+# already staged before an onyo operation and are to be included in the commit.
+# Which sounds like a bad idea, b/c of obfuscating history. So, probably:
+# have functions to assemble paths/modifications and commit at once w/o staging
+# anything in-between.
 
-        if not all_tests[key](repo):
-            log.debug(f"'{key}' failed")
-            raise OnyoInvalidRepoError(f"'{repo.root}' failed fsck test '{key}'")
 
-        log.debug(f"'{key}' succeeded")
+# Note: logging for user messaging rather than logging progress along internal
+# call paths. DataLad does, too, and it's bad. Conflates debugging with "real"
+# output.
 
 
-def fsck_anchors(repo: Repo) -> bool:
-    anchors_exist = {x for x in repo.files if x.name == '.anchor' and '.onyo' not in x.parts}
-    anchors_expected = {x.joinpath('.anchor') for x in repo.dirs
-                        if not is_protected_path(x)}
-    difference = anchors_expected.difference(anchors_exist)
+def is_move_mode(sources: list[Union[Path]],
+                 destination: Path) -> bool:
+    """
+    `mv()` can be used to either move or rename a file/directory. The mode
+    is not explicitly declared by the user, and must be inferred from the
+    arguments.
 
-    if difference:
-        log.warning(
-            'The following .anchor files are missing:\n'
-            '{0}'.format('\n'.join(map(str, difference))))
-        log.warning(
-            "Likely 'mkdir' was used to create the directory. Use "
-            "'onyo mkdir' instead.")
-        # TODO: Prompt the user if they want Onyo to fix it.
+    Returns True if "move" mode and False if not.
+    """
+    # Note: This is internal `onyo mv` logic. Determine whether it's a move or a
+    #       renaming based on argument properties. Called in "sanitize", though.
 
-        return False
-
-    return True
-
-
-def fsck_clean_tree(repo: Repo) -> bool:
-    changed = {str(x) for x in repo.files_changed}
-    staged = {str(x) for x in repo.files_staged}
-    untracked = {str(x) for x in repo.files_untracked}
-
-    if changed or staged or untracked:
-        log.error('The working tree is not clean.')
-
-        if changed:
-            log.error('Changes not staged for commit:\n{}'.format(
-                '\n'.join(map(str, changed))))
-
-        if staged:
-            log.error('Changes to be committed:\n{}'.format(
-                '\n'.join(map(str, staged))))
-
-        if untracked:
-            log.error('Untracked files:\n{}'.format(
-                '\n'.join(map(str, untracked))))
-
-        log.error(
-            'Please commit all changes or add untracked files to '
-            '.gitignore')
-
-        return False
-
-    return True
-
-
-def fsck_pseudo_keys(repo: Repo) -> bool:
-    assets_failed = {}
-    pseudo_keys = ["type", "make", "model", "serial"]
-
-    for asset in repo.assets:
-        violation_list = [
-            x for x in pseudo_keys if x in read_asset(asset)]
-        if violation_list:
-            assets_failed[asset] = violation_list
-
-    if assets_failed:
-        log.error(
-            "Pseudo keys {0} are reserved for asset file names, and are "
-            "not allowed in the asset's contents. The following assets "
-            "contain pseudo keys:\n{1}".format(
-                tuple(pseudo_keys),
-                '\n'.join(
-                    f'{k}: {", ".join(v)}'
-                    for k, v in assets_failed.items())))
-
-        return False
-
-    return True
-
-
-def fsck_unique_assets(repo: Repo) -> bool:
-    asset_names = [a.name for a in repo.assets]
-    duplicates = [a for a in repo.assets if asset_names.count(a.name) > 1]
-    duplicates.sort(key=lambda x: x.name)
-
-    if duplicates:
-        log.error('The following file names are not unique:\n{}'.format(
-            '\n'.join(map(str, duplicates))))
-        return False
-
-    return True
-
-
-def fsck_validation(repo: Repo) -> bool:
-    invalid = {}
-    for asset in repo.assets:
-        # TODO: validate assets
-        pass
-
-    if invalid:
-        log.error(
-            'The contents of the following files fail validation:\n'
-            '{}'.format(
-                '\n'.join([f'{k}\n{v}' for k, v in invalid.items()])))
-
-        return False
-
-    return True
-
-
-def fsck_yaml(repo: Repo) -> bool:
-    invalid_yaml = []
-
-    for asset in repo.assets:
-        # TODO: use valid_yaml()
-        try:
-            YAML(typ='rt').load(Path(repo.root, asset))
-        except scanner.ScannerError:
-            invalid_yaml.append(str(asset))
-
-    if invalid_yaml:
-        log.error('The following files fail YAML validation:\n{}'.format(
-            '\n'.join(invalid_yaml)))
-
-        return False
-
-    return True
-
-
-def init_onyo(repo: Repo, directory: Union[Path, str]) -> None:
-    target_dir = init_sanitize(directory)
-    skel_dir = Path(Path(__file__).resolve().parent.parent, 'skel')
-    dot_onyo = Path(target_dir, '.onyo')
-
-    # create target if it doesn't already exist
-    target_dir.mkdir(exist_ok=True)
-
-    # git init (if needed)
-    if Path(target_dir, '.git').exists():
-        log.info(f"'{target_dir}' is already a git repository.")
-    else:
-        ret = repo._git(['init'], cwd=target_dir)
-        log.info(ret.strip())
-
-    # populate .onyo dir
-    shutil.copytree(skel_dir, dot_onyo)
-
-    # add and commit
-    repo._git(['add', '.onyo/'], cwd=target_dir)
-    repo._git(['commit', '-m', 'Initialize as an Onyo repository'], cwd=target_dir)
-
-    log.info(f'Initialized Onyo repository in {dot_onyo}/')
-
-
-def init_sanitize(directory: Union[Path, str]) -> Path:
-    full_path = Path(directory).resolve()
-
-    # target must be a directory
-    if full_path.exists() and not full_path.is_dir():
-        log.error(f"'{full_path}' exists but is not a directory.")
-        raise FileExistsError(f"'{full_path}' exists but is not a directory.")
-
-    # parent must exist
-    if not full_path.parent.exists():
-        log.error(f"'{full_path.parent}' does not exist.")
-        raise FileNotFoundError(f"'{full_path.parent}' does not exist.")
-
-    # cannot already be an .onyo repo
-    dot_onyo = Path(full_path, '.onyo')
-    if dot_onyo.exists():
-        log.error(f"'{dot_onyo}' already exists.")
-        raise FileExistsError(f"'{dot_onyo}' already exists.")
-
-    return full_path
-
-
-def mk_onyo_dir(repo: Repo, directories: Union[Iterable[Union[Path, str]], Path, str]) -> None:
-    if not isinstance(directories, (list, set)):
-        directories = [directories]
-
-    dirs = mkdir_sanitize(repo, directories)
-    # make dirs
-    for d in dirs:
-        d.mkdir(parents=True, exist_ok=True)
-
-    # anchors
-    anchors = {Path(i, '.anchor') for d in dirs
-               for i in [d] + list(d.parents)
-               if i.is_relative_to(repo.root) and
-               not i.samefile(repo.root)}
-    for a in anchors:
-        a.touch(exist_ok=True)
-
-    repo.add(anchors)
-
-
-def mkdir_sanitize(repo: Repo, dirs: Iterable[Union[Path, str]]) -> set[Path]:
-    error_exist = []
-    error_path_protected = []
-    dirs_to_create = set()
-    # TODO: the set() neatly avoids creating the same dir twice. Intentional?
-
-    for d in dirs:
-        full_dir = Path(repo.root, d).resolve()
-
-        # check if it exists
-        if full_dir.exists():
-            error_exist.append(d)
-            continue
-
-        # protected paths
-        if is_protected_path(full_dir):
-            error_path_protected.append(d)
-            continue
-
-        dirs_to_create.add(full_dir)
-
-    # errors
-    if error_exist:
-        log.error(
-            'The following paths already exist:\n{}\nNo directories were '
-            'created.'.format('\n'.join(map(str, error_exist))))
-        raise FileExistsError(
-            'The following paths already exist:\n{}'.format(
-                '\n'.join(map(str, error_exist))))
-
-    if error_path_protected:
-        log.error(
-            'The following paths are protected by onyo:\n{}\nNo '
-            'directories were created.'.format(
-                '\n'.join(map(str, error_path_protected))))
-        raise OnyoProtectedPathError(
-            'The following paths are protected by onyo:\n{}'.format(
-                '\n'.join(map(str, error_path_protected))))
-
-    return dirs_to_create
-
-
-def mv(repo: Repo,
-       sources: Union[Iterable[Union[Path, str]], Path, str],
-       destination: Union[Path, str],
-       dryrun: bool = False) -> list[tuple[str, str]]:
-
-    if not isinstance(sources, (list, set)):
-        sources = [sources]
-    elif not isinstance(sources, list):
-        sources = list(sources)
-
-    # sanitize and validate arguments
-    src_paths = mv_sanitize_sources(repo, sources)
-    dest_path = mv_sanitize_destination(repo, sources, destination)
-
-    if dryrun:
-        ret = repo._git(
-            ['mv', '--dry-run', *map(str, src_paths), str(dest_path)])
-    else:
-        ret = repo._git(['mv', *map(str, src_paths), str(dest_path)])
-
-    # TODO: change this to info
-    log.debug('The following will be moved:\n{}'.format('\n'.join(
-        map(lambda x: str(x.relative_to(repo.root)), src_paths))))
-
-    repo.clear_caches(
-        assets=True,  # `onyo mv` can change the dir of assets
-        dirs=True,  # might move directories
-        files=True,  # might move anchors
-        templates=True)  # might move or rename templates
-
-    # return a list of mv-ed assets
-    return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
-
-
-def mv_move_mode(repo: Repo,
-                 sources: list[Union[Path, str]],
-                 destination: Union[Path, str]) -> bool:
     # can only rename one item
     if len(sources) > 1:
         return True
 
-    if Path(repo.root, destination).resolve().is_dir():
+    if destination.is_dir():
         return True
 
     # explicitly restating the source name at the destination is a move
-    if Path(sources[0]).name == Path(destination).name and not Path(repo.root, destination).resolve().exists():
+    if sources[0].name == destination.name and not destination.exists():
         return True
 
     return False
 
 
-def mv_sanitize_destination(repo: Repo,
-                            sources: list[Union[Path, str]],
-                            destination: Union[Path, str]) -> Path:
-    error_path_conflict = []
-    dest_path = Path(repo.root, destination).resolve()
+def update_names(repo: OnyoRepo,
+                 assets: list[Path],
+                 name_values: Dict[str, Union[float, int, str]]) -> None:
+    """
+    Set the pseudo key fields of an assets name (rename an asset file) from
+    values of a dictionary and test that the new name is valid and
+    available.
+    """
+    from .assets import generate_new_asset_names
+    for old, new in generate_new_asset_names(repo, repo.asset_paths, assets, name_values):
+        repo.git._git(["mv", str(old), str(new)])
 
+
+def sanitize_args_config(git_config_args: list[str]) -> list[str]:
     """
-    Common checks
+    Check the git config arguments against a list of conflicting options. If
+    conflicts are present, the conflict list will be printed and will exit with
+    error.
+
+    Returns the unmodified  git config args on success.
     """
+    # git-config supports multiple layers of git configuration. Onyo uses
+    # ``--file`` to write to .onyo/config. Other options are excluded.
+    forbidden_flags = ['--system',
+                       '--global',
+                       '--local',
+                       '--worktree',
+                       '--file',
+                       '--blob',
+                       '--help',
+                       '-h',
+                       ]
+
+    for a in git_config_args:
+        if a in forbidden_flags:
+            log.error("The following options cannot be used with onyo config:")
+            log.error('\n'.join(forbidden_flags))
+            log.error("\nExiting. Nothing was set.")
+            sys.exit(1)
+    return git_config_args
+
+
+def get_editor(repo: OnyoRepo) -> str:
+    """
+    Returns the editor, progressing through git, onyo, $EDITOR, and finally
+    fallback to "nano".
+    """
+    # onyo config and git config
+    editor = repo.git.get_config('onyo.core.editor')
+
+    # $EDITOR environment variable
+    if not editor:
+        log.debug("onyo.core.editor is not set.")
+        editor = os.environ.get('EDITOR')
+
+    # fallback to nano
+    if not editor:
+        log.debug("$EDITOR is also not set.")
+        editor = 'nano'
+
+    return editor
+
+
+def request_user_response(question: str) -> bool:
+    """
+    Opens a dialog for the user and reads an answer from the keyboard.
+    Returns True when user answers yes, False when no, and asks again if the
+    input is neither.
+    """
+    while True:
+        answer = input(question)
+        if answer in ['y', 'Y', 'yes']:
+            return True
+        elif answer in ['n', 'N', 'no']:
+            return False
+    return False
+
+
+def edit_asset(editor: str, asset: Path) -> bool:
+    """
+    Open an existing asset with `editor`. After changes are made, check the
+    asset for validity and check its YAML syntax. If valid, write the changes,
+    otherwise open a dialog and ask the user if the asset should be corrected
+    or the changes discarded.
+
+    Returns True when the asset was changed and saved without errors, and False
+    if the user wants to discard the changes.
+    """
+    while True:
+        os.system(f'{editor} {quote(str(asset))}')
+        try:
+            YAML(typ='rt').load(asset)
+            # TODO: add asset validity here
+            return True
+        except scanner.ScannerError:
+            print(f"{asset} has invalid YAML syntax.", file=sys.stderr)
+
+        if not request_user_response("Continue editing? No discards changes. (y/n) "):
+            break
+    return False
+
+
+def sanitize_keys(k: list[str], defaults: list) -> list[str]:
+    """
+    Remove duplicates from k while preserving key order and return default
+    (pseudo) keys if k is empty
+    """
+    seen = set()
+    k = [x for x in k if not (x in seen or seen.add(x))]
+    return k if k else defaults
+
+
+def set_filters(
+        filters: list[str], repo: OnyoRepo, rich: bool = False) -> list[Filter]:
+    """Create filters and check if there are no duplicate filter keys"""
+    # Note: This is part of the get command
+
+    init_filters = []
+    try:
+        init_filters = [Filter(f) for f in filters]
+    except OnyoInvalidFilterError as exc:
+        if rich:
+            console = Console(stderr=True)
+            console.print(f'[red]FAILED[/red] {exc}')
+        else:
+            print(exc, file=sys.stderr)
+        # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
+        #       rendering/printing handled upstairs.
+        raise
+
+    # ensure there are no duplicate filter keys
+    duplicates = [
+        x for x, i in Counter([f.key for f in init_filters]).items() if i > 1]
+    if duplicates:
+        if rich:
+            console = Console(stderr=True)
+            console.print(
+                f'[red]FAILED[/red] Duplicate filter keys: {duplicates}')
+        else:
+            print(f'Duplicate filter keys: {duplicates}', file=sys.stderr)
+        # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
+        #       rendering/printing handled upstairs.
+        raise ValueError
+    return init_filters
+
+
+def fill_unset(
+        assets: Generator[tuple[Path, dict[str, str]], None, None],
+        keys: list, unset: str = UNSET_VALUE) -> Generator:
+    """
+    If a key is not present for an asset, define it as `unset`.
+    """
+    unset_keys = {key: unset for key in keys}
+    for asset, data in assets:
+        yield asset, unset_keys | data
+
+
+def natural_sort(
+        assets: list[tuple[Path, dict[str, str]]],
+        keys: Union[list, None] = None, reverse: bool = False) -> list:
+    """
+    Sort the output of `Repo.get()` by a given list of `keys` or by the path
+    of the `assets` if no `keys` are provided.
+    """
+    if keys:
+        for key in reversed(keys):
+            assets = sorted(
+                assets,
+                key=lambda x: [
+                    int(s) if s.isdigit() else s.lower() for s in
+                    re.split('([0-9]+)', str(x[1][key]))],
+                reverse=reverse)
+    else:
+        assets = sorted(
+            assets,
+            key=lambda x: [
+                int(s) if s.isdigit() else s.lower()
+                for s in re.split('([0-9]+)', str(x[0]))],
+            reverse=reverse)
+
+    return assets
+
+
+def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
+    """
+    Get the command used to display history. The appropriate one is selected
+    according to the interactive mode, and basic checks are performed for
+    validity.
+
+    Returns the command on success.
+    """
+    history_cmd = None
+    config_name = 'onyo.history.interactive'
+
+    if not interactive or not sys.stdout.isatty():
+        config_name = 'onyo.history.non-interactive'
+
+    history_cmd = repo.git.get_config(config_name)
+    if not history_cmd:
+        raise ValueError(f"'{config_name}' is unset and is required to display history.\n"
+                         f"Please see 'onyo config --help' for information about how to set it.")
+
+    history_program = history_cmd.split()[0]
+    if not shutil.which(history_program):
+        raise ValueError(f"'{history_cmd}' acquired from '{config_name}'. "
+                         f"The program '{history_program}' was not found. Exiting.")
+
+    return history_cmd
+
+
+def validate_args_for_new(tsv: Optional[Path],
+                          path: Optional[list[Path]],
+                          template: Optional[str]) -> None:
+    """
+    Some arguments conflict with each other, e.g. it has to be checked that the
+    information from a tsv table does not conflict with the information from
+    the command line.
+    """
+    # have either tsv table describing paths and asset names, or have it as
+    # input argument, but not both.
+    if tsv and path:
+        raise ValueError("Can't have asset(s) and tsv file given.")
+    if not tsv and not path:
+        raise ValueError("Either asset(s) or a tsv file must be given.")
+
+    if tsv:
+        if not tsv.is_file():
+            raise ValueError(f"{str(tsv)} does not exist.")
+        with tsv.open('r') as tsv_file:
+            table = csv.reader(tsv_file, delimiter='\t')
+            # Note: Next lines can prob. be reduced to `header = table.next()`
+            header = []
+            # check that the first row (header) is complete
+            for row in table:
+                header = row
+                break
+            if not all(field in header for field in ['type', 'make', 'model', 'serial', 'directory']):
+                raise ValueError("onyo new --tsv needs columns 'type', 'make', 'model', 'serial' and 'directory'.")
+            if template and 'template' in header:
+                raise ValueError("Can't use --template and template column in tsv.")
+
+
+def rm(repo: OnyoRepo,
+       paths: Union[Iterable[Path], Path],
+       dryrun: bool = False) -> list[str]:
+    """
+    Delete ``asset``\\(s) and ``directory``\\(s).
+    """
+    # Note: This doesn't commit. For some reason this is done at the CLI layer
+    # in case of this command.
+
+    if not isinstance(paths, (list, set)):
+        paths = [paths]
+
+    paths_to_rm = []
+    invalid_paths = []
+    for p in paths:
+        if repo.is_asset_path(p) or repo.is_inventory_dir(p):
+            paths_to_rm.append(p)
+        else:
+            invalid_paths.append(p)
+    if invalid_paths:
+        log.error("The following paths are neither inventory directories nor assets:\n%s"
+                  "\nNothing was deleted.",
+                  '\n'.join(map(str, invalid_paths)))
+        # Note: Consider ExceptionGroup -> what python version required?
+        raise RuntimeError("TODO")
+
+    git_rm_cmd = ['rm', '-r']
+    if dryrun:
+        git_rm_cmd.append('--dry-run')
+    git_rm_cmd.extend([str(x) for x in paths_to_rm])
+    # Note: This comment is a lie - nothing's committed
+    # rm and commit
+    ret = repo.git._git(git_rm_cmd)
+
+    # TODO: change this to info
+    log.debug('The following will be deleted:\n' +
+              '\n'.join([str(x.relative_to(repo.git.root)) for x in paths_to_rm]))
+
+    # Note: The usual "invalidate everything because we don't know what we did".
+    repo.clear_caches()
+    # return a list of rm-ed assets
+    # TODO: should this also list the dirs?
+    # TODO: is this relative to opdir or root? (should be opdir)
+    # Note: NO. It's root!
+    # ben@tree in /tmp/some/some on git:master
+    # ❱ tree
+    # .
+    # └── where
+    #     └── file
+    #
+    # 2 directories, 1 file
+    # ben@tree in /tmp/some/some on git:master
+    # ❱ git rm where/file
+    # rm 'some/where/file'
+
+    # Note: Why is this parsing the output? The command didn't fail, we know
+    # what we told it, and we don't double-check whether the output matches
+    # expectation. Either don't bother at all, or simply let git-rm do the
+    # output, instead of catching and parsing it only in order to spit out the
+    # same thing again.
+    # The only reason to do it is, so we can swallow it the second time (running
+    # dry-run first and then for real)
+
+    return [r for r in re.findall("rm '(.*)'", ret)]
+
+
+def set_assets(repo: OnyoRepo,
+               paths: Iterable[Path],
+               values: Dict[str, Union[str, int, float]],
+               dryrun: bool,
+               rename: bool,
+               depth: Union[int]) -> str:
+    """
+    Set values for a list of assets (or directories), or rename assets
+    through updating their name fields.
+
+    A flag enable to limit the depth of recursion for setting values in
+    directories.
+    """
+
+    from .assets import get_asset_content, get_asset_files_by_path, write_asset_file, PSEUDO_KEYS, generate_new_asset_names
+    assets_to_set = get_asset_files_by_path(repo.asset_paths, paths, depth)
+
+    # Note: This separation may not be necessary. We can check whether any key is in fact a pseudo key
+    # (in order to fail w/o rename)
+    # But represent ALL key-value pairs in one dict. An Asset object (or alike) can then consider what to do with a key
+    # based on whatever is configured to be a pseudo-key.
+    content_values = dict((field, values[field]) for field in values.keys() if field not in PSEUDO_KEYS)
+    name_values = dict((field, values[field]) for field in values.keys() if field in PSEUDO_KEYS)
+
+    if name_values and not rename:
+        log.error("Can't change pseudo keys without --rename.")
+        raise ValueError("Can't change pseudo keys without --rename.")
+
+    if content_values:
+        for asset_path in assets_to_set:
+            contents = get_asset_content(asset_path)
+            contents.update(content_values)
+            write_asset_file(asset_path, contents)
+            repo.git.add(asset_path)
+
+    if name_values:
+        try:
+            for old, new in generate_new_asset_names(repo, repo.asset_paths, assets_to_set, name_values):
+                repo.git._git(["mv", str(old), str(new)])
+
+        except ValueError as e:
+            # Note: repo.files_staged is cached. How do we know, it's accounting for what we just have done?
+            #       This implies to assume this is the first time the property is accessed.
+            if repo.git.files_staged:
+                repo.git.restore()
+            # reset renaming needs double-restoring
+            if repo.git.files_staged:
+                repo.git.restore()
+            raise ValueError(e)
+
+    # generate diff, and restore changes for dry-runs
+    diff = repo.git._diff_changes()
+    if diff and dryrun:
+        repo.git.restore()
+
+    # Note: Here, too, everything is invalidated regardless of what was actually done.
+    repo.clear_caches()
+    return diff
+
+
+def unset(repo: OnyoRepo,
+          paths: Iterable[Path],
+          keys: list[str],
+          dryrun: bool,
+          quiet: bool,
+          depth: Union[int, None]) -> str:
+
+    from .assets import get_asset_files_by_path, unset_asset_keys, PSEUDO_KEYS
+    # set and unset should select assets exactly the same way
+    assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
+
+    if any([key in PSEUDO_KEYS for key in keys]):
+        log.error("Can't unset pseudo keys (name fields are required).")
+        raise ValueError("Can't unset pseudo keys (name fields are required).")
+
+    unset_assets = []
+    for asset in assets_to_unset:
+        unset_asset_keys(asset, keys, quiet)
+        unset_assets.append(asset)
+    repo.git.add(unset_assets)
+
+    # generate diff, and restore changes for dry-runs
+    diff = repo.git._diff_changes()
+    if diff and dryrun:
+        repo.git.restore()
+
+    return diff
+
+
+def sanitize_destination_for_mv(repo: OnyoRepo,
+                                sources: list[Path],
+                                destination: Path) -> Path:
+    """
+    Perform a sanity check on the destination. This includes protected
+    paths, conflicts, and other pathological scenarios.
+
+    Returns an absolute Path on success.
+    """
+
+    error_path_conflict = []
+
+    # Common checks
     # protected paths
-    if is_protected_path(dest_path):
+
+    if not repo.is_inventory_dir(destination) and not repo.is_inventory_path(destination):  # 2nd condition sufficient to be rename target?
+        # Note: Questionable message. This piece of code has no clue whether
+        #       something was moved. That is done by the caller.
         log.error('The following paths are protected by onyo:\n' +
-                  f'{dest_path}\n' +
+                  f'{destination}\n' +
                   'Nothing was moved.')
         raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                     f'{dest_path}')
+                                     f'{destination}')
 
     # destination cannot be a file
-    if dest_path.is_file():
+    if destination.is_file():
         # This intentionally raises FileExistsError rather than NotADirectoryError.
         # It reduces the number of different exceptions that can be raised
         # by `mv()`, and keeps the exception type unified with other similar
         # situations (such as implicit conflict with the destination).
-        log.error(f"The destination '{dest_path}' cannot be a file.\n" +
+        log.error(f"The destination '{destination}' cannot be a file.\n" +
                   'Nothing was moved.')
-        raise FileExistsError(f"The destination '{dest_path}' cannot be a file.\n" +
+        raise FileExistsError(f"The destination '{destination}' cannot be a file.\n" +
                               'Nothing was moved.')
 
     # check for conflicts and general insanity
     for src in sources:
-        src_path = Path(repo.root, src).resolve()
-        new_path = Path(dest_path, src_path.name).resolve()
-        if not dest_path.exists:
-            new_path = Path(dest_path).resolve()
+        new_path = destination / src.name
+        if not destination.exists():
+            new_path = destination
 
         # cannot rename/move into self
-        if src_path in new_path.parents:
+        if src in new_path.parents:
             log.error(f"Cannot move '{src}' into itself.\n" +
                       "Nothing was moved.")
             raise ValueError(f"Cannot move '{src}' into itself.\n" +
@@ -372,6 +515,7 @@ def mv_sanitize_destination(repo: Repo,
             continue
 
     if error_path_conflict:
+        # Note: See earlier; "Nothing was moved" has no business being here.
         log.error(
             'The following destinations exist and would conflict:\n{}\n'
             'Nothing was moved.'.format(
@@ -382,38 +526,38 @@ def mv_sanitize_destination(repo: Repo,
                 '\n'.join(map(str, error_path_conflict))))
 
     # parent must exist
-    if not dest_path.parent.exists():
+    if not destination.parent.exists():
         log.error(
-            f"The destination '{dest_path.parent}' does not exist.\n"
+            f"The destination '{destination.parent}' does not exist.\n"
             f"Nothing was moved.")
         raise FileNotFoundError(
-            f"The destination '{dest_path.parent}' does not exist.\n"
+            f"The destination '{destination.parent}' does not exist.\n"
             f"Nothing was moved.")
 
-    if mv_rename_mode(repo, sources, destination):
+    if not is_move_mode(sources, destination):
         """
         Rename mode checks
         """
         log.debug("'mv' in rename mode")
         # renaming files is not allowed
-        src_path = Path(repo.root, sources[0]).resolve()
-        if src_path.is_file() and src_path.name != dest_path.name:
+        src = sources[0]
+        if src.is_file() and src.name != destination.name:
             log.error(
-                f"Cannot rename asset '{src_path.name}' to "
-                f"'{dest_path.name}'.\nUse 'set()' to rename assets.\n"
+                f"Cannot rename asset '{src.name}' to "
+                f"'{destination.name}'.\nUse 'set()' to rename assets.\n"
                 f"Nothing was moved.")
             raise ValueError(
-                f"Cannot rename asset '{src_path.name}' to "
-                f"'{dest_path.name}'.\nUse 'set()' to rename assets.\n"
+                f"Cannot rename asset '{src.name}' to "
+                f"'{destination.name}'.\nUse 'set()' to rename assets.\n"
                 f"Nothing was moved.")
 
         # target cannot already exist
-        if dest_path.exists():
+        if destination.exists():
             log.error(
-                f"The destination '{dest_path}' exists and would "
+                f"The destination '{destination}' exists and would "
                 f"conflict.\nNothing was moved.")
             raise FileExistsError(
-                f"The destination '{dest_path}' exists and would "
+                f"The destination '{destination}' exists and would "
                 f"conflict.\nNothing was moved.")
     else:
         """
@@ -423,9 +567,9 @@ def mv_sanitize_destination(repo: Repo,
 
         # check if same name is specified as the destination
         # (e.g. rename to same name is a move)
-        if src_path.name != dest_path.name:
+        if src.name != destination.name:
             # dest must exist
-            if not dest_path.exists():
+            if not destination.exists():
                 log.error(
                     f"The destination '{destination}' does not exist.\n"
                     f"Nothing was moved.")
@@ -434,351 +578,55 @@ def mv_sanitize_destination(repo: Repo,
                     f"Nothing was moved.")
 
         # cannot move onto self
-        if src_path.is_file() and dest_path.is_file() and src_path.samefile(dest_path):
+        if src.is_file() and destination.is_file() and src.samefile(destination):
             log.error(f"Cannot move '{src}' onto itself.\n" +
                       "Nothing was moved.")
             raise FileExistsError(f"Cannot move '{src}' onto itself.\n" +
                                   "Nothing was moved.")
 
-    return dest_path
+    return destination
 
 
-def mv_rename_mode(repo: Repo,
-                   sources: list[Union[Path, str]],
-                   destination: Union[Path, str]) -> bool:
-    return not mv_move_mode(repo, sources, destination)
+def onyo_mv(repo: OnyoRepo,
+            sources: Union[Iterable[Path], Path],
+            destination: Path,
+            dryrun: bool = False) -> list[tuple[str, str]]:
+    # Note: For clarity in history, I think renaming (locations) and moving (assets) should be separated operations.
 
+    if not isinstance(sources, (list, set)):
+        sources = [sources]
+    elif not isinstance(sources, list):
+        sources = list(sources)
 
-def mv_sanitize_sources(repo: Repo, sources: list[Union[Path, str]]) -> list[Path]:
-    paths_to_mv = []
-    error_path_absent = []
-    error_path_protected = []
+    # sanitize and validate arguments
+    invalid_sources = [p
+                       for p in sources
+                       if not repo.is_asset_path(p) and
+                       not repo.is_inventory_dir(p)]
+    if invalid_sources:
+        log.error("The following paths are neither inventory directories nor assets:\n%s"
+                  "\nNothing was moved.",
+                  '\n'.join(map(str, invalid_sources)))
+        # Note: Consider ExceptionGroup -> what python version required?
+        raise RuntimeError("TODO")
 
-    # validate sources
-    for src in sources:
-        full_path = Path(repo.root, src).resolve()
+    dest_path = sanitize_destination_for_mv(repo, sources, destination)
 
-        # paths must exist
-        if not full_path.exists():
-            error_path_absent.append(src)
-            continue
-
-        # protected paths
-        if is_protected_path(full_path):
-            error_path_protected.append(src)
-            continue
-
-        paths_to_mv.append(full_path)
-
-    if error_path_absent:
-        log.error(
-            'The following source paths do not exist:\n{}\nNothing was '
-            'moved.'.format('\n'.join(map(str, error_path_absent))))
-        raise FileNotFoundError(
-            'The following source paths do not exist:\n{}'.format(
-                '\n'.join(map(str, error_path_absent))))
-
-    if error_path_protected:
-        log.error(
-            'The following paths are protected by onyo:\n{}\nNothing was '
-            'moved.'.format('\n'.join(map(str, error_path_protected))))
-        raise OnyoProtectedPathError(
-            'The following paths are protected by onyo:\n{}'.format(
-                '\n'.join(map(str, error_path_protected))))
-
-    return paths_to_mv
-
-
-def generate_faux_serials(repo: Repo,
-                          length: int = 6,
-                          num: int = 1) -> set[str]:
-    if length < 4:
-        # 62^4 is ~14.7 million combinations. Which is the lowest acceptable
-        # risk of collisions between independent checkouts of a repo.
-        raise ValueError('The length of faux serial numbers must be >= 4.')
-
-    if num < 1:
-        raise ValueError('The length of faux serial numbers must be >= 1.')
-
-    alphanum = string.ascii_letters + string.digits
-    faux_serials = set()
-    repo_faux_serials = {str(x.name).split('faux')[-1] for x in repo.assets}
-
-    while len(faux_serials) < num:
-        serial = ''.join(random.choices(alphanum, k=length))
-        if serial not in repo_faux_serials:
-            faux_serials.add(f'faux{serial}')
-
-    return faux_serials
-
-
-def get_template(repo: Repo,
-                 template_name: Union[Path, str, None] = None) -> Path:
-    if not template_name:
-        template_name = repo.get_config('onyo.new.template')
-        if template_name is None:
-            log.error("Either --template must be given or 'onyo.new.template' must be set.")
-            raise ValueError("Either --template must be given or 'onyo.new.template' must be set.")
-
-    template_name = Path(template_name)
-    for template in repo.templates:
-        if template.name == template_name.name:
-            return template
-        elif template_name.is_file() and template.samefile(template_name):
-            return template
-
-    log.error(f"Template {template_name} does not exist.")
-    raise ValueError(f"Template {template_name} does not exist.")
-
-
-def valid_asset_path_and_name_available(repo: Repo,
-                                        asset: Path,
-                                        new_assets: list[Path]) -> None:
-    if not valid_name(asset):
-        log.error(f"'{asset}' is not a valid asset name.")
-        raise ValueError(f"'{asset}' is not a valid asset name.")
-    if file := [file for file in repo.assets if asset.name == file.name]:
-        log.error(f"Filename '{asset.name}' already exists as '{file[0]}'.")
-        raise ValueError(f"Filename '{asset.name}' already exists as '{file[0]}'.")
-    elif file := [file for file in new_assets if asset.name == file.name]:
-        log.error(f"Input contains multiple '{file[0].name}'")
-        raise ValueError(f"Input contains multiple '{file[0].name}'")
-    if is_protected_path(asset):
-        log.error(f"The path is protected by onyo: '{asset}'")
-        raise ValueError(f"The path is protected by onyo: '{asset}'")
-
-
-def valid_name(asset: Union[Path, str]) -> bool:
-    asset = Path(asset)
-
-    try:
-        re.findall(r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset.name)[0]
-    except (ValueError, IndexError):
-        log.info(f"'{asset.name}' must be in the format '<type>_<make>_<model>.<serial>'")
-        return False
-
-    return True
-
-
-def set_assets(repo: Repo,
-               paths: Iterable[Union[Path, str]],
-               values: Dict[str, Union[str, int, float]],
-               dryrun: bool,
-               rename: bool,
-               depth: Union[int]) -> str:
-    assets_to_set = get_assets_by_path(repo, paths, depth)
-
-    content_values = dict((field, values[field]) for field in values.keys() if field not in ["type", "make", "model", "serial"])
-    name_values = dict((field, values[field]) for field in values.keys() if field in ["type", "make", "model", "serial"])
-
-    if name_values and not rename:
-        log.error("Can't change pseudo keys without --rename.")
-        raise ValueError("Can't change pseudo keys without --rename.")
-
-    if content_values:
-        for asset in assets_to_set:
-            contents = read_asset(asset)
-            contents.update(content_values)
-            write_asset(asset, contents)
-            repo.add(asset)
-
-    if name_values:
-        try:
-            update_names(repo, assets_to_set, name_values)
-        except ValueError as e:
-            if repo.files_staged:
-                repo.restore()
-            # reset renaming needs double-restoring
-            if repo.files_staged:
-                repo.restore()
-            raise ValueError(e)
-
-    # generate diff, and restore changes for dry-runs
-    diff = repo._diff_changes()
-    if diff and dryrun:
-        repo.restore()
-
-    repo.clear_caches(assets=True,  # `onyo set` can rename assets
-                      dirs=False,  # `set` cannot create, move, or remove directories
-                      files=True,  # might rename asset files
-                      templates=True  # might modify templates
-                      )
-    return diff
-
-
-def update_names(repo: Repo,
-                 assets: list[Path],
-                 name_values: Dict[str, Union[float, int, str]]) -> None:
-    new_assets = []
-
-    # count and request the needed faux serial numbers
-    faux_serial_list = []
-    if 'serial' in name_values.keys() and name_values['serial'] == 'faux':
-        faux_number = len(assets)
-        if faux_number > 0:
-            faux_serial_list = generate_faux_serials(repo, num=faux_number)
-
-    for asset in assets:
-        # split old name into parts
-        [serial, model, make, type] = [field[::-1] for field in re.findall(r'(.*)\.(.*)_(.*)_(.*)', asset.name[::-1])[0]]
-        fields = name_values.keys()
-
-        # update name fields and build new asset name
-        if "serial" in fields:
-            if name_values["serial"] == "faux":
-                serial = faux_serial_list.pop()
-            else:
-                serial = name_values["serial"]
-        if "model" in fields:
-            model = name_values["model"]
-        if "make" in fields:
-            make = name_values["make"]
-        if "type" in fields:
-            type = name_values["type"]
-        new_name = Path(asset.parent, f"{type}_{make}_{model}.{serial}")
-
-        # Check validity of the new asset name
-        if new_name == asset.name:
-            log.error(f"New asset names must be different than old names: '{new_name}'")
-            raise ValueError(f"New asset names must be different than old names: '{new_name}'")
-
-        if not valid_name(new_name):
-            log.error(f"New asset name is not valid: '{new_name}'")
-            raise ValueError(f"New asset name is not valid: '{new_name}'")
-
-        valid_asset_path_and_name_available(repo, new_name, new_assets)
-        new_assets.append(new_name)
-
-        repo._git(["mv", str(asset), str(new_name)])
-
-
-def rm(repo: Repo,
-       paths: Union[Iterable[Union[Path, str]], Path, str],
-       dryrun: bool = False) -> list[str]:
-
-    if not isinstance(paths, (list, set)):
-        paths = [paths]
-
-    paths_to_rm = rm_sanitize(repo, paths)
-
+    # Move block into method; However, depends on logic above: Can we turn that into inventory/onyorepo method
+    # (moving assets, renaming locations) or plain gitrepo?
+    git_mv_cmd = ['mv']
     if dryrun:
-        ret = repo._git(['rm', '-r', '--dry-run'] + [str(x) for x in paths_to_rm])
-    else:
-        # rm and commit
-        ret = repo._git(['rm', '-r'] + [str(x) for x in paths_to_rm])
+        git_mv_cmd.append('--dry-run')
+    git_mv_cmd.extend([*map(str, sources), str(dest_path)])
+    ret = repo.git._git(git_mv_cmd)
 
     # TODO: change this to info
-    log.debug('The following will be deleted:\n' +
-              '\n'.join([str(x.relative_to(repo.root)) for x in paths_to_rm]))
+    log.debug('The following will be moved:\n{}'.format('\n'.join(
+        map(lambda x: str(x.relative_to(repo.git.root)), sources))))
 
-    repo.clear_caches(assets=True,  # `onyo rm` can delete assets
-                      dirs=True,  # can delete directories
-                      files=True,  # if used on dir, deletes also `.anchor`
-                      templates=True  # can delete templates
-                      )
-    # return a list of rm-ed assets
-    # TODO: should this also list the dirs?
-    return [r for r in re.findall("rm '(.*)'", ret)]
+    # Note: This is invalidating everything, because it pretends to not know what was actually done.
+    #       That information lives in the sanitize functions for some reason.
+    repo.clear_caches()  # might move or rename templates
 
-
-def rm_sanitize(repo: Repo, paths: Iterable[Union[Path, str]]) -> list[Path]:
-    error_path_absent = []
-    error_path_protected = []
-    paths_to_rm = []
-
-    for p in paths:
-        full_path = Path(repo.root, p).resolve()
-
-        # paths must exist
-        if not full_path.exists():
-            error_path_absent.append(p)
-            continue
-
-        # protected paths
-        if is_protected_path(full_path):
-            error_path_protected.append(p)
-            continue
-
-        paths_to_rm.append(full_path)
-
-    if error_path_absent:
-        log.error(
-            'The following paths do not exist:\n{}\nNothing was '
-            'deleted.'.format('\n'.join(map(str, error_path_absent))))
-
-        raise FileNotFoundError(
-            'The following paths do not exist:\n{}'.format(
-                '\n'.join(map(str, error_path_absent))))
-
-    if error_path_protected:
-        log.error(
-            'The following paths are protected by onyo:\n{}\nNo '
-            'directories were created.'.format(
-                '\n'.join(map(str, error_path_protected))))
-        raise OnyoProtectedPathError(
-            'The following paths are protected by onyo:\n{}'.format(
-                '\n'.join(map(str, error_path_protected))))
-
-    return paths_to_rm
-
-
-def unset(repo: Repo,
-          paths: Iterable[Union[Path, str]],
-          keys: list[str],
-          dryrun: bool,
-          quiet: bool,
-          depth: Union[int]) -> str:
-    # set and unset should select assets exactly the same way
-    assets_to_unset = get_assets_by_path(repo, paths, depth)
-
-    if any([key in ["type", "make", "model", "serial"] for key in keys]):
-        log.error("Can't unset pseudo keys (name fields are required).")
-        raise ValueError("Can't unset pseudo keys (name fields are required).")
-
-    for asset in assets_to_unset:
-        contents = read_asset(asset)
-
-        for field in keys:
-            try:
-                del contents[field]
-            except KeyError:
-                if not quiet:
-                    log.info(f"Field {field} does not exist in {asset}")
-
-        write_asset(asset, contents)
-        repo.add(asset)
-
-    # generate diff, and restore changes for dry-runs
-    diff = repo._diff_changes()
-    if diff and dryrun:
-        repo.restore()
-
-    return diff
-
-
-def get(repo: Repo,
-        keys: Set[str],
-        paths: Set[Path],
-        depth: Union[int, None] = None,
-        filters: Union[list[Filter], None] = None) -> Generator:
-    # filter assets by path and depth relative to paths
-    assets = get_assets_by_path(repo, paths, depth) or []
-
-    if filters:
-        # Filters that do not require loading an asset are applied first
-        filters.sort(key=lambda x: x.is_pseudo, reverse=True)
-
-        # Remove assets that do not match all filters
-        for f in filters:
-            assets[:] = filter(f.match, assets)
-
-    # Obtain keys from remaining assets
-    assets = ((a, {
-        k: v
-        for k, v in (read_asset(a) | dict(zip(
-            repo.pseudo_keys, re.findall(
-                r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)',
-                a.name)[0]))).items()
-        if k in keys}) for a in assets)
-
-    return assets
+    # return a list of mv-ed assets
+    return [r for r in re.findall('Renaming (.*) to (.*)', ret)]

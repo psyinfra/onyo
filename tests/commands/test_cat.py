@@ -1,6 +1,7 @@
 import subprocess
 
-from onyo.lib import Repo, OnyoInvalidRepoError
+from onyo.lib import OnyoRepo, OnyoInvalidRepoError
+from onyo.lib.commands import fsck
 import pytest
 from typing import List
 
@@ -29,7 +30,7 @@ contents: List[List[str]] = [[x, content_str] for x in assets]
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_cat(repo: Repo, asset: str) -> None:
+def test_cat(repo: OnyoRepo, asset: str) -> None:
     """
     Test that a single file is cat successfully, and that stdout matches file
     content.
@@ -41,7 +42,7 @@ def test_cat(repo: Repo, asset: str) -> None:
 
 
 @pytest.mark.repo_contents(*contents)
-def test_cat_multiple_inputs(repo: Repo) -> None:
+def test_cat_multiple_inputs(repo: OnyoRepo) -> None:
     """
     Test that multiple files are cat successfully, and that stdout matches file
     content.
@@ -58,7 +59,7 @@ def test_cat_multiple_inputs(repo: Repo) -> None:
                                      'r/e/c/u/r/s/i/v/e/does_not_exist.test'
                                      ]
                          )
-def test_cat_non_existing_path(repo: Repo, variant: str) -> None:
+def test_cat_non_existing_path(repo: OnyoRepo, variant: str) -> None:
     """
     Test that cat fails for a path that doesn't exist.
     """
@@ -74,7 +75,7 @@ def test_cat_non_existing_path(repo: Repo, variant: str) -> None:
     ['one_that_exists.test', 'does_not_exist.test', 'dir/two_that_exists.test'],
     ['one_that_exists.test', 'dir/two_that_exists.test', 'does_not_exist.test']]
 )
-def test_cat_multiple_paths_missing(repo: Repo, variant: list[str]) -> None:
+def test_cat_multiple_paths_missing(repo: OnyoRepo, variant: list[str]) -> None:
     """
     Test that cat fails with multiple paths if at least one doesn't exist.
     """
@@ -86,7 +87,7 @@ def test_cat_multiple_paths_missing(repo: Repo, variant: list[str]) -> None:
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('directory', directories)
-def test_cat_error_with_directory(repo: Repo, directory: str) -> None:
+def test_cat_error_with_directory(repo: OnyoRepo, directory: str) -> None:
     """
     Test that cat fails if path provided not a file.
     """
@@ -98,7 +99,7 @@ def test_cat_error_with_directory(repo: Repo, directory: str) -> None:
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_same_target(repo: Repo, asset: str) -> None:
+def test_same_target(repo: OnyoRepo, asset: str) -> None:
     """
     Test that cat succeeds if the same path is provided more than once.
     """
@@ -112,7 +113,7 @@ def test_same_target(repo: Repo, asset: str) -> None:
                               "---\nRAM:\nSize:\nUSB:"]])
 @pytest.mark.parametrize('variant', [["no_trailing_newline.test",
                                       "---\nRAM:\nSize:\nUSB:"]])
-def test_no_trailing_newline(repo: Repo, variant: list[str]) -> None:
+def test_no_trailing_newline(repo: OnyoRepo, variant: list[str]) -> None:
     """
     Test that `onyo cat` outputs the file content exactly, and doesn't add any
     newlines or other characters.
@@ -125,7 +126,7 @@ def test_no_trailing_newline(repo: Repo, variant: list[str]) -> None:
 
 
 @pytest.mark.repo_files(*assets)
-def test_no_trailing_newline_with_many_empty_assets(repo: Repo) -> None:
+def test_no_trailing_newline_with_many_empty_assets(repo: OnyoRepo) -> None:
     """
     Test that `onyo cat ASSET ASSET [...]` does not print empty lines when given
     a list of empty files.
@@ -142,13 +143,13 @@ def test_no_trailing_newline_with_many_empty_assets(repo: Repo) -> None:
 @pytest.mark.repo_contents(["bad_yaml_file.test", "I: \nam:bad:\nbad:yaml\n"])
 @pytest.mark.parametrize('variant',
                          [["bad_yaml_file.test", "I: \nam:bad:\nbad:yaml\n"]])
-def test_invalid_yaml(repo: Repo, variant: list[str]) -> None:
+def test_invalid_yaml(repo: OnyoRepo, variant: list[str]) -> None:
     """
     Test that `onyo cat` fails for a file with invalid yaml content.
     """
     # check that yaml is invalid
     with pytest.raises(OnyoInvalidRepoError):
-        repo.fsck(['asset-yaml'])
+        fsck(repo, ['asset-yaml'])
 
     # test
     ret = subprocess.run(['onyo', 'cat', variant[0]],

@@ -1,20 +1,18 @@
 from __future__ import annotations
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from onyo.lib import Repo
+from onyo.lib.exceptions import OnyoInvalidFilterError
+
+
+log: logging.Logger = logging.getLogger('onyo.filters')
 
 
 # TODO: Move this to a place specifically meant for defaults, along with
 #  other defaults like <list>, <dict>, and potentially <none> or <null>
 UNSET_VALUE = '<unset>'
-
-
-class OnyoInvalidFilterError(Exception):
-    """Raise if filters are invalidly defined"""
 
 
 def asset_name_to_keys(path: Path, pseudo_keys: list[str]) -> dict[str, str]:
@@ -27,7 +25,6 @@ def asset_name_to_keys(path: Path, pseudo_keys: list[str]) -> dict[str, str]:
 @dataclass
 class Filter:
     _arg: str = field(repr=False)
-    repo: Repo = field(repr=False)
     key: str = field(init=False)
     value: str = field(init=False)
     _pseudo_keys: list[str] = field(init=False, default_factory=list)
@@ -45,8 +42,8 @@ class Filter:
             f = Filter('foo=bar')
             assets[:] = filter(f.match, repo.assets)
         """
-
-        self._pseudo_keys = ['type', 'make', 'model', 'serial']
+        from onyo.lib.assets import PSEUDO_KEYS  # delayed import; would be circular otherwise
+        self._pseudo_keys = PSEUDO_KEYS
         self.key, self.value = self._format(self._arg)
 
     @staticmethod
@@ -81,7 +78,8 @@ class Filter:
                 return True
             return False
 
-        data = self.repo._read_asset(asset)
+        from onyo.lib.assets import read_asset
+        data = read_asset(asset)
 
         # Check if filter is <unset> and there is no data
         if not data and self.value == unset:

@@ -1,9 +1,9 @@
 from __future__ import annotations
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import Repo, OnyoInvalidRepoError
+from onyo import OnyoRepo
+from onyo.lib.commands import fsck as fsck_cmd
 
 if TYPE_CHECKING:
     import argparse
@@ -25,9 +25,6 @@ def fsck(args: argparse.Namespace) -> None:
     - "asset-validity": loads each asset and validates the contents against
       the validation rulesets defined in ``.onyo/validation/``.
     """
-    repo = None
-    try:
-        repo = Repo(Path.cwd(), find_root=True)
-        repo.fsck()
-    except OnyoInvalidRepoError:
-        sys.exit(1)
+    # TODO: Pass args and have a test; Actually - no args defined?
+    repo = OnyoRepo(Path.cwd(), find_root=True)
+    fsck_cmd(repo)

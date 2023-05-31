@@ -1,10 +1,12 @@
-from .filters import Filter, OnyoInvalidFilterError
-from .onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
+from .filters import Filter
+from .onyo import OnyoRepo
+from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError, OnyoInvalidFilterError
+
 
 __all__ = [
     'Filter',
-    'Repo',
-    'OnyoInvalidFilterError',
+    'OnyoRepo',
     'OnyoInvalidRepoError',
     'OnyoProtectedPathError',
+    'OnyoInvalidFilterError',
 ]

@@ -1,10 +1,9 @@
 from __future__ import annotations
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import Repo, OnyoInvalidRepoError, OnyoProtectedPathError
-from onyo.commands.edit import request_user_response
+from onyo import OnyoRepo
+from onyo.lib.commands import fsck, mv as mv_cmd
 
 if TYPE_CHECKING:
     import argparse
@@ -17,36 +16,11 @@ def mv(args: argparse.Namespace) -> None:
 
     Files cannot be renamed using ``onyo mv``. To do so, use ``onyo set``.
     """
-    repo = None
+    repo = OnyoRepo(Path.cwd(), find_root=True)
+    fsck(repo)
 
-    # check flags
-    if args.quiet and not args.yes:
-        print('The --quiet flag requires --yes.', file=sys.stderr)
-        sys.exit(1)
+    # TODO: Figure whether args.source is actually always a list
+    sources = [Path(p).resolve() for p in args.source]
+    destination = Path(args.destination).resolve()
 
-    try:
-        repo = Repo(Path.cwd(), find_root=True)
-        repo.fsck()
-    except OnyoInvalidRepoError:
-        sys.exit(1)
-
-    if not args.quiet:
-        dryrun_list = None
-        try:
-            dryrun_list = repo.mv(args.source, args.destination, dryrun=True)
-        except (FileExistsError, FileNotFoundError, NotADirectoryError, OnyoProtectedPathError, ValueError):
-            sys.exit(1)
-
-        print('The following will be moved:\n' +
-              '\n'.join(f"'{x[0]}' -> '{x[1]}'" for x in dryrun_list))
-
-        if not args.yes and not request_user_response("Save changes? No discards all changes. (y/n) "):
-            print('Nothing was moved.')
-            sys.exit(0)
-
-    try:
-        repo.mv(args.source, args.destination)
-        repo.commit(repo.generate_commit_message(message=args.message, cmd="mv",
-                                                 destination=args.destination))
-    except (FileExistsError, FileNotFoundError, OnyoProtectedPathError, ValueError):
-        sys.exit(1)
+    mv_cmd(repo, sources, destination, args.quiet, args.yes, args.message)

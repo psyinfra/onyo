@@ -1,9 +1,10 @@
 import subprocess
 from pathlib import Path
-from onyo.lib import Repo
+from onyo.lib import OnyoRepo
+from onyo.lib.commands import fsck
 
 
-def test_config_set(repo: Repo) -> None:
+def test_config_set(repo: OnyoRepo) -> None:
     ret = subprocess.run(["onyo", "config", "onyo.test.set", "set-test"],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -11,10 +12,10 @@ def test_config_set(repo: Repo) -> None:
     assert not ret.stderr
     assert 'set =' in Path('.onyo/config').read_text()
     assert '= set-test' in Path('.onyo/config').read_text()
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_get_onyo(repo: Repo) -> None:
+def test_config_get_onyo(repo: OnyoRepo) -> None:
     # set
     ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo",
                           "get-onyo-test"],
@@ -27,10 +28,10 @@ def test_config_get_onyo(repo: Repo) -> None:
     assert ret.returncode == 0
     assert ret.stdout == 'get-onyo-test\n'
     assert not ret.stderr
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_get_pristine(repo: Repo) -> None:
+def test_config_get_pristine(repo: OnyoRepo) -> None:
     """
     onyo should not alter git config's output (newline, etc)
     """
@@ -54,10 +55,10 @@ def test_config_get_pristine(repo: Repo) -> None:
     assert ret.stdout == 'get-pristine-test\n'
 
     assert ret.stdout == git_config_output
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_get_empty(repo: Repo) -> None:
+def test_config_get_empty(repo: OnyoRepo) -> None:
     assert 'onyo.test.not-exist' not in Path('.onyo/config').read_text()
 
     ret = subprocess.run(["onyo", "config", "--get", "onyo.test.not-exist"],
@@ -65,10 +66,10 @@ def test_config_get_empty(repo: Repo) -> None:
     assert ret.returncode == 1
     assert not ret.stdout
     assert not ret.stderr
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_unset(repo: Repo) -> None:
+def test_config_unset(repo: OnyoRepo) -> None:
     # set
     ret = subprocess.run(["onyo", "config", "onyo.test.unset", "unset-test"],
                          capture_output=True, text=True)
@@ -89,10 +90,10 @@ def test_config_unset(repo: Repo) -> None:
     assert ret.returncode == 1
     assert not ret.stdout
     assert not ret.stderr
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_help(repo: Repo) -> None:
+def test_config_help(repo: OnyoRepo) -> None:
     """
     `onyo config --help` is shown and not `git config --help`.
     """
@@ -102,10 +103,10 @@ def test_config_help(repo: Repo) -> None:
         assert ret.returncode == 0
         assert 'onyo' in ret.stdout
         assert not ret.stderr
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_forbidden_flags(repo: Repo) -> None:
+def test_config_forbidden_flags(repo: OnyoRepo) -> None:
     """
     Flags that change the source of values are not allowed.
     """
@@ -115,10 +116,10 @@ def test_config_forbidden_flags(repo: Repo) -> None:
                              capture_output=True, text=True)
         assert ret.returncode == 1
         assert flag in ret.stderr
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_bubble_retcode(repo: Repo) -> None:
+def test_config_bubble_retcode(repo: OnyoRepo) -> None:
     """
     Bubble up git-config's retcodes.
     According to the git config manpage, attempting to unset an option which
@@ -129,10 +130,10 @@ def test_config_bubble_retcode(repo: Repo) -> None:
     ret = subprocess.run(["onyo", "config", "--unset", "onyo.test.not-exist"],
                          capture_output=True, text=True)
     assert ret.returncode == 5
-    repo.fsck()
+    fsck(repo)
 
 
-def test_config_bubble_stderr(repo: Repo) -> None:
+def test_config_bubble_stderr(repo: OnyoRepo) -> None:
     """
     Bubble up git-config printing to stderr.
     """
@@ -142,4 +143,4 @@ def test_config_bubble_stderr(repo: Repo) -> None:
     assert ret.returncode == 129
     assert not ret.stdout
     assert ret.stderr
-    repo.fsck()
+    fsck(repo)

@@ -1,7 +1,8 @@
 import subprocess
 from pathlib import Path
 
-from onyo.lib import Repo
+from onyo.lib import OnyoRepo
+from onyo.lib.commands import fsck
 import pytest
 from typing import List
 
@@ -31,7 +32,7 @@ contents: List[List[str]] = [[x, content_str] for x in assets]
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset(repo: Repo, asset: str) -> None:
+def test_unset(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset KEY <asset>` removes keys from of assets.
     """
@@ -47,12 +48,12 @@ def test_unset(repo: Repo, asset: str) -> None:
 
     # verify changes, and the repository clean
     assert f"{key}: {content_dict.get(key)}" not in Path(asset).read_text()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_interactive(repo: Repo, asset: str) -> None:
+def test_unset_interactive(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset KEY <asset>` removes keys from of assets.
     """
@@ -69,12 +70,12 @@ def test_unset_interactive(repo: Repo, asset: str) -> None:
 
     # verify changes, and the repository clean
     assert f"{key}: {content_dict.get(key)}" not in Path(asset).read_text()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_subset_of_keys(repo: Repo, asset: str) -> None:
+def test_unset_subset_of_keys(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset KEY <asset>` removes just the keys specified from
     assets with many other keys.
@@ -96,12 +97,12 @@ def test_unset_subset_of_keys(repo: Repo, asset: str) -> None:
     assert f"{key}: {content_dict.get(key)}" not in asset_contents
     for k in list(content_dict.keys())[1:]:
         assert f"{k}: {content_dict.get(k)}" in asset_contents
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_info_empty_asset(repo: Repo, asset: str) -> None:
+def test_unset_info_empty_asset(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset --keys KEY --path ASSET` prints the correct info,
     when one of the KEYs does not exist, because the given asset is empty.
@@ -116,12 +117,12 @@ def test_unset_info_empty_asset(repo: Repo, asset: str) -> None:
     assert "No assets containing the specified key(s) could be found. No assets updated." in ret.stdout
     assert f"Field {no_key} does not exist in " in ret.stderr
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_key_does_not_exist(repo: Repo, asset: str) -> None:
+def test_unset_key_does_not_exist(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset --keys KEY --path ASSET` prints the correct info,
     when one of the KEYs does not exist, but the asset is not empty.
@@ -136,11 +137,11 @@ def test_unset_key_does_not_exist(repo: Repo, asset: str) -> None:
     assert "No assets containing the specified key(s) could be found. No assets updated." in ret.stdout
     assert f"Field {no_key} does not exist in " in ret.stderr
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
-def test_unset_multiple_assets(repo: Repo) -> None:
+def test_unset_multiple_assets(repo: OnyoRepo) -> None:
     """
     Test that `onyo unset --keys KEY --path ASSET` removes keys from of assets.
     """
@@ -151,15 +152,15 @@ def test_unset_multiple_assets(repo: Repo) -> None:
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    for asset in repo.relative_to_root(repo.assets):
+    for asset in [p.relative_to(repo.git.root) for p in repo.asset_paths]:
         assert str(asset) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify changes, and the repository clean
-    for asset in repo.assets:
+    for asset in repo.asset_paths:
         assert key not in Path(asset).read_text()
-    repo.fsck()
+    fsck(repo)
 
 
 non_existing_assets: List[List[str]] = [
@@ -168,7 +169,7 @@ non_existing_assets: List[List[str]] = [
     [assets[0], "single_non_existing.asset"]]
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('no_assets', non_existing_assets)
-def test_unset_error_non_existing_assets(repo: Repo,
+def test_unset_error_non_existing_assets(repo: OnyoRepo,
                                          no_assets: list[str]) -> None:
     """
     Test that `onyo unset --keys KEY --path ASSET` errors correctly for
@@ -181,13 +182,13 @@ def test_unset_error_non_existing_assets(repo: Repo,
 
     # verify output
     assert not ret.stdout
-    assert "The following paths do not exist:" in ret.stderr
+    assert "The following paths are neither an inventory directory nor an asset:" in ret.stderr
     assert ret.returncode == 1
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
-def test_unset_with_dot(repo: Repo) -> None:
+def test_unset_with_dot(repo: OnyoRepo) -> None:
     """
     Test that when `onyo unset --keys KEY=VALUE --path .` is called from the
     repository root, onyo uses all assets in the completely repo recursively.
@@ -201,11 +202,11 @@ def test_unset_with_dot(repo: Repo) -> None:
     assert ret.stdout.count(f"-{key}: {content_dict.get(key)}") == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
-def test_unset_without_path(repo: Repo) -> None:
+def test_unset_without_path(repo: OnyoRepo) -> None:
     """
     Test that `onyo unset --keys KEY` without a given path argument selects all
     assets recursively.
@@ -219,12 +220,12 @@ def test_unset_without_path(repo: Repo) -> None:
     assert ret.stdout.count(f"-{key}: {content_dict.get(key)}") == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('directory', directories)
-def test_unset_recursive_directories(repo: Repo, directory: str) -> None:
+def test_unset_recursive_directories(repo: OnyoRepo, directory: str) -> None:
     """
     Test that `onyo unset --keys KEY --path DIRECTORY` updates contents of
     assets in DIRECTORY.
@@ -234,16 +235,16 @@ def test_unset_recursive_directories(repo: Repo, directory: str) -> None:
 
     # verify changes, and the repository clean
     # TODO: update this after solving #259
-    repo_assets = repo.assets
+    repo_assets = repo.asset_paths
     for asset in [asset for asset in Path(directory).iterdir() if asset in repo_assets]:
         assert key not in Path(asset).read_text()
         assert f"-{key}: {content_dict.get(key)}" in ret.stdout
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_discard_changes_single_assets(repo: Repo, asset: str) -> None:
+def test_unset_discard_changes_single_assets(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset` discards changes for assets successfully.
     """
@@ -257,11 +258,11 @@ def test_unset_discard_changes_single_assets(repo: Repo, asset: str) -> None:
 
     # verify that the key was not removed
     assert f"{key}: {content_dict.get(key)}" in Path(asset).read_text()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
-def test_unset_discard_changes_recursive(repo: Repo) -> None:
+def test_unset_discard_changes_recursive(repo: OnyoRepo) -> None:
     """
     Test that `onyo unset` discards changes for all assets successfully.
     """
@@ -273,20 +274,20 @@ def test_unset_discard_changes_recursive(repo: Repo) -> None:
     assert "The following assets will be changed:" in ret.stdout
     assert "Update assets? (y/n) " in ret.stdout
     assert "No assets updated." in ret.stdout
-    assert ret.stdout.count(f"-{key}: {content_dict.get(key)}") == len(repo.assets)
+    assert ret.stdout.count(f"-{key}: {content_dict.get(key)}") == len(repo.asset_paths)
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify that the removal was not written but discarded
-    repo_assets = repo.assets
+    repo_assets = repo.asset_paths
     for asset in repo_assets:
         assert f"{key}: {content_dict.get(key)}" in Path.read_text(asset)
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_yes_flag(repo: Repo, asset: str) -> None:
+def test_unset_yes_flag(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset --yes KEY <asset>` updates assets without prompt.
     """
@@ -305,12 +306,12 @@ def test_unset_yes_flag(repo: Repo, asset: str) -> None:
 
     # verify that the removal did happen, and the repository is still clean
     assert f"{key}" not in Path(asset).read_text()
-    repo.fsck()
+    fsck(repo)
 
 
 asset = 'simple/laptop_apple_macbookpro.0'
 @pytest.mark.repo_files(asset)
-def test_unset_quiet_without_yes_flag(repo: Repo) -> None:
+def test_unset_quiet_without_yes_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo unset --quiet --keys KEY --path ASSET` errors correctly
     without the --yes flag.
@@ -324,12 +325,12 @@ def test_unset_quiet_without_yes_flag(repo: Repo) -> None:
     assert ret.returncode == 1
 
     # verify that the repository is in a clean state
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_quiet_flag(repo: Repo, asset: str) -> None:
+def test_unset_quiet_flag(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset --quiet --yes --keys KEY --path ASSET` works correctly
     without output and user-response.
@@ -346,12 +347,12 @@ def test_unset_quiet_flag(repo: Repo, asset: str) -> None:
     assert f"{key}" not in Path(asset).read_text()
 
     # verify that the repository is in a clean state
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
-def test_unset_message_flag(repo: Repo, asset: str) -> None:
+def test_unset_message_flag(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo unset --message msg` overwrites the default commit message
     with one specified by the user containing different special characters.
@@ -367,11 +368,11 @@ def test_unset_message_flag(repo: Repo, asset: str) -> None:
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
     assert msg in ret.stdout
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_contents(*contents)
-def test_unset_dryrun_flag(repo: Repo) -> None:
+def test_unset_dryrun_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo unset --dry-run --keys KEY --path ASSET` displays correct
     diff-output without actually changing any assets.
@@ -398,7 +399,7 @@ def test_unset_dryrun_flag(repo: Repo) -> None:
         assert f"{key}: {content_dict.get(key)}" in Path(asset).read_text()
 
     # check that the repository is still clean
-    repo.fsck()
+    fsck(repo)
 
 
 depth_assets = ["laptop_macbook_pro.0",
@@ -410,7 +411,7 @@ depth_assets = ["laptop_macbook_pro.0",
                 "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6"]
 depth_contents: List[List[str]] = [[x, content_str] for x in depth_assets]
 @pytest.mark.repo_contents(*depth_contents)
-def test_unset_depth_flag(repo: Repo) -> None:
+def test_unset_depth_flag(repo: OnyoRepo) -> None:
     """
     Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` for
     different values for `--depth N`:
@@ -428,7 +429,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert not ret.stdout
     assert "depth values must be positive, but is -1" in ret.stderr
     assert ret.returncode == 1
-    repo.fsck()
+    fsck(repo)
 
     ret = subprocess.run(['onyo', 'unset', '--depth', '0', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 0
@@ -440,7 +441,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     # while scripting with onyo.
     assert "depth values must be positive" not in ret.stderr
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
     ret = subprocess.run(['onyo', 'unset', '--depth', '1', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 1
@@ -450,7 +451,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert "dir1/laptop_macbook_pro.1" not in ret.stdout
     assert "--depth must be bigger than 0" not in ret.stderr
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
     ret = subprocess.run(['onyo', 'unset', '--depth', '3', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 3
@@ -460,7 +461,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert "dir1/dir2/dir3/laptop_macbook_pro.3" not in ret.stdout
     assert ret.stdout.count(f"-{key}") == 3
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
     ret = subprocess.run(['onyo', 'unset', '--depth', '6', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth 6 (maximum depth) contains all files
@@ -473,7 +474,7 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" not in ret.stdout
     assert ret.stdout.count(f"-{key}") == 6
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
     ret = subprocess.run(['onyo', 'unset', '--depth', '10', '--keys', key], input='n', capture_output=True, text=True)
     # verify output for --depth bigger then folder depth without error
@@ -484,9 +485,9 @@ def test_unset_depth_flag(repo: Repo) -> None:
     assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" in ret.stdout
     assert "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5" in ret.stdout
     assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" in ret.stdout
-    assert ret.stdout.count(f"-{key}") == len(repo.assets)
+    assert ret.stdout.count(f"-{key}") == len(repo.asset_paths)
     assert ret.returncode == 0
-    repo.fsck()
+    fsck(repo)
 
 
 name_fields = [["type"],
@@ -497,7 +498,7 @@ name_fields = [["type"],
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 @pytest.mark.parametrize('name_field', name_fields)
-def test_error_unset_name_fields(repo: Repo, asset: str, name_field: list[str]) -> None:
+def test_error_unset_name_fields(repo: OnyoRepo, asset: str, name_field: list[str]) -> None:
     """
     Test that `onyo unset KEY <asset>` throws the correct error without printing
     the usual information (e.g. diff output), when called with a KEY that is a
@@ -511,4 +512,4 @@ def test_error_unset_name_fields(repo: Repo, asset: str, name_field: list[str]) 
     assert ret.returncode == 1
 
     # verify state of repo is clean
-    repo.fsck()
+    fsck(repo)

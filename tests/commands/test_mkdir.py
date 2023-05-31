@@ -2,7 +2,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from onyo.lib import Repo
+from onyo.lib import OnyoRepo
+from onyo.lib.commands import fsck
 
 
 directories = ['simple',
@@ -16,7 +17,7 @@ directories = ['simple',
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_mkdir(repo: Repo, directory: str) -> None:
+def test_mkdir(repo: OnyoRepo, directory: str) -> None:
     """
     Test that `onyo mkdir <dir>` creates new directories correctly for different
     depths and directory names.
@@ -30,16 +31,16 @@ def test_mkdir(repo: Repo, directory: str) -> None:
 
     # verify folders and anchors exist
     d = Path(directory)
-    while not d.samefile(repo.root):
+    while not d.samefile(repo.git.root):
         assert Path(d).is_dir()
         assert Path(d, ".anchor").is_file()
         d = d.parent
 
     # verify that the repository is clean
-    repo.fsck()
+    fsck(repo)
 
 
-def test_mkdir_multiple_inputs(repo: Repo) -> None:
+def test_mkdir_multiple_inputs(repo: OnyoRepo) -> None:
     """
     Test that `onyo mkdir <dirs>` creates new directories all in one call when
     given a list of inputs.
@@ -53,16 +54,16 @@ def test_mkdir_multiple_inputs(repo: Repo) -> None:
     for directory in directories:
         assert directory in ret.stdout
         d = Path(directory)
-        while not d.samefile(repo.root):
+        while not d.samefile(repo.git.root):
             assert Path(d).is_dir()
             assert Path(d, ".anchor").is_file()
             d = d.parent
 
     # verify that the repository is clean
-    repo.fsck()
+    fsck(repo)
 
 
-def test_mkdir_no_response(repo: Repo) -> None:
+def test_mkdir_no_response(repo: OnyoRepo) -> None:
     """
     Test that `onyo mkdir <dirs>` creates no new directories when user responds
     with "no".
@@ -80,10 +81,10 @@ def test_mkdir_no_response(repo: Repo) -> None:
         assert not Path(directory, ".anchor").is_file()
 
     # verify that the repository is clean
-    repo.fsck()
+    fsck(repo)
 
 
-def test_mkdir_message_flag(repo: Repo) -> None:
+def test_mkdir_message_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo mkdir --message msg` overwrites the default commit message
     with one specified by the user containing different special characters.
@@ -99,12 +100,12 @@ def test_mkdir_message_flag(repo: Repo) -> None:
         assert directory in ret.stdout
 
     # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'history', '-I', directories[0]], capture_output=True, text=True)
     assert msg in ret.stdout
-    repo.fsck()
+    fsck(repo)
 
 
-def test_mkdir_quiet_flag(repo: Repo) -> None:
+def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo mkdir --yes --quiet <dirs>` creates new directories without
     printing output.
@@ -120,18 +121,18 @@ def test_mkdir_quiet_flag(repo: Repo) -> None:
     # verify folders and anchors exist
     for directory in directories:
         d = Path(directory)
-        while not d.samefile(repo.root):
+        while not d.samefile(repo.git.root):
             assert Path(d).is_dir()
             assert Path(d, ".anchor").is_file()
             d = d.parent
 
     # verify that the repository is clean
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
-def test_error_dir_exists(repo: Repo, directory: str) -> None:
+def test_error_dir_exists(repo: OnyoRepo, directory: str) -> None:
     """
     Test the correct error behavior when `onyo mkdir <path>` is called on an
     existing directory name.
@@ -147,12 +148,12 @@ def test_error_dir_exists(repo: Repo, directory: str) -> None:
     assert Path(directory, ".anchor").is_file()
 
     # verify that the repository is clean
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_files(*directories)  # used as files to test errors
 @pytest.mark.parametrize('file', directories)
-def test_dir_exists_as_file(repo: Repo, file: str) -> None:
+def test_dir_exists_as_file(repo: OnyoRepo, file: str) -> None:
     """
     Test the correct error behavior when `onyo mkdir <file>` is called on files.
     """
@@ -166,18 +167,19 @@ def test_dir_exists_as_file(repo: Repo, file: str) -> None:
     assert Path(file).is_file()
 
     # verify that the repository is clean
-    repo.fsck()
+    fsck(repo)
 
 
-protected_paths = [".anchor",
-                   "simple/.git",
+#  Note: I don't think it's necessary to exclude `.anchor` as a directory name,
+#  hence deleted ".anchor" from that list for now:
+protected_paths = ["simple/.git",
                    "simple/.onyo",
                    ".git/nope"
                    ".onyo/nope",
                    ]
 @pytest.mark.repo_dirs("simple")
 @pytest.mark.parametrize('protected_path', protected_paths)
-def test_dir_protected(repo: Repo, protected_path: str) -> None:
+def test_dir_protected(repo: OnyoRepo, protected_path: str) -> None:
     """
     Test the correct error behavior of `onyo mkdir <path>` on protected paths.
     """
@@ -190,11 +192,11 @@ def test_dir_protected(repo: Repo, protected_path: str) -> None:
 
     # verify that the directory was not created and the repository is clean
     assert not Path(protected_path).is_dir()
-    repo.fsck()
+    fsck(repo)
 
 
 @pytest.mark.repo_dirs("simple")
-def test_mkdir_relative_path(repo: Repo) -> None:
+def test_mkdir_relative_path(repo: OnyoRepo) -> None:
     """
     Test `onyo mkdir <path>` with a relative path given as input.
     """
@@ -208,4 +210,4 @@ def test_mkdir_relative_path(repo: Repo) -> None:
     # verify that the correct directory was created and the repository is clean
     assert Path("./relative").exists()
     assert not Path('simple/\\.\\./relative').exists()
-    repo.fsck()
+    fsck(repo)
