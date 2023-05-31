@@ -6,6 +6,8 @@ from onyo.lib import OnyoRepo
 from onyo.lib.commands import fsck
 import pytest
 
+
+prepared_tsvs = Path(__file__).parent / "tables"
 directories = ['simple',
                's p a c e s',
                's p a/c e s',
@@ -16,6 +18,7 @@ directories = ['simple',
                'spe\"cial\\char\'acteஞrs',
                'very/very/very/deep'
                ]
+
 
 @pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
@@ -456,7 +459,7 @@ def test_tsv(repo: OnyoRepo) -> None:
     actually does create assets and directories without error.
     """
     # select table for this test case
-    table_path = Path(Path(__file__).parent.parent, "tables/table.tsv")
+    table_path = prepared_tsvs / "table.tsv"
     assert table_path.is_file()
 
     # create assets with table
@@ -479,8 +482,7 @@ def test_tsv_with_value_columns(repo: OnyoRepo) -> None:
     Test `onyo new --tsv <table>` with a table containing a column with the age
     of the device and a group to which it belongs.
     """
-    table_path = Path(Path(__file__).parent.parent,
-                      "tables/table_with_key_values.tsv")
+    table_path = prepared_tsvs / "table_with_key_values.tsv"
     ret = subprocess.run(['onyo', 'new', '--yes', '--tsv', table_path],
                          capture_output=True, text=True)
 
@@ -508,7 +510,7 @@ def test_tsv_with_flags_template_keys_edit(repo: OnyoRepo) -> None:
     non-empty template, values to set with --keys, and an editor.
     """
     # select table, editor, --keys values and template
-    table_path = Path(Path(__file__).parent.parent, "tables/table.tsv")
+    table_path = prepared_tsvs / "table.tsv"
     os.environ['EDITOR'] = "printf 'key: value' >>"
     template = "laptop.example"
     key_values = "mode=keys"
@@ -548,8 +550,7 @@ def test_tsv_with_template_column(repo: OnyoRepo) -> None:
     The table contains entries with and without faux serial numbers, spaces, and
     existing and non-existing folders, and the columns are in a different order.
     """
-    table_path = Path(Path(__file__).parent.parent,
-                      "tables/table_with_template.tsv")
+    table_path = prepared_tsvs / "table_with_template.tsv"
     assert table_path.is_file()
 
     # create assets with table
@@ -574,8 +575,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     - error if both `--template` and 'template' column in tsv header are given
     - error if both `KEY=VALUE` and a column named `KEY` is given
     """
-    table_path = Path(Path(__file__).parent.parent,
-                      "tables/table_with_template.tsv")
+    table_path = prepared_tsvs / "table_with_template.tsv"
     assert table_path.is_file()
 
     # error if `onyo new` gets neither table nor asset names
@@ -601,8 +601,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     assert ret.returncode == 1
 
     # error if both `--keys KEY=VALUE` and a column named `KEY` is given
-    table_path = Path(Path(__file__).parent.parent,
-                      "tables/table_with_key_values.tsv")
+    table_path = prepared_tsvs / "table_with_key_values.tsv"
     ret = subprocess.run(['onyo', 'new', '--keys', 'group=a_group',
                           '--tsv', table_path], capture_output=True, text=True)
     assert not ret.stdout
@@ -630,7 +629,7 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
     assert ret.returncode == 1
 
     # <TSV> exists, but is empty (no columns/header)
-    table = Path(Path(__file__).parent.parent, "tables/error_empty_table.tsv")
+    table = prepared_tsvs / "error_empty_table.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
     assert not ret.stdout
@@ -638,8 +637,7 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
     assert ret.returncode == 1
 
     # <TSV> contains 5 assets, but each misses one field
-    table = Path(Path(__file__).parent.parent,
-                 "tables/error_incomplete_rows.tsv")
+    table = prepared_tsvs / "error_incomplete_rows.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
     assert not ret.stdout
@@ -647,7 +645,7 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
     assert ret.returncode == 1
 
     # <TSV> has necessary columns but contains no assets
-    table = Path(Path(__file__).parent.parent, "tables/error_empty_columns.tsv")
+    table = prepared_tsvs / "error_empty_columns.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
     assert not ret.stdout
@@ -665,7 +663,7 @@ def test_tsv_error_asset_exists_already(repo: OnyoRepo) -> None:
     asset name that already exists in the repository.
     """
     asset = "laptop_apple_macbookpro.0"
-    table = Path(Path(__file__).parent.parent, "tables/table.tsv")
+    table = prepared_tsvs / "table.tsv"
     assert table.is_file()
     ret = subprocess.run(['onyo', 'new', '--tsv', table], capture_output=True, text=True)
 
@@ -686,8 +684,7 @@ def test_tsv_error_identical_entries(repo: OnyoRepo) -> None:
     the same name (type, make, model and serial identical, but directories
     different).
     """
-    table = Path(Path(__file__).parent.parent,
-                 "tables/error_identical_entries.tsv")
+    table = prepared_tsvs / "error_identical_entries.tsv"
     assert table.is_file()
     ret = subprocess.run(['onyo', 'new', '--tsv', table],
                          capture_output=True, text=True)
@@ -707,8 +704,7 @@ def test_tsv_error_template_does_not_exist(repo: OnyoRepo) -> None:
     Test that `onyo new --tsv` errors when the template column contains entries
     for which no template exist (e.g. typos).
     """
-    table = Path(Path(__file__).parent.parent,
-                 "tables/error_template_does_not_exist.tsv")
+    table = prepared_tsvs / "error_template_does_not_exist.tsv"
     assert table.is_file()
     ret = subprocess.run(['onyo', 'new', '--tsv', table],
                          capture_output=True, text=True)

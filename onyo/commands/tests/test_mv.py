@@ -15,6 +15,7 @@ assets = ['laptop_apple_macbookpro.0',
           'very/very/very/deep/spe\"c_ial\\ch_ar\'ac.teஞrs'
           ]
 
+
 #
 # FLAGS
 #
@@ -91,6 +92,7 @@ def test_mv_quiet(repo: OnyoRepo) -> None:
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
     fsck(repo)
+
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
 def test_mv_yes(repo: OnyoRepo) -> None:

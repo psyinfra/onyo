@@ -177,6 +177,8 @@ protected_paths = ["simple/.git",
                    ".git/nope"
                    ".onyo/nope",
                    ]
+
+
 @pytest.mark.repo_dirs("simple")
 @pytest.mark.parametrize('protected_path', protected_paths)
 def test_dir_protected(repo: OnyoRepo, protected_path: str) -> None:
