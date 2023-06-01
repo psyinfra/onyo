@@ -9,6 +9,7 @@ Command Line Reference
    cmd_config
    cmd_edit
    cmd_fsck
+   cmd_get
    cmd_history
    cmd_init
    cmd_mkdir
@@ -18,3 +19,4 @@ Command Line Reference
    cmd_set
    cmd_shell-completion
    cmd_tree
+   cmd_unset
