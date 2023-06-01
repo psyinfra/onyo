@@ -94,7 +94,7 @@ class OnyoRepo(object):
         message_appendix = ""
 
         # staged files and directories (without ".anchor") in alphabetical order
-        staged_changes = [x if not x.name == ".anchor" else x.parent
+        staged_changes = [x if not x.name == self.ANCHOR_FILE else x.parent
                           for x in sorted(f.relative_to(self.git.root) for f in self.git.files_staged)]
 
         if message:
@@ -108,7 +108,7 @@ class OnyoRepo(object):
                 keys_str = f" ({','.join(str(x.split('=')[0]) for x in sorted(keys))})"
             if destination:
                 dest = Path(self.git.root, destination).relative_to(self.git.root)
-            if dest and dest.name == ".anchor":
+            if dest and dest.name == self.ANCHOR_FILE:
                 dest = dest.parent
 
             # the `msg_dummy` is the way all automatically generated commit

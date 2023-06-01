@@ -321,7 +321,7 @@ def new(repo: OnyoRepo,
         print("The following will be created:")
         for path in staged:
             # display new folders, not anchors.
-            if ".anchor" in str(path):
+            if path.name == repo.ANCHOR_FILE:
                 print(path.parent)
                 changes.append(path.parent)
             else:
