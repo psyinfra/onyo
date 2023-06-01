@@ -326,11 +326,8 @@ def rm(repo: OnyoRepo,
         else:
             invalid_paths.append(p)
     if invalid_paths:
-        log.error("The following paths are neither inventory directories nor assets:\n%s"
-                  "\nNothing was deleted.",
-                  '\n'.join(map(str, invalid_paths)))
-        # Note: Consider ExceptionGroup -> what python version required?
-        raise RuntimeError("TODO")
+        raise ValueError("The following paths are neither inventory directories nor assets:\n%s"
+                         "\nNothing was deleted." % '\n'.join(map(str, invalid_paths)))
 
     git_rm_cmd = ['rm', '-r']
     if dryrun:
@@ -397,7 +394,6 @@ def set_assets(repo: OnyoRepo,
     name_values = dict((field, values[field]) for field in values.keys() if field in PSEUDO_KEYS)
 
     if name_values and not rename:
-        log.error("Can't change pseudo keys without --rename.")
         raise ValueError("Can't change pseudo keys without --rename.")
 
     if content_values:
@@ -412,7 +408,7 @@ def set_assets(repo: OnyoRepo,
             for old, new in generate_new_asset_names(repo, repo.asset_paths, assets_to_set, name_values):
                 repo.git._git(["mv", str(old), str(new)])
 
-        except ValueError as e:
+        except ValueError:
             # Note: repo.files_staged is cached. How do we know, it's accounting for what we just have done?
             #       This implies to assume this is the first time the property is accessed.
             if repo.git.files_staged:
@@ -420,7 +416,7 @@ def set_assets(repo: OnyoRepo,
             # reset renaming needs double-restoring
             if repo.git.files_staged:
                 repo.git.restore()
-            raise ValueError(e)
+            raise
 
     # generate diff, and restore changes for dry-runs
     diff = repo.git._diff_changes()
@@ -444,7 +440,6 @@ def unset(repo: OnyoRepo,
     assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
 
     if any([key in PSEUDO_KEYS for key in keys]):
-        log.error("Can't unset pseudo keys (name fields are required).")
         raise ValueError("Can't unset pseudo keys (name fields are required).")
 
     unset_assets = []
@@ -479,11 +474,8 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
     if not repo.is_inventory_dir(destination) and not repo.is_inventory_path(destination):  # 2nd condition sufficient to be rename target?
         # Note: Questionable message. This piece of code has no clue whether
         #       something was moved. That is done by the caller.
-        log.error('The following paths are protected by onyo:\n' +
-                  f'{destination}\n' +
-                  'Nothing was moved.')
         raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                     f'{destination}')
+                                     f'{destination}\nNothing was moved.')
 
     # destination cannot be a file
     if destination.is_file():
@@ -491,8 +483,6 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
         # It reduces the number of different exceptions that can be raised
         # by `mv()`, and keeps the exception type unified with other similar
         # situations (such as implicit conflict with the destination).
-        log.error(f"The destination '{destination}' cannot be a file.\n" +
-                  'Nothing was moved.')
         raise FileExistsError(f"The destination '{destination}' cannot be a file.\n" +
                               'Nothing was moved.')
 
@@ -504,8 +494,6 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
 
         # cannot rename/move into self
         if src in new_path.parents:
-            log.error(f"Cannot move '{src}' into itself.\n" +
-                      "Nothing was moved.")
             raise ValueError(f"Cannot move '{src}' into itself.\n" +
                              "Nothing was moved.")
 
@@ -516,10 +504,6 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
 
     if error_path_conflict:
         # Note: See earlier; "Nothing was moved" has no business being here.
-        log.error(
-            'The following destinations exist and would conflict:\n{}\n'
-            'Nothing was moved.'.format(
-                '\n'.join(map(str, error_path_conflict))))
         raise FileExistsError(
             'The following destination paths exist and would conflict:\n{}'
             '\nNothing was moved.'.format(
@@ -527,9 +511,6 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
 
     # parent must exist
     if not destination.parent.exists():
-        log.error(
-            f"The destination '{destination.parent}' does not exist.\n"
-            f"Nothing was moved.")
         raise FileNotFoundError(
             f"The destination '{destination.parent}' does not exist.\n"
             f"Nothing was moved.")
@@ -542,10 +523,6 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
         # renaming files is not allowed
         src = sources[0]
         if src.is_file() and src.name != destination.name:
-            log.error(
-                f"Cannot rename asset '{src.name}' to "
-                f"'{destination.name}'.\nUse 'set()' to rename assets.\n"
-                f"Nothing was moved.")
             raise ValueError(
                 f"Cannot rename asset '{src.name}' to "
                 f"'{destination.name}'.\nUse 'set()' to rename assets.\n"
@@ -553,9 +530,6 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
 
         # target cannot already exist
         if destination.exists():
-            log.error(
-                f"The destination '{destination}' exists and would "
-                f"conflict.\nNothing was moved.")
             raise FileExistsError(
                 f"The destination '{destination}' exists and would "
                 f"conflict.\nNothing was moved.")
@@ -570,17 +544,12 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
         if src.name != destination.name:
             # dest must exist
             if not destination.exists():
-                log.error(
-                    f"The destination '{destination}' does not exist.\n"
-                    f"Nothing was moved.")
                 raise FileNotFoundError(
                     f"The destination '{destination}' does not exist.\n"
                     f"Nothing was moved.")
 
         # cannot move onto self
         if src.is_file() and destination.is_file() and src.samefile(destination):
-            log.error(f"Cannot move '{src}' onto itself.\n" +
-                      "Nothing was moved.")
             raise FileExistsError(f"Cannot move '{src}' onto itself.\n" +
                                   "Nothing was moved.")
 
@@ -604,11 +573,9 @@ def onyo_mv(repo: OnyoRepo,
                        if not repo.is_asset_path(p) and
                        not repo.is_inventory_dir(p)]
     if invalid_sources:
-        log.error("The following paths are neither inventory directories nor assets:\n%s"
-                  "\nNothing was moved.",
-                  '\n'.join(map(str, invalid_sources)))
-        # Note: Consider ExceptionGroup -> what python version required?
-        raise RuntimeError("TODO")
+        raise ValueError("The following paths are neither inventory directories nor assets:\n%s"
+                         "\nNothing was moved.",
+                         '\n'.join(map(str, invalid_sources)))
 
     dest_path = sanitize_destination_for_mv(repo, sources, destination)
 
