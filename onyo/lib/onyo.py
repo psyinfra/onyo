@@ -252,8 +252,7 @@ class OnyoRepo(object):
         # TODO: possibly nested assets; hence "asset path", not "asset file"
         # TODO: We are currently ignoring .gitignore w/ underlying globbing
         return self.is_inventory_path(path) and \
-            path.is_file() and \
-            path.name != self.ANCHOR_FILE
+            path.is_file()
 
     def is_inventory_path(self, path: Path) -> bool:
         # Note: path underneath an inventory location with no regard for existence of `path` itself.
@@ -263,7 +262,8 @@ class OnyoRepo(object):
         #       restriction (ANCHOR)
         return path.is_relative_to(self.git.root) and \
             not self.git.is_git_path(path) and \
-            not self.is_onyo_path(path)
+            not self.is_onyo_path(path) and \
+            self.ANCHOR_FILE not in path.parts
 
     def get_template_file(self, name: Union[Path, str, None] = None) -> Path:
         """

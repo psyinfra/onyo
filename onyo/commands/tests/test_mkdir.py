@@ -170,9 +170,8 @@ def test_dir_exists_as_file(repo: OnyoRepo, file: str) -> None:
     fsck(repo)
 
 
-#  Note: I don't think it's necessary to exclude `.anchor` as a directory name,
-#  hence deleted ".anchor" from that list for now:
-protected_paths = ["simple/.git",
+protected_paths = [".anchor",
+                   "simple/.git",
                    "simple/.onyo",
                    ".git/nope"
                    ".onyo/nope",
