@@ -38,7 +38,7 @@ log: logging.Logger = logging.getLogger('onyo.command_utils')
 # output.
 
 
-def is_move_mode(sources: list[Union[Path]],
+def is_move_mode(sources: list[Path],
                  destination: Path) -> bool:
     """
     `mv()` can be used to either move or rename a file/directory. The mode
