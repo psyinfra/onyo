@@ -132,17 +132,17 @@ def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
-def test_error_dir_exists(repo: OnyoRepo, directory: str) -> None:
+def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
     """
-    Test the correct error behavior when `onyo mkdir <path>` is called on an
+    Test the correct behavior when `onyo mkdir <path>` is called on an
     existing directory name.
     """
     ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
 
     # verify output
-    assert not ret.stdout
-    assert "The following paths already exist:" in ret.stderr
-    assert ret.returncode == 1
+    assert "No assets updated." in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
 
     assert Path(directory).is_dir()
     assert Path(directory, ".anchor").is_file()
@@ -161,7 +161,7 @@ def test_dir_exists_as_file(repo: OnyoRepo, file: str) -> None:
 
     # verify output
     assert not ret.stdout
-    assert "The following paths already exist:" in ret.stderr
+    assert "The following paths are existing files:" in ret.stderr
     assert ret.returncode == 1
 
     assert Path(file).is_file()
