@@ -98,7 +98,7 @@ class GitRepo(object):
         (except under .git).
         """
         log.debug('Acquiring list of files')
-        files = {self.root / x for x in self._git(['-C', str(self.root), 'ls-files', '-z']).split('\0') if x}
+        files = {self.root / x for x in self._git(['ls-files', '-z']).split('\0') if x}
         return files
 
     def _get_files_changed(self) -> set[Path]:
@@ -107,7 +107,7 @@ class GitRepo(object):
         repository.
         """
         log.debug('Acquiring list of changed files')
-        changed = {self.root / x for x in self._git(['-C', str(self.root), 'diff', '-z', '--name-only']).split('\0') if x}
+        changed = {self.root / x for x in self._git(['diff', '-z', '--name-only']).split('\0') if x}
         return changed
 
     def _get_files_staged(self) -> set[Path]:
@@ -116,7 +116,7 @@ class GitRepo(object):
         repository.
         """
         log.debug('Acquiring list of staged files')
-        staged = {self.root / x for x in self._git(['-C', str(self.root), 'diff', '--name-only', '-z', '--staged']).split('\0') if x}
+        staged = {self.root / x for x in self._git(['diff', '--name-only', '-z', '--staged']).split('\0') if x}
         return staged
 
     def _get_files_untracked(self) -> set[Path]:
@@ -125,7 +125,7 @@ class GitRepo(object):
         repository.
         """
         log.debug('Acquiring list of untracked files')
-        untracked = {self.root / x for x in self._git(['-C', str(self.root), 'ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
+        untracked = {self.root / x for x in self._git(['ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
         return untracked
 
     @property
@@ -195,8 +195,8 @@ class GitRepo(object):
     def stage_and_commit(self, paths: Union[Iterable[Path], Path], message: str) -> None:
         if isinstance(paths, Path):
             paths = [paths]
-        self._git(['add'] + [str(p) for p in paths], cwd=self.root)
-        self._git(['commit', '-m', message], cwd=self.root)
+        self._git(['add'] + [str(p) for p in paths])
+        self._git(['commit', '-m', message])
 
     def stage(self, paths: Union[Iterable[Path], Path]) -> None:
         self.add(paths)
