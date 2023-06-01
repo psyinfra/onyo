@@ -156,7 +156,6 @@ def get_asset_files_by_path(asset_files: set[Path],
     `depth` directories. A `depth` of 0 descends without a limit.
     """
     if depth and depth < 0:
-        log.error(f"depth values must be positive, but is {depth}.")
         raise ValueError(f"depth values must be positive, but is {depth}.")
 
     paths = {Path(p) for p in paths}
@@ -170,9 +169,7 @@ def get_asset_files_by_path(asset_files: set[Path],
     #       The query yielded no matching asset. That's a valid response. What to do with that should be up to the
     #       caller.
     if not assets:
-        msg = 'No assets selected.'
-        log.error(msg)
-        raise ValueError(msg)
+        raise ValueError('No assets selected.')
 
     return assets
 
@@ -242,11 +239,9 @@ def generate_new_asset_names(repo: OnyoRepo,
 
         # Check validity of the new asset name
         if new_name == asset.name:
-            log.error(f"New asset names must be different than old names: '{new_name}'")
             raise ValueError(f"New asset names must be different than old names: '{new_name}'")
 
         if not valid_asset_name(new_name):
-            log.error(f"New asset name is not valid: '{new_name}'")
             raise ValueError(f"New asset name is not valid: '{new_name}'")
 
         # God damnit. This check needs to go up:
@@ -473,16 +468,12 @@ def asset_path_available(repo: OnyoRepo,
     #  -> one level up (generate): Same story.
 
     if not valid_asset_name(asset):
-        log.error(f"'{asset}' is not a valid asset name.")
         raise ValueError(f"'{asset}' is not a valid asset name.")
     # Note: Not clear why to go over all existing files; Path.exists() should suffice
     if file := [file for file in existing_asset_files if asset.name == file.name]:
-        log.error(f"Filename '{asset.name}' already exists as '{file[0]}'.")
         raise ValueError(f"Filename '{asset.name}' already exists as '{file[0]}'.")
     elif file := [file for file in new_assets if asset.name == file.name]:
-        log.error(f"Input contains multiple '{file[0].name}'")
         raise ValueError(f"Input contains multiple '{file[0].name}'")
     # Note: We already know it's a valid_asset_name and doesn't exist, so all that remains is:
     if not repo.is_inventory_path(asset):
-        log.error(f"The path is protected by onyo: '{asset}'")
         raise ValueError(f"The path is protected by onyo: '{asset}'")

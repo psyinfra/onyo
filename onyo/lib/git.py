@@ -31,7 +31,6 @@ class GitRepo(object):
                                  capture_output=True, text=True)
             root = Path(ret.stdout.strip())
         except (subprocess.CalledProcessError, FileNotFoundError):
-            log.error(f"'{path}' is not a Git repository.")
             raise OnyoInvalidRepoError(f"'{path}' is not a Git repository.")
         return root
 
@@ -220,7 +219,6 @@ class GitRepo(object):
 
         for t in tgts:
             if not Path(self.root, t).exists():
-                log.error(f"'{t}' does not exist.")
                 raise FileNotFoundError(f"'{t}' does not exist.")
 
         self._git(['add'] + tgts)

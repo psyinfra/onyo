@@ -40,7 +40,6 @@ class OnyoRepo(object):
             self._init(path)
         else:
             if not self.is_valid_onyo_repo():
-                log.error(f"'{path}' is no valid Onyo Repository.")
                 raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
 
         log.debug(f"Onyo repo found at '{self.git.root}'")
@@ -212,20 +211,17 @@ class OnyoRepo(object):
         # this will repeat that same test anyway (and would fail telling us this problem)
         # target must be a directory
         if path.exists() and not path.is_dir():
-            log.error(f"'{path}' exists but is not a directory.")
             raise FileExistsError(f"'{path}' exists but is not a directory.")
 
         # Note: Why is this a requirement? What could go wrong with mkdir-p ?
         # parent must exist
         if not path.parent.exists():
-            log.error(f"'{path.parent}' does not exist.")
             raise FileNotFoundError(f"'{path.parent}' does not exist.")
 
         # Note: Why is this a requirement? Why not only add what's missing in case of apparent re-init?
         # cannot already be an .onyo repo
         dot_onyo = Path(path, '.onyo')
         if dot_onyo.exists():
-            log.error(f"'{dot_onyo}' already exists.")
             raise FileExistsError(f"'{dot_onyo}' already exists.")
 
         self.git.maybe_init(path)
@@ -279,13 +275,11 @@ class OnyoRepo(object):
         if not name:
             name = self.git.get_config('onyo.new.template')
             if name is None:
-                log.error("Either --template must be given or 'onyo.new.template' must be set.")
                 raise ValueError("Either --template must be given or 'onyo.new.template' must be set.")
 
         # Note: Protect against providing absolute path in `template_name`?
         template_file = self.git.root / self.ONYO_DIR / self.TEMPLATE_DIR / name
         if not template_file.is_file():
-            log.error(f"Template {name} does not exist.")
             raise ValueError(f"Template {name} does not exist.")
         return template_file
 
@@ -333,22 +327,17 @@ class OnyoRepo(object):
             dirs = [dirs]
         non_inventory_paths = [d for d in dirs if not self.is_inventory_path(d)]
         if non_inventory_paths:
-            log.error(
+            raise OnyoProtectedPathError(
                 'The following paths are protected by onyo:\n{}\nNo '
                 'directories were created.'.format(
-                    '\n'.join(map(str, non_inventory_paths))))
-            raise OnyoProtectedPathError(
-                'The following paths are protected by onyo:\n{}'.format(
                     '\n'.join(map(str, non_inventory_paths))))
         # Note: Why is it not okay for the dirs to exist, but the anchor files later on are?
         #       Also: mkdir itself is called with exist_ok=True. So, why fail?
         existent_paths = [d for d in dirs if d.exists()]
         if existent_paths:
-            log.error(
-                'The following paths already exist:\n{}\nNo directories were '
-                'created.'.format('\n'.join(map(str, existent_paths))))
             raise FileExistsError(
-                'The following paths already exist:\n{}'.format(
+                'The following paths already exist:\n{}\nNo directories were '
+                'created.'.format(
                     '\n'.join(map(str, existent_paths))))
 
         # make dirs

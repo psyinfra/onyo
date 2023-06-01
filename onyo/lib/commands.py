@@ -63,8 +63,7 @@ def fsck(repo: OnyoRepo, tests: Optional[list[str]] = None) -> None:
         log.debug(f"'{key}' starting")
 
         if not all_tests[key]():
-            # Note: Why report on opdir rather than root? The repository failed the tests, not a subtree
-            #       Also: What's that debug message adding? Alone it lacks the identifying path and in combination with
+            # Note: What's that debug message adding? Alone it lacks the identifying path and in combination with
             #       the exception it's redundant.
             log.debug(f"'{key}' failed")
             raise OnyoInvalidRepoError(f"'{repo.git.root}' failed fsck test '{key}'")
