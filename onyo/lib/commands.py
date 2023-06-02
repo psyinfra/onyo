@@ -141,7 +141,7 @@ def edit(repo: OnyoRepo,
             repo.git.add(asset)
         else:
             # If user wants to discard changes, restore the asset's state
-            repo.git._git(['restore', str(asset)])
+            repo.git.restore(asset)
             if not quiet:
                 print(f"'{asset}' not updated.")
 
@@ -154,7 +154,7 @@ def edit(repo: OnyoRepo,
             repo.git.commit(repo.generate_commit_message(message=message,
                                                          cmd="edit"))
         else:
-            repo.git.restore()
+            repo.git.restore_staged()
             if not quiet:
                 print('No assets updated.')
 
@@ -244,7 +244,7 @@ def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Uni
         repo.git.commit(repo.generate_commit_message(
             message=message, cmd="mkdir"))
     else:
-        repo.git.restore()
+        repo.git.restore_staged()
         if not quiet:
             print('No assets updated.')
 
@@ -332,7 +332,7 @@ def new(repo: OnyoRepo,
         repo.git.commit(repo.generate_commit_message(message=message,
                                                      cmd="new"))
     else:
-        repo.git._git(["rm", "-rf"] + [str(path) for path in changes])
+        repo.git.rm(changes, force=True)
         print('No new assets created.')
 
 
@@ -400,11 +400,11 @@ def set_(repo: OnyoRepo,
                                                          cmd="set",
                                                          keys=[f"{k}={v}" for k, v in keys.items()]))
         else:
-            repo.git.restore()
+            repo.git.restore_staged()
             # when names were changed, the first restoring just brings
             # back the name, but leaves working-tree unclean
             if repo.git.files_staged:
-                repo.git.restore()
+                repo.git.restore_staged()
             if not quiet:
                 print("No assets updated.")
 
@@ -464,10 +464,10 @@ def unset(repo: OnyoRepo,
                                                          cmd="unset",
                                                          keys=keys))
         else:
-            repo.git.restore()
+            repo.git.restore_staged()
             # when names were changed, the first restoring just brings
             # back the name, but leaves working-tree unclean
             if repo.git.files_staged:
-                repo.git.restore()
+                repo.git.restore_staged()
             if not quiet:
                 print("No assets updated.")

@@ -79,7 +79,7 @@ class GitRepo(object):
         if files:
             self._files = None
 
-    def restore(self) -> None:
+    def restore_staged(self) -> None:
         """
         Restore all staged files with uncommitted changes in the repository.
         """
@@ -91,6 +91,13 @@ class GitRepo(object):
         # variable after doing some manual changes on files (e.g. with
         # subprocess).
         self.clear_caches()
+
+    def restore(self, paths: Union[list[Path], Path]) -> None:
+        """Call git-restore on `paths`.
+        """
+        if not isinstance(paths, list):
+            paths = [paths]
+        self._git(['restore'] + [str(p) for p in paths])
 
     def _get_files(self) -> set[Path]:
         """
@@ -324,3 +331,40 @@ class GitRepo(object):
                 line[0:4] == '--- ' or "rename" in line]
 
         return "\n".join(diff).strip()
+
+    def mv(self, source: Union[Path, list[Path]], destination: Path, dryrun: bool = False) -> str:
+        """Call git-mv on paths provided by `source` and `destination`.
+
+        Returns
+        -------
+        str
+          stdout of the git-mv subprocess
+        """
+        if not isinstance(source, list):
+            source = [source]
+
+        log.debug('The following will be moved:\n{}'.format('\n'.join(
+            map(lambda x: str(x.relative_to(self.root)), source))))
+
+        mv_cmd = ['mv']
+        if dryrun:
+            mv_cmd.append('--dry-run')
+        mv_cmd.extend([str(p) for p in source])
+        mv_cmd.append(str(destination))
+        return self._git(mv_cmd)
+
+    def rm(self, paths: Union[list[Path], Path], force: bool = False, dryrun: bool = False) -> str:
+        """Call git-rm on `paths`
+
+        Returns
+        -------
+        str
+          stdout of the git-rm subprocess
+        """
+        if not isinstance(paths, list):
+            paths = [paths]
+        rm_cmd = ["rm", "-r" + ('f' if force else '')]
+        if dryrun:
+            rm_cmd.append("--dry-run")
+        rm_cmd.extend([str(p) for p in paths])
+        return self._git(rm_cmd)

@@ -38,7 +38,7 @@ log: logging.Logger = logging.getLogger('onyo.command_utils')
 # output.
 
 
-def is_move_mode(sources: list[Union[Path]],
+def is_move_mode(sources: list[Path],
                  destination: Path) -> bool:
     """
     `mv()` can be used to either move or rename a file/directory. The mode
@@ -74,7 +74,7 @@ def update_names(repo: OnyoRepo,
     """
     from .assets import generate_new_asset_names
     for old, new in generate_new_asset_names(repo, repo.asset_paths, assets, name_values):
-        repo.git._git(["mv", str(old), str(new)])
+        repo.git.mv(old, new)
 
 
 def sanitize_args_config(git_config_args: list[str]) -> list[str]:
@@ -329,13 +329,9 @@ def rm(repo: OnyoRepo,
         raise ValueError("The following paths are neither inventory directories nor assets:\n%s"
                          "\nNothing was deleted." % '\n'.join(map(str, invalid_paths)))
 
-    git_rm_cmd = ['rm', '-r']
-    if dryrun:
-        git_rm_cmd.append('--dry-run')
-    git_rm_cmd.extend([str(x) for x in paths_to_rm])
     # Note: This comment is a lie - nothing's committed
     # rm and commit
-    ret = repo.git._git(git_rm_cmd)
+    ret = repo.git.rm(paths_to_rm, dryrun=dryrun)
 
     # TODO: change this to info
     log.debug('The following will be deleted:\n' +
@@ -406,22 +402,22 @@ def set_assets(repo: OnyoRepo,
     if name_values:
         try:
             for old, new in generate_new_asset_names(repo, repo.asset_paths, assets_to_set, name_values):
-                repo.git._git(["mv", str(old), str(new)])
+                repo.git.mv(old, new)
 
         except ValueError:
             # Note: repo.files_staged is cached. How do we know, it's accounting for what we just have done?
             #       This implies to assume this is the first time the property is accessed.
             if repo.git.files_staged:
-                repo.git.restore()
+                repo.git.restore_staged()
             # reset renaming needs double-restoring
             if repo.git.files_staged:
-                repo.git.restore()
+                repo.git.restore_staged()
             raise
 
     # generate diff, and restore changes for dry-runs
     diff = repo.git._diff_changes()
     if diff and dryrun:
-        repo.git.restore()
+        repo.git.restore_staged()
 
     # Note: Here, too, everything is invalidated regardless of what was actually done.
     repo.clear_caches()
@@ -451,7 +447,7 @@ def unset(repo: OnyoRepo,
     # generate diff, and restore changes for dry-runs
     diff = repo.git._diff_changes()
     if diff and dryrun:
-        repo.git.restore()
+        repo.git.restore_staged()
 
     return diff
 
@@ -578,18 +574,7 @@ def onyo_mv(repo: OnyoRepo,
                          '\n'.join(map(str, invalid_sources)))
 
     dest_path = sanitize_destination_for_mv(repo, sources, destination)
-
-    # Move block into method; However, depends on logic above: Can we turn that into inventory/onyorepo method
-    # (moving assets, renaming locations) or plain gitrepo?
-    git_mv_cmd = ['mv']
-    if dryrun:
-        git_mv_cmd.append('--dry-run')
-    git_mv_cmd.extend([*map(str, sources), str(dest_path)])
-    ret = repo.git._git(git_mv_cmd)
-
-    # TODO: change this to info
-    log.debug('The following will be moved:\n{}'.format('\n'.join(
-        map(lambda x: str(x.relative_to(repo.git.root)), sources))))
+    ret = repo.git.mv(sources, dest_path, dryrun=dryrun)
 
     # Note: This is invalidating everything, because it pretends to not know what was actually done.
     #       That information lives in the sanitize functions for some reason.
