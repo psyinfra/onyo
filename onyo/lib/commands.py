@@ -232,26 +232,26 @@ def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Uni
 
     created_files = repo.mk_inventory_dirs(dirs)
 
-    # commit changes
-    if created_files and not quiet:
-        created_dirs = [p.parent for p in created_files]
-        print(
-            'The following directories will be created:',
-            *map(str, created_dirs), sep='\n')
-
-    if created_files and (yes or request_user_response(
-            "Save changes? No discards all changes. (y/n) ")):
-        repo.git.stage_and_commit(
-            paths=created_files,
-            message=repo.generate_commit_message(message=message,
-                                                 cmd="mkdir",
-                                                 modified=created_files)
-        )
-    else:
-        if created_files:
-            rollback_untracked(created_files)
+    if created_files:
+        # commit changes
         if not quiet:
-            print('No directories created.')
+            created_dirs = [p.parent for p in created_files]
+            print(
+                'The following directories will be created:',
+                *map(str, created_dirs), sep='\n')
+
+        if yes or request_user_response("Save changes? No discards all changes. (y/n) "):
+            repo.git.stage_and_commit(
+                paths=created_files,
+                message=repo.generate_commit_message(message=message,
+                                                     cmd="mkdir",
+                                                     modified=created_files)
+            )
+            return
+        else:
+            rollback_untracked(created_files)
+    if not quiet:
+        print('No directories created.')
 
 
 def mv(repo: OnyoRepo,
