@@ -94,7 +94,7 @@ class OnyoRepo(object):
         message_appendix = ""
 
         # staged files and directories (without ".anchor") in alphabetical order
-        staged_changes = [x if not x.name == ".anchor" else x.parent
+        staged_changes = [x if not x.name == self.ANCHOR_FILE else x.parent
                           for x in sorted(f.relative_to(self.git.root) for f in self.git.files_staged)]
 
         if message:
@@ -108,7 +108,7 @@ class OnyoRepo(object):
                 keys_str = f" ({','.join(str(x.split('=')[0]) for x in sorted(keys))})"
             if destination:
                 dest = Path(self.git.root, destination).relative_to(self.git.root)
-            if dest and dest.name == ".anchor":
+            if dest and dest.name == self.ANCHOR_FILE:
                 dest = dest.parent
 
             # the `msg_dummy` is the way all automatically generated commit
@@ -331,14 +331,15 @@ class OnyoRepo(object):
                 'The following paths are protected by onyo:\n{}\nNo '
                 'directories were created.'.format(
                     '\n'.join(map(str, non_inventory_paths))))
-        # Note: Why is it not okay for the dirs to exist, but the anchor files later on are?
-        #       Also: mkdir itself is called with exist_ok=True. So, why fail?
-        existent_paths = [d for d in dirs if d.exists()]
-        if existent_paths:
+
+        # Note: This check is currently done here, because we are dealing with a bunch of directories at once.
+        #       We may want to operate on single dirs, rely on mkdir throwing instead, and collect errors higher up.
+        file_paths = [d for d in dirs if d.is_file()]
+        if file_paths:
             raise FileExistsError(
-                'The following paths already exist:\n{}\nNo directories were '
+                'The following paths are existing files:\n{}\nNo directories were '
                 'created.'.format(
-                    '\n'.join(map(str, existent_paths))))
+                    '\n'.join(map(str, file_paths))))
 
         # make dirs
         for d in dirs:

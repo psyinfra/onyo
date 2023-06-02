@@ -234,17 +234,18 @@ def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Uni
 
     # commit changes
     staged = sorted(repo.git.files_staged)
-    if not quiet:
+    if staged and not quiet:
         print(
             'The following directories will be created:',
             *map(str, staged), sep='\n')
 
-    if yes or request_user_response(
-            "Save changes? No discards all changes. (y/n) "):
+    if staged and (yes or request_user_response(
+            "Save changes? No discards all changes. (y/n) ")):
         repo.git.commit(repo.generate_commit_message(
             message=message, cmd="mkdir"))
     else:
-        repo.git.restore_staged()
+        if staged:
+            repo.git.restore_staged()
         if not quiet:
             print('No assets updated.')
 
@@ -320,7 +321,7 @@ def new(repo: OnyoRepo,
         print("The following will be created:")
         for path in staged:
             # display new folders, not anchors.
-            if ".anchor" in str(path):
+            if path.name == repo.ANCHOR_FILE:
                 print(path.parent)
                 changes.append(path.parent)
             else:
