@@ -160,10 +160,8 @@ def edit_asset(editor: str, asset: Path) -> bool:
             return True
         except scanner.ScannerError:
             print(f"{asset} has invalid YAML syntax.", file=sys.stderr)
-
-        if not request_user_response("Continue editing? No discards changes. (y/n) "):
-            break
-    return False
+            if not request_user_response("Continue editing? No discards changes. (y/n) "):
+                return False
 
 
 def sanitize_keys(k: list[str], defaults: list) -> list[str]:
