@@ -81,8 +81,8 @@ def repo(tmp_path: str, monkeypatch, request) -> Generator[OnyoRepo, None, None]
         if contents:
             for file in contents:
                 Path(repo_path, file[0]).write_text(file[1])
-        repo_.git.add(files)
-        repo_.git.commit('populate files for tests', files)
+        repo_.git.stage_and_commit(paths=files,
+                                   message="populate files for tests")
 
     # cd into repo; to ease testing
     monkeypatch.chdir(repo_path)
