@@ -136,27 +136,31 @@ def edit(repo: OnyoRepo,
 
     editor = get_editor(repo)
 
+    modified = []
     for asset in valid_asset_paths:
         if edit_asset(editor, asset):
-            repo.git.add(asset)
+            modified.append(asset)
         else:
             # If user wants to discard changes, restore the asset's state
             repo.git.restore(asset)
             if not quiet:
                 print(f"'{asset}' not updated.")
 
-    # commit changes
-    staged = sorted(repo.git.files_staged)
-    if staged:
+    diff = repo.git._diff_changes()
+    if diff:
+        # commit changes
         if not quiet:
-            print(repo.git._diff_changes())
+            print(diff)
         if yes or request_user_response("Save changes? No discards all changes. (y/n) "):
-            repo.git.commit(repo.generate_commit_message(message=message,
-                                                         cmd="edit"))
+            repo.git.stage_and_commit(paths=modified,
+                                      message=repo.generate_commit_message(message=message,
+                                                                           cmd="edit")
+                                      )
+            return
         else:
-            repo.git.restore_staged()
-            if not quiet:
-                print('No assets updated.')
+            repo.git.restore(modified)
+    if not quiet:
+        print('No assets updated.')
 
 
 def get(repo: OnyoRepo,
