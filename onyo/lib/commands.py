@@ -234,9 +234,10 @@ def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Uni
 
     # commit changes
     if created_files and not quiet:
+        created_dirs = [p.parent for p in created_files]
         print(
             'The following directories will be created:',
-            *map(str, created_files), sep='\n')
+            *map(str, created_dirs), sep='\n')
 
     if created_files and (yes or request_user_response(
             "Save changes? No discards all changes. (y/n) ")):
@@ -259,7 +260,7 @@ def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Uni
                     # If we already deleted it - fine.
                     pass
         if not quiet:
-            print('No assets updated.')
+            print('No directories created.')
 
 
 def mv(repo: OnyoRepo,
