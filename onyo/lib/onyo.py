@@ -330,7 +330,24 @@ class OnyoRepo(object):
         assets = {x for x in self.git.files if self.is_asset_path(x)}
         return assets
 
-    def mk_inventory_dirs(self, dirs: Union[Iterable[Path], Path]):
+    def mk_inventory_dirs(self, dirs: Union[Iterable[Path], Path]) -> list[Path]:
+        """Create inventory directories `dirs`
+
+        Creates `dirs` including anchor files.
+
+        Raises
+        ------
+        OnyoProtectedPathError
+          if `dirs` contains an invalid path (see `OnyoRepo.is_inventory_path()`)
+
+        FileExistsError
+          if `dirs` contains a path pointing to an existing file (hence, the dir can't be created)
+
+        Returns
+        -------
+        list of Path
+          list of created anchor files (paths to be committed)
+        """
         if isinstance(dirs, Path):
             dirs = [dirs]
         non_inventory_paths = [d for d in dirs if not self.is_inventory_path(d)]
@@ -358,7 +375,13 @@ class OnyoRepo(object):
                    for i in [d] + list(d.parents)
                    if i.is_relative_to(self.git.root) and
                    not i.samefile(self.git.root)}
+        added_files = []
         for a in anchors:
-            a.touch(exist_ok=True)
-
-        self.git.stage(anchors)
+            # Note, that this currently tests for existence first.
+            # That's because we return actually modified paths for possible rollback.
+            # Eventually, rollback approaches should be stopped wherever possible.
+            # Collect what needs doing first instead of do it and then ask for confirmation.
+            if not a.exists():
+                a.touch(exist_ok=False)
+                added_files.append(a)
+        return added_files

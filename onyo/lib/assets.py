@@ -363,14 +363,16 @@ def create_assets_in_destination(assets: Dict[Path, Dict[str, Union[float, int, 
     """
     Create and populate assets. Parent directories are created if necessary.
     """
+    created_files = []
     for asset in assets.keys():
         # create missing directories
         if not asset.parent.exists():
-            repo.mk_inventory_dirs([asset.parent])
+            created_files.extend(repo.mk_inventory_dirs([asset.parent]))
         if not asset.is_file():
             asset.touch()
         write_asset(asset, assets[asset])
-    repo.git.add(list(assets.keys()))
+        created_files.append(asset)
+    repo.git.add(created_files)
 
 
 def read_assets_from_CLI(assets: list[Path],

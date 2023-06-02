@@ -230,22 +230,34 @@ def get(repo: OnyoRepo,
 
 def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Union[list[str], None]) -> None:
 
-    repo.mk_inventory_dirs(dirs)
+    created_files = repo.mk_inventory_dirs(dirs)
 
     # commit changes
-    staged = sorted(repo.git.files_staged)
-    if staged and not quiet:
+    if created_files and not quiet:
         print(
             'The following directories will be created:',
-            *map(str, staged), sep='\n')
+            *map(str, created_files), sep='\n')
 
-    if staged and (yes or request_user_response(
+    if created_files and (yes or request_user_response(
             "Save changes? No discards all changes. (y/n) ")):
-        repo.git.commit(repo.generate_commit_message(
-            message=message, cmd="mkdir"))
+        repo.git.stage_and_commit(
+            paths=created_files,
+            message=repo.generate_commit_message(message=message,
+                                                 cmd="mkdir",
+                                                 modified=created_files)
+        )
     else:
-        if staged:
-            repo.git.restore_staged()
+        if created_files:
+            for f in sorted(created_files, reverse=True):
+                # Reverse sorted in order to first remove files and then their containing dir.
+                # missing_ok, because we may have duplicates from overlapping paths in `dirs`.
+                f.unlink(missing_ok=True)
+                try:
+                    f.parent.rmdir()
+                except FileNotFoundError:
+                    # Catching this is the equivalent to `missing_ok=True` above.
+                    # If we already deleted it - fine.
+                    pass
         if not quiet:
             print('No assets updated.')
 

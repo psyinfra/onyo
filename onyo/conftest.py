@@ -70,8 +70,9 @@ def repo(tmp_path: str, monkeypatch, request) -> Generator[OnyoRepo, None, None]
 
     # populate the repo
     if dirs:
-        repo_.mk_inventory_dirs([repo_path / d for d in dirs])
-        repo_.git.commit('populate dirs for tests', dirs)
+        anchors = repo_.mk_inventory_dirs([repo_path / d for d in dirs])
+        repo_.git.stage_and_commit(paths=anchors,
+                                   message="populate dirs for tests")
 
     for i in files:
         i.touch()
