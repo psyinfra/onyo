@@ -359,7 +359,7 @@ def read_assets_from_tsv(tsv: Path,
 
 
 def create_assets_in_destination(assets: Dict[Path, Dict[str, Union[float, int, str]]],
-                                 repo: OnyoRepo) -> None:
+                                 repo: OnyoRepo) -> list[Path]:
     """
     Create and populate assets. Parent directories are created if necessary.
     """
@@ -372,7 +372,7 @@ def create_assets_in_destination(assets: Dict[Path, Dict[str, Union[float, int, 
             asset.touch()
         write_asset(asset, assets[asset])
         created_files.append(asset)
-    repo.git.add(created_files)
+    return created_files
 
 
 def read_assets_from_CLI(assets: list[Path],

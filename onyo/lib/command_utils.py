@@ -582,3 +582,24 @@ def onyo_mv(repo: OnyoRepo,
 
     # return a list of mv-ed assets
     return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
+
+
+def rollback_untracked(new_files: Iterable[Path]) -> None:
+    """Remove newly created files/dirs
+
+    Helper for various commands rolling back newly created files (like mkdir, new).
+    This accounts for anchor files: If an anchor file was part of `new_files`, this
+    indicates that the directory it's in was newly created as well.
+    Hence, this is rm'd as well.
+    """
+    for f in sorted(new_files, reverse=True):
+        # Reverse sorted in order to first remove files and then possibly their containing dir.
+        # missing_ok, because we may have duplicates from overlapping paths.
+        f.unlink(missing_ok=True)
+        if f.name == OnyoRepo.ANCHOR_FILE:
+            try:
+                f.parent.rmdir()
+            except FileNotFoundError:
+                # Catching this is the equivalent to `missing_ok=True` above.
+                # If we already deleted it - fine.
+                pass

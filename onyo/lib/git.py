@@ -205,9 +205,6 @@ class GitRepo(object):
         self._git(['add'] + [str(p) for p in paths])
         self._git(['commit', '-m', message])
 
-    def stage(self, paths: Union[Iterable[Path], Path]) -> None:
-        self.add(paths)
-
     @staticmethod
     def is_git_path(path: Path) -> bool:
         # .git/*, .gitignore, .gitattributes, .gitmodules, etc.

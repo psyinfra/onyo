@@ -12,7 +12,7 @@ from rich.table import Table
 
 from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
 from onyo.lib.command_utils import get_editor, edit_asset, request_user_response, sanitize_keys, set_filters, \
-    fill_unset, natural_sort, validate_args_for_new, onyo_mv
+    fill_unset, natural_sort, validate_args_for_new, onyo_mv, rollback_untracked
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
@@ -249,16 +249,7 @@ def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Uni
         )
     else:
         if created_files:
-            for f in sorted(created_files, reverse=True):
-                # Reverse sorted in order to first remove files and then their containing dir.
-                # missing_ok, because we may have duplicates from overlapping paths in `dirs`.
-                f.unlink(missing_ok=True)
-                try:
-                    f.parent.rmdir()
-                except FileNotFoundError:
-                    # Catching this is the equivalent to `missing_ok=True` above.
-                    # If we already deleted it - fine.
-                    pass
+            rollback_untracked(created_files)
         if not quiet:
             print('No directories created.')
 
@@ -315,24 +306,22 @@ def new(repo: OnyoRepo,
         raise ValueError("No new assets given.")
 
     # create all assets (and non-existing folder), and set their contents
-    create_assets_in_destination(assets, repo)
+    new_files = create_assets_in_destination(assets, repo)
 
     if edit:
         editor = get_editor(repo)
         # Note: This is different from the `edit` command WRT validation. Prob. just call the edit command?
         for asset in assets:
             edit_asset(editor, asset)
-            repo.git.add(asset)
 
     # TODO: validate assets before offering to commit. This has to be done after
-    # they are build, their values are set, and they where opened to edit
+    # they are build, their values are set, and they were opened to edit
 
     # print diff-like output and remember new directories and assets
-    staged = sorted(repo.git.files_staged)
     changes = []
-    if staged:
+    if new_files:
         print("The following will be created:")
-        for path in staged:
+        for path in new_files:
             # display new folders, not anchors.
             if path.name == repo.ANCHOR_FILE:
                 print(path.parent)
@@ -342,12 +331,17 @@ def new(repo: OnyoRepo,
                 changes.append(path)
 
     # commit or discard changes
-    if yes or request_user_response("Create assets? (y/n) "):
-        repo.git.commit(repo.generate_commit_message(message=message,
-                                                     cmd="new"))
-    else:
-        repo.git.rm(changes, force=True)
-        print('No new assets created.')
+    if new_files:
+        if yes or request_user_response("Create assets? (y/n) "):
+            repo.git.stage_and_commit(paths=new_files,
+                                      message=repo.generate_commit_message(message=message,
+                                                                           cmd="new",
+                                                                           modified=new_files)
+                                      )
+            return
+        else:
+            rollback_untracked(new_files)
+    print('No new assets created.')
 
 
 def rm(repo: OnyoRepo,
