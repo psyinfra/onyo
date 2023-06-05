@@ -99,9 +99,8 @@ def sanitize_args_config(git_config_args: list[str]) -> list[str]:
 
     for a in git_config_args:
         if a in forbidden_flags:
-            log.error("The following options cannot be used with onyo config:")
-            log.error('\n'.join(forbidden_flags))
-            log.error("\nExiting. Nothing was set.")
+            log.error("The following options cannot be used with onyo config:\n%s\nExiting. Nothing was set.",
+                      '\n'.join(forbidden_flags))
             sys.exit(1)
     return git_config_args
 
