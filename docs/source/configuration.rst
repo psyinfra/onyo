@@ -37,4 +37,4 @@ Options
     ``--non-interactive``.  (default: "git --no-pager log --follow")
 
 ``onyo.new.template``
-    The default template to use with ``onyo new``. (default: "standard")
+    The default template to use with ``onyo new``. (default: "empty")

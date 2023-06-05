@@ -95,10 +95,10 @@ repository.
     - ``onyo config history.interactive "tig --follow"``
     - ``onyo config history.non-interactive "git --no-pager log --follow"``
 
-  - default template to use with ``onyo new <dir>``
+  - default template to use with ``onyo new --path <asset>``
     The standard template can be updated with e.g.:
 
-    - ``onyo config template.default standard``
+    - ``onyo config template.default empty``
 
 - ``.onyo/templates/`` contains:
 
@@ -111,14 +111,14 @@ Template Files
 **************
 
 Templates can be used with the command ``onyo new --template <template>
-<directory>`` and are stored in the folder ``.onyo/templates/``.
+--path <asset>`` and are stored in the folder ``.onyo/templates/``.
 Templates will be copied as a basis for a new asset file, and can then be
 edited. After saving the newly created asset, the file will be checked for
 valid YAML syntax.
 
 The default template that gets used when ``onyo new`` is called is
-``.onyo/templates/standard``. It can be updated with
-``onyo config template.default standard``.
+``.onyo/templates/empty``. It can be updated with
+``onyo config template.default empty``.
 
 For examples, see the section "Templates" in :doc:`examples`.
 
