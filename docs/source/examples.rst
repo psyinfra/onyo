@@ -8,13 +8,8 @@ Basic Use
 
 .. code:: shell
 
-   onyo new shelf
-   <type>*: laptop
-   <make>*: lenovo
-   <model>*: T490s
-   <serial>*: abc123
-   <spawns editor. The user edits fields>
-   <writes out to shelf/laptop_lenovo_T490s.abc123
+   onyo new --keys RAM=8GB --path shelf/laptop_lenovo_T490s.abc123
+   <writes out to shelf/laptop_lenovo_T490s.abc123>
 
 **Assign an asset:**
 
@@ -26,13 +21,13 @@ Basic Use
 
 .. code:: shell
 
-   onyo mv accounting/Bingo\ Bob/laptop_lenovo_T490s retired/
+   onyo mv accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123 retired/
 
 **Upgrade an asset:**
 
 .. code:: shell
 
-   onyo set RAM=16GB accounting/Bingo\ Bob/laptop_lenovo_T490s
+   onyo set --keys RAM=16GB --path accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
    - RAM: 8GB
    + RAM: 16GB
 
@@ -40,7 +35,7 @@ or
 
 .. code:: shell
 
-   onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s
+   onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
    <spawns $EDITOR; user edits RAM field>
 
 **List all assets on the shelf:**
@@ -53,7 +48,7 @@ or
 
 .. code:: shell
 
-   onyo history accounting/Bingo\ Bob/laptop_lenovo_T490s
+   onyo history accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
 
 **List the history of all assets of a user:**
 
@@ -67,17 +62,14 @@ Templates
 This section describes some of the templates provided with ``onyo init`` in the
 directory ``.onyo/templates/``.
 
-``onyo new <dir>`` (equivalent to ``onyo new --template standard <dir>``) as defined
-by ``.onyo/templates/standard`` is a plain YAML file:
-
-.. code:: yaml
-
-   ---
+``onyo new --path <asset>`` (equivalent to
+``onyo new --template empty --path <asset>``) as defined
+by ``.onyo/templates/empty`` is an empty YAML file.
 
 This template passes the YAML syntax check when onyo is called while the editor
-is suppressed with ``onyo new --non-interactive <directory>``.
+is suppressed with ``onyo new --non-interactive --path <asset>``.
 
-``onyo new --template laptop.example <dir>`` as defined by
+``onyo new --template laptop.example --path <asset>`` as defined by
 ``.onyo/templates/laptop.example`` contains a simple example for a laptop asset
 which already contains some fields, which are relevant for all assets of that
 device type.
