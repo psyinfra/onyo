@@ -140,7 +140,7 @@ def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
     ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
 
     # verify output
-    assert "No assets updated." in ret.stdout
+    assert "No directories created." in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -204,7 +204,7 @@ def test_mkdir_relative_path(repo: OnyoRepo) -> None:
     ret = subprocess.run(["onyo", "mkdir", "--yes", "simple/../relative"], capture_output=True, text=True)
 
     # verify output
-    assert "relative/.anchor" in ret.stdout
+    assert "relative" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 

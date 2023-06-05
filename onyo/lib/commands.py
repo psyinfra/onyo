@@ -12,7 +12,7 @@ from rich.table import Table
 
 from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
 from onyo.lib.command_utils import get_editor, edit_asset, request_user_response, sanitize_keys, set_filters, \
-    fill_unset, natural_sort, validate_args_for_new, onyo_mv
+    fill_unset, natural_sort, validate_args_for_new, onyo_mv, rollback_untracked
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
@@ -136,27 +136,31 @@ def edit(repo: OnyoRepo,
 
     editor = get_editor(repo)
 
+    modified = []
     for asset in valid_asset_paths:
         if edit_asset(editor, asset):
-            repo.git.add(asset)
+            modified.append(asset)
         else:
             # If user wants to discard changes, restore the asset's state
             repo.git.restore(asset)
             if not quiet:
                 print(f"'{asset}' not updated.")
 
-    # commit changes
-    staged = sorted(repo.git.files_staged)
-    if staged:
+    diff = repo.git._diff_changes()
+    if diff:
+        # commit changes
         if not quiet:
-            print(repo.git._diff_changes())
+            print(diff)
         if yes or request_user_response("Save changes? No discards all changes. (y/n) "):
-            repo.git.commit(repo.generate_commit_message(message=message,
-                                                         cmd="edit"))
+            repo.git.stage_and_commit(paths=modified,
+                                      message=repo.generate_commit_message(message=message,
+                                                                           cmd="edit")
+                                      )
+            return
         else:
-            repo.git.restore_staged()
-            if not quiet:
-                print('No assets updated.')
+            repo.git.restore(modified)
+    if not quiet:
+        print('No assets updated.')
 
 
 def get(repo: OnyoRepo,
@@ -230,24 +234,28 @@ def get(repo: OnyoRepo,
 
 def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Union[list[str], None]) -> None:
 
-    repo.mk_inventory_dirs(dirs)
+    created_files = repo.mk_inventory_dirs(dirs)
 
-    # commit changes
-    staged = sorted(repo.git.files_staged)
-    if staged and not quiet:
-        print(
-            'The following directories will be created:',
-            *map(str, staged), sep='\n')
-
-    if staged and (yes or request_user_response(
-            "Save changes? No discards all changes. (y/n) ")):
-        repo.git.commit(repo.generate_commit_message(
-            message=message, cmd="mkdir"))
-    else:
-        if staged:
-            repo.git.restore_staged()
+    if created_files:
+        # commit changes
         if not quiet:
-            print('No assets updated.')
+            created_dirs = [p.parent for p in created_files]
+            print(
+                'The following directories will be created:',
+                *map(str, created_dirs), sep='\n')
+
+        if yes or request_user_response("Save changes? No discards all changes. (y/n) "):
+            repo.git.stage_and_commit(
+                paths=created_files,
+                message=repo.generate_commit_message(message=message,
+                                                     cmd="mkdir",
+                                                     modified=created_files)
+            )
+            return
+        else:
+            rollback_untracked(created_files)
+    if not quiet:
+        print('No directories created.')
 
 
 def mv(repo: OnyoRepo,
@@ -302,24 +310,22 @@ def new(repo: OnyoRepo,
         raise ValueError("No new assets given.")
 
     # create all assets (and non-existing folder), and set their contents
-    create_assets_in_destination(assets, repo)
+    new_files = create_assets_in_destination(assets, repo)
 
     if edit:
         editor = get_editor(repo)
         # Note: This is different from the `edit` command WRT validation. Prob. just call the edit command?
         for asset in assets:
             edit_asset(editor, asset)
-            repo.git.add(asset)
 
     # TODO: validate assets before offering to commit. This has to be done after
-    # they are build, their values are set, and they where opened to edit
+    # they are build, their values are set, and they were opened to edit
 
     # print diff-like output and remember new directories and assets
-    staged = sorted(repo.git.files_staged)
     changes = []
-    if staged:
+    if new_files:
         print("The following will be created:")
-        for path in staged:
+        for path in new_files:
             # display new folders, not anchors.
             if path.name == repo.ANCHOR_FILE:
                 print(path.parent)
@@ -329,12 +335,17 @@ def new(repo: OnyoRepo,
                 changes.append(path)
 
     # commit or discard changes
-    if yes or request_user_response("Create assets? (y/n) "):
-        repo.git.commit(repo.generate_commit_message(message=message,
-                                                     cmd="new"))
-    else:
-        repo.git.rm(changes, force=True)
-        print('No new assets created.')
+    if new_files:
+        if yes or request_user_response("Create assets? (y/n) "):
+            repo.git.stage_and_commit(paths=new_files,
+                                      message=repo.generate_commit_message(message=message,
+                                                                           cmd="new",
+                                                                           modified=new_files)
+                                      )
+            return
+        else:
+            rollback_untracked(new_files)
+    print('No new assets created.')
 
 
 def rm(repo: OnyoRepo,
@@ -381,7 +392,7 @@ def set_(repo: OnyoRepo,
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
 
-    diff = set_assets(repo, paths, keys, dryrun, rename, depth)
+    diff, modified = set_assets(repo, paths, keys, dryrun, rename, depth)
 
     # display changes
     if not quiet and diff:
@@ -392,6 +403,11 @@ def set_(repo: OnyoRepo,
     else:
         print("The values are already set. No assets updated.")
         return
+
+    # Note: This needs to go again, when dryrun (gh-377) and convolution of name generation,
+    #       git-mv, etc. is resolved.
+    if not dryrun and modified:
+        repo.git.add(modified)
 
     # commit or discard changes
     staged = sorted(repo.git.files_staged)
@@ -445,7 +461,7 @@ def unset(repo: OnyoRepo,
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
 
-    diff = ut_unset(repo, paths, keys, dryrun, quiet, depth)
+    diff, modified = ut_unset(repo, paths, keys, dryrun, quiet, depth)
 
     # display changes
     if not quiet and diff:
@@ -458,17 +474,14 @@ def unset(repo: OnyoRepo,
         return
 
     # commit or discard changes
-    staged = sorted(repo.git.files_staged)
-    if staged:
+    if modified:
         if yes or request_user_response("Update assets? (y/n) "):
-            repo.git.commit(repo.generate_commit_message(message=message,
-                                                         cmd="unset",
-                                                         keys=keys))
+            repo.git.stage_and_commit(paths=modified,
+                                      message=repo.generate_commit_message(message=message,
+                                                                           cmd="unset",
+                                                                           keys=keys)
+                                      )
         else:
-            repo.git.restore_staged()
-            # when names were changed, the first restoring just brings
-            # back the name, but leaves working-tree unclean
-            if repo.git.files_staged:
-                repo.git.restore_staged()
+            repo.git.restore(modified)
             if not quiet:
                 print("No assets updated.")

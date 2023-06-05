@@ -9,7 +9,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 from shlex import quote
-from typing import Dict, Union, Generator, Iterable, Optional
+from typing import Dict, Union, Generator, Iterable, Optional, Tuple
 
 from rich.console import Console
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
@@ -160,10 +160,8 @@ def edit_asset(editor: str, asset: Path) -> bool:
             return True
         except scanner.ScannerError:
             print(f"{asset} has invalid YAML syntax.", file=sys.stderr)
-
-        if not request_user_response("Continue editing? No discards changes. (y/n) "):
-            break
-    return False
+            if not request_user_response("Continue editing? No discards changes. (y/n) "):
+                return False
 
 
 def sanitize_keys(k: list[str], defaults: list) -> list[str]:
@@ -370,7 +368,7 @@ def set_assets(repo: OnyoRepo,
                values: Dict[str, Union[str, int, float]],
                dryrun: bool,
                rename: bool,
-               depth: Union[int]) -> str:
+               depth: Union[int]) -> Tuple[str, list[Path]]:
     """
     Set values for a list of assets (or directories), or rename assets
     through updating their name fields.
@@ -392,12 +390,13 @@ def set_assets(repo: OnyoRepo,
     if name_values and not rename:
         raise ValueError("Can't change pseudo keys without --rename.")
 
+    modified = []
     if content_values:
         for asset_path in assets_to_set:
             contents = get_asset_content(asset_path)
             contents.update(content_values)
             write_asset_file(asset_path, contents)
-            repo.git.add(asset_path)
+            modified.append(asset_path)
 
     if name_values:
         try:
@@ -405,23 +404,30 @@ def set_assets(repo: OnyoRepo,
                 repo.git.mv(old, new)
 
         except ValueError:
-            # Note: repo.files_staged is cached. How do we know, it's accounting for what we just have done?
-            #       This implies to assume this is the first time the property is accessed.
+            # Note: This should not be necessary. Disentangle name generation and git-mv above.
+            #       Only call git-mv when we have valid targets in the first place.
+            #       Also: Use git-mv with dryrun option (see gh-377).
             if repo.git.files_staged:
                 repo.git.restore_staged()
-            # reset renaming needs double-restoring
-            if repo.git.files_staged:
+                # reset renaming needs double-restoring
+                # Note: Double-check this claim. Would suspect that's due to passing only one of the paths involved to
+                #       git-restore.
                 repo.git.restore_staged()
+            # if we raise here, restore modifications as well:
+            if modified:
+                repo.git.restore(modified)
             raise
 
     # generate diff, and restore changes for dry-runs
     diff = repo.git._diff_changes()
     if diff and dryrun:
         repo.git.restore_staged()
+        if modified:
+            repo.git.restore(modified)
 
     # Note: Here, too, everything is invalidated regardless of what was actually done.
     repo.clear_caches()
-    return diff
+    return diff, modified
 
 
 def unset(repo: OnyoRepo,
@@ -429,7 +435,7 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           dryrun: bool,
           quiet: bool,
-          depth: Union[int, None]) -> str:
+          depth: Union[int, None]) -> Tuple[str, list[Path]]:
 
     from .assets import get_asset_files_by_path, unset_asset_keys, PSEUDO_KEYS
     # set and unset should select assets exactly the same way
@@ -442,14 +448,14 @@ def unset(repo: OnyoRepo,
     for asset in assets_to_unset:
         unset_asset_keys(asset, keys, quiet)
         unset_assets.append(asset)
-    repo.git.add(unset_assets)
 
     # generate diff, and restore changes for dry-runs
     diff = repo.git._diff_changes()
     if diff and dryrun:
-        repo.git.restore_staged()
+        repo.git.restore(unset_assets)
+        unset_assets = []
 
-    return diff
+    return diff, unset_assets
 
 
 def sanitize_destination_for_mv(repo: OnyoRepo,
@@ -582,3 +588,24 @@ def onyo_mv(repo: OnyoRepo,
 
     # return a list of mv-ed assets
     return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
+
+
+def rollback_untracked(new_files: Iterable[Path]) -> None:
+    """Remove newly created files/dirs
+
+    Helper for various commands rolling back newly created files (like mkdir, new).
+    This accounts for anchor files: If an anchor file was part of `new_files`, this
+    indicates that the directory it's in was newly created as well.
+    Hence, this is rm'd as well.
+    """
+    for f in sorted(new_files, reverse=True):
+        # Reverse sorted in order to first remove files and then possibly their containing dir.
+        # missing_ok, because we may have duplicates from overlapping paths.
+        f.unlink(missing_ok=True)
+        if f.name == OnyoRepo.ANCHOR_FILE:
+            try:
+                f.parent.rmdir()
+            except FileNotFoundError:
+                # Catching this is the equivalent to `missing_ok=True` above.
+                # If we already deleted it - fine.
+                pass

@@ -80,11 +80,15 @@ class GitRepo(object):
             self._files = None
 
     def restore_staged(self) -> None:
+        """Restore all staged files with uncommitted changes in the repository.
+
+        If nothing is staged, returns with no error.
         """
-        Restore all staged files with uncommitted changes in the repository.
-        """
+        staged = self.files_staged
+        if not staged:
+            return
         self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                  [str(file) for file in self.files_staged])
+                  [str(file) for file in staged])
         # `Repo.restore()` gets used by all most commands that might change the
         # repository to revert changes, especially when users answer "no" to
         # user dialogs. It might also be used by the API to reset the repository
@@ -204,9 +208,6 @@ class GitRepo(object):
             paths = [paths]
         self._git(['add'] + [str(p) for p in paths])
         self._git(['commit', '-m', message])
-
-    def stage(self, paths: Union[Iterable[Path], Path]) -> None:
-        self.add(paths)
 
     @staticmethod
     def is_git_path(path: Path) -> bool:
