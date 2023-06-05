@@ -392,7 +392,7 @@ def set_(repo: OnyoRepo,
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
 
-    diff = set_assets(repo, paths, keys, dryrun, rename, depth)
+    diff, modified = set_assets(repo, paths, keys, dryrun, rename, depth)
 
     # display changes
     if not quiet and diff:
@@ -403,6 +403,11 @@ def set_(repo: OnyoRepo,
     else:
         print("The values are already set. No assets updated.")
         return
+
+    # Note: This needs to go again, when dryrun (gh-377) and convolution of name generation,
+    #       git-mv, etc. is resolved.
+    if not dryrun and modified:
+        repo.git.add(modified)
 
     # commit or discard changes
     staged = sorted(repo.git.files_staged)
