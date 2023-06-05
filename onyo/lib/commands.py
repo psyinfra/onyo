@@ -461,7 +461,7 @@ def unset(repo: OnyoRepo,
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
 
-    diff = ut_unset(repo, paths, keys, dryrun, quiet, depth)
+    diff, modified = ut_unset(repo, paths, keys, dryrun, quiet, depth)
 
     # display changes
     if not quiet and diff:
@@ -474,17 +474,14 @@ def unset(repo: OnyoRepo,
         return
 
     # commit or discard changes
-    staged = sorted(repo.git.files_staged)
-    if staged:
+    if modified:
         if yes or request_user_response("Update assets? (y/n) "):
-            repo.git.commit(repo.generate_commit_message(message=message,
-                                                         cmd="unset",
-                                                         keys=keys))
+            repo.git.stage_and_commit(paths=modified,
+                                      message=repo.generate_commit_message(message=message,
+                                                                           cmd="unset",
+                                                                           keys=keys)
+                                      )
         else:
-            repo.git.restore_staged()
-            # when names were changed, the first restoring just brings
-            # back the name, but leaves working-tree unclean
-            if repo.git.files_staged:
-                repo.git.restore_staged()
+            repo.git.restore(modified)
             if not quiet:
                 print("No assets updated.")

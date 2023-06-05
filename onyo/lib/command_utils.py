@@ -435,7 +435,7 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           dryrun: bool,
           quiet: bool,
-          depth: Union[int, None]) -> str:
+          depth: Union[int, None]) -> Tuple[str, list[Path]]:
 
     from .assets import get_asset_files_by_path, unset_asset_keys, PSEUDO_KEYS
     # set and unset should select assets exactly the same way
@@ -448,14 +448,14 @@ def unset(repo: OnyoRepo,
     for asset in assets_to_unset:
         unset_asset_keys(asset, keys, quiet)
         unset_assets.append(asset)
-    repo.git.add(unset_assets)
 
     # generate diff, and restore changes for dry-runs
     diff = repo.git._diff_changes()
     if diff and dryrun:
-        repo.git.restore_staged()
+        repo.git.restore(unset_assets)
+        unset_assets = []
 
-    return diff
+    return diff, unset_assets
 
 
 def sanitize_destination_for_mv(repo: OnyoRepo,
