@@ -375,22 +375,18 @@ def test_set_depth_flag(
     """
     cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
     ret = subprocess.run(cmd, input='n', capture_output=True, text=True)
-    output = [output for output in ret.stdout.split('\n')]
-    asset_paths = [str(a) for a in [p.relative_to(repo.git.root) for p in repo.asset_paths]]
+    asset_paths = [p.relative_to(repo.git.root) for p in repo.asset_paths]
     n_assets = 0
 
     assert not ret.stderr
     assert ret.returncode == 0
 
-    for line in output:
-        if line not in asset_paths:
-            continue
-
-        n_assets += 1
-
-        if depth != '0':
-            assert len(Path(line).parents) <= int(depth)
-
+    for line in ret.stdout.splitlines():
+        for p in asset_paths:
+            if str(p) in line:
+                n_assets += 1
+                if depth != '0':
+                    assert len(p.parents) <= int(depth)
     assert n_assets == expected
 
 
@@ -448,10 +444,10 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo, asset: str) -> None:
     assert not ret.stderr
     assert ret.returncode == 0
 
-    # this line is already changed, it should not be in the output, but the file
-    assert set_1.replace("=", ": ") not in ret.stdout
+    # This line is unchanged, it should still be the file.
+    # Whether and how it shows up in the output depends on how a diff is shown.
     assert set_1.replace("=", ": ") in Path.read_text(Path(asset))
-    # this change is new, it has to be in the output and the file
+    # this change is new, it has to be part of the diff in the output and the file
     assert set_2.replace("=", ": ") in ret.stdout
     assert set_2.replace("=", ": ") in Path.read_text(Path(asset))
 
@@ -524,8 +520,8 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: st
     assert not ret.stderr
     assert ret.returncode == 0
 
-    # this line is already changed, it should not be in the output, but the file
-    assert "change=one".replace("=", ": ") not in ret.stdout
+    # This line is unchanged, it should still be the file.
+    # Whether and how it shows up in the output depends on how a diff is shown.
     assert "change=one".replace("=", ": ") in Path.read_text(Path(asset))
 
     # this change is new, it has to be in the output
@@ -616,7 +612,7 @@ def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert len(assets) == ret.stdout.count('faux')
+    assert len(assets) == ret.stdout.count('.faux')
     assert not ret.stderr
     assert ret.returncode == 0
 

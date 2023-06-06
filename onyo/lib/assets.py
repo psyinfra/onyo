@@ -173,6 +173,16 @@ def get_asset_files_by_path(asset_files: set[Path],
     return assets
 
 
+def dict_to_yaml(content: Dict[str, Union[float, int, str]]) -> str:
+    if not content:
+        return ""
+    from io import StringIO
+    yaml = YAML(typ='rt')
+    s = StringIO()
+    yaml.dump(content, s)
+    return s.getvalue()
+
+
 def write_asset_file(asset_path: Path,
                      asset_content: Dict[str, Union[float, int, str]]) -> None:
     if asset_content == {}:
