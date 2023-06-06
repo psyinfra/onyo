@@ -4,7 +4,6 @@ import csv
 import random
 import re
 import string
-import sys
 from pathlib import Path
 from typing import Dict, Union, Iterable, Set, Generator, Optional
 
@@ -299,8 +298,8 @@ def read_assets_from_tsv(tsv: Path,
             # error if any required field is empty
             if not all([row['type'], row['make'], row['model'], row['serial'], row['directory']]):
                 row_str = "\t".join([value for value in row.values() if value])
-                print(f"The fields 'type', 'make', 'model', 'serial' and 'directory' are required, but missing in line {row_count}: '{row_str}'", file=sys.stderr)
-                sys.exit(1)
+                raise ValueError(f"The fields 'type', 'make', 'model', 'serial' and 'directory' are required, "
+                                 f"but missing in line {row_count}: '{row_str}'")
 
             # set asset name and directory, add faux serial numbers if needed
             if row['serial'] == 'faux':
@@ -324,8 +323,8 @@ def read_assets_from_tsv(tsv: Path,
                 template = repo.get_template_file()
 
             # set the values from --keys and TSV columns, check for conflicts
-            contents_valid = True
             contents = get_asset_content(template)
+
             if key_values:
                 contents.update(key_values)
             for col in row.keys():
@@ -334,13 +333,8 @@ def read_assets_from_tsv(tsv: Path,
                     continue
                 # information from --keys is not allowed to conflict with columns
                 if key_values and col in key_values.keys():
-                    print(f"Can't use --keys '{col}' and have tsv column '{col}'", file=sys.stderr)
-                    contents_valid = False
-                    break
+                    raise ValueError(f"Can't use --keys '{col}' and have tsv column '{col}'")
                 contents[col] = row[col]
-            if not contents_valid:
-                # Note: message missing. This was a plain sys.exit(1)
-                raise ValueError
 
             new_assets[new_path] = contents
 
@@ -348,18 +342,20 @@ def read_assets_from_tsv(tsv: Path,
 
 
 def create_assets_in_destination(assets: Dict[Path, Dict[str, Union[float, int, str]]],
-                                 repo: OnyoRepo) -> None:
+                                 repo: OnyoRepo) -> list[Path]:
     """
     Create and populate assets. Parent directories are created if necessary.
     """
+    created_files = []
     for asset in assets.keys():
         # create missing directories
         if not asset.parent.exists():
-            repo.mk_inventory_dirs([asset.parent])
+            created_files.extend(repo.mk_inventory_dirs([asset.parent]))
         if not asset.is_file():
             asset.touch()
         write_asset_file(asset, assets[asset])
-    repo.git.add(list(assets.keys()))
+        created_files.append(asset)
+    return created_files
 
 
 def read_assets_from_CLI(assets: list[Path],

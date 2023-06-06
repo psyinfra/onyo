@@ -67,10 +67,13 @@ class OnyoRepo(object):
             self._asset_paths = None
             self.git.clear_caches(files=True)
 
-    def generate_commit_message(
-            self, message: Union[list[str], None] = None, cmd: str = "",
-            keys: Union[list[str], None] = None, destination: str = "",
-            max_length: int = 80) -> str:
+    def generate_commit_message(self,
+                                message: Union[list[str], None] = None,
+                                cmd: str = "",
+                                keys: Union[list[str], None] = None,
+                                destination: str = "",
+                                max_length: int = 80,
+                                modified: Optional[list[Path]] = None) -> str:
         """
         Generate a commit subject and body suitable for use with git commit.
 
@@ -83,19 +86,22 @@ class OnyoRepo(object):
         The paths for the message are shortened if needed, so that the resulting
         message subject does not exceed `MAX_LEN`.
 
-        Adds a list of `changed files` with their path relative to the root of
-        the repository to the body of all commit messages.
+        Adds a list of changed files with their path relative to the root of
+        the repository to the body of all commit messages. This is based on the
+        `modified` parameter or on currently staged paths if none was given.
         """
         message = [] if message is None else message
         keys = [] if keys is None else keys
+        if modified is None:
+            modified = self.git.files_staged
 
         message_subject = ""
         message_body = ""
         message_appendix = ""
 
         # staged files and directories (without ".anchor") in alphabetical order
-        staged_changes = [x if not x.name == self.ANCHOR_FILE else x.parent
-                          for x in sorted(f.relative_to(self.git.root) for f in self.git.files_staged)]
+        changes_to_record = [x if not x.name == self.ANCHOR_FILE else x.parent
+                             for x in sorted(f.relative_to(self.git.root) for f in modified)]
 
         if message:
             message_subject = message[0][0]
@@ -107,6 +113,8 @@ class OnyoRepo(object):
             if keys:
                 keys_str = f" ({','.join(str(x.split('=')[0]) for x in sorted(keys))})"
             if destination:
+                # Note: This seems to expect relative path in `destination`, turns it into absolute and
+                #       back into relative. Double-check where `destination` is used and remove resolution:
                 dest = Path(self.git.root, destination).relative_to(self.git.root)
             if dest and dest.name == self.ANCHOR_FILE:
                 dest = dest.parent
@@ -114,16 +122,16 @@ class OnyoRepo(object):
             # the `msg_dummy` is the way all automatically generated commit
             # message headers (independently of later adding/shortening of
             # information) begin, for all commands.
-            msg_dummy = f"{cmd} [{len(staged_changes)}]{keys_str}"
+            msg_dummy = f"{cmd} [{len(changes_to_record)}]{keys_str}"
             message_subject = self._generate_commit_message_subject(
-                msg_dummy, staged_changes, dest, max_length)
+                msg_dummy, changes_to_record, dest, max_length)
 
-        message_appendix = '\n'.join(map(str, staged_changes))
+        message_appendix = '\n'.join(map(str, changes_to_record))
         return f"{message_subject}\n\n{message_body}\n\n{message_appendix}"
 
     @staticmethod
     def _generate_commit_message_subject(
-            msg_dummy: str, staged_changes: list[Path],
+            msg_dummy: str, changes: list[Path],
             destination: Optional[Path], max_length: int = 80) -> str:
         """
         Generates "commit message subject" with the `msg_dummy` and the paths
@@ -132,7 +140,7 @@ class OnyoRepo(object):
         """
 
         # long message: full paths (relative to repo-root)
-        paths_str = ','.join([f"'{x}'" for x in staged_changes])
+        paths_str = ','.join([f"'{x}'" for x in changes])
         msg = f"{msg_dummy}: {paths_str}"
         if destination:
             msg = f"{msg} -> '{destination}'"
@@ -141,7 +149,7 @@ class OnyoRepo(object):
             return msg
 
         # medium message: highest level (e.g. dir or asset name)
-        paths = [x.name for x in staged_changes]
+        paths = [x.name for x in changes]
         paths_str = ','.join(["'{}'".format(x) for x in paths])
         msg = f"{msg_dummy}: {paths_str}"
         if destination:
@@ -151,7 +159,7 @@ class OnyoRepo(object):
             return msg
 
         # short message: "type" of devices in summary (e.g.  "laptop (2)")
-        paths = [x.name.split('_')[0] for x in staged_changes]
+        paths = [x.name.split('_')[0] for x in changes]
         paths_str = ','.join(sorted(["'{} ({})'".format(x, paths.count(x))
                                      for x in set(paths)]))
         msg = f"{msg_dummy}: {paths_str}"
@@ -322,7 +330,24 @@ class OnyoRepo(object):
         assets = {x for x in self.git.files if self.is_asset_path(x)}
         return assets
 
-    def mk_inventory_dirs(self, dirs: Union[Iterable[Path], Path]):
+    def mk_inventory_dirs(self, dirs: Union[Iterable[Path], Path]) -> list[Path]:
+        """Create inventory directories `dirs`
+
+        Creates `dirs` including anchor files.
+
+        Raises
+        ------
+        OnyoProtectedPathError
+          if `dirs` contains an invalid path (see `OnyoRepo.is_inventory_path()`)
+
+        FileExistsError
+          if `dirs` contains a path pointing to an existing file (hence, the dir can't be created)
+
+        Returns
+        -------
+        list of Path
+          list of created anchor files (paths to be committed)
+        """
         if isinstance(dirs, Path):
             dirs = [dirs]
         non_inventory_paths = [d for d in dirs if not self.is_inventory_path(d)]
@@ -350,7 +375,13 @@ class OnyoRepo(object):
                    for i in [d] + list(d.parents)
                    if i.is_relative_to(self.git.root) and
                    not i.samefile(self.git.root)}
+        added_files = []
         for a in anchors:
-            a.touch(exist_ok=True)
-
-        self.git.stage(anchors)
+            # Note, that this currently tests for existence first.
+            # That's because we return actually modified paths for possible rollback.
+            # Eventually, rollback approaches should be stopped wherever possible.
+            # Collect what needs doing first instead of do it and then ask for confirmation.
+            if not a.exists():
+                a.touch(exist_ok=False)
+                added_files.append(a)
+        return added_files
