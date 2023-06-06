@@ -265,17 +265,6 @@ def unset_asset_keys(asset: Path,
     write_asset_file(asset, contents)
 
 
-def read_asset(asset):
-    from .assets import get_asset_content
-    return get_asset_content(asset)
-
-
-def write_asset(asset: Path,
-                contents: Dict[str, Union[float, int, str]]) -> None:
-    from .assets import write_asset_file
-    write_asset_file(asset, contents)
-
-
 def read_assets_from_tsv(tsv: Path,
                          template_name: Optional[str],
                          key_values: Dict[str, str],
@@ -334,7 +323,8 @@ def read_assets_from_tsv(tsv: Path,
                 template = repo.get_template_file()
 
             # set the values from --keys and TSV columns, check for conflicts
-            contents = read_asset(template)
+            contents = get_asset_content(template)
+
             if key_values:
                 contents.update(key_values)
             for col in row.keys():
@@ -363,7 +353,7 @@ def create_assets_in_destination(assets: Dict[Path, Dict[str, Union[float, int, 
             created_files.extend(repo.mk_inventory_dirs([asset.parent]))
         if not asset.is_file():
             asset.touch()
-        write_asset(asset, assets[asset])
+        write_asset_file(asset, assets[asset])
         created_files.append(asset)
     return created_files
 
@@ -408,7 +398,7 @@ def read_assets_from_CLI(assets: list[Path],
         template = repo.get_template_file(template_name)
 
         # add values from --keys and template to asset:
-        contents = read_asset(template)
+        contents = get_asset_content(template)
         if key_values:
             contents.update(key_values)
 

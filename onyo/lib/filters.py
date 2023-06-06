@@ -78,8 +78,8 @@ class Filter:
                 return True
             return False
 
-        from onyo.lib.assets import read_asset
-        data = read_asset(asset)
+        from onyo.lib.assets import get_asset_content
+        data = get_asset_content(asset)
 
         # Check if filter is <unset> and there is no data
         if not data and self.value == unset:

@@ -24,7 +24,7 @@ def test_filter(filt: str) -> None:
         elif asset.name == 'wheelchair_make_model.4':
             return {'foo': ''}
 
-    with mock.patch("onyo.lib.assets.read_asset", read_asset_mock):
+    with mock.patch("onyo.lib.assets.get_asset_content", read_asset_mock):
         f = Filter(filt)
         assert f.key == filt.split('=', 1)[0]
         assert f.value == filt.split('=', 1)[1]
@@ -52,7 +52,7 @@ def test_filter_match_type(filt: str) -> None:
         elif asset.name == 'type_make_model.2':
             return {'key': {'a': 'b', 'c': 'd'}}
 
-    with mock.patch("onyo.lib.assets.read_asset", read_asset_mock):
+    with mock.patch("onyo.lib.assets.get_asset_content", read_asset_mock):
         string_type = filt.split('=', 1)[1]
         f = Filter(filt)
         if string_type == '<list>':
@@ -77,7 +77,7 @@ def test_filter_invalid(filter_arg: str) -> None:
 
     def read_asset_mock(asset: Path):
         return {'foo': 'bar', 'key': 'value and more'}
-    with mock.patch("onyo.lib.assets.read_asset", read_asset_mock), \
+    with mock.patch("onyo.lib.assets.get_asset_content", read_asset_mock), \
             pytest.raises(OnyoInvalidFilterError) as exc:
         _ = Filter('key')
 
