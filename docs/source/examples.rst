@@ -11,13 +11,6 @@ with Onyo, can look like.
 Basic Use
 *********
 
-**Inventory a new asset; add it to the shelf:**
-
-.. code:: shell
-
-   onyo new --keys RAM=8GB --path shelf/laptop_lenovo_T490s.abc123
-   <writes out to shelf/laptop_lenovo_T490s.abc123>
-
 **Assign an asset:**
 
 .. code:: shell
