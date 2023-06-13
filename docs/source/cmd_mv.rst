@@ -22,8 +22,14 @@ Example Usage
 
    onyo mv accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123 retired/
 
-**A user moves the workgroup**
+**Move a user to another workgroup**
 
 .. code:: shell
 
    onyo mv --message "Bob is now an admin!" accounting/Bingo\ Bob/ admin/
+
+**Rename a group**
+
+.. code:: shell
+
+   onyo mv --message "Marketing is now Advertisement" marketing/ advertisement/
