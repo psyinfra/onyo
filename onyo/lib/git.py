@@ -99,6 +99,9 @@ class GitRepo(object):
     def restore(self, paths: Union[list[Path], Path]) -> None:
         """Call git-restore on `paths`.
         """
+        if not paths:
+            log.debug("No paths passed to restore. Nothing to do.")
+            return
         if not isinstance(paths, list):
             paths = [paths]
         self._git(['restore'] + [str(p) for p in paths])
@@ -333,19 +336,19 @@ class GitRepo(object):
 
         return "\n".join(diff).strip()
 
-    def mv(self, source: Union[Path, list[Path]], destination: Path, dryrun: bool = False) -> str:
+    def mv(self,
+           source: Union[Path, Iterable[Path]],
+           destination: Path,
+           dryrun: bool = False) -> str:
         """Call git-mv on paths provided by `source` and `destination`.
 
         Returns
         -------
-        str
-          stdout of the git-mv subprocess
+        list of tuple of Path
+          each tuple represents a move from a source file to a destination file
         """
-        if not isinstance(source, list):
+        if isinstance(source, Path):
             source = [source]
-
-        log.debug('The following will be moved:\n{}'.format('\n'.join(
-            map(lambda x: str(x.relative_to(self.root)), source))))
 
         mv_cmd = ['mv']
         if dryrun:

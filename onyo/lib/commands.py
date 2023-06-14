@@ -382,48 +382,67 @@ def set_(repo: OnyoRepo,
          yes: bool,
          message: Union[list[str], None]) -> Union[str, None]:
     from onyo.lib.command_utils import set_assets
+    from .assets import get_asset_files_by_path, write_asset_file
 
     # check flags for conflicts
     if quiet and not yes:
         raise ValueError('The --quiet flag requires --yes.')
+
+    if not rename and any(k in PSEUDO_KEYS for k in keys.keys()):
+        raise ValueError("Can't change pseudo keys without --rename.")
 
     non_inventory_paths = [str(p) for p in paths if not repo.is_asset_path(p) and not repo.is_inventory_dir(p)]
     if non_inventory_paths:
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
 
-    diff, modified = set_assets(repo, paths, keys, dryrun, rename, depth)
+    asset_paths_to_set = get_asset_files_by_path(repo.asset_paths, paths, depth)
+    modifications, moves = set_assets(repo, asset_paths_to_set, keys)
 
+    diffs = [m[2] for m in modifications if m[2] != []]
     # display changes
-    if not quiet and diff:
-        print("The following assets will be changed:")
-        print(diff)
-    elif quiet:
-        pass
-    else:
-        print("The values are already set. No assets updated.")
-        return
+    if not quiet:
+        if diffs or moves:
+            print("The following assets will be changed:")
+            for src, dst in moves:
+                print(f"Rename {src} to {dst}")
+            if diffs:
+                for d in diffs:
+                    for line in d:
+                        print(line)
+        else:
+            print("The values are already set. No assets updated.")
+            return
 
     # Note: This needs to go again, when dryrun (gh-377) and convolution of name generation,
     #       git-mv, etc. is resolved.
-    if not dryrun and modified:
-        repo.git.add(modified)
+    if not dryrun:
+        if diffs:
+            to_add = []
+            for p, c, d in modifications:
+                if d is not []:
+                    write_asset_file(p, c)
+                    to_add.append(p)
+            repo.git.add(to_add)
+        if moves:
+            for old_path, new_path in moves:
+                repo.git.mv(old_path, new_path)
 
-    # commit or discard changes
-    staged = sorted(repo.git.files_staged)
-    if staged:
-        if yes or request_user_response("Update assets? (y/n) "):
-            repo.git.commit(repo.generate_commit_message(message=message,
-                                                         cmd="set",
-                                                         keys=[f"{k}={v}" for k, v in keys.items()]))
-        else:
-            repo.git.restore_staged()
-            # when names were changed, the first restoring just brings
-            # back the name, but leaves working-tree unclean
-            if repo.git.files_staged:
+        # commit or discard changes
+        if diffs or moves:
+            if yes or request_user_response("Update assets? (y/n) "):
+                repo.git.commit(repo.generate_commit_message(message=message,
+                                                             cmd="set",
+                                                             keys=[f"{k}={v}" for k, v in keys.items()]))
+                return
+            else:
+                to_restore = [m[0] for m in modifications]
+                for s, d in moves:
+                    to_restore.append(s)
+                    to_restore.append(d)
                 repo.git.restore_staged()
-            if not quiet:
-                print("No assets updated.")
+    if not quiet:
+        print("No assets updated.")
 
 
 def tree(repo: OnyoRepo, paths: list[Path]) -> None:

@@ -64,19 +64,6 @@ def is_move_mode(sources: list[Path],
     return False
 
 
-def update_names(repo: OnyoRepo,
-                 assets: list[Path],
-                 name_values: Dict[str, Union[float, int, str]]) -> None:
-    """
-    Set the pseudo key fields of an assets name (rename an asset file) from
-    values of a dictionary and test that the new name is valid and
-    available.
-    """
-    from .assets import generate_new_asset_names
-    for old, new in generate_new_asset_names(repo, repo.asset_paths, assets, name_values):
-        repo.git.mv(old, new)
-
-
 def sanitize_args_config(git_config_args: list[str]) -> list[str]:
     """
     Check the git config arguments against a list of conflicting options. If
@@ -362,11 +349,8 @@ def rm(repo: OnyoRepo,
 
 
 def set_assets(repo: OnyoRepo,
-               paths: Iterable[Path],
-               values: Dict[str, Union[str, int, float]],
-               dryrun: bool,
-               rename: bool,
-               depth: Union[int]) -> Tuple[str, list[Path]]:
+               paths: list[Path],
+               values: Dict[str, Union[str, int, float]]) -> Tuple[list[Tuple[Path, Dict, Iterable]], list[Tuple[Path, Path]]]:
     """
     Set values for a list of assets (or directories), or rename assets
     through updating their name fields.
@@ -375,57 +359,37 @@ def set_assets(repo: OnyoRepo,
     directories.
     """
 
-    from .assets import get_asset_content, get_asset_files_by_path, write_asset_file, PSEUDO_KEYS, generate_new_asset_names
-    assets_to_set = get_asset_files_by_path(repo.asset_paths, paths, depth)
+    from .assets import get_asset_content, dict_to_yaml, PSEUDO_KEYS, generate_new_asset_names
 
-    # Note: This separation may not be necessary. We can check whether any key is in fact a pseudo key
-    # (in order to fail w/o rename)
+    # Note: This separation may not be necessary.
     # But represent ALL key-value pairs in one dict. An Asset object (or alike) can then consider what to do with a key
     # based on whatever is configured to be a pseudo-key.
     content_values = dict((field, values[field]) for field in values.keys() if field not in PSEUDO_KEYS)
     name_values = dict((field, values[field]) for field in values.keys() if field in PSEUDO_KEYS)
 
-    if name_values and not rename:
-        raise ValueError("Can't change pseudo keys without --rename.")
-
-    modified = []
-    if content_values:
-        for asset_path in assets_to_set:
-            contents = get_asset_content(asset_path)
-            contents.update(content_values)
-            write_asset_file(asset_path, contents)
-            modified.append(asset_path)
-
+    moves = []
     if name_values:
-        try:
-            for old, new in generate_new_asset_names(repo, repo.asset_paths, assets_to_set, name_values):
-                repo.git.mv(old, new)
+        # generate_new_asset_names may raise
+        moves = [(old, new) for old, new in generate_new_asset_names(repo, repo.asset_paths, paths, name_values)]
 
-        except ValueError:
-            # Note: This should not be necessary. Disentangle name generation and git-mv above.
-            #       Only call git-mv when we have valid targets in the first place.
-            #       Also: Use git-mv with dryrun option (see gh-377).
-            if repo.git.files_staged:
-                repo.git.restore_staged()
-                # reset renaming needs double-restoring
-                # Note: Double-check this claim. Would suspect that's due to passing only one of the paths involved to
-                #       git-restore.
-                repo.git.restore_staged()
-            # if we raise here, restore modifications as well:
-            if modified:
-                repo.git.restore(modified)
-            raise
+    modifications = []
+    if content_values:
+        for asset_path in paths:
+            contents = get_asset_content(asset_path)
+            prev_content = contents.copy()
+            contents.update(content_values)
+            if prev_content != contents:
+                from difflib import unified_diff
+                diff = unified_diff(dict_to_yaml(prev_content).splitlines(keepends=True),
+                                    dict_to_yaml(contents).splitlines(keepends=True),
+                                    fromfile=str(asset_path),
+                                    tofile="Update",
+                                    lineterm="")
+            else:
+                diff = []
+            modifications.append((asset_path, contents, diff))
 
-    # generate diff, and restore changes for dry-runs
-    diff = repo.git._diff_changes()
-    if diff and dryrun:
-        repo.git.restore_staged()
-        if modified:
-            repo.git.restore(modified)
-
-    # Note: Here, too, everything is invalidated regardless of what was actually done.
-    repo.clear_caches()
-    return diff, modified
+    return modifications, moves
 
 
 def unset(repo: OnyoRepo,
