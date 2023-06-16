@@ -7,3 +7,13 @@ onyo edit
    :prog: onyo
    :path: edit
 
+
+Example Usage
+*************
+
+**Upgrade an asset**
+
+.. code:: shell
+
+   onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+   <spawns $EDITOR; user edits RAM field>

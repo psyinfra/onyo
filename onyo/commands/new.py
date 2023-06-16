@@ -15,13 +15,12 @@ log: logging.Logger = logging.getLogger('onyo')
 
 def new(args: argparse.Namespace) -> None:
     """
-    Create new ``<path>/asset``\\(s) and add contents with ``--template``,
+    Create new ``<path>/<asset>``\\(s) and add contents with ``--template``,
     ``--keys`` and ``--edit``. If the directories do not exist, they will be
     created.
 
     After the contents are added, the new ``assets``\\(s) will be checked for
-    the validity of its YAML syntax and based on the rules in
-    ``.onyo/validation/``.
+    the validity of its YAML syntax.
     """
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck(repo)

@@ -38,3 +38,29 @@ Options
 
 ``onyo.new.template``
     The default template to use with ``onyo new``. (default: "empty")
+
+
+Templates
+*********
+
+This section describes some of the templates provided with ``onyo init`` in the
+directory ``.onyo/templates/``.
+
+``onyo new --path <asset>`` (equivalent to
+``onyo new --template empty --path <asset>``) as defined
+by ``.onyo/templates/empty`` is an empty YAML file.
+
+This template passes the YAML syntax check when onyo is called while the editor
+is suppressed with ``onyo new --non-interactive --path <asset>``.
+
+``onyo new --template laptop.example --path <asset>`` as defined by
+``.onyo/templates/laptop.example`` contains a simple example for a laptop asset
+which already contains some fields, which are relevant for all assets of that
+device type.
+
+.. code:: yaml
+
+   ---
+   RAM:
+   Size:
+   USB:

@@ -7,3 +7,12 @@ onyo shell-completion
    :prog: onyo
    :path: shell-completion
 
+
+Example Usage
+*************
+
+**Enable shell completion for onyo**
+
+.. code:: shell
+
+    source <(onyo shell-completion)
