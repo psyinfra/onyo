@@ -30,11 +30,11 @@ Options
 
 ``onyo.history.interactive``
     The command used to display history when running ``onyo history``. (default:
-    "tig --follow")
+    ``tig --follow``)
 
 ``onyo.history.non-interactive``
     The command used to print history when running ``onyo history`` with
-    ``--non-interactive``.  (default: "git --no-pager log --follow")
+    ``--non-interactive``.  (default: ``git --no-pager log --follow``)
 
 ``onyo.new.template``
     The default template to use with ``onyo new``. (default: "empty")
