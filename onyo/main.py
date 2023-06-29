@@ -134,9 +134,9 @@ def setup_parser() -> argparse.ArgumentParser:
         dest='opdir',
         metavar='DIR',
         required=False,
-        default=os.getcwd(),
+        default=Path.cwd(),
         type=directory,
-        help='run as if onyo was started in DIR'
+        help='Run Onyo commands from inside of DIR'
     )
     parser.add_argument(
         '-d',
@@ -144,17 +144,17 @@ def setup_parser() -> argparse.ArgumentParser:
         required=False,
         default=False,
         action='store_true',
-        help='enable debug logging'
+        help='Enable debug logging'
     )
     parser.add_argument(
         '--version',
         action='version',
         version='%(prog)s {version}'.format(version=__version__),
-        help="print onyo's version and exit"
+        help="Print onyo's version and exit"
     )
     # subcommands
     subcmds = parser.add_subparsers(
-        title="commands"
+        title='commands'
     )
     subcmds.metavar = '<command>'
     #
@@ -164,7 +164,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'cat',
         description=textwrap.dedent(commands.cat.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='print the contents of an asset'
+        help=textwrap.dedent(commands.cat.__doc__)
     )
     cmd_cat.set_defaults(run=commands.cat)
     cmd_cat.add_argument(
@@ -172,7 +172,7 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar='ASSET',
         nargs='+',
         type=file,
-        help='asset(s) to print'
+        help='List paths of asset(s) to print'
     )
     #
     # subcommand "config"
@@ -181,7 +181,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'config',
         description=textwrap.dedent(commands.config.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='set, query, and unset Onyo repository configuration options'
+        help=textwrap.dedent(commands.config.__doc__)
     )
     cmd_config.set_defaults(run=commands.config)
     cmd_config.add_argument(
@@ -189,7 +189,7 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar='ARGS',
         nargs='+',
         type=git_config,
-        help='arguments to set config options in .onyo/config'
+        help='Arguments configure the options in .onyo/config'
     )
     #
     # subcommand "edit"
@@ -198,7 +198,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'edit',
         description=textwrap.dedent(commands.edit.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='open asset with a text editor'
+        help=textwrap.dedent(commands.edit.__doc__)
     )
     cmd_edit.set_defaults(run=commands.edit)
     cmd_edit.add_argument(
@@ -207,28 +207,35 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs=1,
         action='append',
         type=str,
-        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help=(
+            'Use the given MESSAGE as the commit message (rather than the '
+            'default). If multiple -m options are given, their values are '
+            'concatenated as separate paragraphs')
     )
     cmd_edit.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='silence messages to stdout (does not suppress interactive editors; requires the --yes flag)'
+        help=(
+            'Silence messages printed to stdout. Does not suppress interactive '
+            'editors. Requires the --yes flag')
     )
     cmd_edit.add_argument(
         '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='respond "yes" to any prompts'
+        help=(
+            'Respond "yes" to any prompts. The --yes flag is required to '
+            'use --quiet')
     )
     cmd_edit.add_argument(
         'asset',
         metavar='ASSET',
         nargs='+',
         type=file,
-        help='asset(s) to edit'
+        help='List paths of asset(s) to edit'
     )
     #
     # subcommand "fsck"
@@ -237,10 +244,9 @@ def setup_parser() -> argparse.ArgumentParser:
         'fsck',
         description=textwrap.dedent(commands.fsck.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='verify the integrity and validity of an onyo repository and its contents'
+        help=textwrap.dedent(commands.fsck.__doc__)
     )
     cmd_fsck.set_defaults(run=commands.fsck)
-
     #
     # subcommand "get"
     #
@@ -248,10 +254,8 @@ def setup_parser() -> argparse.ArgumentParser:
         'get',
         description=textwrap.dedent(commands.get.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help=(
-            'Return matching asset(s) and values corresponding to the '
-            'requested key(s). If no key(s) are given, the pseudo-keys are'
-            'returned instead.'))
+        help=textwrap.dedent(commands.get.__doc__)
+    )
     cmd_get.set_defaults(run=commands.get)
     cmd_get.add_argument(
         '-d', '--depth',
@@ -260,8 +264,9 @@ def setup_parser() -> argparse.ArgumentParser:
         required=False,
         default=0,
         help=(
-            'descend at most DEPTH levels of directories below the '
-            'starting-point, with a DEPTH value of 0 having no descend limit'))
+            'Descent up to DEPTH levels into directories specified. DEPTH=0 '
+            'descends recursively without limit')
+    )
     cmd_get.add_argument(
         '-f', '--filter',
         metavar='FILTER',
@@ -269,46 +274,47 @@ def setup_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help=(
-            'filter the results by key=value conditional statement(s) '
-            'to return only assets matching the condition. Multiple '
-            'conditions are separated by spaces and function as a logical '
-            'conjunction. Regular expressions can be used as a value and '
-            'pseudo-keys can also be used'))
+            'Add a filter to only show assets matching KEY=VALUE. Multiple '
+            'filters, regular expressions, and pseudo-keys can be used.')
+    )
     cmd_get.add_argument(
         '-H', '--machine-readable',
         dest='machine_readable',
         action='store_true',
         help=(
-            'return output separating assets by new lines and keys by tabs '
-            'instead of a formatted table'))
+            'Display asset(s) separated by new lines, and keys by tabs instead '
+            'of printing a formatted table')
+    )
     cmd_get.add_argument(
         '-k', '--keys',
         metavar='KEYS',
         nargs='+',
         default=[],
         help=(
-            'key value(s) to return. Pseudo-keys (i.e., keys for which the '
-            'values are only stored in the asset name) are also available '
-            'for queries'))
+            'Key value(s) to return. Pseudo-keys (information not stored in '
+            'the asset file, e.g. filename) are also available for queries')
+    )
     cmd_get.add_argument(
         '-p', '--path',
         metavar='PATH',
         default=['.'],
         nargs='+',
-        help='asset(s) or directory(s) to search through')
+        help='List asset(s) or directory(s) to search through'
+    )
     cmd_get.add_argument(
         '-s', '--sort-ascending',
         dest='sort_ascending',
         action='store_true',
         default=False,
-        help='sort output by keys in ascending order')
+        help='Sort output in ascending order (excludes --sort-descending)'
+    )
     cmd_get.add_argument(
         '-S', '--sort-descending',
         dest='sort_descending',
         action='store_true',
         default=False,
-        help='sort output by keys in descending order')
-
+        help='Sort output in descending order (excludes --sort-ascending)'
+    )
     #
     # subcommand "history"
     #
@@ -316,7 +322,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'history',
         description=textwrap.dedent(commands.history.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='show the history of an asset or directory'
+        help=textwrap.dedent(commands.history.__doc__)
     )
     cmd_history.set_defaults(run=commands.history)
     cmd_history.add_argument(
@@ -325,14 +331,17 @@ def setup_parser() -> argparse.ArgumentParser:
         required=False,
         default=True,
         action='store_false',
-        help='print the git log instead of opening an interactive tig session'
+        help=(
+            "Use the interactive history tool (specified in '.onyo/config' "
+            "under 'onyo.history.interactive') to display the history of the "
+            "repository, an asset or a directory")
     )
     cmd_history.add_argument(
         'path',
         metavar='PATH',
         nargs='?',
         type=path,
-        help='asset or directory to show the history of'
+        help='Specify an asset or a directory to show the history of'
     )
     #
     # subcommand "init"
@@ -341,7 +350,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'init',
         description=textwrap.dedent(commands.init.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='initialize an onyo repository'
+        help=textwrap.dedent(commands.init.__doc__)
     )
     cmd_init.set_defaults(run=commands.init)
     cmd_init.add_argument(
@@ -349,7 +358,7 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar='DIR',
         nargs='?',
         type=directory,
-        help='initialize DIR as an onyo repository'
+        help='Initialize DIR as an onyo repository'
     )
     #
     # subcommand "mkdir"
@@ -358,7 +367,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'mkdir',
         description=textwrap.dedent(commands.mkdir.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='create a directory (with git anchor)'
+        help=textwrap.dedent(commands.mkdir.__doc__)
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
     cmd_mkdir.add_argument(
@@ -367,28 +376,33 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs=1,
         action='append',
         type=str,
-        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help=(
+            'Use the given MESSAGE as the commit message (rather than the '
+            'default). If multiple -m options are given, their values are '
+            'concatenated as separate paragraphs')
     )
     cmd_mkdir.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='silence messages to stdout; requires the --yes flag'
+        help='Silence messages printed to stdout. Requires the --yes flag'
     )
     cmd_mkdir.add_argument(
         '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='respond "yes" to any prompts'
+        help=(
+            'Respond "yes" to any prompts. The --yes flag is required to '
+            'use --quiet')
     )
     cmd_mkdir.add_argument(
         'directory',
         metavar='DIR',
         nargs='+',
         type=directory,
-        help='directory to create'
+        help='List directory(s) to create'
     )
     #
     # subcommand "mv"
@@ -397,7 +411,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'mv',
         description=textwrap.dedent(commands.mv.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='move an asset'
+        help=textwrap.dedent(commands.mv.__doc__)
     )
     cmd_mv.set_defaults(run=commands.mv)
     cmd_mv.add_argument(
@@ -406,34 +420,37 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs=1,
         action='append',
         type=str,
-        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help=(
+            'Use the given MESSAGE as the commit message (rather than the '
+            'default). If multiple -m options are given, their values are '
+            'concatenated as separate paragraphs')
     )
     cmd_mv.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='silence messages to stdout (requires the --yes flag)'
+        help='Silence messages to stdout. Requires the --yes flag'
     )
     cmd_mv.add_argument(
         '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='respond "yes" to any prompts'
+        help='Respond "yes" to any prompts. Is required to use --yes flag'
     )
     cmd_mv.add_argument(
         'source',
         metavar='SOURCE',
         nargs='+',
         type=path,
-        help='source ...'
+        help='List asset(s) and/or directory(s) to move into DEST'
     )
     cmd_mv.add_argument(
         'destination',
         metavar='DEST',
         type=path,
-        help='destination'
+        help='Destination to move SOURCE(s) into'
     )
     #
     # subcommand "new"
@@ -442,7 +459,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'new',
         description=textwrap.dedent(commands.new.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='create a new asset'
+        help=textwrap.dedent(commands.new.__doc__)
     )
     cmd_new.set_defaults(run=commands.new)
     cmd_new.add_argument(
@@ -451,7 +468,10 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs=1,
         action='append',
         type=str,
-        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help=(
+            'Use the given MESSAGE as the commit message (rather than the '
+            'default). If multiple -m options are given, their values are '
+            'concatenated as separate paragraphs')
     )
     cmd_new.add_argument(
         '-t', '--template',
@@ -459,7 +479,7 @@ def setup_parser() -> argparse.ArgumentParser:
         required=False,
         default=[],
         type=template,
-        help='the template to seed the new asset'
+        help='Specify the template to seed the new asset(s)'
     )
     cmd_new.add_argument(
         '-e', '--edit',
@@ -474,14 +494,18 @@ def setup_parser() -> argparse.ArgumentParser:
         action=StoreKeyValuePairs,
         metavar="KEYS",
         nargs='+',
-        help='key-value pairs to set in assets; multiple pairs can be given (e.g. key=value key2=value2)'
+        help=(
+            'Set key-value pairs in the new asset(s). Multiple pairs can be '
+            'specified (e.g. key=value key2=value2)')
     )
     cmd_new.add_argument(
         '-p', '--path',
         metavar='ASSET',
         type=path,
         nargs='*',
-        help='add new assets'
+        help=(
+            'Specify the directory and name of the new asset(s) '
+            '(in the format DIR/ASSET). Excludes usage of --tsv')
     )
     cmd_new.add_argument(
         '-tsv', '--tsv',
@@ -489,14 +513,16 @@ def setup_parser() -> argparse.ArgumentParser:
         required=False,
         default=None,
         type=path,
-        help='tsv file describing new assets'
+        help=(
+            'Read information of new assets from a tsv file describing them. '
+            'Excludes the usage of --path')
     )
     cmd_new.add_argument(
         '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='respond "yes" to any prompts'
+        help='Respond "yes" to any prompts. Is required to use --yes flag'
     )
     #
     # subcommand "rm"
@@ -505,7 +531,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'rm',
         description=textwrap.dedent(commands.rm.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='delete asset(s) and directories'
+        help=textwrap.dedent(commands.rm.__doc__)
     )
     cmd_rm.set_defaults(run=commands.rm)
     cmd_rm.add_argument(
@@ -514,28 +540,31 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs=1,
         action='append',
         type=str,
-        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help=(
+            'Use the given MESSAGE as the commit message (rather than the '
+            'default). If multiple -m options are given, their values are '
+            'concatenated as separate paragraphs')
     )
     cmd_rm.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='silence messages to stdout (requires the --yes flag)'
+        help='Silence messages to stdout. Requires the --yes flag'
     )
     cmd_rm.add_argument(
         '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='respond "yes" to any prompts'
+        help='Respond "yes" to any prompts. Is required for usage of --quiet'
     )
     cmd_rm.add_argument(
         'path',
         metavar='PATH',
         nargs='+',
         type=path,
-        help='assets or directories to delete'
+        help='List asset(s) and/or directory(s) to delete'
     )
     #
     # subcommand "set"
@@ -544,18 +573,19 @@ def setup_parser() -> argparse.ArgumentParser:
         'set',
         description=textwrap.dedent(commands.set.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='set values in assets'
+        help=textwrap.dedent(commands.set.__doc__)
     )
     cmd_set.set_defaults(run=commands.set)
     cmd_set.add_argument(
         '-d', '--depth',
-        metavar='N',
+        metavar='DEPTH',
         type=int,
         required=False,
         default=0,
         help=(
-            'descend at most N levels of directories below the '
-            'starting-point, with an N value of 0 for infinite'))
+            'Descent up to DEPTH levels into directories specified. DEPTH=0 '
+            'descends recursively without limit')
+    )
     cmd_set.add_argument(
         '-f', '--filter',
         metavar='FILTER',
@@ -572,35 +602,40 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs=1,
         action='append',
         type=str,
-        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help=(
+            'Use the given MESSAGE as the commit message (rather than the '
+            'default). If multiple -m options are given, their values are '
+            'concatenated as separate paragraphs')
     )
     cmd_set.add_argument(
-        '-n', "--dry-run",
+        '-n', '--dry-run',
         required=False,
         default=False,
         action='store_true',
-        help='perform a non-interactive trial-run without making any changes'
+        help='Perform a non-interactive trial-run without making any changes'
     )
     cmd_set.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='silence output (requires the --yes flag)'
+        help='Silence messages printed to stdout. Requires the --yes flag'
     )
     cmd_set.add_argument(
         '-r', '--rename',
         required=False,
         default=False,
         action='store_true',
-        help='Permit assigning values to pseudo-keys that would result in the file(s) being renamed.'
+        help=(
+            'Permit assigning values to pseudo-keys that would result in the '
+            'file(s) being renamed.')
     )
     cmd_set.add_argument(
         '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='respond "yes" to any prompts'
+        help='Respond "yes" to any prompts. Is required to use --yes flag'
     )
     cmd_set.add_argument(
         '-k', '--keys',
@@ -608,7 +643,9 @@ def setup_parser() -> argparse.ArgumentParser:
         action=StoreKeyValuePairs,
         metavar="KEYS",
         nargs='+',
-        help='key-value pairs to set in assets; multiple pairs can be given (e.g. key=value key2=value2)'
+        help=(
+            'Specify key-value pairs to set in asset(s). Multiple pairs can '
+            'be specified (e.g. key=value key2=value2)')
     )
     cmd_set.add_argument(
         '-p', '--path',
@@ -616,7 +653,7 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar='PATH',
         nargs='*',
         type=path,
-        help='assets or directories to set keys/values in'
+        help='List asset(s) and/or directorie(s) to set KEY=VALUE in'
     )
     #
     # subcommand "shell-completion"
@@ -625,7 +662,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'shell-completion',
         description=textwrap.dedent(commands.shell_completion.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='shell completion for Onyo, suitable for use with "source"'
+        help=textwrap.dedent(commands.shell_completion.__doc__)
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion,
                                       parser=parser)
@@ -635,7 +672,7 @@ def setup_parser() -> argparse.ArgumentParser:
         required=False,
         default='zsh',
         choices=['zsh'],
-        help='shell to generate tab completion for'
+        help='Specify the shell for which to generate tab completion for'
     )
     #
     # subcommand "tree"
@@ -644,7 +681,7 @@ def setup_parser() -> argparse.ArgumentParser:
         'tree',
         description=textwrap.dedent(commands.tree.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='print the contents of a directory in a tree-like format'
+        help=textwrap.dedent(commands.tree.__doc__)
     )
     cmd_tree.set_defaults(run=commands.tree)
     cmd_tree.add_argument(
@@ -652,7 +689,7 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar='DIR',
         nargs='*',
         type=directory,
-        help='directories to print'
+        help='List directory(s) to print tree of'
     )
     #
     # subcommand "unset"
@@ -661,18 +698,19 @@ def setup_parser() -> argparse.ArgumentParser:
         'unset',
         description=textwrap.dedent(commands.unset.__doc__),
         formatter_class=SubcommandHelpFormatter,
-        help='remove values from assets'
+        help=textwrap.dedent(commands.unset.__doc__)
     )
     cmd_unset.set_defaults(run=commands.unset)
     cmd_unset.add_argument(
         '-d', '--depth',
-        metavar='N',
+        metavar='DEPTH',
         type=int,
         required=False,
         default=0,
         help=(
-            'descend at most N levels of directories below the '
-            'starting-point, with an N value of 0 for infinite'))
+            'Descent up to DEPTH levels into directories specified. DEPTH=0 '
+            'descends recursively without limit')
+    )
     cmd_unset.add_argument(
         '-f', '--filter',
         metavar='FILTER',
@@ -689,28 +727,34 @@ def setup_parser() -> argparse.ArgumentParser:
         nargs=1,
         action='append',
         type=str,
-        help='Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs'
+        help=(
+            'Use the given MESSAGE as the commit message (rather than the '
+            'default). If multiple -m options are given, their values are '
+            'concatenated as separate paragraphs')
     )
     cmd_unset.add_argument(
-        '-n', "--dry-run",
+        '-n', '--dry-run',
         required=False,
         default=False,
         action='store_true',
-        help='perform a non-interactive trial-run without making any changes'
+        help=(
+            'Perform a non-interactive trial-run without making any changes '
+            'on assets')
+
     )
     cmd_unset.add_argument(
         '-q', '--quiet',
         required=False,
         default=False,
         action='store_true',
-        help='silence output (requires the --yes flag)'
+        help='Silence messages printed to stdout. Requires the --yes flag'
     )
     cmd_unset.add_argument(
         '-y', '--yes',
         required=False,
         default=False,
         action='store_true',
-        help='respond "yes" to any prompts'
+        help='Respond "yes" to any prompts. Is required to use --yes flag'
     )
     cmd_unset.add_argument(
         '-k', '--keys',
@@ -718,7 +762,9 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar="KEYS",
         nargs='+',
         type=str,
-        help='keys to unset in assets; multiple keys can be given (e.g. key key2 key3)'
+        help=(
+            'Specify keys to unset in assets. Multiple keys can be given '
+            '(e.g. key key2 key3)')
     )
     cmd_unset.add_argument(
         '-p', '--path',
@@ -726,7 +772,7 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         nargs='*',
         type=path,
-        help='assets or directories for which to unset values'
+        help='List asset(s) and/or directory(s) for which to unset values in'
     )
 
     return parser
