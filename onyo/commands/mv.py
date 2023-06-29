@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 def mv(args: argparse.Namespace) -> None:
     """
-    Move ``source``\\(s) (assets or directories) to the ``destination``
-    directory, or rename a ``source`` directory to ``destination``.
+    Move ``SOURCE``\\(s) (assets or directories) to the ``DEST`` directory, or
+    rename a ``SOURCE`` directory to ``DEST``.
 
     Files cannot be renamed using ``onyo mv``. To do so, use ``onyo set``.
     """

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 def rm(args: argparse.Namespace) -> None:
     """
-    Delete ``asset``\\(s) and ``directory``\\(s).
+    Delete ``ASSET``\\(s) and ``DIRECTORY``\\(s).
 
     A list of all files and directories to delete will be presented, and the
     user prompted for confirmation.

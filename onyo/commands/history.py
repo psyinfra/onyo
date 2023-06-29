@@ -19,11 +19,13 @@ log: logging.Logger = logging.getLogger('onyo')
 
 def history(args: argparse.Namespace) -> None:
     """
-    Display the history of an ``asset`` or ``directory``.
+    Display the history of an ``ASSET`` or ``DIRECTORY``.
 
-    Onyo detects whether an interactive TTY is in use, and will launch either an
-    interactive display (default ``tig``) or a non-interactive one (default
-    ``git log``) accordingly.
+    Onyo detects whether an interactive TTY is in use, and will either use
+    the interactive display tool (specified in ``.onyo/config`` under
+    ``onyo.history.interactive``; default ``tig –-follow``) or the
+    non-interactive one (``onyo.history.non-interactive``; default ``git log``)
+    accordingly.
 
     The commands to display history are configurable using ``onyo config``.
     """

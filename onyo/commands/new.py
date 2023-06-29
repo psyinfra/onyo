@@ -15,7 +15,7 @@ log: logging.Logger = logging.getLogger('onyo')
 
 def new(args: argparse.Namespace) -> None:
     """
-    Create new ``<path>/<asset>``\\(s) and add contents with ``--template``,
+    Create new ``DIRECTORY/ASSET``\\(s), and add contents with ``--template``,
     ``--keys`` and ``--edit``. If the directories do not exist, they will be
     created.
 

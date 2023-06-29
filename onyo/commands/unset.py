@@ -15,7 +15,7 @@ log: logging.Logger = logging.getLogger('onyo')
 
 def unset(args: argparse.Namespace) -> None:
     """
-    Remove the ``value`` of ``key`` for matching assets.
+    Remove the ``value`` of ``key`` for matching ``ASSET``\s.
 
     Multiple ``key=value`` pairs can be declared and divided by spaces. Quotes
     can be used around ``value``, which is necessary when it contains a comma,
@@ -25,8 +25,7 @@ def unset(args: argparse.Namespace) -> None:
     changed, to rename a file(s) use ``onyo set --rename``.
 
     If no ``asset`` or ``directory`` is specified, the current working directory
-    is used. If Onyo is invoked from outside of the Onyo repository, the root of
-    the repository is used.
+    is used.
 
     Changes are printed to the terminal in the style of ``diff``.
 

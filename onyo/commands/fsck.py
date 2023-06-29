@@ -18,7 +18,7 @@ def fsck(args: argparse.Namespace) -> None:
 
     - "clean-tree": verifies that the git tree is clean ---that there are
       no changed (staged or unstaged) nor untracked files.
-    - "anchors": verifies that all folders (outside of .onyo) have an
+    - "anchors": verifies that all directories (outside of .onyo) have an
       .anchor file
     - "asset-unique": verifies that all asset names are unique
     - "asset-yaml": loads each assets and checks if it's valid YAML
