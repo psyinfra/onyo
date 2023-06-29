@@ -289,7 +289,6 @@ def setup_parser() -> argparse.ArgumentParser:
         '-k', '--keys',
         metavar='KEYS',
         nargs='+',
-        default=[],
         help=(
             'Key value(s) to return. Pseudo-keys (information not stored in '
             'the asset file, e.g. filename) are also available for queries')
@@ -297,7 +296,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_get.add_argument(
         '-p', '--path',
         metavar='PATH',
-        default=['.'],
+        type=path,
         nargs='+',
         help='List asset(s) or directory(s) to search through'
     )
@@ -477,7 +476,6 @@ def setup_parser() -> argparse.ArgumentParser:
         '-t', '--template',
         metavar='TEMPLATE',
         required=False,
-        default=[],
         type=template,
         help='Specify the template to seed the new asset(s)'
     )
@@ -511,7 +509,6 @@ def setup_parser() -> argparse.ArgumentParser:
         '-tsv', '--tsv',
         metavar='TSV',
         required=False,
-        default=None,
         type=path,
         help=(
             'Read information of new assets from a tsv file describing them. '
@@ -649,7 +646,6 @@ def setup_parser() -> argparse.ArgumentParser:
     )
     cmd_set.add_argument(
         '-p', '--path',
-        default=["."],
         metavar='PATH',
         nargs='*',
         type=path,
@@ -768,7 +764,6 @@ def setup_parser() -> argparse.ArgumentParser:
     )
     cmd_unset.add_argument(
         '-p', '--path',
-        default=["."],
         metavar="PATH",
         nargs='*',
         type=path,
