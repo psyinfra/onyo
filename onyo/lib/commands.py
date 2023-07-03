@@ -384,7 +384,7 @@ def set_(repo: OnyoRepo,
          yes: bool,
          message: Union[list[str], None]) -> Union[str, None]:
     from onyo.lib.command_utils import set_assets
-    from .assets import get_asset_files_by_path, write_asset_file
+    from .assets import write_asset_file
 
     # check flags for conflicts
     if quiet and not yes:
