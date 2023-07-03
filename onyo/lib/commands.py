@@ -403,6 +403,8 @@ def set_(repo: OnyoRepo,
     asset_paths_to_set = get_assets_by_query(
         repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
 
+    asset_paths_to_set = [a[0] for a in asset_paths_to_set]
+
     modifications, moves = set_assets(repo, asset_paths_to_set, keys)
 
     diffs = [m[2] for m in modifications if m[2] != []]
@@ -490,6 +492,7 @@ def unset(repo: OnyoRepo,
     filters = set_filters(filter_strings, repo=repo) if filter_strings else None
     paths = get_assets_by_query(
         repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
+    paths = [a[0] for a in paths]
 
     diff, modified = ut_unset(repo, paths, keys, dryrun, quiet, depth)
 
