@@ -557,6 +557,16 @@ def setup_parser() -> argparse.ArgumentParser:
             'descend at most N levels of directories below the '
             'starting-point, with an N value of 0 for infinite'))
     cmd_set.add_argument(
+        '-f', '--filter',
+        metavar='FILTER',
+        nargs='+',
+        type=str,
+        default=None,
+        help=(
+            'Add a filter to only show assets matching KEY=VALUE. Multiple '
+            'filters, regular expressions, and pseudo-keys can be used.')
+    )
+    cmd_set.add_argument(
         '-m', '--message',
         metavar='MESSAGE',
         nargs=1,
@@ -663,6 +673,16 @@ def setup_parser() -> argparse.ArgumentParser:
         help=(
             'descend at most N levels of directories below the '
             'starting-point, with an N value of 0 for infinite'))
+    cmd_unset.add_argument(
+        '-f', '--filter',
+        metavar='FILTER',
+        nargs='+',
+        type=str,
+        default=None,
+        help=(
+            'Add a filter to only show assets matching KEY=VALUE. Multiple '
+            'filters, regular expressions, and pseudo-keys can be used.')
+    )
     cmd_unset.add_argument(
         '-m', '--message',
         metavar='MESSAGE',

@@ -11,7 +11,8 @@ from rich import box
 from rich.table import Table
 
 from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
-from onyo.lib.command_utils import get_editor, edit_asset, request_user_response, sanitize_keys, set_filters, \
+from onyo.lib.command_utils import get_editor, edit_asset, \
+    request_user_response, sanitize_keys, set_filters, \
     fill_unset, natural_sort, validate_args_for_new, onyo_mv, rollback_untracked
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.filters import UNSET_VALUE
@@ -375,6 +376,7 @@ def rm(repo: OnyoRepo,
 def set_(repo: OnyoRepo,
          paths: Iterable[Path],
          keys: Dict[str, Union[str, int, float]],
+         filter_strings: list[str],
          dryrun: bool,
          rename: bool,
          depth: Union[int],
@@ -396,7 +398,11 @@ def set_(repo: OnyoRepo,
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
 
-    asset_paths_to_set = get_asset_files_by_path(repo.asset_paths, paths, depth)
+    filters = set_filters(filter_strings, repo=repo) if filter_strings else None
+
+    asset_paths_to_set = get_assets_by_query(
+        repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
+
     modifications, moves = set_assets(repo, asset_paths_to_set, keys)
 
     diffs = [m[2] for m in modifications if m[2] != []]
@@ -465,6 +471,7 @@ def tree(repo: OnyoRepo, paths: list[Path]) -> None:
 def unset(repo: OnyoRepo,
           paths: Iterable[Path],
           keys: list[str],
+          filter_strings: list[str],
           dryrun: bool,
           quiet: bool,
           yes: bool,
@@ -479,6 +486,10 @@ def unset(repo: OnyoRepo,
     if non_inventory_paths:
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
+
+    filters = set_filters(filter_strings, repo=repo) if filter_strings else None
+    paths = get_assets_by_query(
+        repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
 
     diff, modified = ut_unset(repo, paths, keys, dryrun, quiet, depth)
 
