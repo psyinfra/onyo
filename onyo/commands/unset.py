@@ -38,4 +38,12 @@ def unset(args: argparse.Namespace) -> None:
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck(repo)
     paths = [Path(p).resolve() for p in args.path]
-    unset_cmd(repo, paths, args.keys, args.dry_run, args.quiet, args.yes, args.depth, args.message)
+    unset_cmd(repo,
+              paths,
+              args.keys,
+              args.filter,
+              args.dry_run,
+              args.quiet,
+              args.yes,
+              args.depth,
+              args.message)

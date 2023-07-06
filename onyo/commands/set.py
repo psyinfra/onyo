@@ -42,4 +42,13 @@ def set(args: argparse.Namespace) -> None:
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck(repo)
     paths = [Path(p).resolve() for p in args.path]
-    set_cmd(repo, paths, args.keys, args.dry_run, args.rename, args.depth, args.quiet, args.yes, args.message)
+    set_cmd(repo,
+            paths,
+            args.keys,
+            args.filter,
+            args.dry_run,
+            args.rename,
+            args.depth,
+            args.quiet,
+            args.yes,
+            args.message)

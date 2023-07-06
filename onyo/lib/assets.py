@@ -418,7 +418,7 @@ def read_assets_from_CLI(assets: list[Path],
 
 
 def get_assets_by_query(asset_files: set[Path],
-                        keys: Set[str],
+                        keys: Optional[Set[str]],
                         paths: Iterable[Path],
                         depth: Union[int, None] = None,
                         filters: Union[list[Filter], None] = None) -> Generator:
@@ -440,13 +440,21 @@ def get_assets_by_query(asset_files: set[Path],
             assets[:] = filter(f.match, assets)
 
     # Obtain keys from remaining assets
-    assets = ((a, {
-        k: v
-        for k, v in (get_asset_content(a) | dict(zip(
-            PSEUDO_KEYS, re.findall(
-                r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)',
-                a.name)[0]))).items()
-        if k in keys}) for a in assets)
+    if keys:
+        assets = ((a, {
+            k: v
+            for k, v in (get_asset_content(a) | dict(zip(
+                PSEUDO_KEYS, re.findall(
+                    r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)',
+                    a.name)[0]))).items()
+            if k in keys}) for a in assets)
+    else:
+        assets = ((a, {
+            k: v
+            for k, v in (get_asset_content(a) | dict(zip(
+                PSEUDO_KEYS, re.findall(
+                    r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)',
+                    a.name)[0]))).items()}) for a in assets)
 
     return assets
 
