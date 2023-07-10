@@ -480,6 +480,7 @@ def unset(repo: OnyoRepo,
           depth: Union[int, None],
           message: Union[list[str], None]) -> None:
     from onyo.lib.command_utils import unset as ut_unset
+    from .assets import write_asset_file
     # check flags for conflicts
     if quiet and not yes:
         raise ValueError("The --quiet flag requires --yes.")
@@ -494,27 +495,32 @@ def unset(repo: OnyoRepo,
         repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
     paths = [a[0] for a in paths]
 
-    diff, modified = ut_unset(repo, paths, keys, dryrun, quiet, depth)
+    modifications = ut_unset(repo, paths, keys, dryrun, quiet, depth)
 
+    diffs = [m[2] for m in modifications if m[2] != []]
     # display changes
-    if not quiet and diff:
-        print("The following assets will be changed:")
-        print(diff)
-    elif quiet:
-        pass
-    else:
-        print("No assets containing the specified key(s) could be found. No assets updated.")
-        return
+    if not quiet:
+        if diffs:
+            print("The following assets will be changed:")
+            if diffs:
+                for d in diffs:
+                    for line in d:
+                        print(line)
+        else:
+            print("No assets containing the specified key(s) could be found. No assets updated.")
+            return
 
-    # commit or discard changes
-    if modified:
+    if diffs and not dryrun:
         if yes or request_user_response("Update assets? (y/n) "):
-            repo.git.stage_and_commit(paths=modified,
+            to_commit = []
+            for m in modifications:
+                write_asset_file(m[0], m[1])
+                to_commit.append(m[0])
+            repo.git.stage_and_commit(paths=to_commit,
                                       message=repo.generate_commit_message(message=message,
                                                                            cmd="unset",
                                                                            keys=keys)
                                       )
-        else:
-            repo.git.restore(modified)
-            if not quiet:
-                print("No assets updated.")
+            return
+    if not quiet:
+        print("No assets updated.")
