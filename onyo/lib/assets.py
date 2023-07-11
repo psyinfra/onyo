@@ -261,20 +261,6 @@ def generate_new_asset_names(repo: OnyoRepo,
     return to_move
 
 
-def unset_asset_keys(asset: Path,
-                     keys: list[str],
-                     quiet: bool):
-    # Note: This does not handle pseudo keys - see command_utils:unset
-    contents = get_asset_content(asset)
-    for field in keys:
-        try:
-            del contents[field]
-        except KeyError:
-            if not quiet:
-                log.info(f"Field {field} does not exist in {asset}")
-    write_asset_file(asset, contents)
-
-
 def read_assets_from_tsv(tsv: Path,
                          template_name: Optional[str],
                          key_values: Dict[str, str],

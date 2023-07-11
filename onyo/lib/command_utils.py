@@ -397,27 +397,39 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           dryrun: bool,
           quiet: bool,
-          depth: Union[int, None]) -> Tuple[str, list[Path]]:
+          depth: Union[int, None]) -> list[Tuple[Path, Dict, Iterable]]:
 
-    from .assets import get_asset_files_by_path, unset_asset_keys, PSEUDO_KEYS
+    from .assets import get_asset_files_by_path, PSEUDO_KEYS, get_asset_content, dict_to_yaml
     # set and unset should select assets exactly the same way
     assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
 
     if any([key in PSEUDO_KEYS for key in keys]):
         raise ValueError("Can't unset pseudo keys (name fields are required).")
 
-    unset_assets = []
-    for asset in assets_to_unset:
-        unset_asset_keys(asset, keys, quiet)
-        unset_assets.append(asset)
+    modifications = []
+    for asset_path in assets_to_unset:
+        contents = get_asset_content(asset_path)
+        prev_content = contents.copy()
 
-    # generate diff, and restore changes for dry-runs
-    diff = repo.git._diff_changes()
-    if diff and dryrun:
-        repo.git.restore(unset_assets)
-        unset_assets = []
+        for field in keys:
+            try:
+                del contents[field]
+            except KeyError:
+                if not quiet:
+                    log.info(f"Field {field} does not exist in {asset_path}")
 
-    return diff, unset_assets
+        if prev_content != contents:
+            from difflib import unified_diff
+            diff = unified_diff(dict_to_yaml(prev_content).splitlines(keepends=True),
+                                dict_to_yaml(contents).splitlines(keepends=True),
+                                fromfile=str(asset_path),
+                                tofile="Update",
+                                lineterm="")
+        else:
+            diff = []
+        modifications.append((asset_path, contents, diff))
+
+    return modifications
 
 
 def sanitize_destination_for_mv(repo: OnyoRepo,
