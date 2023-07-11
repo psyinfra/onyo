@@ -16,7 +16,8 @@ log = logging.getLogger('onyo')
 
 def get(args: argparse.Namespace) -> None:
     """
-    Return matching asset(s) and values corresponding to the requested key(s).
+    Return matching ``ASSET``\(s) and values corresponding to the requested
+    ``KEY``\(s).
 
     If no key(s) are given, the pseudo-keys are returned instead.
     If no ``asset`` or ``directory`` is specified, the current working directory
@@ -36,7 +37,7 @@ def get(args: argparse.Namespace) -> None:
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck(repo, ['asset-yaml'])
 
-    paths = [Path(p).resolve() for p in args.path]
+    paths = [Path(p).resolve() for p in args.path] if args.path else None
     get_cmd(repo,
             args.sort_ascending,
             args.sort_descending,

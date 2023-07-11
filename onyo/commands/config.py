@@ -16,8 +16,8 @@ log: logging.Logger = logging.getLogger('onyo')
 def config(args: argparse.Namespace) -> None:
     """
     Set, query, and unset Onyo repository configuration options. These options
-    are stored in ``.onyo/config`` (which is tracked by git) and are shared with
-    all other consumers of an Onyo repository.
+    are stored in ``.onyo/config``. This file is tracked by git and are shared
+    with all other consumers of an Onyo repository.
 
     To set configuration options locally (and not commit them to the Onyo
     repository), use ``git config`` instead.
@@ -39,10 +39,6 @@ def config(args: argparse.Namespace) -> None:
       (default: "git --no-pager log --follow")
     - ``onyo.new.template``: The default template to use with ``onyo new``.
       (default: "empty")
-
-    Example:
-
-        $ onyo config onyo.core.editor "vim"
     """
 
     repo = OnyoRepo(Path.cwd(), find_root=True)

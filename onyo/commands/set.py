@@ -15,7 +15,7 @@ log: logging.Logger = logging.getLogger('onyo')
 
 def set(args: argparse.Namespace) -> None:
     """
-    Set the ``value`` of ``key`` for matching assets. If the key does not exist,
+    Set the ``value`` of ``key`` for matching assets. If a key does not exist,
     it is added and set appropriately.
 
     Key names can be any valid YAML key name.
@@ -41,7 +41,7 @@ def set(args: argparse.Namespace) -> None:
 
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck(repo)
-    paths = [Path(p).resolve() for p in args.path]
+    paths = [Path(p).resolve() for p in args.path] if args.path else None
     set_cmd(repo,
             paths,
             args.keys,

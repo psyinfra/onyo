@@ -15,7 +15,7 @@ log: logging.Logger = logging.getLogger('onyo')
 
 def tree(args: argparse.Namespace) -> None:
     """
-    List the assets and directories in ``directory`` using ``tree``.
+    List the assets and directories in ``DIRECTORY`` in the ``tree`` format.
     """
 
     repo = OnyoRepo(Path.cwd(), find_root=True)

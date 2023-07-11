@@ -15,8 +15,7 @@ log: logging.Logger = logging.getLogger('onyo')
 
 def cat(args: argparse.Namespace) -> None:
     """
-    Print the contents of ``asset``\\(s) to the terminal without parsing or
-    validating the contents.
+    Print the contents of ``ASSET``\\(s) to the terminal without parsing.
     """
     paths = [Path(p).resolve() for p in args.asset]
 

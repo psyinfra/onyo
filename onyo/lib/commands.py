@@ -167,11 +167,11 @@ def edit(repo: OnyoRepo,
 def get(repo: OnyoRepo,
         sort_ascending: bool,
         sort_descending: bool,
-        paths: list[Path],
+        paths: Optional[list[Path]],
         depth: int,
         machine_readable: bool,
         filter_strings: list[str],
-        keys: list[str]) -> None:
+        keys: Optional[list[str]]) -> None:
 
     if sort_ascending and sort_descending:
         msg = (
@@ -183,6 +183,9 @@ def get(repo: OnyoRepo,
             console = Console(stderr=True)
             console.print(f'[red]FAILED[/red] {msg}')
         raise ValueError
+
+    if not paths:
+        paths = [Path.cwd()]
 
     # validate path arguments
     invalid_paths = set(p for p in paths if not repo.is_inventory_dir(p))
@@ -374,7 +377,7 @@ def rm(repo: OnyoRepo,
 
 
 def set_(repo: OnyoRepo,
-         paths: Iterable[Path],
+         paths: Optional[Iterable[Path]],
          keys: Dict[str, Union[str, int, float]],
          filter_strings: list[str],
          dryrun: bool,
@@ -389,6 +392,9 @@ def set_(repo: OnyoRepo,
     # check flags for conflicts
     if quiet and not yes:
         raise ValueError('The --quiet flag requires --yes.')
+
+    if not paths:
+        paths = [Path.cwd()]
 
     if not rename and any(k in PSEUDO_KEYS for k in keys.keys()):
         raise ValueError("Can't change pseudo keys without --rename.")
@@ -471,7 +477,7 @@ def tree(repo: OnyoRepo, paths: list[Path]) -> None:
 
 
 def unset(repo: OnyoRepo,
-          paths: Iterable[Path],
+          paths: Optional[Iterable[Path]],
           keys: list[str],
           filter_strings: list[str],
           dryrun: bool,
@@ -484,6 +490,9 @@ def unset(repo: OnyoRepo,
     # check flags for conflicts
     if quiet and not yes:
         raise ValueError("The --quiet flag requires --yes.")
+
+    if not paths:
+        paths = [Path.cwd()]
 
     non_inventory_paths = [str(p) for p in paths if not repo.is_asset_path(p) and not repo.is_inventory_dir(p)]
     if non_inventory_paths:

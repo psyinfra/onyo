@@ -149,14 +149,14 @@ def edit_asset(editor: str, asset: Path) -> bool:
                 return False
 
 
-def sanitize_keys(k: list[str], defaults: list) -> list[str]:
+def sanitize_keys(k: Optional[list[str]],
+                  defaults: list) -> list[str]:
     """
     Remove duplicates from k while preserving key order and return default
     (pseudo) keys if k is empty
     """
     seen = set()
-    k = [x for x in k if not (x in seen or seen.add(x))]
-    return k if k else defaults
+    return [x for x in k if not (x in seen or seen.add(x))] if k else defaults
 
 
 def set_filters(
