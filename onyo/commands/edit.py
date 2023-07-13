@@ -5,12 +5,20 @@ from typing import TYPE_CHECKING
 
 from onyo.lib.commands import edit as edit_cmd
 from onyo.lib.onyo import OnyoRepo
+from onyo.shared_arguments import file
 
 if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
+
+arg_asset = dict(
+    dest='asset',
+    metavar='ASSET',
+    nargs='+',
+    type=file,
+    help='Paths of asset(s) to edit')
 
 
 def edit(args: argparse.Namespace) -> None:
