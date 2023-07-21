@@ -26,16 +26,16 @@ def test_new(repo: OnyoRepo, directory: str) -> None:
     """
     Test that `onyo new` can create an asset in different directories.
     """
-    file = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file],
+    file_ = f'{directory}/laptop_apple_macbookpro.0'
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
                          capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert file in ret.stdout
+    assert file_ in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
-    assert Path(file).exists()
+    assert Path(file_).exists()
 
     # verify that the new asset exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
@@ -48,17 +48,17 @@ def test_new_interactive(repo: OnyoRepo) -> None:
     Test that `onyo new` can create an asset in different directories when given
     'y' as input in the dialog, instead of using the flag '--yes'.
     """
-    file = f'{directories[0]}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--path', file],
+    file_ = f'{directories[0]}/laptop_apple_macbookpro.0'
+    ret = subprocess.run(['onyo', 'new', '--path', file_],
                          input='y', capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
-    assert file in ret.stdout
+    assert file_ in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
-    assert Path(file).exists()
+    assert Path(file_).exists()
 
     # verify that the new asset exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
@@ -70,18 +70,76 @@ def test_new_top_level(repo: OnyoRepo) -> None:
     Test that `onyo new --path <path>` can create an asset on the top level of
     the repository.
     """
-    file = 'laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file],
+    file_ = 'laptop_apple_macbookpro.0'
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
                          capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert file in ret.stdout
+    assert file_ in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
-    assert Path(file).exists()
+    assert Path(file_).exists()
 
     # verify that the new asset exists and the repository is in a clean state
+    assert len(repo.asset_paths) == 1
+    fsck(repo)
+
+
+@pytest.mark.repo_dirs(*directories)
+def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
+    """
+    Test that `onyo new --path <path>` can create an asset in sub-directories of
+    the repository while the cwd is inside a different sub-directory.
+    """
+    # Change cwd to sub-directory
+    cwd = repo.git.root / 'spe\"cial\\char\'acteஞrs'
+    os.chdir(cwd)
+
+    # build a path for the new asset as an absolute path
+    file_ = repo.git.root / "just another path" / "laptop_apple_macbookpro.0"
+
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
+                         capture_output=True, text=True)
+
+    # verify correct output
+    assert "The following will be created:" in ret.stdout
+    assert str(file_) in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify that the new asset exists and the repository is in a clean state
+    assert len(repo.asset_paths) == 1
+    fsck(repo)
+
+
+@pytest.mark.repo_dirs(*directories)
+def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
+    """
+    Test that `onyo new --path <path>` can create an asset in sub-directories of
+    the repository while the cwd is inside a different sub-directory with a
+    relative path.
+    """
+    # Change cwd to sub-directory
+    cwd = repo.git.root / 'r/e/c/u/r/s/i/v/e'
+    os.chdir(cwd)
+
+    # count levels until repo.git.root and build relative path with "../"
+    var = "../" * (len(cwd.relative_to(repo.git.root).parts) - 1)
+
+    # build a path for the new asset as a relative path
+    file_ = Path(var, "just another path", "laptop_apple_macbookpro.0")
+
+    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
+                         capture_output=True, text=True)
+
+    # verify correct output
+    assert "The following will be created:" in ret.stdout
+    assert "just another path/laptop_apple_macbookpro.0" in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify that all new assets exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
     fsck(repo)
 
@@ -117,15 +175,15 @@ def test_with_faux_serial_number(repo: OnyoRepo) -> None:
     Test that `onyo new` can create multiple assets with faux serial numbers in
     the multiple directories at once.
     """
-    file = "laptop_apple_macbookpro.faux"
+    file_ = "laptop_apple_macbookpro.faux"
     num = 10
-    assets = [f"{d}/{file}" for d in directories for i in range(0, num)]
+    assets = [f"{d}/{file_}" for d in directories for i in range(0, num)]
     ret = subprocess.run(['onyo', 'new', '--yes', '--path', *assets],
                          capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert ret.stdout.count(file) == len(assets)
+    assert ret.stdout.count(file_) == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
 
