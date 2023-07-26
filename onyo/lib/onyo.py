@@ -19,17 +19,32 @@ class OnyoRepo(object):
     def __init__(self,
                  path: Path,
                  init: bool = False,
-                 find_root: bool = False):
+                 find_root: bool = False) -> None:
         """
-        Instantiates a `OnyoRepo` object with `path` as the root directory.
+        Instantiates an `OnyoRepo` object with `path` as the root directory.
 
-        If `find_root=True` searches the root of a repository from `path`.
+        Parameters
+        ----------
+        path: Path
+            An absolute path to the root of the Onyo Repository for which the
+            `OnyoRepo` object should be initialized.
+        init: boolean
+            If `init=True`, the `path` will be initialized as a git repo and a
+            `.onyo/` directory will be created. `find_root=True` must not be
+            used in combination with `init=True`.
+            Verifies the validity of the onyo repository.
+        find_root: boolean
+            When `find_root=True`, the function searches the root of a
+            repository, beginning at `path`.
 
-        If `init=True`, the `path` will be initialized as a git repo and a
-        `.onyo/` directory will be created. `find_root=True` must not be used
-        in combination with `init=True`.
-        Otherwise the validity of the onyo repository is verified, and if the
-        path is invalid a `OnyoInvalidRepoError` is raised.
+        Raises
+        ------
+        ValueError
+            Is raised if tried to find a repository root and initializing a
+            repository at the same time.
+        OnyoInvalidRepoError
+            Is raised if the path to initialize the repository is not a valid
+            path to an Onyo repository.
         """
         self.git = GitRepo(path, find_root=find_root)
         self.dot_onyo = self.git.root / self.ONYO_DIR
@@ -45,7 +60,7 @@ class OnyoRepo(object):
         log.debug(f"Onyo repo found at '{self.git.root}'")
 
         # caches
-        self._asset_paths: Union[set[Path], None] = None
+        self._asset_paths: Optional[set[Path]] = None
 
     def clear_caches(self, assets: bool = True) -> None:
         """
