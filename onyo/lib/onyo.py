@@ -62,7 +62,8 @@ class OnyoRepo(object):
         # caches
         self._asset_paths: Optional[set[Path]] = None
 
-    def clear_caches(self, assets: bool = True) -> None:
+    def clear_caches(self,
+                     assets: bool = True) -> None:
         """
         Clear caches of the instance of the repository object.
 
@@ -77,6 +78,12 @@ class OnyoRepo(object):
         caches of the `Repo` object are consistent. If the repository is
         modified otherwise, this function clears the caches to ensure that the
         caches do not contain stale information.
+
+        Parameters
+        ----------
+        assets: boolean
+            An option to deactivate or activate the clearing of the
+            `asset_paths` cache.
         """
         if assets:
             self._asset_paths = None

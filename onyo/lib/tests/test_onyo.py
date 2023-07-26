@@ -45,3 +45,25 @@ def test_OnyoRepo_incorrect_input_arguments_raise_error(repo: OnyoRepo,
     # try with conflicting argumeents `init=True` and `find_root=True`
     with pytest.raises(ValueError):
         OnyoRepo(repo.git.root, init=True, find_root=True)
+
+
+@pytest.mark.repo_files('a/test/asset_for_test.0')
+def test_clear_caches(repo: OnyoRepo) -> None:
+    """
+    The function `clear_caches()` must allow to empty the cache of the OnyoRepo,
+    so that an invalid cache can be re-loaded by a newly call of the property.
+    """
+    # make sure the asset is in the cache
+    asset = Path('a/test/asset_for_test.0').resolve()
+    assert asset in repo.asset_paths
+
+    # delete the asset (with a non-onyo function to invalid the cache) and then
+    # verify that the asset stays in the cache after the deletion
+    Path.unlink(asset)
+    assert asset in repo.asset_paths
+
+    # test clear_caches() fixes the cache
+    repo.clear_caches(assets=True)
+    assert asset not in repo.asset_paths
+
+
