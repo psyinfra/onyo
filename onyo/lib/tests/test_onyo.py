@@ -95,3 +95,29 @@ def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
     # verify all necessary information is in the body:
     assert 'a/new/folder' in body
     assert 's p a c e s' in body
+
+
+@pytest.mark.repo_files('a/test/asset_for_test.0')
+def test_is_onyo_path(repo: OnyoRepo) -> None:
+    """
+    Verify that `OnyoRepo.is_onyo_path()` differentiates correctly between
+    paths under `.onyo/` and outside of it.
+    """
+    # True for the directory `.onyo/` itself
+    assert repo.is_onyo_path(repo.dot_onyo)
+    # True for the directory `templates` inside of `.onyo/`
+    assert repo.is_onyo_path(repo.dot_onyo / 'templates')
+    # True for a file inside `.onyo/`
+    assert repo.is_onyo_path(repo.dot_onyo / 'templates' / 'empty')
+
+    # other files/directories beginning with .onyo should be recognized too
+    assert repo.is_onyo_path(repo.git.root / '.onyoignore')
+
+    # False for root of onyo repository
+    assert not repo.is_onyo_path(repo.git.root)
+    # False for directory `.git/`
+    assert not repo.is_onyo_path(repo.git.root / '.git')
+    # False for directory inside an onyo repository
+    assert not repo.is_onyo_path(repo.git.root / 'a' / 'test')
+    # False for asset inside an onyo repository
+    assert not repo.is_onyo_path(repo.git.root / 'a' / 'test' / 'asset_for_test.0')

@@ -309,8 +309,26 @@ class OnyoRepo(object):
         self.git.stage_and_commit(self.dot_onyo, message='Initialize as an Onyo repository')
         log.info(f'Initialized Onyo repository in {self.dot_onyo}/')
 
-    def is_onyo_path(self, path: Path) -> bool:
-        return path == self.dot_onyo or self.dot_onyo in path.parents or path.name.startswith('.onyo')  # see .onyoignore
+    def is_onyo_path(self,
+                     path: Path) -> bool:
+        """
+        Determine whether an absolute `path` is used by onyo internally.
+
+        Currently anything underneath `.onyo/` as well as anything named
+        `.onyo*` is considered an onyo path.
+
+        Parameters
+        ----------
+        path
+          The path to check for if it is inside the `.onyo/` directory
+
+        Returns
+        -------
+        boolean
+          True if `path` is inside `.onyo/`, otherwise False
+        """
+        return path == self.dot_onyo or self.dot_onyo in path.parents or \
+            path.name.startswith('.onyo')  # see .onyoignore
 
     def is_inventory_dir(self, path: Path) -> bool:
         # - existing inventory directory
