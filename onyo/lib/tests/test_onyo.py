@@ -21,7 +21,7 @@ def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
     """
     new_repo = OnyoRepo(tmp_path, init=True)
     assert new_repo.git.root.samefile(tmp_path)
-    assert (new_repo.git.root / ".onyo").exists()
+    assert (new_repo.git.root / '.onyo').exists()
     fsck(new_repo)
 
 
@@ -38,7 +38,7 @@ def test_OnyoRepo_incorrect_input_arguments_raise_error(repo: OnyoRepo,
     """
     # try OnyoRepo with a non-repo path
     with pytest.raises(OnyoInvalidRepoError):
-        OnyoRepo(tmp_path / "no-existy", init=False)
+        OnyoRepo(tmp_path / 'no-existy', init=False)
     # try OnyoRepo initialization with a path which is already a repo
     with pytest.raises(FileExistsError):
         OnyoRepo(repo.git.root, init=True)
