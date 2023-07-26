@@ -2,6 +2,15 @@ import argparse
 from typing import Optional
 
 
+arg_shell = dict(
+    args=('-s', '--shell'),
+    metavar='SHELL',
+    required=False,
+    default='zsh',
+    choices=['zsh'],
+    help='Specify the shell for which to generate tab completion for')
+
+
 class TabCompletion:
     """
     A superclass for tab-completion classes. It accepts an ArgumentParser

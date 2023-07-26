@@ -3,9 +3,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
+from onyo.shared_arguments import directory
 
 if TYPE_CHECKING:
     import argparse
+
+arg_directory = dict(
+    dest='directory',
+    metavar='DIR',
+    nargs='?',
+    type=directory,
+    help='Initialize DIR as an onyo repository')
 
 
 def init(args: argparse.Namespace) -> None:

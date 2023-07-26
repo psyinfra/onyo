@@ -5,12 +5,20 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, tree as tree_cmd
+from onyo.shared_arguments import directory
 
 if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
+
+arg_directory = dict(
+    dest='directory',
+    metavar='DIR',
+    nargs='*',
+    type=directory,
+    help='Directory(s) to print tree of')
 
 
 def tree(args: argparse.Namespace) -> None:

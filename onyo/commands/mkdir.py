@@ -4,9 +4,17 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, mkdir as mkdir_cmd
+from onyo.shared_arguments import directory
 
 if TYPE_CHECKING:
     import argparse
+
+arg_directory = dict(
+    dest='directory',
+    metavar='DIR',
+    nargs='+',
+    type=directory,
+    help='Directory(s) to create')
 
 
 def mkdir(args: argparse.Namespace) -> None:

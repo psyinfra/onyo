@@ -5,12 +5,30 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, unset as unset_cmd
+from onyo.shared_arguments import path
 
 if TYPE_CHECKING:
     import argparse
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
+
+arg_keys = dict(
+    args=('-k', '--keys'),
+    required=True,
+    metavar="KEYS",
+    nargs='+',
+    type=str,
+    help=(
+        'Specify keys to unset in assets. Multiple keys can be given '
+        '(e.g. key key2 key3)'))
+
+arg_path = dict(
+    args=('-p', '--path'),
+    metavar="PATH",
+    nargs='*',
+    type=path,
+    help='Asset(s) and/or directory(s) for which to unset values in')
 
 
 def unset(args: argparse.Namespace) -> None:

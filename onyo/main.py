@@ -124,6 +124,15 @@ def template(string: str) -> str:
 
 
 def setup_parser() -> argparse.ArgumentParser:
+    from onyo.shared_arguments import (
+        shared_arg_depth,
+        shared_arg_dry_run,
+        shared_arg_filter,
+        shared_arg_message,
+        shared_arg_quiet,
+        shared_arg_yes
+    )
+
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
         formatter_class=SubcommandHelpFormatter
@@ -160,6 +169,7 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     # subcommand "cat"
     #
+    from onyo.commands.cat import arg_asset
     cmd_cat = subcmds.add_parser(
         'cat',
         description=textwrap.dedent(commands.cat.__doc__),
@@ -167,16 +177,11 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.cat.__doc__)
     )
     cmd_cat.set_defaults(run=commands.cat)
-    cmd_cat.add_argument(
-        'asset',
-        metavar='ASSET',
-        nargs='+',
-        type=file,
-        help='List paths of asset(s) to print'
-    )
+    cmd_cat.add_argument(**arg_asset)
     #
     # subcommand "config"
     #
+    from onyo.commands.config import arg_git_config_args
     cmd_config = subcmds.add_parser(
         'config',
         description=textwrap.dedent(commands.config.__doc__),
@@ -184,16 +189,11 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.config.__doc__)
     )
     cmd_config.set_defaults(run=commands.config)
-    cmd_config.add_argument(
-        'git_config_args',
-        metavar='ARGS',
-        nargs='+',
-        type=git_config,
-        help='Arguments configure the options in .onyo/config'
-    )
+    cmd_config.add_argument(**arg_git_config_args)
     #
     # subcommand "edit"
     #
+    from onyo.commands.edit import arg_asset
     cmd_edit = subcmds.add_parser(
         'edit',
         description=textwrap.dedent(commands.edit.__doc__),
@@ -201,42 +201,13 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.edit.__doc__)
     )
     cmd_edit.set_defaults(run=commands.edit)
-    cmd_edit.add_argument(
-        '-m', '--message',
-        metavar='MESSAGE',
-        nargs=1,
-        action='append',
-        type=str,
-        help=(
-            'Use the given MESSAGE as the commit message (rather than the '
-            'default). If multiple -m options are given, their values are '
-            'concatenated as separate paragraphs')
-    )
-    cmd_edit.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help=(
-            'Silence messages printed to stdout. Does not suppress interactive '
-            'editors. Requires the --yes flag')
-    )
-    cmd_edit.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help=(
-            'Respond "yes" to any prompts. The --yes flag is required to '
-            'use --quiet')
-    )
-    cmd_edit.add_argument(
-        'asset',
-        metavar='ASSET',
-        nargs='+',
-        type=file,
-        help='List paths of asset(s) to edit'
-    )
+    cmd_edit.add_argument(*(shared_arg_message['args']),
+                          **{k: v for k, v in shared_arg_message.items() if k != 'args'})
+    cmd_edit.add_argument(*(shared_arg_quiet['args']),
+                          **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
+    cmd_edit.add_argument(*(shared_arg_yes['args']),
+                          **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
+    cmd_edit.add_argument(**arg_asset)
     #
     # subcommand "fsck"
     #
@@ -250,6 +221,13 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     # subcommand "get"
     #
+    from onyo.commands.get import (
+        arg_machine_readable,
+        arg_keys,
+        arg_path,
+        arg_sort_ascending,
+        arg_sort_descending
+    )
     cmd_get = subcmds.add_parser(
         'get',
         description=textwrap.dedent(commands.get.__doc__),
@@ -257,66 +235,24 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.get.__doc__)
     )
     cmd_get.set_defaults(run=commands.get)
-    cmd_get.add_argument(
-        '-d', '--depth',
-        metavar='DEPTH',
-        type=int,
-        required=False,
-        default=0,
-        help=(
-            'Descent up to DEPTH levels into directories specified. DEPTH=0 '
-            'descends recursively without limit')
-    )
-    cmd_get.add_argument(
-        '-f', '--filter',
-        metavar='FILTER',
-        nargs='+',
-        type=str,
-        default=None,
-        help=(
-            'Add a filter to only show assets matching KEY=VALUE. Multiple '
-            'filters, regular expressions, and pseudo-keys can be used.')
-    )
-    cmd_get.add_argument(
-        '-H', '--machine-readable',
-        dest='machine_readable',
-        action='store_true',
-        help=(
-            'Display asset(s) separated by new lines, and keys by tabs instead '
-            'of printing a formatted table')
-    )
-    cmd_get.add_argument(
-        '-k', '--keys',
-        metavar='KEYS',
-        nargs='+',
-        help=(
-            'Key value(s) to return. Pseudo-keys (information not stored in '
-            'the asset file, e.g. filename) are also available for queries')
-    )
-    cmd_get.add_argument(
-        '-p', '--path',
-        metavar='PATH',
-        type=path,
-        nargs='+',
-        help='List asset(s) or directory(s) to search through'
-    )
-    cmd_get.add_argument(
-        '-s', '--sort-ascending',
-        dest='sort_ascending',
-        action='store_true',
-        default=False,
-        help='Sort output in ascending order (excludes --sort-descending)'
-    )
-    cmd_get.add_argument(
-        '-S', '--sort-descending',
-        dest='sort_descending',
-        action='store_true',
-        default=False,
-        help='Sort output in descending order (excludes --sort-ascending)'
-    )
+    cmd_get.add_argument(*(shared_arg_depth['args']),
+                         **{k: v for k, v in shared_arg_depth.items() if k != 'args'})
+    cmd_get.add_argument(*(shared_arg_filter['args']),
+                         **{k: v for k, v in shared_arg_filter.items() if k != 'args'})
+    cmd_get.add_argument(*arg_machine_readable['args'],
+                         **{k: v for k, v in arg_machine_readable.items() if k != 'args'})
+    cmd_get.add_argument(*arg_keys['args'],
+                         **{k: v for k, v in arg_keys.items() if k != 'args'})
+    cmd_get.add_argument(*arg_path['args'],
+                         **{k: v for k, v in arg_path.items() if k != 'args'})
+    cmd_get.add_argument(*arg_sort_ascending['args'],
+                         **{k: v for k, v in arg_sort_ascending.items() if k != 'args'})
+    cmd_get.add_argument(*arg_sort_descending['args'],
+                         **{k: v for k, v in arg_sort_descending.items() if k != 'args'})
     #
     # subcommand "history"
     #
+    from onyo.commands.history import arg_interactive, arg_path
     cmd_history = subcmds.add_parser(
         'history',
         description=textwrap.dedent(commands.history.__doc__),
@@ -324,27 +260,13 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.history.__doc__)
     )
     cmd_history.set_defaults(run=commands.history)
-    cmd_history.add_argument(
-        '-I', '--non-interactive',
-        dest='interactive',
-        required=False,
-        default=True,
-        action='store_false',
-        help=(
-            "Use the interactive history tool (specified in '.onyo/config' "
-            "under 'onyo.history.interactive') to display the history of the "
-            "repository, an asset or a directory")
-    )
-    cmd_history.add_argument(
-        'path',
-        metavar='PATH',
-        nargs='?',
-        type=path,
-        help='Specify an asset or a directory to show the history of'
-    )
+    cmd_history.add_argument(*(arg_interactive['args']),
+                             **{k: v for k, v in arg_interactive.items() if k != 'args'})
+    cmd_history.add_argument(**arg_path)
     #
     # subcommand "init"
     #
+    from onyo.commands.init import arg_directory
     cmd_init = subcmds.add_parser(
         'init',
         description=textwrap.dedent(commands.init.__doc__),
@@ -352,16 +274,11 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.init.__doc__)
     )
     cmd_init.set_defaults(run=commands.init)
-    cmd_init.add_argument(
-        'directory',
-        metavar='DIR',
-        nargs='?',
-        type=directory,
-        help='Initialize DIR as an onyo repository'
-    )
+    cmd_init.add_argument(**arg_directory)
     #
     # subcommand "mkdir"
     #
+    from onyo.commands.mkdir import arg_directory
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
         description=textwrap.dedent(commands.mkdir.__doc__),
@@ -369,43 +286,17 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.mkdir.__doc__)
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
-    cmd_mkdir.add_argument(
-        '-m', '--message',
-        metavar='MESSAGE',
-        nargs=1,
-        action='append',
-        type=str,
-        help=(
-            'Use the given MESSAGE as the commit message (rather than the '
-            'default). If multiple -m options are given, their values are '
-            'concatenated as separate paragraphs')
-    )
-    cmd_mkdir.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Silence messages printed to stdout. Requires the --yes flag'
-    )
-    cmd_mkdir.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help=(
-            'Respond "yes" to any prompts. The --yes flag is required to '
-            'use --quiet')
-    )
-    cmd_mkdir.add_argument(
-        'directory',
-        metavar='DIR',
-        nargs='+',
-        type=directory,
-        help='List directory(s) to create'
-    )
+    cmd_mkdir.add_argument(*(shared_arg_message['args']),
+                           **{k: v for k, v in shared_arg_message.items() if k != 'args'})
+    cmd_mkdir.add_argument(*(shared_arg_quiet['args']),
+                           **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
+    cmd_mkdir.add_argument(*(shared_arg_yes['args']),
+                           **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
+    cmd_mkdir.add_argument(**arg_directory)
     #
     # subcommand "mv"
     #
+    from onyo.commands.mv import arg_source, arg_destination
     cmd_mv = subcmds.add_parser(
         'mv',
         description=textwrap.dedent(commands.mv.__doc__),
@@ -413,47 +304,18 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.mv.__doc__)
     )
     cmd_mv.set_defaults(run=commands.mv)
-    cmd_mv.add_argument(
-        '-m', '--message',
-        metavar='MESSAGE',
-        nargs=1,
-        action='append',
-        type=str,
-        help=(
-            'Use the given MESSAGE as the commit message (rather than the '
-            'default). If multiple -m options are given, their values are '
-            'concatenated as separate paragraphs')
-    )
-    cmd_mv.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Silence messages to stdout. Requires the --yes flag'
-    )
-    cmd_mv.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Respond "yes" to any prompts. Is required to use --yes flag'
-    )
-    cmd_mv.add_argument(
-        'source',
-        metavar='SOURCE',
-        nargs='+',
-        type=path,
-        help='List asset(s) and/or directory(s) to move into DEST'
-    )
-    cmd_mv.add_argument(
-        'destination',
-        metavar='DEST',
-        type=path,
-        help='Destination to move SOURCE(s) into'
-    )
+    cmd_mv.add_argument(*(shared_arg_message['args']),
+                        **{k: v for k, v in shared_arg_message.items() if k != 'args'})
+    cmd_mv.add_argument(*(shared_arg_quiet['args']),
+                        **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
+    cmd_mv.add_argument(*(shared_arg_yes['args']),
+                        **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
+    cmd_mv.add_argument(**arg_source)
+    cmd_mv.add_argument(**arg_destination)
     #
     # subcommand "new"
     #
+    from onyo.commands.new import arg_template, arg_edit, arg_keys, arg_path, arg_tsv
     cmd_new = subcmds.add_parser(
         'new',
         description=textwrap.dedent(commands.new.__doc__),
@@ -461,69 +323,24 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.new.__doc__)
     )
     cmd_new.set_defaults(run=commands.new)
-    cmd_new.add_argument(
-        '-m', '--message',
-        metavar='MESSAGE',
-        nargs=1,
-        action='append',
-        type=str,
-        help=(
-            'Use the given MESSAGE as the commit message (rather than the '
-            'default). If multiple -m options are given, their values are '
-            'concatenated as separate paragraphs')
-    )
-    cmd_new.add_argument(
-        '-t', '--template',
-        metavar='TEMPLATE',
-        required=False,
-        type=template,
-        help='Specify the template to seed the new asset(s)'
-    )
-    cmd_new.add_argument(
-        '-e', '--edit',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Open new assets to edit them before creation'
-    )
-    cmd_new.add_argument(
-        '-k', '--keys',
-        required=False,
-        action=StoreKeyValuePairs,
-        metavar="KEYS",
-        nargs='+',
-        help=(
-            'Set key-value pairs in the new asset(s). Multiple pairs can be '
-            'specified (e.g. key=value key2=value2)')
-    )
-    cmd_new.add_argument(
-        '-p', '--path',
-        metavar='ASSET',
-        type=path,
-        nargs='*',
-        help=(
-            'Specify the directory and name of the new asset(s) '
-            '(in the format DIR/ASSET). Excludes usage of --tsv')
-    )
-    cmd_new.add_argument(
-        '-tsv', '--tsv',
-        metavar='TSV',
-        required=False,
-        type=path,
-        help=(
-            'Read information of new assets from a tsv file describing them. '
-            'Excludes the usage of --path')
-    )
-    cmd_new.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Respond "yes" to any prompts. Is required to use --yes flag'
-    )
+    cmd_new.add_argument(*(shared_arg_message['args']),
+                         **{k: v for k, v in shared_arg_message.items() if k != 'args'})
+    cmd_new.add_argument(*(arg_template['args']),
+                         **{k: v for k, v in arg_template.items() if k != 'args'})
+    cmd_new.add_argument(*(arg_edit['args']),
+                         **{k: v for k, v in arg_edit.items() if k != 'args'})
+    cmd_new.add_argument(*(arg_keys['args']),
+                         **{k: v for k, v in arg_keys.items() if k != 'args'}, action=StoreKeyValuePairs)
+    cmd_new.add_argument(*arg_path['args'],
+                         **{k: v for k, v in arg_path.items() if k != 'args'})
+    cmd_new.add_argument(*(arg_tsv['args']),
+                         **{k: v for k, v in arg_tsv.items() if k != 'args'})
+    cmd_new.add_argument(*(shared_arg_yes['args']),
+                         **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
     #
     # subcommand "rm"
     #
+    from onyo.commands.rm import arg_path
     cmd_rm = subcmds.add_parser(
         'rm',
         description=textwrap.dedent(commands.rm.__doc__),
@@ -531,41 +348,17 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.rm.__doc__)
     )
     cmd_rm.set_defaults(run=commands.rm)
-    cmd_rm.add_argument(
-        '-m', '--message',
-        metavar='MESSAGE',
-        nargs=1,
-        action='append',
-        type=str,
-        help=(
-            'Use the given MESSAGE as the commit message (rather than the '
-            'default). If multiple -m options are given, their values are '
-            'concatenated as separate paragraphs')
-    )
-    cmd_rm.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Silence messages to stdout. Requires the --yes flag'
-    )
-    cmd_rm.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Respond "yes" to any prompts. Is required for usage of --quiet'
-    )
-    cmd_rm.add_argument(
-        'path',
-        metavar='PATH',
-        nargs='+',
-        type=path,
-        help='List asset(s) and/or directory(s) to delete'
-    )
+    cmd_rm.add_argument(*(shared_arg_message['args']),
+                        **{k: v for k, v in shared_arg_message.items() if k != 'args'})
+    cmd_rm.add_argument(*(shared_arg_quiet['args']),
+                        **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
+    cmd_rm.add_argument(*(shared_arg_yes['args']),
+                        **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
+    cmd_rm.add_argument(**arg_path)
     #
     # subcommand "set"
     #
+    from onyo.commands.set import arg_rename, arg_keys, arg_path
     cmd_set = subcmds.add_parser(
         'set',
         description=textwrap.dedent(commands.set.__doc__),
@@ -573,87 +366,29 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.set.__doc__)
     )
     cmd_set.set_defaults(run=commands.set)
-    cmd_set.add_argument(
-        '-d', '--depth',
-        metavar='DEPTH',
-        type=int,
-        required=False,
-        default=0,
-        help=(
-            'Descent up to DEPTH levels into directories specified. DEPTH=0 '
-            'descends recursively without limit')
-    )
-    cmd_set.add_argument(
-        '-f', '--filter',
-        metavar='FILTER',
-        nargs='+',
-        type=str,
-        default=None,
-        help=(
-            'Add a filter to only show assets matching KEY=VALUE. Multiple '
-            'filters, regular expressions, and pseudo-keys can be used.')
-    )
-    cmd_set.add_argument(
-        '-m', '--message',
-        metavar='MESSAGE',
-        nargs=1,
-        action='append',
-        type=str,
-        help=(
-            'Use the given MESSAGE as the commit message (rather than the '
-            'default). If multiple -m options are given, their values are '
-            'concatenated as separate paragraphs')
-    )
-    cmd_set.add_argument(
-        '-n', '--dry-run',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Perform a non-interactive trial-run without making any changes'
-    )
-    cmd_set.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Silence messages printed to stdout. Requires the --yes flag'
-    )
-    cmd_set.add_argument(
-        '-r', '--rename',
-        required=False,
-        default=False,
-        action='store_true',
-        help=(
-            'Permit assigning values to pseudo-keys that would result in the '
-            'file(s) being renamed.')
-    )
-    cmd_set.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Respond "yes" to any prompts. Is required to use --yes flag'
-    )
-    cmd_set.add_argument(
-        '-k', '--keys',
-        required=True,
-        action=StoreKeyValuePairs,
-        metavar="KEYS",
-        nargs='+',
-        help=(
-            'Specify key-value pairs to set in asset(s). Multiple pairs can '
-            'be specified (e.g. key=value key2=value2)')
-    )
-    cmd_set.add_argument(
-        '-p', '--path',
-        metavar='PATH',
-        nargs='*',
-        type=path,
-        help='List asset(s) and/or directorie(s) to set KEY=VALUE in'
-    )
+    cmd_set.add_argument(*(shared_arg_depth['args']),
+                         **{k: v for k, v in shared_arg_depth.items() if k != 'args'})
+    cmd_set.add_argument(*(shared_arg_filter['args']),
+                         **{k: v for k, v in shared_arg_filter.items() if k != 'args'})
+    cmd_set.add_argument(*(shared_arg_message['args']),
+                         **{k: v for k, v in shared_arg_message.items() if k != 'args'})
+    cmd_set.add_argument(*(shared_arg_dry_run['args']),
+                         **{k: v for k, v in shared_arg_dry_run.items() if k != 'args'})
+    cmd_set.add_argument(*(shared_arg_quiet['args']),
+                         **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
+    cmd_set.add_argument(*(arg_rename['args']),
+                         **{k: v for k, v in arg_rename.items() if k != 'args'})
+    cmd_set.add_argument(*(shared_arg_yes['args']),
+                         **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
+    cmd_set.add_argument(*(arg_keys['args']),
+                         **{k: v for k, v in arg_keys.items() if k != 'args'},
+                         action=StoreKeyValuePairs)
+    cmd_set.add_argument(*(arg_path['args']),
+                         **{k: v for k, v in arg_path.items() if k != 'args'})
     #
     # subcommand "shell-completion"
     #
+    from onyo.commands.shell_completion import arg_shell
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
         description=textwrap.dedent(commands.shell_completion.__doc__),
@@ -662,17 +397,12 @@ def setup_parser() -> argparse.ArgumentParser:
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion,
                                       parser=parser)
-    cmd_shell_completion.add_argument(
-        '-s', '--shell',
-        metavar='SHELL',
-        required=False,
-        default='zsh',
-        choices=['zsh'],
-        help='Specify the shell for which to generate tab completion for'
-    )
+    cmd_shell_completion.add_argument(*(arg_shell['args']),
+                                      **{k: v for k, v in arg_shell.items() if k != 'args'})
     #
     # subcommand "tree"
     #
+    from onyo.commands.tree import arg_directory
     cmd_tree = subcmds.add_parser(
         'tree',
         description=textwrap.dedent(commands.tree.__doc__),
@@ -680,16 +410,11 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.tree.__doc__)
     )
     cmd_tree.set_defaults(run=commands.tree)
-    cmd_tree.add_argument(
-        'directory',
-        metavar='DIR',
-        nargs='*',
-        type=directory,
-        help='List directory(s) to print tree of'
-    )
+    cmd_tree.add_argument(**arg_directory)
     #
     # subcommand "unset"
     #
+    from onyo.commands.unset import arg_keys, arg_path
     cmd_unset = subcmds.add_parser(
         'unset',
         description=textwrap.dedent(commands.unset.__doc__),
@@ -697,78 +422,22 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.unset.__doc__)
     )
     cmd_unset.set_defaults(run=commands.unset)
-    cmd_unset.add_argument(
-        '-d', '--depth',
-        metavar='DEPTH',
-        type=int,
-        required=False,
-        default=0,
-        help=(
-            'Descent up to DEPTH levels into directories specified. DEPTH=0 '
-            'descends recursively without limit')
-    )
-    cmd_unset.add_argument(
-        '-f', '--filter',
-        metavar='FILTER',
-        nargs='+',
-        type=str,
-        default=None,
-        help=(
-            'Add a filter to only show assets matching KEY=VALUE. Multiple '
-            'filters, regular expressions, and pseudo-keys can be used.')
-    )
-    cmd_unset.add_argument(
-        '-m', '--message',
-        metavar='MESSAGE',
-        nargs=1,
-        action='append',
-        type=str,
-        help=(
-            'Use the given MESSAGE as the commit message (rather than the '
-            'default). If multiple -m options are given, their values are '
-            'concatenated as separate paragraphs')
-    )
-    cmd_unset.add_argument(
-        '-n', '--dry-run',
-        required=False,
-        default=False,
-        action='store_true',
-        help=(
-            'Perform a non-interactive trial-run without making any changes '
-            'on assets')
-
-    )
-    cmd_unset.add_argument(
-        '-q', '--quiet',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Silence messages printed to stdout. Requires the --yes flag'
-    )
-    cmd_unset.add_argument(
-        '-y', '--yes',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Respond "yes" to any prompts. Is required to use --yes flag'
-    )
-    cmd_unset.add_argument(
-        '-k', '--keys',
-        required=True,
-        metavar="KEYS",
-        nargs='+',
-        type=str,
-        help=(
-            'Specify keys to unset in assets. Multiple keys can be given '
-            '(e.g. key key2 key3)')
-    )
-    cmd_unset.add_argument(
-        '-p', '--path',
-        metavar="PATH",
-        nargs='*',
-        type=path,
-        help='List asset(s) and/or directory(s) for which to unset values in'
-    )
+    cmd_unset.add_argument(*(shared_arg_depth['args']),
+                           **{k: v for k, v in shared_arg_depth.items() if k != 'args'})
+    cmd_unset.add_argument(*(shared_arg_filter['args']),
+                           **{k: v for k, v in shared_arg_filter.items() if k != 'args'})
+    cmd_unset.add_argument(*(shared_arg_message['args']),
+                           **{k: v for k, v in shared_arg_message.items() if k != 'args'})
+    cmd_unset.add_argument(*(shared_arg_dry_run['args']),
+                           **{k: v for k, v in shared_arg_dry_run.items() if k != 'args'})
+    cmd_unset.add_argument(*(shared_arg_quiet['args']),
+                           **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
+    cmd_unset.add_argument(*(shared_arg_yes['args']),
+                           **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
+    cmd_unset.add_argument(*(arg_keys['args']),
+                           **{k: v for k, v in arg_keys.items() if k != 'args'})
+    cmd_unset.add_argument(*(arg_path['args']),
+                           **{k: v for k, v in arg_path.items() if k != 'args'})
 
     return parser
 
