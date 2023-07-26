@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from onyo import OnyoRepo, OnyoInvalidRepoError
-from onyo.lib.commands import fsck
+from onyo.lib.commands import fsck, mkdir, mv
 
 
 def test_OnyoRepo_instantiation_existing(repo: OnyoRepo) -> None:
@@ -67,3 +67,31 @@ def test_clear_caches(repo: OnyoRepo) -> None:
     assert asset not in repo.asset_paths
 
 
+def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
+    """
+    A generated commit message has to have a header with less then 80 characters
+    length, and a body with the paths to changed files and directories relative
+    to the root of the repository.
+    """
+    modified = [repo.git.root / 's p a c e s',
+                repo.git.root / 'a/new/folder']
+
+    # modify the repository with some different commands:
+    mkdir(repo, modified, quiet=True, yes=True, message=None)
+    mv(repo, *modified, quiet=True, yes=True, message=None)
+
+    # generate a commit message:
+    message = repo.generate_commit_message(cmd='TST', modified=modified)
+    lines = message.splitlines()
+    header = lines[0]
+    body = "\n".join(lines[1:])
+
+    # root should not be in output
+    assert str(repo.git.root) not in message
+
+    # verify all necessary information is in the header:
+    assert f'TST [{len(modified)}]: ' in header
+
+    # verify all necessary information is in the body:
+    assert 'a/new/folder' in body
+    assert 's p a c e s' in body
