@@ -394,12 +394,25 @@ class OnyoRepo(object):
             self.ANCHOR_FILE not in path.parts
 
     def get_template_file(self,
-                          name: Union[Path, str, None] = None) -> Path:
+                          name: Optional[str] = None) -> Path:
         """
-        Select the template to use. If no template name is given, use the
-        template from the repository config file `.onyo/config`.
+        Select and return a template file from the directory `.onyo/templates/`.
 
-        Returns the template path on success, or raises `ValueError`.
+        Parameters
+        ----------
+        name: Path
+            The name of the template to look for. If no name is given, the
+            template defined in the config file `.onyo/config` is returned.
+
+        Returns
+        -------
+        Path
+            The template path on success
+
+        Raises
+        ------
+        ValueError
+            If the requested template can't be found or is not a file.
         """
         if not name:
             name = self.git.get_config('onyo.new.template')

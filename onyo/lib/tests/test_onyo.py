@@ -121,3 +121,29 @@ def test_is_onyo_path(repo: OnyoRepo) -> None:
     assert not repo.is_onyo_path(repo.git.root / 'a' / 'test')
     # False for asset inside an onyo repository
     assert not repo.is_onyo_path(repo.git.root / 'a' / 'test' / 'asset_for_test.0')
+
+
+def test_Repo_get_template_file(repo: OnyoRepo) -> None:
+    """
+    The function `OnyoRepo.get_template_file()` must return a Path for all
+    file names of templates in `.onyo/templates/*`, and return the default
+    template if called without a file name specified.
+    """
+    # Call the function without parameter to get the default template `empty`:
+    assert repo.get_template_file().samefile(repo.git.root / '.onyo' /
+                                             'templates' / 'empty')
+
+    # from the templates dir, use the filename of each template to find the
+    # corresponding template file as a path.
+    for path in (repo.git.root / '.onyo' / 'templates').iterdir():
+        if path.name == '.anchor':
+            continue
+
+        template = repo.get_template_file(path.name)
+        assert isinstance(template, Path)
+        assert template.samefile(path)
+
+    # verify the correct error response when called with a template name that
+    # does not exist
+    with pytest.raises(ValueError):
+        repo.get_template_file('I DO NOT EXIST')
