@@ -427,8 +427,12 @@ class OnyoRepo(object):
 
     def validate_anchors(self) -> bool:
         """
-        Check if all dirs (except those in .onyo) contain an .anchor file.
-        Returns True or False.
+        Check if all dirs (except those in `.onyo/`) contain an .anchor file.
+
+        Returns
+        -------
+        boolean
+            True if all directories contain an `.anchor` file, otherwise False.
         """
         # Note: First line not using protected_paths, because `.anchor` is part
         #       of it. But ultimately, exist vs expected should take the same

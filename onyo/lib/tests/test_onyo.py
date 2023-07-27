@@ -147,3 +147,22 @@ def test_Repo_get_template_file(repo: OnyoRepo) -> None:
     # does not exist
     with pytest.raises(ValueError):
         repo.get_template_file('I DO NOT EXIST')
+
+
+@pytest.mark.repo_dirs('a/test/directory/structure/',
+                       'another/dir/')
+def test_Repo_validate_anchors(repo: OnyoRepo) -> None:
+    """
+    `OnyoRepo.validate_anchors()` must return True when all existing directories
+    have an `.anchor` file, and otherwise False.
+    """
+    # Must be true for valid repository
+    assert repo.validate_anchors()
+
+    # Delete an .anchor, commit changes, reload object
+    Path.unlink(repo.git.root / "a" / "test" / ".anchor")
+    repo.git.stage_and_commit(repo.git.root / "a" / "test" / ".anchor", "TEST")
+    repo = OnyoRepo(repo.git.root)
+
+    # Must return False, because an .anchor is missing
+    assert not repo.validate_anchors()
