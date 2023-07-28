@@ -2,7 +2,7 @@ from pathlib import Path
 import subprocess
 
 import pytest
-from onyo import OnyoRepo, OnyoInvalidRepoError
+from onyo import OnyoInvalidRepoError
 from onyo.lib.git import GitRepo
 
 
@@ -31,12 +31,35 @@ def test_GitRepo_instantiation(tmp_path: Path) -> None:
     assert new_repo.root.samefile(tmp_path)
 
 
-@pytest.mark.repo_dirs('existing/directory')
-def test_GitRepo_instantiation_find_root(repo: OnyoRepo) -> None:
+def test_GitRepo_find_root(tmp_path: Path) -> None:
     """
-    The GitRepo class must instantiate correctly with paths to sub-directories
-    in a repository when `find_root=True`.
+    `GitRepo.find_root()` MUST identify the root of a repository for the root
+    itself and sub-directories of a repository.
+    If called on a Path which is not a git repository it must raise an
+    `OnyoInvalidRepoError`.
     """
-    new_repo = GitRepo(repo.git.root / 'existing/directory', find_root=True)
-    assert new_repo.root.samefile(repo.git.root)
-    assert (new_repo.root / '.git').exists()
+
+    # test GitRepo.find_root() with an existing but non-repo path raises the
+    # expected OnyoInvalidRepoError
+    with pytest.raises(OnyoInvalidRepoError):
+        GitRepo.find_root(tmp_path)
+
+    # Path GitRepo.find_root() with a Path that does not exist at all raises the
+    # correct OnyoInvalidRepoError
+    with pytest.raises(OnyoInvalidRepoError):
+        GitRepo.find_root(Path("This/path/does/not/exist"))
+
+    # initialize a new git repo to test correct behavior when git exists
+    subprocess.run(['git', 'init', tmp_path])
+    subprocess.run(['mkdir', '-p', tmp_path / 'existing/directory'])
+
+    # test that `GitRepo.find_root(root)` returns the same root path
+    assert GitRepo.find_root(tmp_path).samefile(tmp_path)
+
+    # test that `GitRepo.find_root()` returns correct root for a sub-directory
+    assert GitRepo.find_root(tmp_path / 'existing/directory').samefile(tmp_path)
+
+    # test that `GitRepo.find_root()` raises the correct error when called on
+    # a non-existing sub-path under an existing root
+    with pytest.raises(OnyoInvalidRepoError):
+        GitRepo.find_root(tmp_path / 'non-existing/directory')

@@ -44,7 +44,26 @@ class GitRepo(object):
 
     @staticmethod
     def find_root(path: Path) -> Path:
-        """Returns the git worktree root `path` belongs to"""
+        """
+        Returns the git worktree root `path` belongs to.
+
+        Parameters
+        ----------
+        path: Path
+            The path to identify the git worktree root for. This can be any
+            sub-directory of the repository, or the root directory itself.
+
+        Returns
+        -------
+        Path
+            An absolute path to the root of the git worktree where `.git/` is
+            located.
+
+        Raises
+        ------
+        OnyoInvalidRepoError
+            If `path` is not inside a git repository at all.
+        """
         root = None
         try:
             ret = subprocess.run(["git", "rev-parse", "--show-toplevel"],
