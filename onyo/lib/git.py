@@ -8,6 +8,20 @@ log: logging.Logger = logging.getLogger('onyo.git')
 
 
 class GitRepo(object):
+    """
+    An object to get and set git information, and to call git functions with.
+
+    Attributes
+    ----------
+    root: Path
+        The absolute path to the directory of the git worktree root.
+
+    files: set of Paths
+        A property containing the absolute Path to all files tracked in git.
+        This property is cached and consistent when only the public functions of
+        GitRepo are called. Usage of private or external functions might
+        require a manual reset of the cache with `GitRepo.clear_caches()`.
+    """
 
     def __init__(self,
                  path: Path,
@@ -15,11 +29,18 @@ class GitRepo(object):
         """
         Instantiates a `GitRepo` object with `path` as the root directory.
 
-        If `find_root=True` searches the root of a worktree from `path`.
+        Parameters
+        ----------
+        path: Path
+            An absolute path to the root of a git repository.
+
+        find_root: bool
+            `find_root=True` allows to search the root of a git worktree from a
+            sub-directory, beginning at `path`, instead of requiring the root.
         """
         self.root = GitRepo.find_root(path) if find_root else path.resolve()
 
-        self._files: Union[set[Path], None] = None
+        self._files: Optional[set[Path]] = None
 
     @staticmethod
     def find_root(path: Path) -> Path:
