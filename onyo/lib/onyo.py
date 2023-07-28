@@ -11,6 +11,29 @@ log: logging.Logger = logging.getLogger('onyo.onyo')
 
 
 class OnyoRepo(object):
+    """
+    An object representing an Onyo repository.
+
+    Allows identifying and working with asset paths and directories, getting and
+    setting onyo config information.
+
+    Attributes
+    ----------
+    git: GitRepo
+        Contains the path to the root of the repository, and functions to add
+        and commit changes, set and get config information, and delete files and
+        folders.
+
+    dot_onyo: Path
+        The path to the `.onyo/` directory containing templates, the config file
+        and other onyo specific information.
+
+    asset_paths: Set of Path
+        The paths to all assets in the Repository.
+        This property is cached and consistent when only the public functions of
+        OnyoRepo are called. Usage of private or external functions might
+        require a manual reset of the cache with `OnyoRepo.clear_caches()`.
+    """
 
     ONYO_DIR = Path('.onyo')
     TEMPLATE_DIR = 'templates'
