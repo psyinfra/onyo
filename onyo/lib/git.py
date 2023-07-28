@@ -100,21 +100,24 @@ class GitRepo(object):
             self._files = self._get_files()
         return self._files
 
-    def clear_caches(self, files: bool = True) -> None:
+    def clear_caches(self,
+                     files: bool = True) -> None:
         """
-        Clear caches of the instance of the repository object.
+        Clear caches of the instance of the GitRepo object.
 
-        Paths such as files, assets, and directories are cached, and can become
-        stale when the repository contents are modified. This function clears
-        the caches of the properties.
-
-        By default all caches are cleared, and arguments make it possible to
-        specify which caches which should remain set.
+        Paths to files in git are cached, and can become stale when the
+        repository contents are modified. By default, this function clears the
+        cache of all properties of the GitRepo.
 
         If the repository is exclusively modified via public API functions, the
-        caches of the `Repo` object are consistent. If the repository is
+        caches of the `GitRepo` object are consistent. If the repository is
         modified otherwise, this function clears the caches to ensure that the
         caches do not contain stale information.
+
+        Parameters
+        ----------
+        files: boolean
+            Deactivate the resetting of the file cache.
         """
         if files:
             self._files = None
