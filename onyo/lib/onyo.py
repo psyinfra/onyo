@@ -11,6 +11,29 @@ log: logging.Logger = logging.getLogger('onyo.onyo')
 
 
 class OnyoRepo(object):
+    """
+    An object representing an Onyo repository.
+
+    Allows identifying and working with asset paths and directories, getting and
+    setting onyo config information.
+
+    Attributes
+    ----------
+    git: GitRepo
+        Contains the path to the root of the repository, and functions to add
+        and commit changes, set and get config information, and delete files and
+        folders.
+
+    dot_onyo: Path
+        The path to the `.onyo/` directory containing templates, the config file
+        and other onyo specific information.
+
+    asset_paths: Set of Path
+        The paths to all assets in the Repository.
+        This property is cached and consistent when only the public functions of
+        OnyoRepo are called. Usage of private or external functions might
+        require a manual reset of the cache with `OnyoRepo.clear_caches()`.
+    """
 
     ONYO_DIR = Path('.onyo')
     TEMPLATE_DIR = 'templates'
@@ -19,17 +42,35 @@ class OnyoRepo(object):
     def __init__(self,
                  path: Path,
                  init: bool = False,
-                 find_root: bool = False):
+                 find_root: bool = False) -> None:
         """
-        Instantiates a `OnyoRepo` object with `path` as the root directory.
+        Instantiates an `OnyoRepo` object with `path` as the root directory.
 
-        If `find_root=True` searches the root of a repository from `path`.
+        Parameters
+        ----------
+        path: Path
+            An absolute path to the root of the Onyo Repository for which the
+            `OnyoRepo` object should be initialized.
 
-        If `init=True`, the `path` will be initialized as a git repo and a
-        `.onyo/` directory will be created. `find_root=True` must not be used
-        in combination with `init=True`.
-        Otherwise the validity of the onyo repository is verified, and if the
-        path is invalid a `OnyoInvalidRepoError` is raised.
+        init: boolean
+            If `init=True`, the `path` will be initialized as a git repo and a
+            `.onyo/` directory will be created. `find_root=True` must not be
+            used in combination with `init=True`.
+            Verifies the validity of the onyo repository.
+
+        find_root: boolean
+            When `find_root=True`, the function searches the root of a
+            repository, beginning at `path`.
+
+        Raises
+        ------
+        ValueError
+            If tried to find a repository root and initializing a repository at
+            the same time.
+
+        OnyoInvalidRepoError
+            If the path to initialize the repository is not a valid path to an
+            Onyo repository.
         """
         self.git = GitRepo(path, find_root=find_root)
         self.dot_onyo = self.git.root / self.ONYO_DIR
@@ -45,9 +86,10 @@ class OnyoRepo(object):
         log.debug(f"Onyo repo found at '{self.git.root}'")
 
         # caches
-        self._asset_paths: Union[set[Path], None] = None
+        self._asset_paths: Optional[set[Path]] = None
 
-    def clear_caches(self, assets: bool = True) -> None:
+    def clear_caches(self,
+                     assets: bool = True) -> None:
         """
         Clear caches of the instance of the repository object.
 
@@ -62,33 +104,66 @@ class OnyoRepo(object):
         caches of the `Repo` object are consistent. If the repository is
         modified otherwise, this function clears the caches to ensure that the
         caches do not contain stale information.
+
+        Parameters
+        ----------
+        assets: boolean
+            An option to deactivate or activate the clearing of the
+            `asset_paths` cache.
         """
         if assets:
             self._asset_paths = None
             self.git.clear_caches(files=True)
 
     def generate_commit_message(self,
-                                message: Union[list[str], None] = None,
+                                message: Optional[list[str]] = None,
                                 cmd: str = "",
-                                keys: Union[list[str], None] = None,
+                                keys: Optional[list[str]] = None,
                                 destination: str = "",
                                 max_length: int = 80,
                                 modified: Optional[list[Path]] = None) -> str:
         """
-        Generate a commit subject and body suitable for use with git commit.
+        Generate a commit message subject and body suitable for use with
+        `git commit`.
 
-        If `message` is given, the function uses the first element of it to
-        generate a message subject, and the following ones are joined for the
-        message body.
+        Parameters
+        ----------
+        message: list of str
+            If `message` is given, the function uses the first element of it to
+            generate a message subject, and the following ones are joined for
+            the message body.
 
-        If no `message` is given, generate a default commit message based on
-        the other parameters given, and the `files staged` in the repository.
-        The paths for the message are shortened if needed, so that the resulting
-        message subject does not exceed `MAX_LEN`.
+            An optional message to use instead of the generated commit message.
+            If multiple elements are given, the first is used as the message
+            subject, and the following ones are joined for the message body.
+            If no `message` is given, generate a default commit message based on
+            the other parameters given, and the `files staged` in the
+            repository. The paths for the message are shortened if needed, so
+            that the resulting message subject does not exceed `max_length`.
 
-        Adds a list of changed files with their path relative to the root of
-        the repository to the body of all commit messages. This is based on the
-        `modified` parameter or on currently staged paths if none was given.
+        cmd: str
+            Defines the beginning of a commit message subject.
+
+        keys: list of strings
+            Allow listing of e.g. changed keys in message subject.
+            If given, they are listed at the beginning after `cmd`.
+
+        destination: str
+            A string that can specify a destination for the message subject for
+            moved assets and directories.
+
+        max_length: int
+            An integer specifying the maximal length for generated commit
+            message subjects.
+
+        modified: list of paths
+            A list of Paths to assets/directories modified in the commit, used
+            to generate the commit message subject and body.
+
+        Returns
+        -------
+        str
+            A massage suitable as a commit message for use with `git commit`.
         """
         message = [] if message is None else message
         keys = [] if keys is None else keys
@@ -113,8 +188,10 @@ class OnyoRepo(object):
             if keys:
                 keys_str = f" ({','.join(str(x.split('=')[0]) for x in sorted(keys))})"
             if destination:
-                # Note: This seems to expect relative path in `destination`, turns it into absolute and
-                #       back into relative. Double-check where `destination` is used and remove resolution:
+                # Note: This seems to expect relative path in `destination`,
+                #       turns it into absolute and back into relative.
+                #       Double-check where `destination` is used and remove
+                #       resolution:
                 dest = Path(self.git.root, destination).relative_to(self.git.root)
             if dest and dest.name == self.ANCHOR_FILE:
                 dest = dest.parent
@@ -130,13 +207,35 @@ class OnyoRepo(object):
         return f"{message_subject}\n\n{message_body}\n\n{message_appendix}"
 
     @staticmethod
-    def _generate_commit_message_subject(
-            msg_dummy: str, changes: list[Path],
-            destination: Optional[Path], max_length: int = 80) -> str:
+    def _generate_commit_message_subject(msg_dummy: str,
+                                         changes: list[Path],
+                                         destination: Optional[Path],
+                                         max_length: int = 80) -> str:
         """
-        Generates "commit message subject" with the `msg_dummy` and the paths
-        from `staged_changes` and `destination`, and shortens the paths if the
-        message length exceeds the `MAX_LEN`.
+        Generates a "commit message subject" usable with `git commit`.
+        The function lists the paths of `changes` and will shorten the resulting
+        string to try to include as much user readable information as possible.
+
+        Parameters
+        ----------
+        msg_dummy: str
+            The first part of commit message subjects generated by Onyo.
+
+        changes: list of paths
+            The list of paths modified which should be mentioned in the commit
+            message subject.
+
+        destination: path
+            Destination for assets/directories when the commit contains `mv`s.
+
+        max_length: int
+            Limit the length of the generated message to `max_length` if
+            possible.
+
+        Returns
+        -------
+        str
+            A commit message subject to use with `git commit`.
         """
 
         # long message: full paths (relative to repo-root)
@@ -187,6 +286,11 @@ class OnyoRepo(object):
         """
         Assert whether this is a properly set up onyo repository and has a fully
         populated `.onyo/` directory.
+
+        Returns
+        -------
+        boolean
+            True when the repository is complete and valid, otherwise False.
         """
         files = ['config',
                  OnyoRepo.ANCHOR_FILE,
@@ -204,20 +308,34 @@ class OnyoRepo(object):
             return False
         return True
 
-    def _init(self, path: Path) -> None:
-        """Initialize an Onyo repository at `path`
-
-        The directory will be initialized as a git repository (if it is not one already),
-        ``.onyo/`` directory created (containing default config files, templates, etc.),
-        and everything committed.
+    def _init(self,
+              path: Path) -> None:
+        """Initialize an Onyo repository at `path`.
 
         Re-init-ing an existing repository is safe. It will not overwrite
         anything; it will raise an exception.
+
+        Parameters
+        ----------
+        Path: path
+            The path where to set up an Onyo repository.
+            The directory will be initialized as a git repository (if it is not
+            one already), ``.onyo/`` directory created (containing default
+            config files, templates, etc.), and everything committed.
+
+        Raises
+        ------
+        FileExistsError
+            If called on e.g. an existing file instead of a valid directory,
+            or if called on a directory which already contains a `.onyo/`.
+
+        FileNotFoundError
+            If called on a directory which sub-directory path does not exist.
         """
 
         # Note: Why is this necessary to check? Assuming we call git-init on it,
-        # this will repeat that same test anyway (and would fail telling us this problem)
-        # target must be a directory
+        # this will repeat that same test anyway (and would fail telling us this
+        # problem) target must be a directory
         if path.exists() and not path.is_dir():
             raise FileExistsError(f"'{path}' exists but is not a directory.")
 
@@ -226,8 +344,8 @@ class OnyoRepo(object):
         if not path.parent.exists():
             raise FileNotFoundError(f"'{path.parent}' does not exist.")
 
-        # Note: Why is this a requirement? Why not only add what's missing in case of apparent re-init?
-        # cannot already be an .onyo repo
+        # Note: Why is this a requirement? Why not only add what's missing in
+        # case of apparent re-init? cannot already be an .onyo repo
         dot_onyo = Path(path, '.onyo')
         if dot_onyo.exists():
             raise FileExistsError(f"'{dot_onyo}' already exists.")
@@ -235,50 +353,89 @@ class OnyoRepo(object):
         self.git.maybe_init(path)
 
         # Note: pheewww - No. Installed resource needs to be found differently.
-        #       Who the hell is supposed to maintain that? One cannot simply move
-        #       this function without changing its implementation.
+        #       Who the hell is supposed to maintain that? One cannot simply
+        #       move this function without changing its implementation.
         skel_dir = Path(Path(__file__).resolve().parent.parent, 'skel')
 
         # populate .onyo dir
         shutil.copytree(skel_dir, self.dot_onyo)
 
         # add and commit
-        self.git.stage_and_commit(self.dot_onyo, message='Initialize as an Onyo repository')
+        self.git.stage_and_commit(self.dot_onyo,
+                                  message='Initialize as an Onyo repository')
         log.info(f'Initialized Onyo repository in {self.dot_onyo}/')
 
-    def is_onyo_path(self, path: Path) -> bool:
-        return path == self.dot_onyo or self.dot_onyo in path.parents or path.name.startswith('.onyo')  # see .onyoignore
+    def is_onyo_path(self,
+                     path: Path) -> bool:
+        """
+        Determine whether an absolute `path` is used by onyo internally.
 
-    def is_inventory_dir(self, path: Path) -> bool:
+        Currently anything underneath `.onyo/` as well as anything named
+        `.onyo*` is considered an onyo path.
+
+        Parameters
+        ----------
+        path
+          The path to check for if it is inside the `.onyo/` directory.
+
+        Returns
+        -------
+        boolean
+          True if `path` is inside `.onyo/`, otherwise False.
+        """
+        return path == self.dot_onyo or self.dot_onyo in path.parents or \
+            path.name.startswith('.onyo')  # see .onyoignore
+
+    def is_inventory_dir(self,
+                         path: Path) -> bool:
         # - existing inventory directory
         # - includes repo.root as "root location"  --> is this valid?
-        # Note: This currently ignores whether there's tracked content in that dir
+        # Note: This currently ignores whether there's tracked content in that
+        #       dir
         return self.is_inventory_path(path) and path.is_dir()
 
-    def is_asset_path(self, path: Path) -> bool:
+    def is_asset_path(self,
+                      path: Path) -> bool:
         # TODO: check for .onyoignore
         # TODO: possibly nested assets; hence "asset path", not "asset file"
         # TODO: We are currently ignoring .gitignore w/ underlying globbing
         return self.is_inventory_path(path) and \
             path.is_file()
 
-    def is_inventory_path(self, path: Path) -> bool:
-        # Note: path underneath an inventory location with no regard for existence of `path` itself.
-        #       This is still a little ugly, since is_inventory_dir is amost identical. Trouble comes from
-        #       root being an inventory dir. Consider lru_cache for these checks. Dependency is_inventory_dir vs *_path
-        #       seems wrong. Things change when we know the path exists, because in case of a file there's another
-        #       restriction (ANCHOR)
+    def is_inventory_path(self,
+                          path: Path) -> bool:
+        # Note: path underneath an inventory location with no regard for
+        #       existence of `path` itself. This is still a little ugly, since
+        #       is_inventory_dir is amost identical. Trouble comes from root
+        #       being an inventory dir. Consider lru_cache for these checks.
+        #       Dependency is_inventory_dir vs *_path seems wrong. Things change
+        #       when we know the path exists, because in case of a file there's
+        #       another restriction (ANCHOR)
         return path.is_relative_to(self.git.root) and \
             not self.git.is_git_path(path) and \
             not self.is_onyo_path(path) and \
             self.ANCHOR_FILE not in path.parts
 
-    def get_template_file(self, name: Union[Path, str, None] = None) -> Path:
+    def get_template_file(self,
+                          name: Optional[str] = None) -> Path:
         """
-        Select the template to use. If no template name is given, use the
-        template from the repository config file `.onyo/config`.
+        Select and return a template file from the directory `.onyo/templates/`.
 
-        Returns the template path on success, or raises `ValueError`.
+        Parameters
+        ----------
+        name: Path
+            The name of the template to look for. If no name is given, the
+            template defined in the config file `.onyo/config` is returned.
+
+        Returns
+        -------
+        Path
+            The template path on success
+
+        Raises
+        ------
+        ValueError
+            If the requested template can't be found or is not a file.
         """
         if not name:
             name = self.git.get_config('onyo.new.template')
@@ -293,12 +450,16 @@ class OnyoRepo(object):
 
     def validate_anchors(self) -> bool:
         """
-        Check if all dirs (except those in .onyo) contain an .anchor file.
-        Returns True or False.
+        Check if all dirs (except those in `.onyo/`) contain an .anchor file.
+
+        Returns
+        -------
+        boolean
+            True if all directories contain an `.anchor` file, otherwise False.
         """
-        # Note: First line not using protected_paths, because `.anchor` is part of it.
-        #       But ultimately, exist vs expected should take the same subtrees into account. So - not good to code it
-        #       differently.
+        # Note: First line not using protected_paths, because `.anchor` is part
+        #       of it. But ultimately, exist vs expected should take the same
+        #       subtrees into account. So - not good to code it differently.
         anchors_exist = {x
                          for x in self.git.files
                          if x.name == self.ANCHOR_FILE and
@@ -330,7 +491,8 @@ class OnyoRepo(object):
         assets = {x for x in self.git.files if self.is_asset_path(x)}
         return assets
 
-    def mk_inventory_dirs(self, dirs: Union[Iterable[Path], Path]) -> list[Path]:
+    def mk_inventory_dirs(self,
+                          dirs: Union[Iterable[Path], Path]) -> list[Path]:
         """Create inventory directories `dirs`
 
         Creates `dirs` including anchor files.
@@ -338,10 +500,12 @@ class OnyoRepo(object):
         Raises
         ------
         OnyoProtectedPathError
-          if `dirs` contains an invalid path (see `OnyoRepo.is_inventory_path()`)
+          if `dirs` contains an invalid path (see
+          `OnyoRepo.is_inventory_path()`)
 
         FileExistsError
-          if `dirs` contains a path pointing to an existing file (hence, the dir can't be created)
+          if `dirs` contains a path pointing to an existing file (hence, the
+          dir can't be created)
 
         Returns
         -------
@@ -357,13 +521,14 @@ class OnyoRepo(object):
                 'directories were created.'.format(
                     '\n'.join(map(str, non_inventory_paths))))
 
-        # Note: This check is currently done here, because we are dealing with a bunch of directories at once.
-        #       We may want to operate on single dirs, rely on mkdir throwing instead, and collect errors higher up.
+        # Note: This check is currently done here, because we are dealing with a
+        # bunch of directories at once. We may want to operate on single dirs,
+        # rely on mkdir throwing instead, and collect errors higher up.
         file_paths = [d for d in dirs if d.is_file()]
         if file_paths:
             raise FileExistsError(
-                'The following paths are existing files:\n{}\nNo directories were '
-                'created.'.format(
+                'The following paths are existing files:\n{}\nNo directories '
+                'were created.'.format(
                     '\n'.join(map(str, file_paths))))
 
         # make dirs
@@ -378,9 +543,10 @@ class OnyoRepo(object):
         added_files = []
         for a in anchors:
             # Note, that this currently tests for existence first.
-            # That's because we return actually modified paths for possible rollback.
-            # Eventually, rollback approaches should be stopped wherever possible.
-            # Collect what needs doing first instead of do it and then ask for confirmation.
+            # That's because we return actually modified paths for possible
+            # rollback. Eventually, rollback approaches should be stopped
+            # wherever possible. Collect what needs doing first instead of do it
+            # and then ask for confirmation.
             if not a.exists():
                 a.touch(exist_ok=False)
                 added_files.append(a)
