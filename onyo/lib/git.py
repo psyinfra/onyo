@@ -262,7 +262,20 @@ class GitRepo(object):
 
     @staticmethod
     def is_git_path(path: Path) -> bool:
-        # .git/*, .gitignore, .gitattributes, .gitmodules, etc.
+        """
+        Identifies if a path is a git file or directory, e.g.
+        `.git/*`, `.gitignore`, `.gitattributes`, `.gitmodules`, etc.
+
+        Parameters
+        ----------
+        path: Path
+            The path to identify if it is a git file or directory, or if not.
+
+        Returns
+        -------
+        boolean
+            True if path is a git file or directory, otherwise False.
+        """
         return '.git' in path.parts or path.name.startswith('.git')
 
     def add(self, targets: Union[Iterable[Path], Path, str]) -> None:

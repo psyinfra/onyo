@@ -127,3 +127,32 @@ def test_GitRepo_is_clean_worktree(tmp_path: Path) -> None:
     # when commit-ed, the function must return True again
     new_git.commit(test_file, 'commit-ed again!')
     assert new_git.is_clean_worktree()
+
+
+@pytest.mark.repo_files('existing/directory/test_file.txt')
+def test_GitRepo_is_git_path(tmp_path: Path) -> None:
+    """
+    `GitRepo.is_git_path()` needs to identify and return True for `.git/*`,
+    `.gitignore`, `.gitattributes`, `.gitmodules`, etc., and otherwise return
+    False.
+    """
+    subprocess.run(['git', 'init', tmp_path])
+    subprocess.run(['mkdir', '-p', tmp_path / 'existing' / 'directory' /
+                    'test_file.txt'])
+    new_git = GitRepo(tmp_path)
+
+    # Test the examples listed above:
+    assert new_git.is_git_path(new_git.root / ".git")
+    assert new_git.is_git_path(new_git.root / ".git" / "HEAD")
+    assert new_git.is_git_path(new_git.root / ".git" / "doesnotexist")
+    assert new_git.is_git_path(new_git.root / ".gitignore")
+    assert new_git.is_git_path(new_git.root / ".gitdoesnotexist")
+    assert new_git.is_git_path(new_git.root / "existing" / ".gitattributes")
+
+    # Must return False
+    assert not new_git.is_git_path(new_git.root)
+    assert not new_git.is_git_path(new_git.root / ".onyo")
+    assert not new_git.is_git_path(new_git.root / "existing")
+    assert not new_git.is_git_path(new_git.root / "existing" / "git_no_.git")
+    assert not new_git.is_git_path(new_git.root / "existing" / "directory" /
+                                   "test_file.txt")
