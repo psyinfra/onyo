@@ -211,7 +211,12 @@ class GitRepo(object):
 
     def is_clean_worktree(self) -> bool:
         """
-        Check if the working tree for git is clean. Returns True or False.
+        Check if the working tree for git is clean.
+
+        Returns
+        -------
+        Boolean
+            True if the git worktree is clean, otherwise False.
         """
 
         changed = {str(x) for x in self.files_changed}

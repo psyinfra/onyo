@@ -90,3 +90,40 @@ def test_GitRepo_clear_caches(tmp_path: Path) -> None:
     # test GitRepo.clear_caches() fixes the cache
     new_git.clear_caches(files=True)
     assert file not in new_git.files
+
+
+def test_GitRepo_is_clean_worktree(tmp_path: Path) -> None:
+    """
+    `GitRepo.is_clean_worktree()´ must return True when the worktree is clean,
+    and otherwise (i.e. for changed, staged, and unstracked files) return False.
+    """
+    subprocess.run(['git', 'init', tmp_path])
+    new_git = GitRepo(tmp_path)
+    test_file = new_git.root / "test_file.txt"
+
+    # initially clean
+    assert new_git.is_clean_worktree()
+
+    # a file created but not added (i.e. untracked) must lead to return False
+    test_file.touch()
+    assert test_file in new_git.files_untracked
+    assert not new_git.is_clean_worktree()
+
+    # a file added but not commit-ed (i.e. staged) must lead to return False
+    new_git.add(test_file)
+    assert test_file in new_git.files_staged
+    assert not new_git.is_clean_worktree()
+
+    # when commit-ed, the function must return True again
+    new_git.commit(test_file, 'commit-ed!')
+    assert new_git.is_clean_worktree()
+
+    # a file modified but not commit-ed (i.e. changed) must lead to return False
+    test_file.open('w').write('Test: content')
+    new_git.add(test_file)
+    assert test_file in new_git.files_staged
+    assert not new_git.is_clean_worktree()
+
+    # when commit-ed, the function must return True again
+    new_git.commit(test_file, 'commit-ed again!')
+    assert new_git.is_clean_worktree()
