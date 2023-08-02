@@ -230,3 +230,28 @@ def test_GitRepo_commit(tmp_path: Path) -> None:
     # properties GitRepo.files_changed or GitRepo.files_staged anymore
     assert test_file not in new_git.files_changed
     assert test_file not in new_git.files_staged
+
+
+def test_GitRepo_stage_and_commit(tmp_path: Path) -> None:
+    """
+    `GitRepo.stage_and_commit()` must allow to add+commit changed files.
+
+    This test follows the scheme of `test_GitRepo_add()`.
+    """
+    subprocess.run(['git', 'init', tmp_path])
+    new_git = GitRepo(tmp_path)
+    test_file = new_git.root / 'test_file.txt'
+
+    # add a file
+    test_file.open('w').write('Test: content')
+    assert test_file in new_git.files_untracked
+
+    # add+commit a changed file
+    new_git.stage_and_commit(test_file, "Test commit message")
+    assert test_file in new_git.files
+
+    # after files are `GitRepo.stage_and_commit()`ed they should not be cached
+    # in the properties GitRepo.files_changed or GitRepo.files_staged
+    assert test_file not in new_git.files_untracked
+    assert test_file not in new_git.files_changed
+    assert test_file not in new_git.files_staged

@@ -255,7 +255,21 @@ class GitRepo(object):
             log.info(ret.strip())
         self.root = target_dir
 
-    def stage_and_commit(self, paths: Union[Iterable[Path], Path], message: str) -> None:
+    def stage_and_commit(self,
+                         paths: Union[Iterable[Path], Path],
+                         message: str) -> None:
+        """
+        Stage and commit changes in git.
+
+        Parameters
+        ----------
+        paths: Paths
+            List of paths to files or directories for which to commit changes to
+            git.
+
+        message: str
+            Specify the git commit message.
+        """
         if isinstance(paths, Path):
             paths = [paths]
         self._git(['add'] + [str(p) for p in paths])
