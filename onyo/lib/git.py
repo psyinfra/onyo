@@ -89,7 +89,8 @@ class GitRepo(object):
     @property
     def files(self) -> set[Path]:
         """
-        A `set` containing the absolute `Paths` of all files of a repository.
+        Get a `set` containing the absolute `Paths` of all files of a
+        repository.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
@@ -188,7 +189,7 @@ class GitRepo(object):
     @property
     def files_changed(self) -> set[Path]:
         """
-        Returns a `set` containing the absolute `Path`s of all changed files
+        Get a `set` containing the absolute `Path`s of all changed files
         (according to git) of a repository.
         """
         return self._get_files_changed()
@@ -196,7 +197,7 @@ class GitRepo(object):
     @property
     def files_staged(self) -> set[Path]:
         """
-        Returns a `set` containing the absolute `Path`s of all staged files
+        Get a `set` containing the absolute `Path`s of all staged files
         (according to git) of a repository.
         """
         return self._get_files_staged()
@@ -204,7 +205,7 @@ class GitRepo(object):
     @property
     def files_untracked(self) -> set[Path]:
         """
-        Returns a `set` containing the absolute `Path`s of all untracked files
+        Get a `set` containing the absolute `Path`s of all untracked files
         (according to git) of a repository.
         """
         return self._get_files_untracked()
