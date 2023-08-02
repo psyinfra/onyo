@@ -312,11 +312,22 @@ class GitRepo(object):
         # call. To always secure the integrity of the caches, we reset them all.
         self.clear_caches()
 
-    def commit(self, *args) -> None:
+    def commit(self,
+               *args) -> None:
         """
-        Perform a ``git commit``. The first message argument is the title; each
-        argument after is a new paragraph. Messages are converted to strings.
-        Lists are printed one item per line, also converted to a string.
+        Perform a ``git commit``.
+
+        Parameters
+        ----------
+        args: tuple
+            Components to compose the commit message from. At least one is
+            required. The first argument is the title; each argument after it is
+            a new paragraph. Lists and sets are printed one item per line.
+
+        Raises
+        ------
+        ValueError
+            If no commit message is provided.
         """
         if not args:
             raise ValueError('at least one commit message is required')

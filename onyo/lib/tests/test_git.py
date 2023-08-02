@@ -198,3 +198,35 @@ def test_GitRepo_add(tmp_path: Path) -> None:
     # properties GitRepo.files_changed and GitRepo.files_untracked
     assert existing_file not in new_git.files_changed
     assert new_file not in new_git.files_untracked
+
+
+def test_GitRepo_commit(tmp_path: Path) -> None:
+    """
+    `GitRepo.commit()` must commit all staged changes.
+
+    This test follows the scheme of `test_GitRepo_add()`.
+    """
+    subprocess.run(['git', 'init', tmp_path])
+    new_git = GitRepo(tmp_path)
+    test_file = new_git.root / 'test_file.txt'
+    test_file.touch()
+    new_git.stage_and_commit(test_file, message="Create file for test")
+
+    # test that GitRepo.commit() raises a ValueError if no commit message is
+    # provided
+    with pytest.raises(ValueError):
+        new_git.commit()
+
+    # modify an existing file, and add it
+    test_file.open('w').write('Test: content')
+    new_git.add(test_file)
+    assert test_file in new_git.files_staged
+
+    # commit staged changes
+    new_git.commit("Test commit message")
+    assert test_file in new_git.files
+
+    # after files are `GitRepo.commit()`ed they should not be cached in the
+    # properties GitRepo.files_changed or GitRepo.files_staged anymore
+    assert test_file not in new_git.files_changed
+    assert test_file not in new_git.files_staged
