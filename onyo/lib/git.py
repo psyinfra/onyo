@@ -279,11 +279,22 @@ class GitRepo(object):
         """
         return '.git' in path.parts or path.name.startswith('.git')
 
-    def add(self, targets: Union[Iterable[Path], Path, str]) -> None:
+    def add(self,
+            targets: Union[Iterable[Path], Path]) -> None:
         """
         Perform ``git add`` to stage files.
 
-        Paths are relative to ``repo.root``.
+        If called on files without changes, it does not raise an error.
+
+        Parameters
+        ----------
+        targets: List of paths
+            Paths are relative to ``repo.root``.
+
+        Raises
+        ------
+        FileNotFoundError
+            If a path in `targets` does not exist.
         """
         if isinstance(targets, (list, set)):
             tgts = [str(x) for x in targets]

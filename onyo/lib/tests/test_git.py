@@ -156,3 +156,45 @@ def test_GitRepo_is_git_path(tmp_path: Path) -> None:
     assert not new_git.is_git_path(new_git.root / "existing" / "git_no_.git")
     assert not new_git.is_git_path(new_git.root / "existing" / "directory" /
                                    "test_file.txt")
+
+
+def test_GitRepo_add(tmp_path: Path) -> None:
+    """
+    `GitRepo.add()` must allow to add files which are either new or contain
+    changes. If called on files without changes, it does not raise an error.
+    """
+    # setup the repo and GitRepo object
+    subprocess.run(['git', 'init', tmp_path])
+    new_git = GitRepo(tmp_path)
+
+    # create a file for the test and add it to git
+    existing_file = new_git.root / 'test_file.txt'
+    existing_file.touch()
+    new_git.stage_and_commit(existing_file, message="Create file for test")
+
+    # create a Path to a file that does not yet exist
+    new_file = new_git.root / 'new_file.txt'
+
+    # test that GitRepo.add() does not raise an error on files that exist and
+    # have no changes
+    new_git.add(existing_file)
+
+    # test that GitRepo.add() raises a FileNotFoundError for `new_file`, an
+    # absolute path to a file that do not yet exist
+    with pytest.raises(FileNotFoundError):
+        new_git.add(new_file)
+
+    # modify an existing file, and create a new file
+    existing_file.open('w').write('Test: content')
+    assert existing_file in new_git.files_changed
+    new_file.touch()
+    assert new_file in new_git.files_untracked
+
+    new_git.add([existing_file, new_file])
+    assert existing_file in new_git.files_staged
+    assert new_file in new_git.files_staged
+
+    # after files are `GitRepo.add()`ed they should not be cached in the
+    # properties GitRepo.files_changed and GitRepo.files_untracked
+    assert existing_file not in new_git.files_changed
+    assert new_file not in new_git.files_untracked
