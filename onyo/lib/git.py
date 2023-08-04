@@ -141,8 +141,19 @@ class GitRepo(object):
         # subprocess).
         self.clear_caches()
 
-    def restore(self, paths: Union[list[Path], Path]) -> None:
-        """Call git-restore on `paths`.
+    def restore(self,
+                paths: Union[list[Path], Path]) -> None:
+        """
+        Call git-restore on `paths`.
+
+        This does restore files which contain changes, but it does not restore
+        changes that are already staged.
+
+        Parameters
+        ----------
+        paths: List of Paths
+            The absolute Paths to the files or directories which are to be
+            `git restore`d.
         """
         if not paths:
             log.debug("No paths passed to restore. Nothing to do.")

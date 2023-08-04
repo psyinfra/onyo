@@ -1,5 +1,6 @@
 from pathlib import Path
 import subprocess
+from subprocess import CalledProcessError
 
 import pytest
 from onyo import OnyoInvalidRepoError
@@ -101,6 +102,55 @@ def test_GitRepo_restore_staged(tmp_path: Path) -> None:
     assert test_file not in new_git.files_staged
     assert untracked_file in new_git.files_untracked
     assert changed_file in new_git.files_changed
+
+
+def test_GitRepo_restore(tmp_path: Path) -> None:
+    """
+    `GitRepo.restore()` receives a list of paths and must restore changes for
+    them.
+
+    This does restore files which contain changes, but it does not restore
+    changes that are already staged.
+    When called on an untracked file, it must raise an error (like `git restore
+    <untracked>`).
+    """
+    subprocess.run(['git', 'init', tmp_path])
+    new_git = GitRepo(tmp_path)
+    test_file = new_git.root / 'asset_for_test.0'
+    test_file.touch()
+    new_git.stage_and_commit([test_file], message="Test File")
+
+    # Test that no error is raised, when called on a clean file
+    new_git.restore(test_file)
+
+    # Test that calling `GitRepo.restore()` on a file with already staged
+    # changes does not effect the file
+    test_file.open('w').write('Test: content')
+    new_git.add(test_file)
+    assert test_file in new_git.files_staged
+    new_git.restore(test_file)
+    assert test_file in new_git.files_staged
+
+    # Test that calling `GitRepo.restore()` on an untracked file must raise an
+    # error (like `git restore` does)
+    untracked_file = new_git.root / 'asset_for_test.untracked'
+    untracked_file.touch()
+    assert untracked_file in new_git.files_untracked
+    with pytest.raises(CalledProcessError):
+        new_git.restore(untracked_file)
+    assert untracked_file in new_git.files_untracked
+
+    # Test that calling `GitRepo.restore()` on a file with unstaged changes
+    # restores the file
+    changed_file = new_git.root / 'asset_for_test.changed'
+    changed_file.touch()
+    new_git.stage_and_commit([changed_file], message="Test File")
+    changed_file.open('w').write('Test: content')
+    assert changed_file in new_git.files_changed
+    new_git.restore(changed_file)
+    assert changed_file not in new_git.files_changed
+    assert changed_file not in new_git.files_untracked
+    assert changed_file not in new_git.files_staged
 
 
 def test_GitRepo_clear_caches(tmp_path: Path) -> None:
