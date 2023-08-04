@@ -124,7 +124,8 @@ class GitRepo(object):
             self._files = None
 
     def restore_staged(self) -> None:
-        """Restore all staged files with uncommitted changes in the repository.
+        """
+        Restore all staged files with uncommitted changes in the repository.
 
         If nothing is staged, returns with no error.
         """

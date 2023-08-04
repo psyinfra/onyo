@@ -65,6 +65,44 @@ def test_GitRepo_find_root(tmp_path: Path) -> None:
         GitRepo.find_root(tmp_path / 'non-existing/directory')
 
 
+def test_GitRepo_restore_staged(tmp_path: Path) -> None:
+    """
+    `GitRepo.restore_staged()` must restore all staged files in the repository.
+    If no files are staged, it should not raise an error.
+    If there are modified or untracked files, they should not be changed.
+    """
+    subprocess.run(['git', 'init', tmp_path])
+    new_git = GitRepo(tmp_path)
+    test_file = new_git.root / 'asset_for_test.0'
+    test_file.touch()
+    new_git.stage_and_commit(test_file, message="Create file for test")
+
+    # test that no error is raised, when called on a clean repository
+    new_git.restore_staged()
+
+    # have an untracked, a changed and a staged file
+    untracked_file = new_git.root / 'asset_for_test.1'
+    untracked_file.touch()
+
+    changed_file = new_git.root / 'asset_for_test.2'
+    changed_file.touch()
+    new_git.stage_and_commit(changed_file, message="Create file to change")
+    changed_file.open('w').write('Test: content')
+
+    test_file.open('w').write('Test: content')
+    new_git.add(test_file)
+    assert untracked_file in new_git.files_untracked
+    assert changed_file in new_git.files_changed
+    assert test_file in new_git.files_staged
+
+    # call restore_staged() and verify that the changes on test_file are not
+    # staged anymore, but that modified and untracked files are unchanged
+    new_git.restore_staged()
+    assert test_file not in new_git.files_staged
+    assert untracked_file in new_git.files_untracked
+    assert changed_file in new_git.files_changed
+
+
 def test_GitRepo_clear_caches(tmp_path: Path) -> None:
     """
     The function `GitRepo.clear_caches()` must allow to empty the cache of the
