@@ -9,7 +9,7 @@ import pytest
 @pytest.mark.repo_dirs('just-a-dir')
 @pytest.mark.parametrize('variant', ['-d', '--debug'])
 def test_onyo_debug(repo: OnyoRepo, variant: str) -> None:
-    ret = subprocess.run(['onyo', variant, 'mkdir', '--yes', f'flag{variant}'],
+    ret = subprocess.run(['onyo', variant, '--yes', 'mkdir', f'flag{variant}'],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert 'DEBUG:onyo' in ret.stderr

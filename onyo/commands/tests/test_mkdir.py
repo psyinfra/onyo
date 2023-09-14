@@ -22,7 +22,7 @@ def test_mkdir(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo mkdir <dir>` creates new directories correctly for different
     depths and directory names.
     """
-    ret = subprocess.run(['onyo', 'mkdir', '--yes', directory], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'mkdir', directory], capture_output=True, text=True)
 
     # verify output
     assert directory in ret.stdout
@@ -45,7 +45,7 @@ def test_mkdir_multiple_inputs(repo: OnyoRepo) -> None:
     Test that `onyo mkdir <dirs>` creates new directories all in one call when
     given a list of inputs.
     """
-    ret = subprocess.run(['onyo', 'mkdir', '--yes', *directories], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'mkdir', *directories], capture_output=True, text=True)
 
     assert not ret.stderr
     assert ret.returncode == 0
@@ -92,7 +92,7 @@ def test_mkdir_message_flag(repo: OnyoRepo) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     # test `onyo mkdir --message msg`
-    ret = subprocess.run(['onyo', 'mkdir', '--yes', '--message', msg, *directories], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'mkdir', '--message', msg, *directories], capture_output=True, text=True)
 
     assert ret.returncode == 0
     assert not ret.stderr
@@ -110,7 +110,7 @@ def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
     Test that `onyo mkdir --yes --quiet <dirs>` creates new directories without
     printing output.
     """
-    ret = subprocess.run(['onyo', 'mkdir', '--yes', '--quiet', *directories],
+    ret = subprocess.run(['onyo', '--yes', '--quiet', 'mkdir', *directories],
                          capture_output=True, text=True)
 
     # verify that all output is empty
@@ -201,7 +201,7 @@ def test_mkdir_relative_path(repo: OnyoRepo) -> None:
     """
     Test `onyo mkdir <path>` with a relative path given as input.
     """
-    ret = subprocess.run(["onyo", "mkdir", "--yes", "simple/../relative"], capture_output=True, text=True)
+    ret = subprocess.run(["onyo", "--yes", "mkdir", "simple/../relative"], capture_output=True, text=True)
 
     # verify output
     assert "relative" in ret.stdout

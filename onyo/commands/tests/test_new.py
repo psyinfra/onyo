@@ -27,7 +27,7 @@ def test_new(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new` can create an asset in different directories.
     """
     file_ = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -71,7 +71,7 @@ def test_new_top_level(repo: OnyoRepo) -> None:
     the repository.
     """
     file_ = 'laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -99,7 +99,7 @@ def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
     # build a path for the new asset as an absolute path
     file_ = repo.git.root / "just another path" / "laptop_apple_macbookpro.0"
 
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -130,7 +130,7 @@ def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
     # build a path for the new asset as a relative path
     file_ = Path(var, "just another path", "laptop_apple_macbookpro.0")
 
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -153,7 +153,7 @@ def test_folder_creation_with_new(repo: OnyoRepo, directory: str) -> None:
     existing dir 'overlap'.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', asset],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -178,7 +178,7 @@ def test_with_faux_serial_number(repo: OnyoRepo) -> None:
     file_ = "laptop_apple_macbookpro.faux"
     num = 10
     assets = [f"{d}/{file_}" for d in directories for i in range(0, num)]
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', *assets],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', *assets],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -199,7 +199,7 @@ def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
     """
     assets = [f'{directory}/laptop_apple_macbookpro.{i}'
               for i, directory in enumerate(directories)]
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', *assets],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', *assets],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -224,7 +224,7 @@ def test_yes_flag(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new --yes` creates assets in different directories.
     """
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', asset],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -254,7 +254,7 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
     key_values = "mode=keys_flag"
 
     # create asset with --keys
-    ret = subprocess.run(['onyo', 'new', '--yes', '--keys', key_values,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--keys', key_values,
                           '--path', asset], capture_output=True, text=True)
 
     # verify output
@@ -278,7 +278,7 @@ def test_new_message_flag(repo: OnyoRepo, directory: str) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--yes', '--message', msg,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--message', msg,
                           '--path', asset], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -353,7 +353,7 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
     key_values = "mode=keys"
 
     # create asset with --edit, --template and --keys
-    ret = subprocess.run(['onyo', 'new', '--yes', '--edit',
+    ret = subprocess.run(['onyo', '--yes', 'new', '--edit',
                           '--template', template, '--keys', key_values,
                           '--path', str(asset)], capture_output=True, text=True)
 
@@ -389,7 +389,7 @@ def test_new_with_keys_overwrite_template(repo: OnyoRepo, directory: str) -> Non
     key_values = ["RAM=16GB", "Size=24.2", "USB=3"]
 
     # create asset with --template and --keys
-    ret = subprocess.run(['onyo', 'new', '--yes', '--template', template,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--template', template,
                           '--keys', *key_values, '--path', str(asset)],
                          capture_output=True, text=True)
 
@@ -425,7 +425,7 @@ def test_with_special_characters(
     Test `onyo new` with names containing special characters.
     """
     asset = f'{directory}/{variant}'
-    ret = subprocess.run(['onyo', 'new', '--yes', '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', asset],
                          capture_output=True, text=True)
 
     # verify correct output
@@ -521,7 +521,7 @@ def test_tsv(repo: OnyoRepo) -> None:
     assert table_path.is_file()
 
     # create assets with table
-    ret = subprocess.run(['onyo', 'new', '--yes', "--tsv", table_path],
+    ret = subprocess.run(['onyo', '--yes', 'new', "--tsv", table_path],
                          capture_output=True, text=True)
     assert not ret.stderr
     assert "The following will be created:" in ret.stdout
@@ -541,7 +541,7 @@ def test_tsv_with_value_columns(repo: OnyoRepo) -> None:
     of the device and a group to which it belongs.
     """
     table_path = prepared_tsvs / "table_with_key_values.tsv"
-    ret = subprocess.run(['onyo', 'new', '--yes', '--tsv', table_path],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--tsv', table_path],
                          capture_output=True, text=True)
 
     assert "The following will be created:" in ret.stdout
@@ -575,7 +575,7 @@ def test_tsv_with_flags_template_keys_edit(repo: OnyoRepo) -> None:
     assert table_path.is_file()
 
     # create assets with table
-    ret = subprocess.run(['onyo', 'new', '--yes', '--edit',
+    ret = subprocess.run(['onyo', '--yes', 'new', '--edit',
                           '--keys', key_values, '--tsv', table_path,
                           '--template', template],
                          capture_output=True, text=True)
@@ -612,7 +612,7 @@ def test_tsv_with_template_column(repo: OnyoRepo) -> None:
     assert table_path.is_file()
 
     # create assets with table
-    ret = subprocess.run(['onyo', 'new', '--yes', '--tsv', table_path],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--tsv', table_path],
                          capture_output=True, text=True)
     assert not ret.stderr
     assert ret.returncode == 0

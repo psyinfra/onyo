@@ -5,36 +5,12 @@ import sys
 import textwrap
 
 from onyo import commands
-from onyo._version import __version__
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Union
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 log.setLevel(logging.INFO)
-
-
-class StoreKeyValuePairs(argparse.Action):
-    def __init__(self, option_strings: Sequence[str], dest: str,
-                 nargs: Union[None, int, str] = None, **kwargs) -> None:
-        self._nargs = nargs
-        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
-
-    def __call__(self, parser: argparse.ArgumentParser,
-                 namespace: argparse.Namespace, key_values: list[str],
-                 option_string: Optional[str] = None) -> None:
-        results = {}
-        for pair in key_values:
-            k, v = pair.split('=', maxsplit=1)
-            try:
-                v = int(v)
-            except ValueError:
-                try:
-                    float(v)
-                except ValueError:
-                    pass
-            results[k] = v
-        setattr(namespace, self.dest, results)
 
 
 # credit: https://stackoverflow.com/a/13429281
@@ -64,103 +40,44 @@ class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
         return text
 
 
-def parse_key_values(string):
+def build_parser(parser, args: dict):
     """
-    Convert a string of key-value pairs to a dictionary.
-
-    The shell interprets the key-value string before it is passed to argparse.
-    As a result, no quotes are passed through, but the chunking follows what the
-    quoting declared.
-
-    Because of the lack of quoting, this function cannot handle a comma in
-    either the key or value.
+    Add arguments to a parser.
     """
-    results = {k: v for k, v in (pair.split('=') for pair in string.split(','))}
-    for k, v in results.items():
+    for cmd in args:
+        # note: `--dry-run` must lead to args.dry_run, the underscore is needed
+        args[cmd]['dest'] = cmd if cmd != "dry-run" else cmd.replace("-", "_")
         try:
-            results.update({k: int(v)})
-        except ValueError:
-            try:
-                results.update({k: float(v)})
-            except ValueError:
-                pass
-
-    return results
-
-
-def directory(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def file(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def git_config(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def path(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def template(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
+            parser.add_argument(
+                *args[cmd]['args'],
+                **{k: v for k, v in args[cmd].items() if k != 'args'})
+        except KeyError:
+            parser.add_argument(**args[cmd])
 
 
 def setup_parser() -> argparse.ArgumentParser:
-    from onyo.shared_arguments import (
-        shared_arg_depth,
-        shared_arg_dry_run,
-        shared_arg_filter,
-        shared_arg_message,
-        shared_arg_quiet,
-        shared_arg_yes
-    )
+    from onyo.onyo_arguments import args_onyo
+    from onyo.commands.cat import args_cat
+    from onyo.commands.config import args_config
+    from onyo.commands.edit import args_edit
+    from onyo.commands.get import args_get
+    from onyo.commands.history import args_history
+    from onyo.commands.init import args_init
+    from onyo.commands.mkdir import args_mkdir
+    from onyo.commands.mv import args_mv
+    from onyo.commands.new import args_new
+    from onyo.commands.rm import args_rm
+    from onyo.commands.set import args_set
+    from onyo.commands.shell_completion import args_shell_completion
+    from onyo.commands.tree import args_tree
+    from onyo.commands.unset import args_unset
 
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
         formatter_class=SubcommandHelpFormatter
     )
-    parser.add_argument(
-        '-C',
-        '--onyopath',
-        dest='opdir',
-        metavar='DIR',
-        required=False,
-        default=Path.cwd(),
-        type=directory,
-        help='Run Onyo commands from inside of DIR'
-    )
-    parser.add_argument(
-        '-d',
-        '--debug',
-        required=False,
-        default=False,
-        action='store_true',
-        help='Enable debug logging'
-    )
-    parser.add_argument(
-        '--version',
-        action='version',
-        version='%(prog)s {version}'.format(version=__version__),
-        help="Print onyo's version and exit"
-    )
+    build_parser(parser, args_onyo)
+
     # subcommands
     subcmds = parser.add_subparsers(
         title='commands'
@@ -169,7 +86,6 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     # subcommand "cat"
     #
-    from onyo.commands.cat import arg_asset
     cmd_cat = subcmds.add_parser(
         'cat',
         description=textwrap.dedent(commands.cat.__doc__),
@@ -177,11 +93,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.cat.__doc__)
     )
     cmd_cat.set_defaults(run=commands.cat)
-    cmd_cat.add_argument(**arg_asset)
+    build_parser(cmd_cat, args_cat)
     #
     # subcommand "config"
     #
-    from onyo.commands.config import arg_git_config_args
     cmd_config = subcmds.add_parser(
         'config',
         description=textwrap.dedent(commands.config.__doc__),
@@ -189,11 +104,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.config.__doc__)
     )
     cmd_config.set_defaults(run=commands.config)
-    cmd_config.add_argument(**arg_git_config_args)
+    build_parser(cmd_config, args_config)
     #
     # subcommand "edit"
     #
-    from onyo.commands.edit import arg_asset
     cmd_edit = subcmds.add_parser(
         'edit',
         description=textwrap.dedent(commands.edit.__doc__),
@@ -201,13 +115,7 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.edit.__doc__)
     )
     cmd_edit.set_defaults(run=commands.edit)
-    cmd_edit.add_argument(*(shared_arg_message['args']),
-                          **{k: v for k, v in shared_arg_message.items() if k != 'args'})
-    cmd_edit.add_argument(*(shared_arg_quiet['args']),
-                          **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
-    cmd_edit.add_argument(*(shared_arg_yes['args']),
-                          **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
-    cmd_edit.add_argument(**arg_asset)
+    build_parser(cmd_edit, args_edit)
     #
     # subcommand "fsck"
     #
@@ -221,13 +129,6 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     # subcommand "get"
     #
-    from onyo.commands.get import (
-        arg_machine_readable,
-        arg_keys,
-        arg_path,
-        arg_sort_ascending,
-        arg_sort_descending
-    )
     cmd_get = subcmds.add_parser(
         'get',
         description=textwrap.dedent(commands.get.__doc__),
@@ -235,24 +136,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.get.__doc__)
     )
     cmd_get.set_defaults(run=commands.get)
-    cmd_get.add_argument(*(shared_arg_depth['args']),
-                         **{k: v for k, v in shared_arg_depth.items() if k != 'args'})
-    cmd_get.add_argument(*(shared_arg_filter['args']),
-                         **{k: v for k, v in shared_arg_filter.items() if k != 'args'})
-    cmd_get.add_argument(*arg_machine_readable['args'],
-                         **{k: v for k, v in arg_machine_readable.items() if k != 'args'})
-    cmd_get.add_argument(*arg_keys['args'],
-                         **{k: v for k, v in arg_keys.items() if k != 'args'})
-    cmd_get.add_argument(*arg_path['args'],
-                         **{k: v for k, v in arg_path.items() if k != 'args'})
-    cmd_get.add_argument(*arg_sort_ascending['args'],
-                         **{k: v for k, v in arg_sort_ascending.items() if k != 'args'})
-    cmd_get.add_argument(*arg_sort_descending['args'],
-                         **{k: v for k, v in arg_sort_descending.items() if k != 'args'})
+    build_parser(cmd_get, args_get)
     #
     # subcommand "history"
     #
-    from onyo.commands.history import arg_interactive, arg_path
     cmd_history = subcmds.add_parser(
         'history',
         description=textwrap.dedent(commands.history.__doc__),
@@ -260,13 +147,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.history.__doc__)
     )
     cmd_history.set_defaults(run=commands.history)
-    cmd_history.add_argument(*(arg_interactive['args']),
-                             **{k: v for k, v in arg_interactive.items() if k != 'args'})
-    cmd_history.add_argument(**arg_path)
+    build_parser(cmd_history, args_history)
     #
     # subcommand "init"
     #
-    from onyo.commands.init import arg_directory
     cmd_init = subcmds.add_parser(
         'init',
         description=textwrap.dedent(commands.init.__doc__),
@@ -274,11 +158,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.init.__doc__)
     )
     cmd_init.set_defaults(run=commands.init)
-    cmd_init.add_argument(**arg_directory)
+    build_parser(cmd_init, args_init)
     #
     # subcommand "mkdir"
     #
-    from onyo.commands.mkdir import arg_directory
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
         description=textwrap.dedent(commands.mkdir.__doc__),
@@ -286,17 +169,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.mkdir.__doc__)
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
-    cmd_mkdir.add_argument(*(shared_arg_message['args']),
-                           **{k: v for k, v in shared_arg_message.items() if k != 'args'})
-    cmd_mkdir.add_argument(*(shared_arg_quiet['args']),
-                           **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
-    cmd_mkdir.add_argument(*(shared_arg_yes['args']),
-                           **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
-    cmd_mkdir.add_argument(**arg_directory)
+    build_parser(cmd_mkdir, args_mkdir)
     #
     # subcommand "mv"
     #
-    from onyo.commands.mv import arg_source, arg_destination
     cmd_mv = subcmds.add_parser(
         'mv',
         description=textwrap.dedent(commands.mv.__doc__),
@@ -304,18 +180,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.mv.__doc__)
     )
     cmd_mv.set_defaults(run=commands.mv)
-    cmd_mv.add_argument(*(shared_arg_message['args']),
-                        **{k: v for k, v in shared_arg_message.items() if k != 'args'})
-    cmd_mv.add_argument(*(shared_arg_quiet['args']),
-                        **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
-    cmd_mv.add_argument(*(shared_arg_yes['args']),
-                        **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
-    cmd_mv.add_argument(**arg_source)
-    cmd_mv.add_argument(**arg_destination)
+    build_parser(cmd_mv, args_mv)
     #
     # subcommand "new"
     #
-    from onyo.commands.new import arg_template, arg_edit, arg_keys, arg_path, arg_tsv
     cmd_new = subcmds.add_parser(
         'new',
         description=textwrap.dedent(commands.new.__doc__),
@@ -323,24 +191,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.new.__doc__)
     )
     cmd_new.set_defaults(run=commands.new)
-    cmd_new.add_argument(*(shared_arg_message['args']),
-                         **{k: v for k, v in shared_arg_message.items() if k != 'args'})
-    cmd_new.add_argument(*(arg_template['args']),
-                         **{k: v for k, v in arg_template.items() if k != 'args'})
-    cmd_new.add_argument(*(arg_edit['args']),
-                         **{k: v for k, v in arg_edit.items() if k != 'args'})
-    cmd_new.add_argument(*(arg_keys['args']),
-                         **{k: v for k, v in arg_keys.items() if k != 'args'}, action=StoreKeyValuePairs)
-    cmd_new.add_argument(*arg_path['args'],
-                         **{k: v for k, v in arg_path.items() if k != 'args'})
-    cmd_new.add_argument(*(arg_tsv['args']),
-                         **{k: v for k, v in arg_tsv.items() if k != 'args'})
-    cmd_new.add_argument(*(shared_arg_yes['args']),
-                         **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
+    build_parser(cmd_new, args_new)
     #
     # subcommand "rm"
     #
-    from onyo.commands.rm import arg_path
     cmd_rm = subcmds.add_parser(
         'rm',
         description=textwrap.dedent(commands.rm.__doc__),
@@ -348,17 +202,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.rm.__doc__)
     )
     cmd_rm.set_defaults(run=commands.rm)
-    cmd_rm.add_argument(*(shared_arg_message['args']),
-                        **{k: v for k, v in shared_arg_message.items() if k != 'args'})
-    cmd_rm.add_argument(*(shared_arg_quiet['args']),
-                        **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
-    cmd_rm.add_argument(*(shared_arg_yes['args']),
-                        **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
-    cmd_rm.add_argument(**arg_path)
+    build_parser(cmd_rm, args_rm)
     #
     # subcommand "set"
     #
-    from onyo.commands.set import arg_rename, arg_keys, arg_path
     cmd_set = subcmds.add_parser(
         'set',
         description=textwrap.dedent(commands.set.__doc__),
@@ -366,29 +213,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.set.__doc__)
     )
     cmd_set.set_defaults(run=commands.set)
-    cmd_set.add_argument(*(shared_arg_depth['args']),
-                         **{k: v for k, v in shared_arg_depth.items() if k != 'args'})
-    cmd_set.add_argument(*(shared_arg_filter['args']),
-                         **{k: v for k, v in shared_arg_filter.items() if k != 'args'})
-    cmd_set.add_argument(*(shared_arg_message['args']),
-                         **{k: v for k, v in shared_arg_message.items() if k != 'args'})
-    cmd_set.add_argument(*(shared_arg_dry_run['args']),
-                         **{k: v for k, v in shared_arg_dry_run.items() if k != 'args'})
-    cmd_set.add_argument(*(shared_arg_quiet['args']),
-                         **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
-    cmd_set.add_argument(*(arg_rename['args']),
-                         **{k: v for k, v in arg_rename.items() if k != 'args'})
-    cmd_set.add_argument(*(shared_arg_yes['args']),
-                         **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
-    cmd_set.add_argument(*(arg_keys['args']),
-                         **{k: v for k, v in arg_keys.items() if k != 'args'},
-                         action=StoreKeyValuePairs)
-    cmd_set.add_argument(*(arg_path['args']),
-                         **{k: v for k, v in arg_path.items() if k != 'args'})
+    build_parser(cmd_set, args_set)
     #
     # subcommand "shell-completion"
     #
-    from onyo.commands.shell_completion import arg_shell
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
         description=textwrap.dedent(commands.shell_completion.__doc__),
@@ -397,12 +225,10 @@ def setup_parser() -> argparse.ArgumentParser:
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion,
                                       parser=parser)
-    cmd_shell_completion.add_argument(*(arg_shell['args']),
-                                      **{k: v for k, v in arg_shell.items() if k != 'args'})
+    build_parser(cmd_shell_completion, args_shell_completion)
     #
     # subcommand "tree"
     #
-    from onyo.commands.tree import arg_directory
     cmd_tree = subcmds.add_parser(
         'tree',
         description=textwrap.dedent(commands.tree.__doc__),
@@ -410,11 +236,10 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.tree.__doc__)
     )
     cmd_tree.set_defaults(run=commands.tree)
-    cmd_tree.add_argument(**arg_directory)
+    build_parser(cmd_tree, args_tree)
     #
     # subcommand "unset"
     #
-    from onyo.commands.unset import arg_keys, arg_path
     cmd_unset = subcmds.add_parser(
         'unset',
         description=textwrap.dedent(commands.unset.__doc__),
@@ -422,22 +247,7 @@ def setup_parser() -> argparse.ArgumentParser:
         help=textwrap.dedent(commands.unset.__doc__)
     )
     cmd_unset.set_defaults(run=commands.unset)
-    cmd_unset.add_argument(*(shared_arg_depth['args']),
-                           **{k: v for k, v in shared_arg_depth.items() if k != 'args'})
-    cmd_unset.add_argument(*(shared_arg_filter['args']),
-                           **{k: v for k, v in shared_arg_filter.items() if k != 'args'})
-    cmd_unset.add_argument(*(shared_arg_message['args']),
-                           **{k: v for k, v in shared_arg_message.items() if k != 'args'})
-    cmd_unset.add_argument(*(shared_arg_dry_run['args']),
-                           **{k: v for k, v in shared_arg_dry_run.items() if k != 'args'})
-    cmd_unset.add_argument(*(shared_arg_quiet['args']),
-                           **{k: v for k, v in shared_arg_quiet.items() if k != 'args'})
-    cmd_unset.add_argument(*(shared_arg_yes['args']),
-                           **{k: v for k, v in shared_arg_yes.items() if k != 'args'})
-    cmd_unset.add_argument(*(arg_keys['args']),
-                           **{k: v for k, v in arg_keys.items() if k != 'args'})
-    cmd_unset.add_argument(*(arg_path['args']),
-                           **{k: v for k, v in arg_path.items() if k != 'args'})
+    build_parser(cmd_unset, args_unset)
 
     return parser
 

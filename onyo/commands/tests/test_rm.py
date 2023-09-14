@@ -28,7 +28,7 @@ def test_rm(repo: OnyoRepo, asset: str) -> None:
     Test that `onyo rm ASSET` deletes assets and leaves the repository in a
     clean state.
     """
-    ret = subprocess.run(['onyo', 'rm', '--yes', asset],
+    ret = subprocess.run(['onyo', '--yes', 'rm', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be deleted:" in ret.stdout
@@ -45,7 +45,7 @@ def test_rm_multiple_inputs(repo: OnyoRepo) -> None:
     Test that `onyo rm ASSET` deletes a list of assets all at once and leaves
     the repository in a clean state.
     """
-    ret = subprocess.run(['onyo', 'rm', '--yes', *assets],
+    ret = subprocess.run(['onyo', '--yes', 'rm', *assets],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be deleted:" in ret.stdout
@@ -64,7 +64,7 @@ def test_rm_single_dirs_with_files(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo rm DIRECTORY` deletes directories successfully and leaves
     the repository in a clean state.
     """
-    ret = subprocess.run(['onyo', 'rm', '--yes', directory],
+    ret = subprocess.run(['onyo', '--yes', 'rm', directory],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be deleted:" in ret.stdout
@@ -81,7 +81,7 @@ def test_rm_multiple_directories(repo: OnyoRepo) -> None:
     Test that `onyo rm DIRECTORY` deletes a list of directories all at once and
     leaves the repository in a clean state.
     """
-    ret = subprocess.run(['onyo', 'rm', '--yes', *directories[1:]],
+    ret = subprocess.run(['onyo', '--yes', 'rm', *directories[1:]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be deleted:" in ret.stdout
@@ -99,7 +99,7 @@ def test_rm_empty_directories(repo: OnyoRepo) -> None:
     Test that `onyo rm DIRECTORY` deletes empty directories and leaves the
     repository in a clean state.
     """
-    ret = subprocess.run(['onyo', 'rm', '--yes', *directories[1:]],
+    ret = subprocess.run(['onyo', '--yes', 'rm', *directories[1:]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be deleted:" in ret.stdout
@@ -167,7 +167,7 @@ def test_rm_quiet_missing_yes(repo: OnyoRepo) -> None:
     Test that `onyo rm --quiet` errors correctly, when the required flag
     `--yes` is missing.
     """
-    ret = subprocess.run(['onyo', 'rm', '--quiet', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--quiet', 'rm', *assets], capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
     assert ret.stderr
@@ -184,7 +184,7 @@ def test_rm_quiet_flag(repo: OnyoRepo) -> None:
     Test that `onyo rm --quiet --yes` deletes a list of assets successfully
     without printing any output or error.
     """
-    ret = subprocess.run(['onyo', 'rm', '--yes', '--quiet', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', '--quiet', 'rm', *assets], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stdout
     assert not ret.stderr
@@ -203,7 +203,7 @@ def test_rm_message_flag(repo: OnyoRepo, asset: str) -> None:
     with one specified by the user containing different special characters.
     """
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-    ret = subprocess.run(['onyo', 'rm', '--yes', '--message', msg, asset],
+    ret = subprocess.run(['onyo', '--yes', 'rm', '--message', msg, asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr

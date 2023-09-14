@@ -87,83 +87,83 @@ cd "$DEMO_DIR"
 onyo init
 
 # setup basic directory structure
-onyo mkdir --yes warehouse
-onyo mkdir --yes recycling
-onyo mkdir --yes repair
+onyo --yes mkdir warehouse
+onyo --yes mkdir recycling
+onyo --yes mkdir repair
 
 # import some existing hardware
 # TSV files can be very useful when adding large amounts of assets
-onyo new -y --tsv "${SCRIPT_DIR}/inventory.tsv"
+onyo -y new --tsv "${SCRIPT_DIR}/inventory.tsv"
 
 # add a set of newly bought assets
-onyo new -y --keys RAM=8GB display=13.3 --path warehouse/laptop_apple_macbook.9r32he
-onyo new -y --keys RAM=8GB display=13.3 --path warehouse/laptop_apple_macbook.9r5qlk
-onyo new -y --keys RAM=8GB display=14.6 --path warehouse/laptop_lenovo_thinkpad.owh8e2
-onyo new -y --keys RAM=8GB display=14.6 --path warehouse/laptop_lenovo_thinkpad.iu7h6d
-onyo new -y --keys RAM=8GB display=12.4 touchscreen=yes --path warehouse/laptop_microsoft_surface.oq782j
+onyo -y new --keys RAM=8GB display=13.3 --path warehouse/laptop_apple_macbook.9r32he
+onyo -y new --keys RAM=8GB display=13.3 --path warehouse/laptop_apple_macbook.9r5qlk
+onyo -y new --keys RAM=8GB display=14.6 --path warehouse/laptop_lenovo_thinkpad.owh8e2
+onyo -y new --keys RAM=8GB display=14.6 --path warehouse/laptop_lenovo_thinkpad.iu7h6d
+onyo -y new --keys RAM=8GB display=12.4 touchscreen=yes --path warehouse/laptop_microsoft_surface.oq782j
 # NOTE: headphones normally do not have a serial number, and thus a faux serial
 # would be generated (e.g. headphones_JBL_pro.faux). However, for the sake of a
 # reproducible demo, explicit serials are specified.
-onyo new -y --path warehouse/headphones_apple_airpods.7h8f04
-onyo new -y --path warehouse/headphones_JBL_pro.325gtt
-onyo new -y --path warehouse/headphones_JBL_pro.e98t2p
-onyo new -y --path warehouse/headphones_JBL_pro.ph9527
+onyo -y new --path warehouse/headphones_apple_airpods.7h8f04
+onyo -y new --path warehouse/headphones_JBL_pro.325gtt
+onyo -y new --path warehouse/headphones_JBL_pro.e98t2p
+onyo -y new --path warehouse/headphones_JBL_pro.ph9527
 
 # one of the headphones was added by accident; remove it.
-onyo rm -y warehouse/headphones_JBL_pro.ph9527
+onyo -y rm warehouse/headphones_JBL_pro.ph9527
 
 # a few new users join
-onyo mkdir --yes "ethics/Max Mustermann" "ethics/Achilles Book"
+onyo --yes mkdir "ethics/Max Mustermann" "ethics/Achilles Book"
 
 # assign equipment to Max and Achilles
-onyo mv -y warehouse/laptop_apple_macbook.9r32he "ethics/Max Mustermann"
-onyo mv -y warehouse/headphones_apple_airpods.7h8f04 "ethics/Max Mustermann"
+onyo -y mv warehouse/laptop_apple_macbook.9r32he "ethics/Max Mustermann"
+onyo -y mv warehouse/headphones_apple_airpods.7h8f04 "ethics/Max Mustermann"
 
-onyo mv -y warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Achilles Book"
-onyo mv -y warehouse/headphones_JBL_pro.e98t2p "ethics/Achilles Book"
+onyo -y mv warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Achilles Book"
+onyo -y mv warehouse/headphones_JBL_pro.e98t2p "ethics/Achilles Book"
 
 # Achilles' laptop broke; set it aside to repair and give him a new one
-onyo mv -y "ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2" repair
-onyo mv -y warehouse/laptop_microsoft_surface.oq782j "ethics/Achilles Book"
+onyo -y mv "ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2" repair
+onyo -y mv warehouse/laptop_microsoft_surface.oq782j "ethics/Achilles Book"
 
 # specify number of USB type A ports on all laptops
-onyo set -y --keys USB_A=2 --filter type=laptop
+onyo -y set --keys USB_A=2 --filter type=laptop
 
 # specify the number of USB ports (type A and C) on MacBooks
-onyo set -y --keys USB_A=2 USB_C=1 --filter model=macbook
+onyo -y set --keys USB_A=2 USB_C=1 --filter model=macbook
 
 # add three newly purchased laptops; shell brace-expansion can be very useful
-onyo new -y --keys RAM=8GB display=13.3 USB_A=2 USB_C=1 \
+onyo -y new --keys RAM=8GB display=13.3 USB_A=2 USB_C=1 \
     --path warehouse/laptop_apple_macbook.{uef82b3,9il2b4,73b2cn}
 
 # Bingo Bob was hired; and new hardware was purchased for him
-onyo mkdir --yes "accounting/Bingo Bob"
-onyo new -y --keys display=22.0 --path warehouse/monitor_dell_PH123.86JZho
-onyo new -y --keys RAM=8GB display=13.3 USB_A=2 --path warehouse/laptop_apple_macbook.oiw629
-onyo new -y --path warehouse/headphones_apple_airpods.uzl8e1
-onyo mv -y warehouse/monitor_dell_PH123.86JZho warehouse/laptop_apple_macbook.oiw629 warehouse/headphones_apple_airpods.uzl8e1 "accounting/Bingo Bob"
+onyo --yes mkdir "accounting/Bingo Bob"
+onyo -y new --keys display=22.0 --path warehouse/monitor_dell_PH123.86JZho
+onyo -y new --keys RAM=8GB display=13.3 USB_A=2 --path warehouse/laptop_apple_macbook.oiw629
+onyo -y new --path warehouse/headphones_apple_airpods.uzl8e1
+onyo -y mv warehouse/monitor_dell_PH123.86JZho warehouse/laptop_apple_macbook.oiw629 warehouse/headphones_apple_airpods.uzl8e1 "accounting/Bingo Bob"
 
 # the broken laptop has been repaired (bad RAM, which has also been increased)
-onyo set -y --keys RAM=32GB --path repair/laptop_lenovo_thinkpad.owh8e2
-onyo mv -y repair/laptop_lenovo_thinkpad.owh8e2 warehouse
+onyo -y set --keys RAM=32GB --path repair/laptop_lenovo_thinkpad.owh8e2
+onyo -y mv repair/laptop_lenovo_thinkpad.owh8e2 warehouse
 
 # Max's laptop is old; retire it and replace with a new one
-onyo mv -y ethics/Max\ Mustermann/laptop_apple_macbook.9r32he recycling
-onyo mv -y warehouse/laptop_apple_macbook.uef82b3 ethics/Max\ Mustermann/
+onyo -y mv ethics/Max\ Mustermann/laptop_apple_macbook.9r32he recycling
+onyo -y mv warehouse/laptop_apple_macbook.uef82b3 ethics/Max\ Mustermann/
 
 # a new group is created ("management"); transfer people to their new group
-onyo mkdir --yes "management"
-onyo mv -y "ethics/Max Mustermann" management
-onyo mkdir --yes "management/Alice Wonder"
-onyo new -y --keys RAM=8GB display=13.3 USB_A=2 --path "management/Alice Wonder/laptop_apple_macbook.83hd0"
+onyo -y mkdir "management"
+onyo -y mv "ethics/Max Mustermann" management
+onyo -y mkdir "management/Alice Wonder"
+onyo -y new --keys RAM=8GB display=13.3 USB_A=2 --path "management/Alice Wonder/laptop_apple_macbook.83hd0"
 
 # Theo joins; assign them a laptop from the warehouse
-onyo mkdir --yes "ethics/Theo Turtle"
-onyo mv -y warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Theo Turtle"
+onyo -y mkdir "ethics/Theo Turtle"
+onyo -y mv warehouse/laptop_lenovo_thinkpad.owh8e2 "ethics/Theo Turtle"
 
 # Max retired; return all of his hardware and delete his directory
-onyo mv -y management/Max\ Mustermann/* warehouse
-onyo rm -y "management/Max Mustermann"
+onyo -y mv management/Max\ Mustermann/* warehouse
+onyo -y rm "management/Max Mustermann"
 
 # test the validity of the inventory's state
 onyo fsck

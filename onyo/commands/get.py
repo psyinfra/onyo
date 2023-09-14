@@ -5,7 +5,8 @@ import logging
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, get as get_cmd
-from onyo.shared_arguments import path
+from onyo.argparse_helpers import path
+from onyo.shared_arguments import shared_arg_depth, shared_arg_filter
 
 if TYPE_CHECKING:
     import argparse
@@ -13,42 +14,44 @@ if TYPE_CHECKING:
 logging.basicConfig()
 log = logging.getLogger('onyo')
 
-arg_machine_readable = dict(
-    args=('-H', '--machine-readable'),
-    dest='machine_readable',
-    action='store_true',
-    help=(
-        'Display asset(s) separated by new lines, and keys by tabs instead '
-        'of printing a formatted table'))
+args_get = {
+    'machine_readable': dict(
+        args=('-H', '--machine-readable'),
+        action='store_true',
+        help=(
+            'Display asset(s) separated by new lines, and keys by tabs instead '
+            'of printing a formatted table')),
 
-arg_keys = dict(
-    args=('-k', '--keys'),
-    metavar='KEYS',
-    nargs='+',
-    help=(
-        'Key value(s) to return. Pseudo-keys (information not stored in '
-        'the asset file, e.g. filename) are also available for queries'))
+    'keys': dict(
+        args=('-k', '--keys'),
+        metavar='KEYS',
+        nargs='+',
+        help=(
+            'Key value(s) to return. Pseudo-keys (information not stored in '
+            'the asset file, e.g. filename) are also available for queries')),
 
-arg_path = dict(
-    args=('-p', '--path'),
-    metavar='PATH',
-    type=path,
-    nargs='+',
-    help='Asset(s) or directory(s) to search through')
+    'path': dict(
+        args=('-p', '--path'),
+        metavar='PATH',
+        type=path,
+        nargs='+',
+        help='Asset(s) or directory(s) to search through'),
 
-arg_sort_ascending = dict(
-    args=('-s', '--sort-ascending'),
-    dest='sort_ascending',
-    action='store_true',
-    default=False,
-    help='Sort output in ascending order (excludes --sort-descending)')
+    'sort_ascending': dict(
+        args=('-s', '--sort-ascending'),
+        action='store_true',
+        default=False,
+        help='Sort output in ascending order (excludes --sort-descending)'),
 
-arg_sort_descending = dict(
-    args=('-S', '-sort-descending'),
-    dest='sort_descending',
-    action='store_true',
-    default=False,
-    help='Sort output in descending order (excludes --sort-ascending)')
+    'sort_descending': dict(
+        args=('-S', '-sort-descending'),
+        action='store_true',
+        default=False,
+        help='Sort output in descending order (excludes --sort-ascending)'),
+
+    'depth': shared_arg_depth,
+    'filter': shared_arg_filter
+}
 
 
 def get(args: argparse.Namespace) -> None:

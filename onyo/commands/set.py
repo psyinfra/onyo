@@ -5,7 +5,13 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, set_ as set_cmd
-from onyo.shared_arguments import path
+from onyo.argparse_helpers import path, StoreKeyValuePairs
+from onyo.shared_arguments import (
+    shared_arg_depth,
+    shared_arg_dry_run,
+    shared_arg_filter,
+    shared_arg_message,
+)
 
 if TYPE_CHECKING:
     import argparse
@@ -13,30 +19,38 @@ if TYPE_CHECKING:
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
-arg_rename = dict(
-    args=('-r', '--rename'),
-    required=False,
-    default=False,
-    action='store_true',
-    help=(
-        'Permit assigning values to pseudo-keys that would result in the '
-        'asset(s) being renamed.'))
+args_set = {
+    'rename': dict(
+        args=('-r', '--rename'),
+        required=False,
+        default=False,
+        action='store_true',
+        help=(
+            'Permit assigning values to pseudo-keys that would result in the '
+            'asset(s) being renamed.')),
 
-arg_keys = dict(
-    args=('-k', '--keys'),
-    required=True,
-    metavar="KEYS",
-    nargs='+',
-    help=(
-        'Specify key-value pairs to set in asset(s). Multiple pairs can '
-        'be specified (e.g. key=value key2=value2)'))
+    'keys': dict(
+        args=('-k', '--keys'),
+        required=True,
+        action=StoreKeyValuePairs,
+        metavar="KEYS",
+        nargs='+',
+        help=(
+            'Specify key-value pairs to set in asset(s). Multiple pairs can '
+            'be specified (e.g. key=value key2=value2)')),
 
-arg_path = dict(
-    args=('-p', '--path'),
-    metavar='PATH',
-    nargs='*',
-    type=path,
-    help='Asset(s) and/or directorie(s) to set KEY=VALUE in')
+    'path': dict(
+        args=('-p', '--path'),
+        metavar='PATH',
+        nargs='*',
+        type=path,
+        help='Asset(s) and/or directorie(s) to set KEY=VALUE in'),
+
+    'depth': shared_arg_depth,
+    'dry_run': shared_arg_dry_run,
+    'filter': shared_arg_filter,
+    'message': shared_arg_message,
+}
 
 
 def set(args: argparse.Namespace) -> None:
