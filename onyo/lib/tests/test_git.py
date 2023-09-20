@@ -80,6 +80,7 @@ def test_GitRepo_restore_staged(tmp_path: Path) -> None:
 
     # test that no error is raised, when called on a clean repository
     new_git.restore_staged()
+    assert new_git.is_clean_worktree()
 
     # have an untracked, a changed and a staged file
     untracked_file = new_git.root / 'asset_for_test.1'
@@ -122,6 +123,7 @@ def test_GitRepo_restore(tmp_path: Path) -> None:
 
     # Test that no error is raised, when called on a clean file
     new_git.restore(test_file)
+    assert new_git.is_clean_worktree()
 
     # Test that calling `GitRepo.restore()` on a file with already staged
     # changes does not effect the file
@@ -266,6 +268,7 @@ def test_GitRepo_add(tmp_path: Path) -> None:
     # test that GitRepo.add() does not raise an error on files that exist and
     # have no changes
     new_git.add(existing_file)
+    assert new_git.is_clean_worktree()
 
     # test that GitRepo.add() raises a FileNotFoundError for `new_file`, an
     # absolute path to a file that do not yet exist

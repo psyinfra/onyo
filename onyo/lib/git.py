@@ -17,7 +17,7 @@ class GitRepo(object):
         The absolute path to the directory of the git worktree root.
 
     files: set of Paths
-        A property containing the absolute Path to all files tracked in git.
+        A property containing the absolute Path to all files saved in git.
         This property is cached and consistent when only the public functions of
         GitRepo are called. Usage of private or external functions might
         require a manual reset of the cache with `GitRepo.clear_caches()`.
@@ -74,8 +74,30 @@ class GitRepo(object):
             raise OnyoInvalidRepoError(f"'{path}' is not a Git repository.")
         return root
 
-    def _git(self, args: list[str], *, cwd: Optional[Path] = None, raise_error: bool = True) -> str:
+    def _git(self,
+             args: list[str], *,
+             cwd: Optional[Path] = None,
+             raise_error: bool = True) -> str:
         """
+        A wrapper function for git calls that runs commands from the root
+        directory and returns the output of commands.
+
+        Parameters
+        ----------
+        args: List of strings
+            Arguments to specify the git call to run, e.g. args=['add', <file>]
+            leads to a system call `git add <file>` from the root of git.
+
+        cwd: Optional Path
+            Run git commands from `cwd` instead of the root of the repository.
+
+        raise_error: boolean
+            Specify if `subprocess.run()` is allowed to raise errors.
+
+        Returns
+        -------
+        str
+            Return the standard output from running the git command.
         """
         if cwd is None:
             cwd = self.root
@@ -95,7 +117,7 @@ class GitRepo(object):
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
         private functions might require a manual reset of the caches, see
-        `Repo.clear_caches()`.
+        `GitRepo.clear_caches()`.
         """
         if not self._files:
             self._files = self._get_files()
@@ -118,7 +140,7 @@ class GitRepo(object):
         Parameters
         ----------
         files: boolean
-            Deactivate the resetting of the file cache.
+            Whether to reset the file cache.
         """
         if files:
             self._files = None
@@ -145,9 +167,6 @@ class GitRepo(object):
                 paths: Union[list[Path], Path]) -> None:
         """
         Call git-restore on `paths`.
-
-        This does restore files which contain changes, but it does not restore
-        changes that are already staged.
 
         Parameters
         ----------
@@ -253,7 +272,16 @@ class GitRepo(object):
             return False
         return True
 
-    def maybe_init(self, target_dir: Path) -> None:
+    def maybe_init(self,
+                   target_dir: Path) -> None:
+        """
+        Initialize a directory as a git repository if it is not already one.
+
+        Parameters
+        ----------
+        target_dir: Path
+            A path to initialize as a git repository.
+        """
         # Note: Why? git-init would do that
         # create target if it doesn't already exist
         target_dir.mkdir(exist_ok=True)
@@ -371,7 +399,8 @@ class GitRepo(object):
 
         self._git(['commit'] + messages)
 
-    def get_config(self, name: str) -> Union[str, None]:
+    def get_config(self,
+                   name: str) -> Union[str, None]:
         """
         Get the value for a configuration option specified by `name`.
 
@@ -379,7 +408,15 @@ class GitRepo(object):
         local, global, system). If the config name is not found, .onyo/config is
         checked.
 
-        Returns a string with the config value on success. None otherwise.
+        Parameters
+        ----------
+        name: str
+            The name of the configuration value to query.
+
+        Returns
+        -------
+        string or `None`
+            The config value on success, otherwise `None`.
         """
         # TODO: Move onyo-config code to OnyoRepo
 
@@ -405,13 +442,35 @@ class GitRepo(object):
 
         return value
 
-    def set_config(self, name: str, value: str, location: str = 'onyo') -> bool:
+    def set_config(self,
+                   name: str,
+                   value: str,
+                   location: str = 'onyo') -> bool:
         """
-        Set the `name` configuration option to `value`. The local is `onyo` by
-        default. Other git config locations are: `system`, `global`, `local`,
-        and `worktree`.
+        Set the configuration option `name` to `value`.
 
-        Returns True on success. Raises an exception otherwise.
+        Parameters
+        ----------
+        name: string
+            The name of the configuration option to set.
+
+        value: string
+            The value to set for the configuration option.
+
+        location: string
+            The location of the configuration for which the value should be set.
+            Defaults to `onyo`. Other git config locations are: `system`,
+            `global`, `local`, and `worktree`.
+
+        Returns
+        -------
+        boolean
+            True on success, otherwise raises an exception.
+
+        Raises
+        ------
+        ValueError
+            If the config file was not found to set the value in.
         """
         location_options = {
             'onyo': ['--file', str(Path(self.root, '.onyo/config'))],
@@ -436,8 +495,13 @@ class GitRepo(object):
 
     def _diff_changes(self) -> str:
         """
-        Return a diff of all uncommitted changes. The format is a simplified
-        version of `git diff`.
+        Query git for information about all uncommitted changes.
+
+        Returns
+        -------
+        string
+            A diff of all uncommitted changes. The format is a simplified
+            version of `git diff`.
         """
         diff = self._git(['--no-pager', 'diff', 'HEAD']).splitlines()
         diff = [line.strip().replace("+++ b/", "\n").replace("+++ /dev/null", "\n")
@@ -450,12 +514,25 @@ class GitRepo(object):
            source: Union[Path, Iterable[Path]],
            destination: Path,
            dryrun: bool = False) -> str:
-        """Call git-mv on paths provided by `source` and `destination`.
+        """
+        Call git-mv on paths provided by `source` and `destination`.
+
+        Parameters
+        ----------
+        source: List of Paths
+            Absolute paths of source files to move.
+
+        destination: Path
+            The absolute path of the destination to move `source` to.
+
+        dryrun: boolean
+            To perform an interactive dry-run of the `git mv` without modifying
+            the repository.
 
         Returns
         -------
-        list of tuple of Path
-          each tuple represents a move from a source file to a destination file
+        string
+            The standard output from running the `git mv` command subprocess.
         """
         if isinstance(source, Path):
             source = [source]
@@ -467,13 +544,29 @@ class GitRepo(object):
         mv_cmd.append(str(destination))
         return self._git(mv_cmd)
 
-    def rm(self, paths: Union[list[Path], Path], force: bool = False, dryrun: bool = False) -> str:
-        """Call git-rm on `paths`
+    def rm(self,
+           paths: Union[list[Path], Path],
+           force: bool = False,
+           dryrun: bool = False) -> str:
+        """
+        Call `git rm` on `paths`.
+
+        Parameters
+        ----------
+        paths: List of Paths
+            Absolute paths of files or directories to delete.
+
+        force: boolean
+            Run `git rm` with option `--force`.
+
+        dryrun: boolean
+            To perform an interactive dry-run of the `git rm` without modifying
+            the repository.
 
         Returns
         -------
-        str
-          stdout of the git-rm subprocess
+        string
+          The standard output from running the `git rm` command subprocess.
         """
         if not isinstance(paths, list):
             paths = [paths]
