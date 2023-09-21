@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import cat as cat_cmd, fsck
-from onyo.shared_arguments import file
+from onyo.argparse_helpers import file
 
 if TYPE_CHECKING:
     import argparse
@@ -13,12 +13,13 @@ if TYPE_CHECKING:
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
-arg_asset = dict(
-    dest='asset',
-    metavar='ASSET',
-    nargs='+',
-    type=file,
-    help='Paths of asset(s) to print')
+args_cat = {
+    'asset': dict(
+        metavar='ASSET',
+        nargs='+',
+        type=file,
+        help='Paths of asset(s) to print'),
+}
 
 
 def cat(args: argparse.Namespace) -> None:

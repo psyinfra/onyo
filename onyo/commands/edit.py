@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 
 from onyo.lib.commands import edit as edit_cmd
 from onyo.lib.onyo import OnyoRepo
-from onyo.shared_arguments import file
+from onyo.argparse_helpers import file
+from onyo.shared_arguments import shared_arg_message
 
 if TYPE_CHECKING:
     import argparse
@@ -13,12 +14,15 @@ if TYPE_CHECKING:
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
-arg_asset = dict(
-    dest='asset',
-    metavar='ASSET',
-    nargs='+',
-    type=file,
-    help='Paths of asset(s) to edit')
+args_edit = {
+    'asset': dict(
+        metavar='ASSET',
+        nargs='+',
+        type=file,
+        help='Paths of asset(s) to edit'),
+
+    'message': shared_arg_message,
+}
 
 
 def edit(args: argparse.Namespace) -> None:

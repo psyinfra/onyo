@@ -1,38 +1,3 @@
-def directory(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def file(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def git_config(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def path(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
-def template(string: str) -> str:
-    """
-    A no-op type-check for ArgParse. Used to hint for shell tab-completion.
-    """
-    return string
-
-
 shared_arg_depth = dict(
     args=('-d', '--depth'),
     metavar='DEPTH',
@@ -69,25 +34,4 @@ shared_arg_message = dict(
     help=(
         'Use the given MESSAGE as the commit message (rather than the '
         'default). If multiple -m options are given, their values are '
-        'concatenated as separate paragraphs')
-)
-
-shared_arg_quiet = dict(
-    args=('-q', '--quiet'),
-    required=False,
-    default=False,
-    action='store_true',
-    help=(
-        'Silence messages printed to stdout. Does not suppress interactive '
-        'editors. Requires the --yes flag')
-)
-
-shared_arg_yes = dict(
-    args=('-y', '--yes'),
-    required=False,
-    default=False,
-    action='store_true',
-    help=(
-        'Respond "yes" to any prompts. The --yes flag is required to use '
-        '--quiet')
-)
+        'concatenated as separate paragraphs'))

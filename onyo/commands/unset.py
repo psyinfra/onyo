@@ -5,7 +5,13 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, unset as unset_cmd
-from onyo.shared_arguments import path
+from onyo.argparse_helpers import path
+from onyo.shared_arguments import (
+    shared_arg_depth,
+    shared_arg_dry_run,
+    shared_arg_filter,
+    shared_arg_message,
+)
 
 if TYPE_CHECKING:
     import argparse
@@ -13,22 +19,29 @@ if TYPE_CHECKING:
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
-arg_keys = dict(
-    args=('-k', '--keys'),
-    required=True,
-    metavar="KEYS",
-    nargs='+',
-    type=str,
-    help=(
-        'Specify keys to unset in assets. Multiple keys can be given '
-        '(e.g. key key2 key3)'))
+args_unset = {
+    'keys': dict(
+        args=('-k', '--keys'),
+        required=True,
+        metavar="KEYS",
+        nargs='+',
+        type=str,
+        help=(
+            'Specify keys to unset in assets. Multiple keys can be given '
+            '(e.g. key key2 key3)')),
 
-arg_path = dict(
-    args=('-p', '--path'),
-    metavar="PATH",
-    nargs='*',
-    type=path,
-    help='Asset(s) and/or directory(s) for which to unset values in')
+    'path': dict(
+        args=('-p', '--path'),
+        metavar="PATH",
+        nargs='*',
+        type=path,
+        help='Asset(s) and/or directory(s) for which to unset values in'),
+
+    'depth': shared_arg_depth,
+    'dry-run': shared_arg_dry_run,
+    'filter': shared_arg_filter,
+    'message': shared_arg_message,
+}
 
 
 def unset(args: argparse.Namespace) -> None:

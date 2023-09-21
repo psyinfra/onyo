@@ -4,23 +4,26 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, mv as mv_cmd
-from onyo.shared_arguments import path
+from onyo.argparse_helpers import path
+from onyo.shared_arguments import shared_arg_message
 
 if TYPE_CHECKING:
     import argparse
 
-arg_source = dict(
-    dest='source',
-    metavar='SOURCE',
-    nargs='+',
-    type=path,
-    help='Asset(s) and/or directory(s) to move into DEST')
+args_mv = {
+    'source': dict(
+        metavar='SOURCE',
+        nargs='+',
+        type=path,
+        help='Asset(s) and/or directory(s) to move into DEST'),
 
-arg_destination = dict(
-    dest='destination',
-    metavar='DEST',
-    type=path,
-    help='Destination to move SOURCE(s) into')
+    'destination': dict(
+        metavar='DEST',
+        type=path,
+        help='Destination to move SOURCE(s) into'),
+
+    'message': shared_arg_message,
+}
 
 
 def mv(args: argparse.Namespace) -> None:

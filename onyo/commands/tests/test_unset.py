@@ -37,7 +37,7 @@ def test_unset(repo: OnyoRepo, asset: str) -> None:
     Test that `onyo unset KEY <asset>` removes keys from of assets.
     """
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -81,7 +81,7 @@ def test_unset_subset_of_keys(repo: OnyoRepo, asset: str) -> None:
     assets with many other keys.
     """
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', asset],
                          capture_output=True, text=True)
 
     # verify output
@@ -110,7 +110,7 @@ def test_unset_info_empty_asset(repo: OnyoRepo, asset: str) -> None:
     no_key = "non_existing"
 
     # test un-setting a non-existing key from an empty file
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', no_key,
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', no_key,
                           '--path', asset], capture_output=True, text=True)
 
     # verify reaction of onyo
@@ -130,7 +130,7 @@ def test_unset_key_does_not_exist(repo: OnyoRepo, asset: str) -> None:
     no_key = "non_existing"
 
     # test un-setting a non-existing key from an empty file
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', no_key,
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', no_key,
                           '--path', asset], capture_output=True, text=True)
 
     # verify reaction of onyo
@@ -148,7 +148,7 @@ def test_unset_multiple_assets(repo: OnyoRepo) -> None:
     key = list(content_dict.keys())[0]
 
     # test unsetting keys for multiple assets:
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', *assets], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -196,7 +196,7 @@ def test_unset_with_dot(repo: OnyoRepo) -> None:
     repository root, onyo uses all assets in the completely repo recursively.
     """
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key,
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key,
                           '--path', "."], capture_output=True, text=True)
 
     assert "The following assets will be changed:" in ret.stdout
@@ -214,7 +214,7 @@ def test_unset_without_path(repo: OnyoRepo) -> None:
     assets recursively.
     """
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key],
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key],
                          capture_output=True, text=True)
 
     # verify the output
@@ -233,7 +233,7 @@ def test_unset_recursive_directories(repo: OnyoRepo, directory: str) -> None:
     assets in DIRECTORY.
     """
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', directory], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', directory], capture_output=True, text=True)
 
     # verify changes, and the repository clean
     # TODO: update this after solving #259
@@ -294,7 +294,7 @@ def test_unset_yes_flag(repo: OnyoRepo, asset: str) -> None:
     Test that `onyo unset --yes KEY <asset>` updates assets without prompt.
     """
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--keys', key, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', asset], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -320,7 +320,7 @@ def test_unset_quiet_without_yes_flag(repo: OnyoRepo) -> None:
     Test that `onyo unset --quiet --keys KEY --path ASSET` errors correctly
     without the --yes flag.
     """
-    ret = subprocess.run(['onyo', 'unset', '--quiet', '--keys', 'dummy_key',
+    ret = subprocess.run(['onyo', '--quiet', 'unset', '--keys', 'dummy_key',
                           '--path', asset], capture_output=True, text=True)
 
     # verify output
@@ -340,7 +340,7 @@ def test_unset_quiet_flag(repo: OnyoRepo, asset: str) -> None:
     without output and user-response.
     """
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--quiet', '--keys', key,
+    ret = subprocess.run(['onyo', '--yes', '--quiet', 'unset', '--keys', key,
                           '--path', asset], capture_output=True, text=True)
     # verify that output is completely empty
     assert not ret.stdout
@@ -363,7 +363,7 @@ def test_unset_message_flag(repo: OnyoRepo, asset: str) -> None:
     """
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
     key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--yes', '--message', msg,
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--message', msg,
                           '--keys', key, '--path', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0

@@ -4,17 +4,21 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, mkdir as mkdir_cmd
-from onyo.shared_arguments import directory
+from onyo.argparse_helpers import directory
+from onyo.shared_arguments import shared_arg_message
 
 if TYPE_CHECKING:
     import argparse
 
-arg_directory = dict(
-    dest='directory',
-    metavar='DIR',
-    nargs='+',
-    type=directory,
-    help='Directory(s) to create')
+args_mkdir = {
+    'directory': dict(
+        metavar='DIR',
+        nargs='+',
+        type=directory,
+        help='Directory(s) to create'),
+
+    'message': shared_arg_message,
+}
 
 
 def mkdir(args: argparse.Namespace) -> None:

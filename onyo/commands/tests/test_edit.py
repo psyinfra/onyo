@@ -86,7 +86,7 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
     os.environ['EDITOR'] = "printf 'key: single_asset' >"
 
     # test `onyo edit` on a single asset
-    ret = subprocess.run(['onyo', 'edit', '--yes', asset],
+    ret = subprocess.run(['onyo', '--yes', 'edit', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "+key: single_asset" in ret.stdout
@@ -107,7 +107,7 @@ def test_edit_multiple_assets(repo: OnyoRepo) -> None:
     repo_assets = repo.asset_paths
 
     # test edit for a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', '--yes', *repo_assets],
+    ret = subprocess.run(['onyo', '--yes', 'edit', *repo_assets],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert ret.stdout.count("+key: multiple_assets") == len(repo_assets)
@@ -149,7 +149,7 @@ def test_edit_message_flag(repo: OnyoRepo, asset: str) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     # test `onyo edit --message msg`
-    ret = subprocess.run(['onyo', 'edit', '--yes', '--message', msg, asset],
+    ret = subprocess.run(['onyo', '--yes', 'edit', '--message', msg, asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -169,7 +169,7 @@ def test_quiet_flag(repo: OnyoRepo) -> None:
     os.environ['EDITOR'] = "printf 'key: quiet' >"
 
     # edit a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', '--yes', '--quiet', *assets],
+    ret = subprocess.run(['onyo', '--yes', '--quiet', 'edit', *assets],
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -191,7 +191,7 @@ def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
     os.environ['EDITOR'] = "printf 'key: quiet' >"
 
     # edit a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', '--quiet', *assets],
+    ret = subprocess.run(['onyo', '--quiet', 'edit', *assets],
                          capture_output=True, text=True)
 
     # verify correct error.
@@ -325,7 +325,7 @@ def test_edit_with_dot_dot(repo: OnyoRepo, asset: str) -> None:
     # Note: Strange. That path isn't used with `edit` at all.
     path = Path(f"../{repo.git.root.name}/{asset}")
     assert path.is_file()
-    ret = subprocess.run(['onyo', 'edit', '--yes', asset],
+    ret = subprocess.run(['onyo', '--yes', 'edit', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "+key: dot_dot" in ret.stdout

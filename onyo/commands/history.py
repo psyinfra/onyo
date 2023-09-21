@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from onyo import OnyoRepo
 from onyo.lib.command_utils import get_history_cmd
 from onyo.lib.commands import fsck
-from onyo.shared_arguments import path
+from onyo.argparse_helpers import path
 
 if TYPE_CHECKING:
     import argparse
@@ -17,23 +17,23 @@ if TYPE_CHECKING:
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
-arg_interactive = dict(
-    args=('-I', '--non-interactive'),
-    dest='interactive',
-    required=False,
-    default=True,
-    action='store_false',
-    help=(
-        "Use the interactive history tool (specified in '.onyo/config' "
-        "under 'onyo.history.interactive') to display the history of the "
-        "repository, an asset or a directory"))
+args_history = {
+    'interactive': dict(
+        args=('-I', '--non-interactive'),
+        required=False,
+        default=True,
+        action='store_false',
+        help=(
+            "Use the interactive history tool (specified in '.onyo/config' "
+            "under 'onyo.history.interactive') to display the history of the "
+            "repository, an asset or a directory")),
 
-arg_path = dict(
-    dest='path',
-    metavar='PATH',
-    nargs='?',
-    type=path,
-    help='Specify an asset or a directory to show the history of')
+    'path': dict(
+        metavar='PATH',
+        nargs='?',
+        type=path,
+        help='Specify an asset or a directory to show the history of'),
+}
 
 
 def history(args: argparse.Namespace) -> None:

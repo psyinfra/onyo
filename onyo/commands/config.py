@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import config as config_cmd, fsck
-from onyo.shared_arguments import git_config
+from onyo.argparse_helpers import git_config
 
 if TYPE_CHECKING:
     import argparse
@@ -13,12 +13,13 @@ if TYPE_CHECKING:
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
-arg_git_config_args = dict(
-    dest='git_config_args',
-    metavar='ARGS',
-    nargs='+',
-    type=git_config,
-    help='Config options to set in .onyo/config')
+args_config = {
+    'git_config_args': dict(
+        metavar='ARGS',
+        nargs='+',
+        type=git_config,
+        help='Config options to set in .onyo/config'),
+}
 
 
 def config(args: argparse.Namespace) -> None:

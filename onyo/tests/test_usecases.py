@@ -31,7 +31,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 1. create new group
     workgroup = Path("newgroup")
-    cmd = ['onyo', 'mkdir', '--yes', '--quiet', str(workgroup)]
+    cmd = ['onyo', '--yes', '--quiet', 'mkdir', str(workgroup)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -39,7 +39,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     member = workgroup / "Sam User"
 
     # 2a. Create the user
-    cmd = ['onyo', 'mkdir', '--yes', '--quiet', str(member)]
+    cmd = ['onyo', '--yes', '--quiet', 'mkdir', str(member)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -50,23 +50,23 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     monitor = Path(ret.stdout.splitlines()[0].split('\t')[-1])
 
     # 2c. Assign display to user
-    cmd = ['onyo', 'mv', '--yes', '--quiet', str(monitor), str(member)]
+    cmd = ['onyo', '--yes', '--quiet', 'mv', str(monitor), str(member)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
     # 2d. Assign newly purchased laptop to user
     laptop = member / "lenovo_thinkpad_laptop.123"
-    cmd = ['onyo', 'new', '--yes', '-p', str(laptop), '-m', "New purchase: ThinkPad", '--keys', 'memory=8GB']
+    cmd = ['onyo', '--yes', 'new', '-p', str(laptop), '-m', "New purchase: ThinkPad", '--keys', 'memory=8GB']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # 2e. That was completely wrong data entry. Essentially all the wrong keys.
     # Let's remove asset entirely and redo.
-    cmd = ['onyo', 'rm', '--yes', str(laptop), '-m', "Delete asset due to erroneous data enty"]
+    cmd = ['onyo', '--yes', 'rm', str(laptop), '-m', "Delete asset due to erroneous data enty"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
     laptop = member / "laptop_lenovo_thinkpad.SN123Z"
-    cmd = ['onyo', 'new', '--yes', '-p', str(laptop), '-m', "New purchase: ThinkPad",
+    cmd = ['onyo', '--yes', 'new', '-p', str(laptop), '-m', "New purchase: ThinkPad",
            '--keys', 'RAM=8GB', 'build-date=20160310']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
@@ -79,7 +79,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
 
     # 3b. Set the inventory number
-    cmd = ['onyo', 'set', '--yes', '-k', 'fzj_inventory=123A4', '-p', str(laptop)]
+    cmd = ['onyo', '--yes', 'set', '-k', 'fzj_inventory=123A4', '-p', str(laptop)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -89,12 +89,12 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     display = Path(ret.stdout.splitlines()[0].split('\t')[-1])
-    cmd = ['onyo', 'mv', '--yes', '--quiet', str(display), str(member.parent)]
+    cmd = ['onyo', '--yes', '--quiet', 'mv', str(display), str(member.parent)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
     # 4b. Move the user with remaining assets
-    cmd = ['onyo', 'mv', '--yes', '--quiet', str(member), 'somegroup']
+    cmd = ['onyo', '--yes', '--quiet', 'mv', str(member), 'somegroup']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     member = Path('somegroup') / member.name
@@ -106,13 +106,13 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
     # 5b. Change recorded RAM size
-    cmd = ['onyo', 'set', '--yes', '-k', 'RAM=16GB', '-p', str(laptop)]
+    cmd = ['onyo', '--yes', 'set', '-k', 'RAM=16GB', '-p', str(laptop)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
     # 6. Member changes name
     member_new = member.parent / "Sam Married"
-    cmd = ['onyo', 'mv', '--yes', str(member), str(member_new)]
+    cmd = ['onyo', '--yes', 'mv', str(member), str(member_new)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     member = member_new
@@ -123,12 +123,12 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
-    cmd = ['onyo', 'mv', '--yes', str(laptop), "retired"]
+    cmd = ['onyo', '--yes', 'mv', str(laptop), "retired"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path("retired") / laptop.name
     # 7b. Remove member
-    cmd = ['onyo', 'rm', '--yes', str(member)]
+    cmd = ['onyo', '--yes', 'rm', str(member)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 

@@ -4,17 +4,21 @@ from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, rm as rm_cmd
-from onyo.shared_arguments import path
+from onyo.argparse_helpers import path
+from onyo.shared_arguments import shared_arg_message
 
 if TYPE_CHECKING:
     import argparse
 
-arg_path = dict(
-    dest='path',
-    metavar='PATH',
-    nargs='+',
-    type=path,
-    help='Asset(s) and/or directory(s) to delete')
+args_rm = {
+    'path': dict(
+        metavar='PATH',
+        nargs='+',
+        type=path,
+        help='Asset(s) and/or directory(s) to delete'),
+
+    'message': shared_arg_message,
+}
 
 
 def rm(args: argparse.Namespace) -> None:
