@@ -271,7 +271,8 @@ class OnyoRepo(object):
     @property
     def asset_paths(self) -> set[Path]:
         """
-        A `set` containing the absolute `Path`s of all assets of a repository.
+        Get a `set` containing the absolute `Path`s of all assets of a
+        repository.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `OnyoRepo`s public functions are used. Use of

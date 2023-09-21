@@ -8,6 +8,20 @@ log: logging.Logger = logging.getLogger('onyo.git')
 
 
 class GitRepo(object):
+    """
+    An object to get and set git information, and to call git functions with.
+
+    Attributes
+    ----------
+    root: Path
+        The absolute path to the directory of the git worktree root.
+
+    files: set of Paths
+        A property containing the absolute Path to all files saved in git.
+        This property is cached and consistent when only the public functions of
+        GitRepo are called. Usage of private or external functions might
+        require a manual reset of the cache with `GitRepo.clear_caches()`.
+    """
 
     def __init__(self,
                  path: Path,
@@ -15,15 +29,41 @@ class GitRepo(object):
         """
         Instantiates a `GitRepo` object with `path` as the root directory.
 
-        If `find_root=True` searches the root of a worktree from `path`.
+        Parameters
+        ----------
+        path: Path
+            An absolute path to the root of a git repository.
+
+        find_root: bool
+            `find_root=True` allows to search the root of a git worktree from a
+            sub-directory, beginning at `path`, instead of requiring the root.
         """
         self.root = GitRepo.find_root(path) if find_root else path.resolve()
 
-        self._files: Union[set[Path], None] = None
+        self._files: Optional[set[Path]] = None
 
     @staticmethod
     def find_root(path: Path) -> Path:
-        """Returns the git worktree root `path` belongs to"""
+        """
+        Returns the git worktree root `path` belongs to.
+
+        Parameters
+        ----------
+        path: Path
+            The path to identify the git worktree root for. This can be any
+            sub-directory of the repository, or the root directory itself.
+
+        Returns
+        -------
+        Path
+            An absolute path to the root of the git worktree where `.git/` is
+            located.
+
+        Raises
+        ------
+        OnyoInvalidRepoError
+            If `path` is not inside a git repository at all.
+        """
         root = None
         try:
             ret = subprocess.run(["git", "rev-parse", "--show-toplevel"],
@@ -34,8 +74,30 @@ class GitRepo(object):
             raise OnyoInvalidRepoError(f"'{path}' is not a Git repository.")
         return root
 
-    def _git(self, args: list[str], *, cwd: Optional[Path] = None, raise_error: bool = True) -> str:
+    def _git(self,
+             args: list[str], *,
+             cwd: Optional[Path] = None,
+             raise_error: bool = True) -> str:
         """
+        A wrapper function for git calls that runs commands from the root
+        directory and returns the output of commands.
+
+        Parameters
+        ----------
+        args: List of strings
+            Arguments to specify the git call to run, e.g. args=['add', <file>]
+            leads to a system call `git add <file>` from the root of git.
+
+        cwd: Optional Path
+            Run git commands from `cwd` instead of the root of the repository.
+
+        raise_error: boolean
+            Specify if `subprocess.run()` is allowed to raise errors.
+
+        Returns
+        -------
+        str
+            Return the standard output from running the git command.
         """
         if cwd is None:
             cwd = self.root
@@ -49,38 +111,43 @@ class GitRepo(object):
     @property
     def files(self) -> set[Path]:
         """
-        A `set` containing the absolute `Paths` of all files of a repository.
+        Get a `set` containing the absolute `Paths` of all files of a
+        repository.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
         private functions might require a manual reset of the caches, see
-        `Repo.clear_caches()`.
+        `GitRepo.clear_caches()`.
         """
         if not self._files:
             self._files = self._get_files()
         return self._files
 
-    def clear_caches(self, files: bool = True) -> None:
+    def clear_caches(self,
+                     files: bool = True) -> None:
         """
-        Clear caches of the instance of the repository object.
+        Clear caches of the instance of the GitRepo object.
 
-        Paths such as files, assets, and directories are cached, and can become
-        stale when the repository contents are modified. This function clears
-        the caches of the properties.
-
-        By default all caches are cleared, and arguments make it possible to
-        specify which caches which should remain set.
+        Paths to files in git are cached, and can become stale when the
+        repository contents are modified. By default, this function clears the
+        cache of all properties of the GitRepo.
 
         If the repository is exclusively modified via public API functions, the
-        caches of the `Repo` object are consistent. If the repository is
+        caches of the `GitRepo` object are consistent. If the repository is
         modified otherwise, this function clears the caches to ensure that the
         caches do not contain stale information.
+
+        Parameters
+        ----------
+        files: boolean
+            Whether to reset the file cache.
         """
         if files:
             self._files = None
 
     def restore_staged(self) -> None:
-        """Restore all staged files with uncommitted changes in the repository.
+        """
+        Restore all staged files with uncommitted changes in the repository.
 
         If nothing is staged, returns with no error.
         """
@@ -96,8 +163,16 @@ class GitRepo(object):
         # subprocess).
         self.clear_caches()
 
-    def restore(self, paths: Union[list[Path], Path]) -> None:
-        """Call git-restore on `paths`.
+    def restore(self,
+                paths: Union[list[Path], Path]) -> None:
+        """
+        Call git-restore on `paths`.
+
+        Parameters
+        ----------
+        paths: List of Paths
+            The absolute Paths to the files or directories which are to be
+            `git restore`d.
         """
         if not paths:
             log.debug("No paths passed to restore. Nothing to do.")
@@ -145,7 +220,7 @@ class GitRepo(object):
     @property
     def files_changed(self) -> set[Path]:
         """
-        Returns a `set` containing the absolute `Path`s of all changed files
+        Get a `set` containing the absolute `Path`s of all changed files
         (according to git) of a repository.
         """
         return self._get_files_changed()
@@ -153,7 +228,7 @@ class GitRepo(object):
     @property
     def files_staged(self) -> set[Path]:
         """
-        Returns a `set` containing the absolute `Path`s of all staged files
+        Get a `set` containing the absolute `Path`s of all staged files
         (according to git) of a repository.
         """
         return self._get_files_staged()
@@ -161,14 +236,19 @@ class GitRepo(object):
     @property
     def files_untracked(self) -> set[Path]:
         """
-        Returns a `set` containing the absolute `Path`s of all untracked files
+        Get a `set` containing the absolute `Path`s of all untracked files
         (according to git) of a repository.
         """
         return self._get_files_untracked()
 
     def is_clean_worktree(self) -> bool:
         """
-        Check if the working tree for git is clean. Returns True or False.
+        Check if the working tree for git is clean.
+
+        Returns
+        -------
+        Boolean
+            True if the git worktree is clean, otherwise False.
         """
 
         changed = {str(x) for x in self.files_changed}
@@ -192,7 +272,16 @@ class GitRepo(object):
             return False
         return True
 
-    def maybe_init(self, target_dir: Path) -> None:
+    def maybe_init(self,
+                   target_dir: Path) -> None:
+        """
+        Initialize a directory as a git repository if it is not already one.
+
+        Parameters
+        ----------
+        target_dir: Path
+            A path to initialize as a git repository.
+        """
         # Note: Why? git-init would do that
         # create target if it doesn't already exist
         target_dir.mkdir(exist_ok=True)
@@ -206,7 +295,21 @@ class GitRepo(object):
             log.info(ret.strip())
         self.root = target_dir
 
-    def stage_and_commit(self, paths: Union[Iterable[Path], Path], message: str) -> None:
+    def stage_and_commit(self,
+                         paths: Union[Iterable[Path], Path],
+                         message: str) -> None:
+        """
+        Stage and commit changes in git.
+
+        Parameters
+        ----------
+        paths: Paths
+            List of paths to files or directories for which to commit changes to
+            git.
+
+        message: str
+            Specify the git commit message.
+        """
         if isinstance(paths, Path):
             paths = [paths]
         self._git(['add'] + [str(p) for p in paths])
@@ -214,14 +317,38 @@ class GitRepo(object):
 
     @staticmethod
     def is_git_path(path: Path) -> bool:
-        # .git/*, .gitignore, .gitattributes, .gitmodules, etc.
+        """
+        Identifies if a path is a git file or directory, e.g.
+        `.git/*`, `.gitignore`, `.gitattributes`, `.gitmodules`, etc.
+
+        Parameters
+        ----------
+        path: Path
+            The path to identify if it is a git file or directory, or if not.
+
+        Returns
+        -------
+        boolean
+            True if path is a git file or directory, otherwise False.
+        """
         return '.git' in path.parts or path.name.startswith('.git')
 
-    def add(self, targets: Union[Iterable[Path], Path, str]) -> None:
+    def add(self,
+            targets: Union[Iterable[Path], Path]) -> None:
         """
         Perform ``git add`` to stage files.
 
-        Paths are relative to ``repo.root``.
+        If called on files without changes, it does not raise an error.
+
+        Parameters
+        ----------
+        targets: List of paths
+            Paths are relative to ``repo.root``.
+
+        Raises
+        ------
+        FileNotFoundError
+            If a path in `targets` does not exist.
         """
         if isinstance(targets, (list, set)):
             tgts = [str(x) for x in targets]
@@ -239,11 +366,22 @@ class GitRepo(object):
         # call. To always secure the integrity of the caches, we reset them all.
         self.clear_caches()
 
-    def commit(self, *args) -> None:
+    def commit(self,
+               *args) -> None:
         """
-        Perform a ``git commit``. The first message argument is the title; each
-        argument after is a new paragraph. Messages are converted to strings.
-        Lists are printed one item per line, also converted to a string.
+        Perform a ``git commit``.
+
+        Parameters
+        ----------
+        args: tuple
+            Components to compose the commit message from. At least one is
+            required. The first argument is the title; each argument after it is
+            a new paragraph. Lists and sets are printed one item per line.
+
+        Raises
+        ------
+        ValueError
+            If no commit message is provided.
         """
         if not args:
             raise ValueError('at least one commit message is required')
@@ -261,7 +399,8 @@ class GitRepo(object):
 
         self._git(['commit'] + messages)
 
-    def get_config(self, name: str) -> Union[str, None]:
+    def get_config(self,
+                   name: str) -> Union[str, None]:
         """
         Get the value for a configuration option specified by `name`.
 
@@ -269,7 +408,15 @@ class GitRepo(object):
         local, global, system). If the config name is not found, .onyo/config is
         checked.
 
-        Returns a string with the config value on success. None otherwise.
+        Parameters
+        ----------
+        name: str
+            The name of the configuration value to query.
+
+        Returns
+        -------
+        string or `None`
+            The config value on success, otherwise `None`.
         """
         # TODO: Move onyo-config code to OnyoRepo
 
@@ -295,13 +442,35 @@ class GitRepo(object):
 
         return value
 
-    def set_config(self, name: str, value: str, location: str = 'onyo') -> bool:
+    def set_config(self,
+                   name: str,
+                   value: str,
+                   location: str = 'onyo') -> bool:
         """
-        Set the `name` configuration option to `value`. The local is `onyo` by
-        default. Other git config locations are: `system`, `global`, `local`,
-        and `worktree`.
+        Set the configuration option `name` to `value`.
 
-        Returns True on success. Raises an exception otherwise.
+        Parameters
+        ----------
+        name: string
+            The name of the configuration option to set.
+
+        value: string
+            The value to set for the configuration option.
+
+        location: string
+            The location of the configuration for which the value should be set.
+            Defaults to `onyo`. Other git config locations are: `system`,
+            `global`, `local`, and `worktree`.
+
+        Returns
+        -------
+        boolean
+            True on success, otherwise raises an exception.
+
+        Raises
+        ------
+        ValueError
+            If the config file was not found to set the value in.
         """
         location_options = {
             'onyo': ['--file', str(Path(self.root, '.onyo/config'))],
@@ -326,8 +495,13 @@ class GitRepo(object):
 
     def _diff_changes(self) -> str:
         """
-        Return a diff of all uncommitted changes. The format is a simplified
-        version of `git diff`.
+        Query git for information about all uncommitted changes.
+
+        Returns
+        -------
+        string
+            A diff of all uncommitted changes. The format is a simplified
+            version of `git diff`.
         """
         diff = self._git(['--no-pager', 'diff', 'HEAD']).splitlines()
         diff = [line.strip().replace("+++ b/", "\n").replace("+++ /dev/null", "\n")
@@ -340,12 +514,25 @@ class GitRepo(object):
            source: Union[Path, Iterable[Path]],
            destination: Path,
            dryrun: bool = False) -> str:
-        """Call git-mv on paths provided by `source` and `destination`.
+        """
+        Call git-mv on paths provided by `source` and `destination`.
+
+        Parameters
+        ----------
+        source: List of Paths
+            Absolute paths of source files to move.
+
+        destination: Path
+            The absolute path of the destination to move `source` to.
+
+        dryrun: boolean
+            To perform an interactive dry-run of the `git mv` without modifying
+            the repository.
 
         Returns
         -------
-        list of tuple of Path
-          each tuple represents a move from a source file to a destination file
+        string
+            The standard output from running the `git mv` command subprocess.
         """
         if isinstance(source, Path):
             source = [source]
@@ -357,13 +544,29 @@ class GitRepo(object):
         mv_cmd.append(str(destination))
         return self._git(mv_cmd)
 
-    def rm(self, paths: Union[list[Path], Path], force: bool = False, dryrun: bool = False) -> str:
-        """Call git-rm on `paths`
+    def rm(self,
+           paths: Union[list[Path], Path],
+           force: bool = False,
+           dryrun: bool = False) -> str:
+        """
+        Call `git rm` on `paths`.
+
+        Parameters
+        ----------
+        paths: List of Paths
+            Absolute paths of files or directories to delete.
+
+        force: boolean
+            Run `git rm` with option `--force`.
+
+        dryrun: boolean
+            To perform an interactive dry-run of the `git rm` without modifying
+            the repository.
 
         Returns
         -------
-        str
-          stdout of the git-rm subprocess
+        string
+          The standard output from running the `git rm` command subprocess.
         """
         if not isinstance(paths, list):
             paths = [paths]
