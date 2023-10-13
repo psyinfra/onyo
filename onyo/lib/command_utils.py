@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import logging
 import os
 import re
 import shutil
@@ -14,12 +13,11 @@ from typing import Dict, Union, Generator, Iterable, Optional, Tuple
 from rich.console import Console
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
+from onyo import ui
 from .onyo import OnyoRepo
 from .exceptions import OnyoProtectedPathError, OnyoInvalidFilterError
 from .filters import Filter, UNSET_VALUE
 
-
-log: logging.Logger = logging.getLogger('onyo.command_utils')
 
 # Note: Several functions only stage changes. Implies: This function somewhat
 # assumes commit to be called later, which is out of its own control.
@@ -34,7 +32,7 @@ log: logging.Logger = logging.getLogger('onyo.command_utils')
 
 
 # Note: logging for user messaging rather than logging progress along internal
-# call paths. DataLad does, too, and it's bad. Conflates debugging with "real"
+# call paths. DataLad does, too, and it's bad. Conflates ebugging with "real"
 # output.
 
 
@@ -101,30 +99,15 @@ def get_editor(repo: OnyoRepo) -> str:
 
     # $EDITOR environment variable
     if not editor:
-        log.debug("onyo.core.editor is not set.")
+        ui.log_debug("onyo.core.editor is not set.")
         editor = os.environ.get('EDITOR')
 
     # fallback to nano
     if not editor:
-        log.debug("$EDITOR is also not set.")
+        ui.log_debug("$EDITOR is also not set.")
         editor = 'nano'
 
     return editor
-
-
-def request_user_response(question: str) -> bool:
-    """
-    Opens a dialog for the user and reads an answer from the keyboard.
-    Returns True when user answers yes, False when no, and asks again if the
-    input is neither.
-    """
-    while True:
-        answer = input(question)
-        if answer in ['y', 'Y', 'yes']:
-            return True
-        elif answer in ['n', 'N', 'no']:
-            return False
-    return False
 
 
 def edit_asset(editor: str, asset: Path) -> bool:
@@ -144,8 +127,8 @@ def edit_asset(editor: str, asset: Path) -> bool:
             # TODO: add asset validity here
             return True
         except scanner.ScannerError:
-            print(f"{asset} has invalid YAML syntax.", file=sys.stderr)
-            if not request_user_response("Continue editing? No discards changes. (y/n) "):
+            ui.error(f"{asset} has invalid YAML syntax.")
+            if not ui.request_user_response("Continue editing? No discards changes. (y/n) "):
                 return False
 
 
@@ -172,7 +155,7 @@ def set_filters(
             console = Console(stderr=True)
             console.print(f'[red]FAILED[/red] {exc}')
         else:
-            print(exc, file=sys.stderr)
+            ui.error(exc)
         # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
         #       rendering/printing handled upstairs.
         raise
@@ -186,7 +169,7 @@ def set_filters(
             console.print(
                 f'[red]FAILED[/red] Duplicate filter keys: {duplicates}')
         else:
-            print(f'Duplicate filter keys: {duplicates}', file=sys.stderr)
+            ui.error(f'Duplicate filter keys: {duplicates}')
         # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
         #       rendering/printing handled upstairs.
         raise ValueError
@@ -317,8 +300,8 @@ def rm(repo: OnyoRepo,
     ret = repo.git.rm(paths_to_rm, dryrun=dryrun)
 
     # TODO: change this to info
-    log.debug('The following will be deleted:\n' +
-              '\n'.join([str(x.relative_to(repo.git.root)) for x in paths_to_rm]))
+    ui.log_debug('The following will be deleted:\n' +
+                 '\n'.join([str(x.relative_to(repo.git.root)) for x in paths_to_rm]))
 
     # Note: The usual "invalidate everything because we don't know what we did".
     repo.clear_caches()
@@ -396,7 +379,6 @@ def unset(repo: OnyoRepo,
           paths: Iterable[Path],
           keys: list[str],
           dryrun: bool,
-          quiet: bool,
           depth: Union[int, None]) -> list[Tuple[Path, Dict, Iterable]]:
 
     from .assets import get_asset_files_by_path, PSEUDO_KEYS, get_asset_content, dict_to_yaml
@@ -415,8 +397,7 @@ def unset(repo: OnyoRepo,
             try:
                 del contents[field]
             except KeyError:
-                if not quiet:
-                    log.info(f"Field {field} does not exist in {asset_path}")
+                ui.log(f"Field {field} does not exist in {asset_path}")
 
         if prev_content != contents:
             from difflib import unified_diff
@@ -495,7 +476,7 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
         """
         Rename mode checks
         """
-        log.debug("'mv' in rename mode")
+        ui.log_debug("'mv' in rename mode")
         # renaming files is not allowed
         src = sources[0]
         if src.is_file() and src.name != destination.name:
@@ -513,7 +494,7 @@ def sanitize_destination_for_mv(repo: OnyoRepo,
         """
         Move mode checks
         """
-        log.debug("'mv' in move mode")
+        ui.log_debug("'mv' in move mode")
 
         # check if same name is specified as the destination
         # (e.g. rename to same name is a move)
@@ -549,9 +530,10 @@ def onyo_mv(repo: OnyoRepo,
                        if not repo.is_asset_path(p) and
                        not repo.is_inventory_dir(p)]
     if invalid_sources:
-        raise ValueError("The following paths are neither inventory directories nor assets:\n%s"
-                         "\nNothing was moved.",
-                         '\n'.join(map(str, invalid_sources)))
+        raise ValueError("The following paths are neither inventory " +
+                         "directories nor assets:\n" +
+                         '\n'.join(map(str, invalid_sources)) +
+                         "\nNothing was moved.")
 
     dest_path = sanitize_destination_for_mv(repo, sources, destination)
     ret = repo.git.mv(sources, dest_path, dryrun=dryrun)

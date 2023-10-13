@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -10,9 +9,6 @@ from onyo.shared_arguments import shared_arg_message
 
 if TYPE_CHECKING:
     import argparse
-
-logging.basicConfig()
-log: logging.Logger = logging.getLogger('onyo')
 
 args_edit = {
     'asset': dict(
@@ -39,4 +35,4 @@ def edit(args: argparse.Namespace) -> None:
 
     paths = [Path(p).resolve() for p in args.asset]
     repo = OnyoRepo(Path.cwd(), find_root=True)
-    edit_cmd(repo, paths, args.message, args.quiet, args.yes)
+    edit_cmd(repo, paths, args.message)

@@ -35,4 +35,4 @@ def mkdir(args: argparse.Namespace) -> None:
     dirs = [Path(d).resolve() for d in args.directory]
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck(repo)
-    mkdir_cmd(repo, dirs, args.quiet, args.yes, args.message)
+    mkdir_cmd(repo, dirs, args.message)

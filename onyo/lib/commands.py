@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 import logging
 from typing import Optional, Union, Iterable, Dict
 from pathlib import Path
@@ -10,10 +9,11 @@ from rich.console import Console
 from rich import box
 from rich.table import Table
 
+from onyo import ui
 from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
-from onyo.lib.command_utils import get_editor, edit_asset, \
-    request_user_response, sanitize_keys, set_filters, \
-    fill_unset, natural_sort, validate_args_for_new, onyo_mv, rollback_untracked
+from onyo.lib.command_utils import get_editor, edit_asset, sanitize_keys,\
+    set_filters, fill_unset, natural_sort, validate_args_for_new, onyo_mv,\
+    rollback_untracked
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
@@ -61,15 +61,15 @@ def fsck(repo: OnyoRepo, tests: Optional[list[str]] = None) -> None:
     # run the selected tests
     for key in tests:
         # TODO: these should be INFO
-        log.debug(f"'{key}' starting")
+        ui.log_debug(f"'{key}' starting")
 
         if not all_tests[key]():
             # Note: What's that debug message adding? Alone it lacks the identifying path and in combination with
             #       the exception it's redundant.
-            log.debug(f"'{key}' failed")
+            ui.log_debug(f"'{key}' failed")
             raise OnyoInvalidRepoError(f"'{repo.git.root}' failed fsck test '{key}'")
 
-        log.debug(f"'{key}' succeeded")
+        ui.log_debug(f"'{key}' succeeded")
 
 
 def cat(repo: OnyoRepo, paths: Iterable[Path]) -> None:
@@ -80,7 +80,7 @@ def cat(repo: OnyoRepo, paths: Iterable[Path]) -> None:
                          "\n".join(non_asset_paths))
     # open file and print to stdout
     for path in paths:
-        print(path.read_text(), end='')
+        ui.print(path.read_text(), end='')
 
 
 def config(repo: OnyoRepo, config_args: list[str]) -> None:
@@ -97,9 +97,9 @@ def config(repo: OnyoRepo, config_args: list[str]) -> None:
 
     # print any output gathered
     if ret.stdout:
-        print(ret.stdout, end='')
+        ui.print(ret.stdout, end="")
     if ret.stderr:
-        print(ret.stderr, file=sys.stderr, end='')
+        ui.error(ret.stderr, end="")
 
     # bubble up error retval
     if ret.returncode != 0:
@@ -112,13 +112,7 @@ def config(repo: OnyoRepo, config_args: list[str]) -> None:
 
 def edit(repo: OnyoRepo,
          asset_paths: Iterable[Path],
-         message: list[str],
-         quiet: bool,
-         yes: bool) -> None:
-    # check flags for conflicts
-    if quiet and not yes:
-        raise ValueError('The --quiet flag requires --yes.')
-
+         message: list[str]) -> None:
     # "onyo fsck" is intentionally not run here.
     # This is so "onyo edit" can be used to fix an existing problem. This has
     # benefits over just simply using `vim`, etc directly, as "onyo edit" will
@@ -129,7 +123,7 @@ def edit(repo: OnyoRepo,
     valid_asset_paths = []
     for a in asset_paths:
         if not repo.is_asset_path(a):
-            print(f"\n{a} is not an asset.", file=sys.stderr)
+            ui.error(f"\n{a} is not an asset.")
         else:
             valid_asset_paths.append(a)
     if not valid_asset_paths:
@@ -144,15 +138,13 @@ def edit(repo: OnyoRepo,
         else:
             # If user wants to discard changes, restore the asset's state
             repo.git.restore(asset)
-            if not quiet:
-                print(f"'{asset}' not updated.")
+            ui.print(f"'{asset}' not updated.")
 
     diff = repo.git._diff_changes()
     if diff:
         # commit changes
-        if not quiet:
-            print(diff)
-        if yes or request_user_response("Save changes? No discards all changes. (y/n) "):
+        ui.print(diff)
+        if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             repo.git.stage_and_commit(paths=modified,
                                       message=repo.generate_commit_message(message=message,
                                                                            cmd="edit")
@@ -160,8 +152,7 @@ def edit(repo: OnyoRepo,
             return
         else:
             repo.git.restore(modified)
-    if not quiet:
-        print('No assets updated.')
+    ui.print('No assets updated.')
 
 
 def get(repo: OnyoRepo,
@@ -178,8 +169,9 @@ def get(repo: OnyoRepo,
             '--sort-ascending (-s) and --sort-descending (-S) cannot be used '
             'together')
         if machine_readable:
-            print(msg, file=sys.stderr)
+            ui.error(msg)
         else:
+            # TODO: do this with ui class too
             console = Console(stderr=True)
             console.print(f'[red]FAILED[/red] {msg}')
         raise ValueError
@@ -214,7 +206,7 @@ def get(repo: OnyoRepo,
         sep = '\t'  # column separator
         for asset, data in results:
             values = sep.join([str(value) for value in data.values()])
-            print(f'{values}{sep}{asset.relative_to(Path.cwd())}')
+            ui.print(f'{values}{sep}{asset.relative_to(Path.cwd())}')
     else:
         console = Console()
         table = Table(
@@ -230,25 +222,25 @@ def get(repo: OnyoRepo,
             for asset, data in results:
                 values = [str(value) for value in data.values()]
                 table.add_row(*values, str(asset.relative_to(Path.cwd())))
-
+            # TODO: do this with ui class, too
             console.print(table)
         else:
             console.print('No assets matching the filter(s) were found')
 
 
-def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Union[list[str], None]) -> None:
+def mkdir(repo: OnyoRepo,
+          dirs: list[Path],
+          message: Union[list[str], None]) -> None:
 
     created_files = repo.mk_inventory_dirs(dirs)
 
     if created_files:
         # commit changes
-        if not quiet:
-            created_dirs = [p.parent for p in created_files]
-            print(
-                'The following directories will be created:',
-                *map(str, created_dirs), sep='\n')
+        created_dirs = [p.parent for p in created_files]
+        ui.print(['The following directories will be created:',
+                  *map(str, created_dirs)], sep='\n')
 
-        if yes or request_user_response("Save changes? No discards all changes. (y/n) "):
+        if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             repo.git.stage_and_commit(
                 paths=created_files,
                 message=repo.generate_commit_message(message=message,
@@ -258,30 +250,21 @@ def mkdir(repo: OnyoRepo, dirs: list[Path], quiet: bool, yes: bool, message: Uni
             return
         else:
             rollback_untracked(created_files)
-    if not quiet:
-        print('No directories created.')
+    ui.print('No directories created.')
 
 
 def mv(repo: OnyoRepo,
        source: Union[Iterable[Path], Path],
        destination: Path,
-       quiet: bool,
-       yes: bool,
        message: Union[list[str], None]) -> None:
 
-    # check flags
-    if quiet and not yes:
-        raise ValueError("The --quiet flag requires --yes.")
+    dryrun_list = onyo_mv(repo, source, destination, dryrun=True)
+    ui.print('The following will be moved:\n' +
+             '\n'.join(f"'{x[0]}' -> '{x[1]}'" for x in dryrun_list))
 
-    # Note: Why does the dryrun execution depend on quiet?
-    if not quiet:
-        dryrun_list = onyo_mv(repo, source, destination, dryrun=True)
-        print('The following will be moved:\n' +
-              '\n'.join(f"'{x[0]}' -> '{x[1]}'" for x in dryrun_list))
-
-        if not yes and not request_user_response("Save changes? No discards all changes. (y/n) "):
-            print('Nothing was moved.')
-            return
+    if not ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+        ui.print('Nothing was moved.')
+        return
 
     onyo_mv(repo, source, destination)
     repo.git.commit(repo.generate_commit_message(message=message, cmd="mv",
@@ -294,7 +277,6 @@ def new(repo: OnyoRepo,
         tsv: Optional[Path],
         keys: Dict[str, str],
         edit: bool,
-        yes: bool,
         message: Union[list[str], None]) -> None:
 
     from onyo.lib.assets import read_assets_from_tsv, create_assets_in_destination, read_assets_from_CLI
@@ -328,19 +310,19 @@ def new(repo: OnyoRepo,
     # print diff-like output and remember new directories and assets
     changes = []
     if new_files:
-        print("The following will be created:")
+        ui.print("The following will be created:")
         for path in new_files:
             # display new folders, not anchors.
             if path.name == repo.ANCHOR_FILE:
-                print(path.parent)
+                ui.print(path.parent)
                 changes.append(path.parent)
             else:
-                print(path)
+                ui.print(path)
                 changes.append(path)
 
     # commit or discard changes
     if new_files:
-        if yes or request_user_response("Create assets? (y/n) "):
+        if ui.request_user_response("Create assets? (y/n) "):
             repo.git.stage_and_commit(paths=new_files,
                                       message=repo.generate_commit_message(message=message,
                                                                            cmd="new",
@@ -349,27 +331,19 @@ def new(repo: OnyoRepo,
             return
         else:
             rollback_untracked(new_files)
-    print('No new assets created.')
+    ui.print('No new assets created.')
 
 
 def rm(repo: OnyoRepo,
        path: list[Path],
-       quiet: bool,
-       yes: bool,
        message: Union[list[str], None]) -> None:
     from onyo.lib.command_utils import rm as onyo_rm
-    # check flags
-    if quiet and not yes:
-        raise ValueError('The --quiet flag requires --yes.')
+    dryrun_list = onyo_rm(repo, path, dryrun=True)
+    ui.print('The following will be deleted:\n' + '\n'.join(dryrun_list))
 
-    if not quiet:
-        dryrun_list = onyo_rm(repo, path, dryrun=True)
-        print('The following will be deleted:\n' +
-              '\n'.join(dryrun_list))
-
-        if not yes and not request_user_response("Save changes? No discards all changes. (y/n) "):
-            print('Nothing was deleted.')
-            return
+    if not ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+        ui.print('Nothing was deleted.')
+        return
 
     onyo_rm(repo, path)
     repo.git.commit(repo.generate_commit_message(message=message,
@@ -383,15 +357,9 @@ def set_(repo: OnyoRepo,
          dryrun: bool,
          rename: bool,
          depth: Union[int],
-         quiet: bool,
-         yes: bool,
          message: Union[list[str], None]) -> Union[str, None]:
     from onyo.lib.command_utils import set_assets
     from .assets import write_asset_file
-
-    # check flags for conflicts
-    if quiet and not yes:
-        raise ValueError('The --quiet flag requires --yes.')
 
     if not paths:
         paths = [Path.cwd()]
@@ -415,18 +383,17 @@ def set_(repo: OnyoRepo,
 
     diffs = [m[2] for m in modifications if m[2] != []]
     # display changes
-    if not quiet:
-        if diffs or moves:
-            print("The following assets will be changed:")
-            for src, dst in moves:
-                print(f"Rename {src} to {dst}")
-            if diffs:
-                for d in diffs:
-                    for line in d:
-                        print(line)
-        else:
-            print("The values are already set. No assets updated.")
-            return
+    if diffs or moves:
+        ui.print("The following assets will be changed:")
+        for src, dst in moves:
+            ui.print(f"Rename {src} to {dst}")
+        if diffs:
+            for d in diffs:
+                for line in d:
+                    ui.print(line)
+    else:
+        ui.print("The values are already set. No assets updated.")
+        return
 
     # Note: This needs to go again, when dryrun (gh-377) and convolution of name generation,
     #       git-mv, etc. is resolved.
@@ -444,7 +411,7 @@ def set_(repo: OnyoRepo,
 
         # commit or discard changes
         if diffs or moves:
-            if yes or request_user_response("Update assets? (y/n) "):
+            if ui.request_user_response("Update assets? (y/n) "):
                 repo.git.commit(repo.generate_commit_message(message=message,
                                                              cmd="set",
                                                              keys=[f"{k}={v}" for k, v in keys.items()]))
@@ -455,8 +422,7 @@ def set_(repo: OnyoRepo,
                     to_restore.append(s)
                     to_restore.append(d)
                 repo.git.restore_staged()
-    if not quiet:
-        print("No assets updated.")
+    ui.print("No assets updated.")
 
 
 def tree(repo: OnyoRepo, paths: list[Path]) -> None:
@@ -473,7 +439,7 @@ def tree(repo: OnyoRepo, paths: list[Path]) -> None:
     if ret.stderr:
         raise RuntimeError(ret.stderr)
     # print tree output
-    print(ret.stdout)
+    ui.print(ret.stdout)
 
 
 def unset(repo: OnyoRepo,
@@ -481,15 +447,10 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           filter_strings: list[str],
           dryrun: bool,
-          quiet: bool,
-          yes: bool,
           depth: Union[int, None],
           message: Union[list[str], None]) -> None:
     from onyo.lib.command_utils import unset as ut_unset
     from .assets import write_asset_file
-    # check flags for conflicts
-    if quiet and not yes:
-        raise ValueError("The --quiet flag requires --yes.")
 
     if not paths:
         paths = [Path.cwd()]
@@ -504,23 +465,22 @@ def unset(repo: OnyoRepo,
         repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
     paths = [a[0] for a in paths]
 
-    modifications = ut_unset(repo, paths, keys, dryrun, quiet, depth)
+    modifications = ut_unset(repo, paths, keys, dryrun, depth)
 
     diffs = [m[2] for m in modifications if m[2] != []]
     # display changes
-    if not quiet:
+    if diffs:
+        ui.print("The following assets will be changed:")
         if diffs:
-            print("The following assets will be changed:")
-            if diffs:
-                for d in diffs:
-                    for line in d:
-                        print(line)
-        else:
-            print("No assets containing the specified key(s) could be found. No assets updated.")
-            return
+            for d in diffs:
+                for line in d:
+                    ui.print(line)
+    else:
+        ui.print("No assets containing the specified key(s) could be found. No assets updated.")
+        return
 
     if diffs and not dryrun:
-        if yes or request_user_response("Update assets? (y/n) "):
+        if ui.request_user_response("Update assets? (y/n) "):
             to_commit = []
             for m in modifications:
                 write_asset_file(m[0], m[1])
@@ -531,5 +491,4 @@ def unset(repo: OnyoRepo,
                                                                            keys=keys)
                                       )
             return
-    if not quiet:
-        print("No assets updated.")
+    ui.print("No assets updated.")

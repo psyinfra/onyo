@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 import csv
 import random
 import re
@@ -9,11 +8,10 @@ from typing import Dict, Union, Iterable, Set, Generator, Optional
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
+from onyo import ui
 from onyo.lib.filters import Filter
 from onyo.lib.onyo import OnyoRepo
 
-
-log: logging.Logger = logging.getLogger('onyo.assets')
 
 # Note: Order in this definition likely matters, since the filename is made of them:
 PSEUDO_KEYS = ["type", "make", "model", "serial"]
@@ -31,7 +29,7 @@ def contains_no_pseudo_keys(asset_files: Set[Path]) -> bool:
             assets_failed[asset] = violation_list
 
     if assets_failed:
-        log.error(
+        ui.error(
             "Pseudo keys {0} are reserved for asset file names, and are "
             "not allowed in the asset's contents. The following assets "
             "contain pseudo keys:\n{1}".format(
@@ -51,8 +49,8 @@ def has_unique_names(asset_files: Set[Path]) -> bool:
     duplicates.sort(key=lambda x: x.name)
 
     if duplicates:
-        log.error('The following file names are not unique:\n{}'.format(
-            '\n'.join(map(str, duplicates))))
+        ui.error('The following file names are not unique:\n{}'.format(
+                 '\n'.join(map(str, duplicates))))
         return False
 
     return True
@@ -65,7 +63,7 @@ def validate_assets(asset_files: Set[Path]) -> bool:
         pass
 
     if invalid:
-        log.error(
+        ui.error(
             'The contents of the following files fail validation:\n'
             '{}'.format(
                 '\n'.join([f'{k}\n{v}' for k, v in invalid.items()])))
@@ -87,7 +85,7 @@ def validate_yaml(asset_files: Set[Path]) -> bool:
             invalid_yaml.append(str(asset))
 
     if invalid_yaml:
-        log.error('The following files fail YAML validation:\n{}'.format(
+        ui.error('The following files fail YAML validation:\n{}'.format(
             '\n'.join(invalid_yaml)))
 
         return False
@@ -140,7 +138,7 @@ def valid_asset_name(asset_file: Path) -> bool:
     try:
         re.findall(r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset_file.name)[0]
     except (ValueError, IndexError):
-        log.info(f"'{asset_file.name}' must be in the format '<type>_<make>_<model>.<serial>'")
+        ui.log(f"'{asset_file.name}' must be in the format '<type>_<make>_<model>.<serial>'")
         return False
 
     return True
@@ -200,7 +198,7 @@ def get_asset_content(asset_file: Path) -> Dict[str, Union[float, int, str]]:
     try:
         contents = yaml.load(asset_file)
     except scanner.ScannerError as e:
-        print(e)
+        ui.error(e)
     if contents is None:
         return dict()
     return contents
