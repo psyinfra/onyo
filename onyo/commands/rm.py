@@ -31,4 +31,4 @@ def rm(args: argparse.Namespace) -> None:
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck(repo)
     paths = [Path(p).resolve() for p in args.path]
-    rm_cmd(repo, paths, args.quiet, args.yes, args.message)
+    rm_cmd(repo, paths, args.message)

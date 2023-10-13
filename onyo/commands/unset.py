@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,9 +14,6 @@ from onyo.shared_arguments import (
 
 if TYPE_CHECKING:
     import argparse
-
-logging.basicConfig()
-log: logging.Logger = logging.getLogger('onyo')
 
 args_unset = {
     'keys': dict(
@@ -73,7 +69,5 @@ def unset(args: argparse.Namespace) -> None:
               args.keys,
               args.filter,
               args.dry_run,
-              args.quiet,
-              args.yes,
               args.depth,
               args.message)

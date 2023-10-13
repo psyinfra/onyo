@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -9,9 +8,6 @@ from onyo.argparse_helpers import directory
 
 if TYPE_CHECKING:
     import argparse
-
-logging.basicConfig()
-log: logging.Logger = logging.getLogger('onyo')
 
 args_tree = {
     'directory': dict(

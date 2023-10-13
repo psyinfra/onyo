@@ -1,16 +1,17 @@
-import logging
 from onyo._version import __version__
 from onyo.lib import (
-    Filter, OnyoRepo, OnyoInvalidRepoError,
-    OnyoProtectedPathError, OnyoInvalidFilterError)
+    Filter,
+    OnyoRepo,
+    OnyoInvalidRepoError,
+    OnyoProtectedPathError,
+    OnyoInvalidFilterError,
+    UI,)
 from onyo.onyo_arguments import args_onyo
 
-logging.basicConfig(level=logging.ERROR)  # external logging level
-log: logging.Logger = logging.getLogger('onyo')  # internal logging level
-log.setLevel(level=logging.INFO)
+# create a shared UI object to import by classes/commands
+ui = UI()
 
 __all__ = [
-    'log',
     '__version__',
     'Filter',
     'args_onyo',

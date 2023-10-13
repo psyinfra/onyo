@@ -1,13 +1,9 @@
 from __future__ import annotations
-import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from onyo.lib.exceptions import OnyoInvalidFilterError
-
-
-log: logging.Logger = logging.getLogger('onyo.filters')
 
 
 # TODO: Move this to a place specifically meant for defaults, along with
