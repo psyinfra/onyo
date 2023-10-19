@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from pathlib import Path
-import logging
 
 from onyo import OnyoRepo
 from onyo.lib.commands import fsck, get as get_cmd
@@ -10,9 +9,6 @@ from onyo.shared_arguments import shared_arg_depth, shared_arg_filter
 
 if TYPE_CHECKING:
     import argparse
-
-logging.basicConfig()
-log = logging.getLogger('onyo')
 
 args_get = {
     'machine_readable': dict(

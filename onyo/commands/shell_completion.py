@@ -1,6 +1,7 @@
 import argparse
 from typing import Optional
 
+from onyo import ui
 
 args_shell_completion = {
     'shell': dict(
@@ -529,4 +530,4 @@ def shell_completion(args: argparse.Namespace) -> None:
 
     # TODO: add bash
 
-    print(content)
+    ui.print(content)

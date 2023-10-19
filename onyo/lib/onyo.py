@@ -8,6 +8,7 @@ from .git import GitRepo
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
+log.setLevel(logging.INFO)
 
 
 class OnyoRepo(object):

@@ -1,21 +1,17 @@
 from __future__ import annotations
-import logging
 import os
 import sys
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING
 
-from onyo import OnyoRepo
+from onyo import OnyoRepo, ui
 from onyo.lib.command_utils import get_history_cmd
 from onyo.lib.commands import fsck
 from onyo.argparse_helpers import path
 
 if TYPE_CHECKING:
     import argparse
-
-logging.basicConfig()
-log: logging.Logger = logging.getLogger('onyo')
 
 args_history = {
     'interactive': dict(
@@ -66,8 +62,8 @@ def history(args: argparse.Namespace) -> None:
     #       history cmd fails. Whatever history command one is using it needs to figure that same thing out again one
     #       way or another. Nothing gained here.
     if path and not path.exists():
-        print(f"Cannot display the history of '{path}'. It does not exist.", file=sys.stderr)
-        print("Exiting.", file=sys.stderr)
+        ui.error(f"Cannot display the history of '{path}'. It does not exist.")
+        ui.error("Exiting.")
         sys.exit(1)
 
     history_cmd = get_history_cmd(args.interactive, repo)

@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,9 +14,6 @@ from onyo.shared_arguments import (
 
 if TYPE_CHECKING:
     import argparse
-
-logging.basicConfig()
-log: logging.Logger = logging.getLogger('onyo')
 
 args_set = {
     'rename': dict(
@@ -89,6 +85,4 @@ def set(args: argparse.Namespace) -> None:
             args.dry_run,
             args.rename,
             args.depth,
-            args.quiet,
-            args.yes,
             args.message)

@@ -40,4 +40,4 @@ def mv(args: argparse.Namespace) -> None:
     sources = [Path(p).resolve() for p in args.source]
     destination = Path(args.destination).resolve()
 
-    mv_cmd(repo, sources, destination, args.quiet, args.yes, args.message)
+    mv_cmd(repo, sources, destination, args.message)

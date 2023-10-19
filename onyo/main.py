@@ -1,16 +1,11 @@
 import argparse
-import logging
 import os
 import sys
 import textwrap
 
-from onyo import commands
+from onyo import commands, ui
 from pathlib import Path
 from typing import Union
-
-logging.basicConfig()
-log: logging.Logger = logging.getLogger('onyo')
-log.setLevel(logging.INFO)
 
 
 # credit: https://stackoverflow.com/a/13429281
@@ -293,9 +288,10 @@ def main() -> None:
     parser = setup_parser()
     args = parser.parse_args()
 
-    # debugging
-    if args.debug:
-        log.setLevel(logging.DEBUG)
+    # configure user interface
+    ui.set_debug(args.debug)
+    ui.set_yes(args.yes)
+    ui.set_quiet(args.quiet)
 
     # run the subcommand
     if subcmd_index:
@@ -306,7 +302,7 @@ def main() -> None:
         except Exception as e:
             # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
             #       non-zero here, in order to have this generic last catcher.
-            log.error(str(e))
+            ui.error(e)
             sys.exit(1)
         finally:
             os.chdir(old_cwd)

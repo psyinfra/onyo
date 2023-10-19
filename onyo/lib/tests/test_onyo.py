@@ -76,9 +76,16 @@ def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
     modified = [repo.git.root / 's p a c e s',
                 repo.git.root / 'a/new/folder']
 
+    # set ui.yes temporarily to `True` to suppress user-interaction
+    from onyo import ui
+    ui.set_yes(True)
+
     # modify the repository with some different commands:
-    mkdir(repo, modified, quiet=True, yes=True, message=None)
-    mv(repo, *modified, quiet=True, yes=True, message=None)
+    mkdir(repo, modified, message=None)
+    mv(repo, *modified, message=None)
+
+    # deactivate `yes` again
+    ui.set_yes(False)
 
     # generate a commit message:
     message = repo.generate_commit_message(cmd='TST', modified=modified)
