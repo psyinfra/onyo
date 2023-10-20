@@ -1,10 +1,9 @@
 import logging
 import os
 import sys
-from pathlib import Path
+import traceback
 from typing import Union
 
-from traceback import format_exception
 
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
@@ -55,6 +54,7 @@ class UI(object):
         self.yes = yes
         self.logger = logging.getLogger('onyo')
 
+        self.debug = debug
         # set the debug level
         if debug:
             self.logger.setLevel(logging.DEBUG)
@@ -93,6 +93,7 @@ class UI(object):
             If tried to activate quiet mode without `yes=True`.
         """
         if quiet and not self.yes:
+            # TODO: This condition would need to be triggered from __init__ as well.
             raise ValueError("The --quiet flag requires --yes.")
         self.quiet = quiet
 
@@ -129,10 +130,12 @@ class UI(object):
         if not self.quiet:
             print(f"ERROR: {error}", file=sys.stderr, end=end)
         if isinstance(error, Exception):
-            self.logger.debug("".join(format_exception(
-                etype=error,  # pyre-ignore[6]
-                value=error,
-                tb=error.__traceback__)))
+            tb = traceback.TracebackException.from_exception(
+                error, lookup_lines=True, capture_locals=False
+            )
+            if error.__traceback__:
+                traceback.clear_frames(error.__traceback__)
+            self.logger.debug(''.join(tb.format()))
 
     def log(self,
             message: str) -> None:
@@ -146,42 +149,29 @@ class UI(object):
         """
         self.logger.info(message)
 
-    def log_debug(self,
-                  message: str) -> None:
+    def log_debug(self, *args, **kwargs) -> None:
         """
         Display debug information if debug mode is activated.
 
         Parameters
         ----------
-        message: string
-            The string to display as debug information.
+        args:
+            passed to Logger.debug
+        kwargs:
+            passed to Logger.debug
         """
-        self.logger.debug(message)
+        self.logger.debug(*args, **kwargs)
 
-    def print(self,
-              message: Union[str, list, Path] = os.linesep,
-              end: str = os.linesep,
-              sep: str = os.linesep) -> None:
+    def print(self, *args, **kwargs) -> None:
         """
         Print a message, if the UI is not set to `quiet`.
 
         Parameters
         ----------
-        message: string, list or Path
-
-        end: str
-            Specify the string at the end of prints.
-            Per default, prints end with a linebreak.
-
-        sep: str
-            Specify a string to concatenate message if it is a list.
-            By default lists are concatenated with line breaks.
+        args, kwargs: passed on to builtin `print`
         """
         if not self.quiet:
-            if isinstance(message, list):
-                print(sep.join(message), end=end)
-            else:
-                print(str(message), end=end)
+            print(*args, **kwargs)
 
     def request_user_response(self,
                               question: str) -> bool:
@@ -207,4 +197,7 @@ class UI(object):
                 return True
             elif answer in ['n', 'N', 'no']:
                 return False
-        return False
+
+
+# create a shared UI object to import by classes/commands
+ui = UI()

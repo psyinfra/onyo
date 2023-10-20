@@ -4,12 +4,8 @@ from onyo.lib import (
     OnyoRepo,
     OnyoInvalidRepoError,
     OnyoProtectedPathError,
-    OnyoInvalidFilterError,
-    UI,)
+    OnyoInvalidFilterError,)
 from onyo.onyo_arguments import args_onyo
-
-# create a shared UI object to import by classes/commands
-ui = UI()
 
 __all__ = [
     '__version__',
