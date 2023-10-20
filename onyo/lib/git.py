@@ -575,3 +575,52 @@ class GitRepo(object):
             rm_cmd.append("--dry-run")
         rm_cmd.extend([str(p) for p in paths])
         return self._git(rm_cmd)
+
+    # Credit: Datalad
+    def get_hexsha(self, commitish: Optional[str] = None, short: bool = False) -> Optional[str]:
+        """Return a hexsha for a given commit-ish.
+
+        Parameters
+        ----------
+        commitish: str, optional
+          Any identifier that refers to a commit (defaults to "HEAD").
+        short: bool
+          Whether to return the abbreviated form of the hexsha.
+
+        Returns
+        -------
+        str or, if no commitish was given and there are no commits yet, None.
+
+        Raises
+        ------
+        ValueError
+          if commit-ish is unknown
+        """
+        # use --quiet because the 'Needed a single revision' error message
+        # that is the result of running this in a repo with no commits
+        # isn't useful to report
+        cmd = ['rev-parse', '--quiet', '--verify',
+               '{}^{{commit}}'.format(commitish if commitish else 'HEAD')]
+        if short:
+            cmd.append('--short')
+        try:
+            return self._git(cmd)
+        except subprocess.CalledProcessError:
+            if commitish is None:
+                return None
+            raise ValueError("Unknown commit identifier: %s" % commitish)
+
+    def get_commit_msg(self, commitish: Optional[str] = None) -> str:
+        """Returns the full commit message of a commit-ish
+
+        Parameters
+        ----------
+        commitish: str, optional
+          Any identifier that refers to a commit (defaults to "HEAD").
+
+        Returns
+        -------
+        str
+          the commit message including the subject line
+        """
+        return self._git(['log', commitish or 'HEAD', '-n1', '--pretty=%B'])
