@@ -28,7 +28,6 @@ shared_arg_filter = dict(
 shared_arg_message = dict(
     args=('-m', '--message'),
     metavar='MESSAGE',
-    nargs=1,
     action='append',
     type=str,
     help=(
