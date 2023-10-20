@@ -61,8 +61,8 @@ sections describe conventions followed in this project, additionally to the
 [PEP 8 Style Guide](https://peps.python.org/pep-0008/).
 
 #### The Complete Code Base:
-- All classes, functions and properties (including tests) have a doc-string that
-  describes their functionality.
+- All classes, functions and properties (including tests) have a docstring
+  following the [Numpy standard](https://numpydoc.readthedocs.io/en/latest/format.html).
 - All functions have type hinting (including explicit return type for `None`).
 - The code conforms to [PEP 8](https://peps.python.org/pep-0008/).
 
