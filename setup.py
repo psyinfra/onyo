@@ -27,7 +27,7 @@ setup(
             'sphinx-rtd-theme>=0.5.2'
         ]
     },
-    python_requires=">=3.9",
+    python_requires=">=3.11",
     entry_points={
         'console_scripts': [
             'onyo=onyo.main:main'

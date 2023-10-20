@@ -187,7 +187,7 @@ class GitRepo(object):
         """"""
         # TODO: - We might want to consider untracked files as well. Would need `--others` in addition.
         #       - turn into issue
-        ui.log_debug("Looking up tracked files%s", f" underneath {', '.join([str(p) for p in paths]) }" if paths else "")
+        ui.log_debug("Looking up tracked files%s", f" underneath {', '.join([str(p) for p in paths])}" if paths else "")
         git_cmd = ['ls-files', '-z']
         if paths:
             git_cmd.extend([str(p) for p in paths])
