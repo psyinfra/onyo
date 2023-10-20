@@ -5,9 +5,9 @@ from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING
 
-from onyo import OnyoRepo, ui
+from onyo import OnyoRepo
+from onyo.lib.ui import ui
 from onyo.lib.command_utils import get_history_cmd
-from onyo.lib.commands import fsck
 from onyo.argparse_helpers import path
 
 if TYPE_CHECKING:
@@ -51,7 +51,6 @@ def history(args: argparse.Namespace) -> None:
     # TODO: Not sure about args.path not given. Doesn't necessarily work with any all history commands.
 
     repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo, ['asset-yaml'])
 
     # get the command and path
     path = Path(args.path).resolve() if args.path else Path.cwd()

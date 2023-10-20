@@ -2,7 +2,6 @@ import subprocess
 from pathlib import Path
 
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 import pytest
 
 # These tests focus on functionality specific to the CLI for `onyo mv`.
@@ -31,7 +30,7 @@ def test_mv_interactive_missing_y(repo: OnyoRepo) -> None:
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
     assert not Path('laptop_apple_macbook.abc123').exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
@@ -46,7 +45,7 @@ def test_mv_interactive_abort(repo: OnyoRepo) -> None:
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
     assert not Path('laptop_apple_macbook.abc123').exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
@@ -61,7 +60,7 @@ def test_mv_interactive(repo: OnyoRepo) -> None:
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
@@ -76,7 +75,7 @@ def test_mv_quiet_missing_yes(repo: OnyoRepo) -> None:
 
     assert Path('subdir/laptop_apple_macbook.abc123').exists()
     assert not Path('laptop_apple_macbook.abc123').exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
@@ -91,7 +90,7 @@ def test_mv_quiet(repo: OnyoRepo) -> None:
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
@@ -107,7 +106,7 @@ def test_mv_yes(repo: OnyoRepo) -> None:
 
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -127,4 +126,4 @@ def test_mv_message_flag(repo: OnyoRepo, asset: str) -> None:
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I', Path("destination") / Path(asset).name], capture_output=True, text=True)
     assert msg in ret.stdout
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

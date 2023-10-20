@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.commands import config as config_cmd, fsck
+from onyo.lib.commands import onyo_config
 from onyo.argparse_helpers import git_config
 
 if TYPE_CHECKING:
@@ -46,6 +46,7 @@ def config(args: argparse.Namespace) -> None:
       (default: "empty")
     """
 
+    # TODO: Wouldn't we want to commit (implying message parameter)?
+
     repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo, ['asset-yaml'])
-    config_cmd(repo, args.git_config_args)
+    onyo_config(repo, args.git_config_args)

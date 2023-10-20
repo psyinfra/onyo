@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.commands import fsck, tree as tree_cmd
+from onyo.lib.commands import onyo_tree
 from onyo.argparse_helpers import directory
 
 if TYPE_CHECKING:
@@ -24,6 +24,5 @@ def tree(args: argparse.Namespace) -> None:
     """
 
     repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo, ['asset-yaml'])
     paths = [Path(p).resolve() for p in args.directory]
-    tree_cmd(repo, paths)
+    onyo_tree(repo, paths)

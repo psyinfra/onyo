@@ -3,7 +3,8 @@ import os
 import sys
 import textwrap
 
-from onyo import commands, ui
+from onyo import commands
+from onyo.lib.ui import ui
 from pathlib import Path
 from typing import Union
 

@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.commands import fsck, mkdir as mkdir_cmd
+from onyo.lib.inventory import Inventory
+from onyo.lib.commands import onyo_mkdir
 from onyo.argparse_helpers import directory
 from onyo.shared_arguments import shared_arg_message
 
@@ -33,6 +34,7 @@ def mkdir(args: argparse.Namespace) -> None:
     an error. All checks are performed before creating directories.
     """
     dirs = [Path(d).resolve() for d in args.directory]
-    repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo)
-    mkdir_cmd(repo, dirs, args.message)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
+    onyo_mkdir(inventory,
+               dirs=dirs,
+               message='\n'.join(m for m in args.message) if args.message else None)

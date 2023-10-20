@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from onyo import OnyoRepo, OnyoInvalidRepoError
-from onyo.lib.commands import fsck, mkdir, mv
+from onyo.lib.commands import fsck, onyo_mkdir, onyo_mv
 
 
 def test_OnyoRepo_instantiation_existing(repo: OnyoRepo) -> None:
@@ -73,16 +73,17 @@ def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
     length, and a body with the paths to changed files and directories relative
     to the root of the repository.
     """
+    raise RuntimeError("TODO: Not worth adjusting. Message generation is supposed to happen elsewhere and differently.")
     modified = [repo.git.root / 's p a c e s',
                 repo.git.root / 'a/new/folder']
 
     # set ui.yes temporarily to `True` to suppress user-interaction
-    from onyo import ui
+    from onyo.lib.ui import ui
     ui.set_yes(True)
 
     # modify the repository with some different commands:
-    mkdir(repo, modified, message=None)
-    mv(repo, *modified, message=None)
+    onyo_mkdir(repo, modified, message=None)
+    onyo_mv(repo, *modified, message=None)
 
     # deactivate `yes` again
     ui.set_yes(False)
@@ -130,30 +131,34 @@ def test_is_onyo_path(repo: OnyoRepo) -> None:
     assert not repo.is_onyo_path(repo.git.root / 'a' / 'test' / 'asset_for_test.0')
 
 
-def test_Repo_get_template_file(repo: OnyoRepo) -> None:
+def test_Repo_get_template(repo: OnyoRepo) -> None:
     """
-    The function `OnyoRepo.get_template_file()` must return a Path for all
-    file names of templates in `.onyo/templates/*`, and return the default
-    template if called without a file name specified.
+    The function `OnyoRepo.get_template` returns a dictionary representing
+    a template in `.onyo/templates/*`. Default can be configured via 'onyo.new.template'.
+    With no config and no name given, returns an empty dict.
     """
-    # Call the function without parameter to get the default template `empty`:
-    assert repo.get_template_file().samefile(repo.git.root / '.onyo' /
-                                             'templates' / 'empty')
+    # Call the function without parameter to get the empty template:
+    assert repo.get_template() == dict()
 
-    # from the templates dir, use the filename of each template to find the
+    # from the 'templates' dir, use the filename of each template to find the
     # corresponding template file as a path.
     for path in (repo.git.root / '.onyo' / 'templates').iterdir():
         if path.name == '.anchor':
             continue
 
-        template = repo.get_template_file(path.name)
-        assert isinstance(template, Path)
-        assert template.samefile(path)
+        template = repo.get_template(path.name)
+        assert isinstance(template, dict)
+        if path.name != 'empty':  # TODO: Make issue about removing `empty` file. That's pointless.
+            assert template != dict()  # TODO: compare content
+        else:
+            assert template == dict()
 
     # verify the correct error response when called with a template name that
     # does not exist
     with pytest.raises(ValueError):
-        repo.get_template_file('I DO NOT EXIST')
+        repo.get_template('I DO NOT EXIST')
+
+    # TODO: test config
 
 
 @pytest.mark.repo_dirs('a/test/directory/structure/',

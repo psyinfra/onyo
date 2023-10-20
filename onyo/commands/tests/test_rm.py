@@ -2,7 +2,6 @@ import subprocess
 from pathlib import Path
 
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 import pytest
 from typing import List
 
@@ -36,7 +35,7 @@ def test_rm(repo: OnyoRepo, asset: str) -> None:
 
     # verify deleting was successful and the repository is in a clean state
     assert not Path(asset).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -54,7 +53,7 @@ def test_rm_multiple_inputs(repo: OnyoRepo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for asset in assets:
         assert not Path(asset).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -72,7 +71,7 @@ def test_rm_single_dirs_with_files(repo: OnyoRepo, directory: str) -> None:
 
     # verify deleting was successful and the repository is in a clean state
     assert not Path(directory).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -90,7 +89,7 @@ def test_rm_multiple_directories(repo: OnyoRepo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for directory in directories[1:]:
         assert not Path(directory).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs(*directories[1:])  # skip "." for directory creation
@@ -108,7 +107,7 @@ def test_rm_empty_directories(repo: OnyoRepo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for directory in directories[1:]:
         assert not Path(directory).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -124,7 +123,7 @@ def test_rm_interactive_missing_y(repo: OnyoRepo) -> None:
     # verify no changes were made and the repository is in a clean state
     for asset in assets:
         assert Path(asset).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -141,7 +140,7 @@ def test_rm_interactive_abort(repo: OnyoRepo) -> None:
     # verify no changes were made and the repository is in a clean state
     for asset in assets:
         assert Path(asset).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -158,7 +157,7 @@ def test_rm_interactive(repo: OnyoRepo, asset: str) -> None:
 
     # verify deleting was successful and the repository is in a clean state
     assert not Path(asset).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -175,7 +174,7 @@ def test_rm_quiet_missing_yes(repo: OnyoRepo) -> None:
     # verify no changes were made and the repository is in a clean state
     for asset in assets:
         assert Path(asset).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -192,7 +191,7 @@ def test_rm_quiet_flag(repo: OnyoRepo) -> None:
     # verify deleting was successful and the repository is in a clean state
     for asset in assets:
         assert not Path(asset).exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*assets)
@@ -211,4 +210,4 @@ def test_rm_message_flag(repo: OnyoRepo, asset: str) -> None:
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I', '.'], capture_output=True, text=True)
     assert msg in ret.stdout
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

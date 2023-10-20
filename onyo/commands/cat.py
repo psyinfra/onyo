@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.commands import cat as cat_cmd, fsck
+from onyo.lib.commands import onyo_cat
 from onyo.argparse_helpers import file
 
 if TYPE_CHECKING:
@@ -25,5 +25,4 @@ def cat(args: argparse.Namespace) -> None:
     paths = [Path(p).resolve() for p in args.asset]
 
     repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo, ['asset-yaml'])
-    cat_cmd(repo, paths)
+    onyo_cat(repo, paths)

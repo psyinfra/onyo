@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 
 from onyo import OnyoRepo
-from onyo.lib.commands import fsck, get as get_cmd
+from onyo.lib.commands import get as get_cmd
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import shared_arg_depth, shared_arg_filter
 
@@ -71,7 +71,6 @@ def get(args: argparse.Namespace) -> None:
     """
 
     repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo, ['asset-yaml'])
 
     paths = [Path(p).resolve() for p in args.path] if args.path else None
     get_cmd(repo,

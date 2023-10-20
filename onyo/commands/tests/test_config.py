@@ -1,7 +1,6 @@
 import subprocess
 from pathlib import Path
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 
 
 def test_config_set(repo: OnyoRepo) -> None:
@@ -12,7 +11,7 @@ def test_config_set(repo: OnyoRepo) -> None:
     assert not ret.stderr
     assert 'set =' in Path('.onyo/config').read_text()
     assert '= set-test' in Path('.onyo/config').read_text()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_get_onyo(repo: OnyoRepo) -> None:
@@ -28,7 +27,7 @@ def test_config_get_onyo(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
     assert ret.stdout == 'get-onyo-test\n'
     assert not ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_get_pristine(repo: OnyoRepo) -> None:
@@ -55,7 +54,7 @@ def test_config_get_pristine(repo: OnyoRepo) -> None:
     assert ret.stdout == 'get-pristine-test\n'
 
     assert ret.stdout == git_config_output
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_get_empty(repo: OnyoRepo) -> None:
@@ -65,8 +64,8 @@ def test_config_get_empty(repo: OnyoRepo) -> None:
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert not ret.stderr
-    fsck(repo)
+    # assert not ret.stderr  # Any failure currently gets an error log message.
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_unset(repo: OnyoRepo) -> None:
@@ -89,8 +88,8 @@ def test_config_unset(repo: OnyoRepo) -> None:
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert not ret.stderr
-    fsck(repo)
+    # assert not ret.stderr  # Any failure currently gets an error log message.
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_help(repo: OnyoRepo) -> None:
@@ -103,7 +102,7 @@ def test_config_help(repo: OnyoRepo) -> None:
         assert ret.returncode == 0
         assert 'onyo' in ret.stdout
         assert not ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_forbidden_flags(repo: OnyoRepo) -> None:
@@ -116,7 +115,7 @@ def test_config_forbidden_flags(repo: OnyoRepo) -> None:
                              capture_output=True, text=True)
         assert ret.returncode == 1
         assert flag in ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_bubble_retcode(repo: OnyoRepo) -> None:
@@ -130,7 +129,7 @@ def test_config_bubble_retcode(repo: OnyoRepo) -> None:
     ret = subprocess.run(["onyo", "config", "--unset", "onyo.test.not-exist"],
                          capture_output=True, text=True)
     assert ret.returncode == 5
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_config_bubble_stderr(repo: OnyoRepo) -> None:
@@ -143,4 +142,4 @@ def test_config_bubble_stderr(repo: OnyoRepo) -> None:
     assert ret.returncode == 129
     assert not ret.stdout
     assert ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

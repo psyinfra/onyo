@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.commands import fsck, unset as unset_cmd
+from onyo.lib.commands import unset as unset_cmd
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import (
     shared_arg_depth,
@@ -62,7 +62,6 @@ def unset(args: argparse.Namespace) -> None:
     """
 
     repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo)
     paths = [Path(p).resolve() for p in args.path] if args.path else None
     unset_cmd(repo,
               paths,
