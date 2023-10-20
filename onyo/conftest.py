@@ -52,7 +52,7 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
     # collect files to populate the repo
     m = request.node.get_closest_marker('repo_files')
     if m:
-        files = {Path(repo_path, x) for x in m.args}
+        files = {(repo_path / x) for x in m.args}
 
     # collect dirs to populate the repo
     m = request.node.get_closest_marker('repo_dirs')
@@ -65,7 +65,7 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
         contents = list(m.args)
 
     # collect files from contents list too
-    files |= {Path(repo_path, x[0]) for x in contents}
+    files |= {(repo_path / x[0]) for x in contents}
 
     # collect dirs from files list too
     dirs |= {x.parent for x in files if not x.parent.exists()}
@@ -82,7 +82,7 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
     if files:
         if contents:
             for file in contents:
-                Path(repo_path, file[0]).write_text(file[1])
+                (repo_path / file[0]).write_text(file[1])
         repo_.git.stage_and_commit(paths=files,
                                    message="populate files for tests")
 
