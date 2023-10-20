@@ -1,6 +1,8 @@
 from pathlib import Path
 import subprocess
 import logging
+
+from onyo.lib.ui import ui
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from typing import Union, Iterable, Optional
 
@@ -102,7 +104,7 @@ class GitRepo(object):
         if cwd is None:
             cwd = self.root
 
-        log.debug(f"Running 'git {args}'")
+        ui.log_debug(f"Running 'git {args}'")
         ret = subprocess.run(["git"] + args,
                              cwd=cwd, check=raise_error,
                              capture_output=True, text=True)
@@ -120,7 +122,7 @@ class GitRepo(object):
         `GitRepo.clear_caches()`.
         """
         if not self._files:
-            self._files = self._get_files()
+            self._files = self.get_subtrees()
         return self._files
 
     def clear_caches(self,
@@ -175,19 +177,21 @@ class GitRepo(object):
             `git restore`d.
         """
         if not paths:
-            log.debug("No paths passed to restore. Nothing to do.")
+            ui.log_debug("No paths passed to restore. Nothing to do.")
             return
         if not isinstance(paths, list):
             paths = [paths]
         self._git(['restore'] + [str(p) for p in paths])
 
-    def _get_files(self) -> set[Path]:
-        """
-        Return a set of all absolute `Path`s to files in the repository
-        (except under .git).
-        """
-        log.debug('Acquiring list of files')
-        files = {self.root / x for x in self._git(['ls-files', '-z']).split('\0') if x}
+    def get_subtrees(self, paths: Optional[Iterable[Path]] = None) -> set[Path]:
+        """"""
+        # TODO: - We might want to consider untracked files as well. Would need `--others` in addition.
+        #       - turn into issue
+        ui.log_debug("Looking up tracked files%s", f" underneath {', '.join([str(p) for p in paths]) }" if paths else "")
+        git_cmd = ['ls-files', '-z']
+        if paths:
+            git_cmd.extend([str(p) for p in paths])
+        files = {self.root / x for x in self._git(git_cmd).split('\0') if x}
         return files
 
     def _get_files_changed(self) -> set[Path]:
@@ -195,7 +199,7 @@ class GitRepo(object):
         Return a set of all absolute `Path`s to unstaged changes in the
         repository.
         """
-        log.debug('Acquiring list of changed files')
+        ui.log_debug('Acquiring list of changed files')
         changed = {self.root / x for x in self._git(['diff', '-z', '--name-only']).split('\0') if x}
         return changed
 
@@ -204,7 +208,7 @@ class GitRepo(object):
         Return a set of all absolute `Path`s to staged changes in the
         repository.
         """
-        log.debug('Acquiring list of staged files')
+        ui.log_debug('Acquiring list of staged files')
         staged = {self.root / x for x in self._git(['diff', '--name-only', '-z', '--staged']).split('\0') if x}
         return staged
 
@@ -213,7 +217,7 @@ class GitRepo(object):
         Return a set of all absolute `Path`s to untracked files in the
         repository.
         """
-        log.debug('Acquiring list of untracked files')
+        ui.log_debug('Acquiring list of untracked files')
         untracked = {self.root / x for x in self._git(['ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
         return untracked
 
@@ -400,46 +404,47 @@ class GitRepo(object):
         self._git(['commit'] + messages)
 
     def get_config(self,
-                   name: str) -> Union[str, None]:
+                   name: str,
+                   file_: Optional[Path] = None) -> Union[str, None]:
         """
         Get the value for a configuration option specified by `name`.
 
-        git-config is checked following its order of precedence (worktree,
-        local, global, system). If the config name is not found, .onyo/config is
-        checked.
+        By default, git-config is checked following its order of precedence (worktree,
+        local, global, system). If a `file_` is given, this is checked instead.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         name: str
-            The name of the configuration value to query.
+          Name of the config variable to query. Follows the Git convention of
+          "SECTION.NAME.KEY" to address a key in a git config file:
+            [SECTION "NAME"]
+              KEY = VALUE
+        file_: Path
+          path to a config file to read instead of Git's default locations.
 
         Returns
         -------
-        string or `None`
-            The config value on success, otherwise `None`.
+        str or None
+          the config value on success. None otherwise.
         """
-        # TODO: Move onyo-config code to OnyoRepo
-
+        # TODO: lru_cache?
+        # TODO: Not sure whether to stick with `file_` being alternative rather than fallback.
+        #       Probably not, b/c then you can have onyo configs locally!
+        #       However, this could be coming from OnyoRepo instead, since this is supposed to interface GIT.
         value = None
-
-        # git-config (with its full stack of locations to check)
-        try:
-            value = self._git(['config', '--get', name]).strip()
-            log.debug(f"git config acquired '{name}': '{value}'")
-        except subprocess.CalledProcessError:
-            log.debug(f"git config missed '{name}'")
-            pass
-
-        # .onyo/config
-        if not value:
-            dot_onyo_config = str(Path(self.root, '.onyo/config'))
+        if file_:
             try:
-                value = self._git(['config', '--file', dot_onyo_config, '--get', name]).strip()
-                log.debug(f"onyo config acquired '{name}': '{value}'")
+                value = self._git(['config', '--file', str(file_), '--get', name]).strip()
+                ui.log_debug(f"config '{name}' acquired from {file_}: '{value}'")
             except subprocess.CalledProcessError:
-                log.debug(f"onyo config missed '{name}'")
-                pass
-
+                ui.log_debug(f"config '{name}' missing in {file_}")
+        else:
+            # git-config (with its full stack of locations to check)
+            try:
+                value = self._git(['config', '--get', name]).strip()
+                ui.log_debug(f"git config acquired '{name}': '{value}'")
+            except subprocess.CalledProcessError:
+                ui.log_debug(f"git config missed '{name}'")
         return value
 
     def set_config(self,
@@ -489,7 +494,7 @@ class GitRepo(object):
 
         # git-config (with its full stack of locations to check)
         self._git(['config'] + location_arg + [name, value]).strip()
-        log.debug(f"'config for '{location}' set '{name}': '{value}'")
+        ui.log_debug(f"'config for '{location}' set '{name}': '{value}'")
 
         return True
 
