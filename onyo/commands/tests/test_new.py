@@ -3,7 +3,6 @@ import subprocess
 from pathlib import Path
 
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 import pytest
 
 
@@ -19,6 +18,11 @@ directories = ['simple',
                'very/very/very/deep'
                ]
 
+# Just a dummy asset specification for reuse throughout this file, represented as
+# the respective part of the keys given to the `onyo new` call.
+# TODO: This should probably become some kind of decorator/fixture/parametrization.
+asset_spec = ['type=laptop', 'make=apple', 'model=macbookpro', 'serial=0']
+
 
 @pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
@@ -27,7 +31,7 @@ def test_new(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new` can create an asset in different directories.
     """
     file_ = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -39,7 +43,7 @@ def test_new(repo: OnyoRepo, directory: str) -> None:
 
     # verify that the new asset exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs(*directories)
@@ -49,7 +53,7 @@ def test_new_interactive(repo: OnyoRepo) -> None:
     'y' as input in the dialog, instead of using the flag '--yes'.
     """
     file_ = f'{directories[0]}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--path', file_],
+    ret = subprocess.run(['onyo', 'new', '--path', directories[0], '--keys'] + asset_spec,
                          input='y', capture_output=True, text=True)
 
     # verify correct output
@@ -62,16 +66,17 @@ def test_new_interactive(repo: OnyoRepo) -> None:
 
     # verify that the new asset exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_new_top_level(repo: OnyoRepo) -> None:
     """
-    Test that `onyo new --path <path>` can create an asset on the top level of
-    the repository.
+    Test that `onyo new` can create an asset on the top level of
+    the repository. This relies on CWD being the default for `--path`
+    and on the `repo` fixture CD'ing into the repo's root dir.
     """
     file_ = 'laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -83,7 +88,7 @@ def test_new_top_level(repo: OnyoRepo) -> None:
 
     # verify that the new asset exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs(*directories)
@@ -97,9 +102,10 @@ def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
     os.chdir(cwd)
 
     # build a path for the new asset as an absolute path
-    file_ = repo.git.root / "just another path" / "laptop_apple_macbookpro.0"
+    subdir = repo.git.root / "just another path"
+    file_ = subdir / "laptop_apple_macbookpro.0"
 
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', subdir, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -110,7 +116,7 @@ def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
 
     # verify that the new asset exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs(*directories)
@@ -128,9 +134,9 @@ def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
     var = "../" * (len(cwd.relative_to(repo.git.root).parts) - 1)
 
     # build a path for the new asset as a relative path
-    file_ = Path(var, "just another path", "laptop_apple_macbookpro.0")
+    subdir = Path(var) / "just another path"
 
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', file_],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', subdir, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -141,7 +147,7 @@ def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
 
     # verify that all new assets exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs('overlap')  # to test sub-dir creation for existing dir
@@ -153,7 +159,7 @@ def test_folder_creation_with_new(repo: OnyoRepo, directory: str) -> None:
     existing dir 'overlap'.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -167,29 +173,34 @@ def test_folder_creation_with_new(repo: OnyoRepo, directory: str) -> None:
     assert (repo.git.root / asset).is_file()
     assert (repo.git.root / asset) in repo_assets
     assert len(repo_assets) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_with_faux_serial_number(repo: OnyoRepo) -> None:
     """
     Test that `onyo new` can create multiple assets with faux serial numbers in
-    the multiple directories at once.
+    multiple directories at once. To specify several assets, at least one key-value-pair
+    has to be given multiple times. This test also needs to use the 'directory'
+    (reserved) key instead of `--path` in order to specify the directory per asset.
     """
-    file_ = "laptop_apple_macbookpro.faux"
+    filename_prefix = "laptop_apple_macbookpro.faux"  # created asset files are expected to be this plus a random suffix
+
     num = 10
-    assets = [f"{d}/{file_}" for d in directories for i in range(0, num)]
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', *assets],
-                         capture_output=True, text=True)
+    assets = [[f"directory={d}", "serial=faux"] for d in directories for i in range(num)]
+    cmd = ['onyo', '--yes', 'new', '--keys', 'type=laptop', 'make=apple', 'model=macbookpro']
+    for a in assets:
+        cmd += a
+    ret = subprocess.run(cmd, capture_output=True, text=True)
 
     # verify correct output
     assert "The following will be created:" in ret.stdout
-    assert ret.stdout.count(file_) == len(assets)
+    assert ret.stdout.count(filename_prefix) == len(assets)
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify that all new assets exist and the repository is in a clean state
     assert len(repo.asset_paths) == len(directories) * num
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
@@ -199,7 +210,10 @@ def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
     """
     assets = [f'{directory}/laptop_apple_macbookpro.{i}'
               for i, directory in enumerate(directories)]
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', *assets],
+    keys = ['--keys', 'type=laptop', 'make=apple', 'model=macbookpro']
+    for i, directory in enumerate(directories):
+        keys += [f'directory={directory}', f'serial={i}']
+    ret = subprocess.run(['onyo', '--yes', 'new'] + keys,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -215,7 +229,7 @@ def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
         assert (repo.git.root / asset).is_file()
         assert (repo.git.root / asset) in repo_assets
     assert len(repo_assets) == len(directories)
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
@@ -224,7 +238,7 @@ def test_yes_flag(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new --yes` creates assets in different directories.
     """
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -241,7 +255,7 @@ def test_yes_flag(repo: OnyoRepo, directory: str) -> None:
     repo_assets = repo.asset_paths
     assert (repo.git.root / asset) in repo_assets
     assert len(repo_assets) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
@@ -254,8 +268,8 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
     key_values = "mode=keys_flag"
 
     # create asset with --keys
-    ret = subprocess.run(['onyo', '--yes', 'new', '--keys', key_values,
-                          '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys', key_values] + asset_spec,
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
@@ -266,7 +280,7 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
     # verify that asset exists, the content is set, and the repository is clean
     assert (repo.git.root / asset) in repo.asset_paths
     assert 'mode: keys_flag' in Path.read_text(Path(repo.git.root / asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
@@ -278,8 +292,8 @@ def test_new_message_flag(repo: OnyoRepo, directory: str) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--message', msg,
-                          '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'new', '--message', msg, '--path', directory, '--keys'] + asset_spec,
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
 
@@ -287,7 +301,7 @@ def test_new_message_flag(repo: OnyoRepo, directory: str) -> None:
     ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
     assert msg in ret.stdout
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
@@ -296,7 +310,7 @@ def test_discard_changes(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new` can discard new assets and the repository stays clean.
     """
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--path', asset],
+    ret = subprocess.run(['onyo', 'new', '--path', directory, '--keys'] + asset_spec,
                          input='n', capture_output=True, text=True)
 
     # verify correct output
@@ -312,7 +326,7 @@ def test_discard_changes(repo: OnyoRepo, directory: str) -> None:
     assert not (repo.git.root / asset).is_file()
     assert (repo.git.root / asset) not in repo_assets
     assert len(repo_assets) == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('protected_folder', [
@@ -328,16 +342,16 @@ def test_new_protected_folder(repo: OnyoRepo, protected_folder: str) -> None:
     Test that `onyo new` when called on protected folders errors correctly
     instead of creating an asset.
     """
-    asset = f"{protected_folder}/laptop_apple_macbookpro.faux"
-    ret = subprocess.run(['onyo', 'new', '--path', asset],
+    asset = f"{protected_folder}/laptop_apple_macbookpro.0"
+    ret = subprocess.run(['onyo', 'new', '--path', protected_folder, '--keys'] + asset_spec,
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert "protected by onyo" in ret.stderr
+    assert f"{asset} is not a valid asset path" in ret.stderr
 
     # Verify that no asset was created and the repository is in a clean state
     assert not Path(asset).is_file()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
@@ -350,12 +364,12 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
     os.environ['EDITOR'] = "printf 'key: value' >>"
     template = "laptop.example"
     asset = Path(f"{directory}/laptop_apple_macbookpro.0")
-    key_values = "mode=keys"
+    key_values = asset_spec + ["mode=keys"]
 
     # create asset with --edit, --template and --keys
     ret = subprocess.run(['onyo', '--yes', 'new', '--edit',
-                          '--template', template, '--keys', key_values,
-                          '--path', str(asset)], capture_output=True, text=True)
+                          '--template', template, '--path', directory, '--keys'] + key_values,
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
@@ -374,7 +388,7 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
     assert 'mode: keys' in contents
 
     # verify that the repository is in a clean state
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
@@ -386,11 +400,11 @@ def test_new_with_keys_overwrite_template(repo: OnyoRepo, directory: str) -> Non
     # set asset, --template and --keys
     template = "laptop.example"
     asset = Path(f"{directory}/laptop_apple_macbookpro.0")
-    key_values = ["RAM=16GB", "Size=24.2", "USB=3"]
+    key_values = asset_spec + ["RAM=16GB", "Size=24.2", "USB=3"]
 
     # create asset with --template and --keys
     ret = subprocess.run(['onyo', '--yes', 'new', '--template', template,
-                          '--keys', *key_values, '--path', str(asset)],
+                          '--path', directory, '--keys'] + key_values,
                          capture_output=True, text=True)
 
     # verify output
@@ -405,27 +419,29 @@ def test_new_with_keys_overwrite_template(repo: OnyoRepo, directory: str) -> Non
 
     # verify values from --keys are set
     assert "RAM: 16GB" in contents
-    assert "Size: '24.2'" in contents
+    assert "Size: 24.2" in contents
     assert "USB: 3" in contents
 
     # verify that the repository is in a clean state
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
 @pytest.mark.parametrize('variant', [
-    'spa ces_i n_as set.na me',
-    'quotes_in_asset.na"me',
-    'escapes_in_asset.na\\me'
-    'lap\"top_appஞle_mac\\book\'pro.0'
+    ['spa ces', 'i n', 'as set', 'na me'],
+    ['quotes', 'in', 'asset', 'na"me'],
+    ['escapes', 'in', 'asset', 'na\\me'],
+    ['lap\"top', 'appஞle', 'mac\\book\'pro', '0']
 ])
 def test_with_special_characters(
         repo: OnyoRepo, directory: str, variant: str) -> None:
     """
     Test `onyo new` with names containing special characters.
     """
-    asset = f'{directory}/{variant}'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', asset],
+    asset = f'{directory}/{variant[0]}_{variant[1]}_{variant[2]}.{variant[3]}'
+    keys = [f"type={variant[0]}", f"make={variant[1]}",
+            f"model={variant[2]}", f"serial={variant[3]}"]
+    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + keys,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -436,7 +452,7 @@ def test_with_special_characters(
 
     # verify that the new asset exists and the repository is in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files('laptop_apple_macbookpro.0')
@@ -447,18 +463,18 @@ def test_error_asset_exists_already(repo: OnyoRepo, directory: str) -> None:
     an asset name that already exists elsewhere in the directory.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', '--path', asset],
+    ret = subprocess.run(['onyo', 'new', '--path', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct error
     assert not ret.stdout
-    assert f"Filename '{Path(asset).name}' already exists as" in ret.stderr
+    assert f"'{Path(asset).name}' already exists" in ret.stderr
     assert ret.returncode == 1
 
     # verify that just the initial asset was created, but no new one, and the
     # repository is still in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
@@ -469,18 +485,17 @@ def test_error_two_identical_assets_in_input(
     the same asset name twice, in two different locations.
     """
     asset_a = "laptop_apple_macbookpro.0"
-    asset_b = f"{directory}/{asset_a}"
-    ret = subprocess.run(['onyo', 'new', '--path', asset_a, asset_b],
+    ret = subprocess.run(['onyo', 'new', '--keys'] + asset_spec + ["directory=.", f"directory={directory}"],
                          capture_output=True, text=True)
 
     # verify correct error
     assert not ret.stdout
-    assert f"Input contains multiple '{asset_a}'" in ret.stderr
+    assert f"Multiple {asset_a}" in ret.stderr
     assert ret.returncode == 1
 
     # verify that no new assets were created and the repository stays clean
     assert len(repo.asset_paths) == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_error_template_does_not_exist(repo: OnyoRepo) -> None:
@@ -488,10 +503,9 @@ def test_error_template_does_not_exist(repo: OnyoRepo) -> None:
     Test that `onyo new --template` errors when it is called with a non-existing
     template name.
     """
-    asset = "laptop_apple_macbookpro.0"
     no_template = "no_template"
-    ret = subprocess.run(['onyo', 'new', '--template', no_template,
-                          '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'new', '--template', no_template, '--keys'] + asset_spec,
+                         capture_output=True, text=True)
 
     # verify correct error
     assert not ret.stdout
@@ -500,7 +514,7 @@ def test_error_template_does_not_exist(repo: OnyoRepo) -> None:
 
     # verify that no new assets were created and the repository stays clean
     assert len(repo.asset_paths) == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs('simple',
@@ -530,7 +544,7 @@ def test_tsv(repo: OnyoRepo) -> None:
     # verify that the new assets exist and the repository is in a clean state
     # TODO: open table and count rows for specific number?
     assert len(repo.asset_paths) > 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs('simple',
@@ -556,7 +570,7 @@ def test_tsv_with_value_columns(repo: OnyoRepo) -> None:
         contents = Path.read_text(repo.git.root / asset)
         assert "group: " in contents
         assert "age: " in contents
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs('simple',
@@ -595,7 +609,7 @@ def test_tsv_with_flags_template_keys_edit(repo: OnyoRepo) -> None:
         assert 'key: value' in contents
         # from --keys:
         assert 'mode: keys' in contents
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs('simple',
@@ -621,7 +635,7 @@ def test_tsv_with_template_column(repo: OnyoRepo) -> None:
     # TODO: open table and count rows for specific number?
     # TODO: check asset content to verify usage of templates
     assert len(repo.asset_paths) > 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
@@ -639,7 +653,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     # error if `onyo new` gets neither table nor asset names
     ret = subprocess.run(['onyo', 'new'], capture_output=True, text=True)
     assert not ret.stdout
-    assert "Either asset(s) or a tsv file must be given." in ret.stderr
+    assert "Either key-value pairs or a tsv file must be given." in ret.stderr
     assert ret.returncode == 1
 
     # error if `onyo new` is called with TSV and assets in CLI
@@ -647,7 +661,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
                           '--path', 'simple/laptop_apple_macbookpro.0'],
                          capture_output=True, text=True)
     assert not ret.stdout
-    assert "Can't have asset(s) and tsv file given." in ret.stderr
+    assert "Can\'t use \'--path\' option and \'directory\' column in tsv." in ret.stderr
     assert ret.returncode == 1
 
     # error if both `--template` and 'template' column in tsv header are given
@@ -655,7 +669,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
                           "--template", "empty"],
                          capture_output=True, text=True)
     assert not ret.stdout
-    assert "Can't use --template and template column in tsv." in ret.stderr
+    assert "Can\'t use \'--template\' option and \'template\' column in tsv." in ret.stderr
     assert ret.returncode == 1
 
     # error if both `--keys KEY=VALUE` and a column named `KEY` is given
@@ -663,11 +677,11 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', 'new', '--keys', 'group=a_group',
                           '--tsv', table_path], capture_output=True, text=True)
     assert not ret.stdout
-    assert "Can't use --keys" in ret.stderr and "and have tsv column" in ret.stderr
+    assert "Asset keys specified twice:" in ret.stderr and "group" in ret.stderr
     assert ret.returncode == 1
 
     # verify that the repository is in a clean state
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_tsv_errors(repo: OnyoRepo) -> None:
@@ -683,21 +697,24 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', 'new', '--tsv', table],
                          capture_output=True, text=True)
     assert not ret.stdout
-    assert f"{table} does not exist." in ret.stderr
+    assert "No such file or directory" in ret.stderr
     assert ret.returncode == 1
 
     # <TSV> exists, but is empty (no columns/header)
     table = prepared_tsvs / "error_empty_table.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
-    assert not ret.stdout
-    assert "onyo new --tsv needs columns 'type', 'make', 'model', 'serial' and 'directory'." in ret.stderr
-    assert ret.returncode == 1
+    # Note: This is currently not a failure, just a no-op.
+    assert "No new assets created" in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
 
     # <TSV> contains 5 assets, but each misses one field
     table = prepared_tsvs / "error_incomplete_rows.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
+    raise RuntimeError("TODO: 'Missing' fields, but unique asset names -> Feature or Bug?")
+
     assert not ret.stdout
     assert "The fields 'type', 'make', 'model', 'serial' and 'directory' are required" in ret.stderr
     assert ret.returncode == 1
@@ -711,7 +728,7 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
     assert ret.returncode == 1
 
     # verify that the repository is in a clean state
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files("laptop_apple_macbookpro.0")
@@ -727,13 +744,13 @@ def test_tsv_error_asset_exists_already(repo: OnyoRepo) -> None:
 
     # verify correct error
     assert not ret.stdout
-    assert f"Filename '{asset}' already exists as" in ret.stderr
+    assert f"'{asset}' already exists" in ret.stderr
     assert ret.returncode == 1
 
     # verify that (except the initial one) no new assets were created and the
     # repository stays in a clean state
     assert len(repo.asset_paths) == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_tsv_error_identical_entries(repo: OnyoRepo) -> None:
@@ -749,12 +766,12 @@ def test_tsv_error_identical_entries(repo: OnyoRepo) -> None:
 
     # verify correct error
     assert not ret.stdout
-    assert "Input contains multiple" in ret.stderr
+    assert "Multiple" in ret.stderr
     assert ret.returncode == 1
 
     # verify that no new assets were created and the repository is still clean
     assert len(repo.asset_paths) == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_tsv_error_template_does_not_exist(repo: OnyoRepo) -> None:
@@ -774,33 +791,4 @@ def test_tsv_error_template_does_not_exist(repo: OnyoRepo) -> None:
 
     # verify that no new assets were created and the repository is still clean
     assert len(repo.asset_paths) == 0
-    fsck(repo)
-
-
-@pytest.mark.parametrize('variant', [
-    'laptop_apple_macbookpro_0',
-    'lap top _ app le _ mac book pro_ 0',
-    'laptop_ap.ple_macbookpro.0',
-    'lap_top_apple_macbookpro.0',
-    'laptop-apple-macbookpro.0',
-    '_apple_macbookpro.0',
-    'laptop__macbookpro.0',
-    'laptop_apple_.0',
-    'laptop_apple_macbookpro.'
-])
-def test_error_namescheme(repo: OnyoRepo, variant: str) -> None:
-    """
-    Test that `onyo new` prints correct errors for different invalid names:
-    - '.' in another field as serial number
-    - Additional '_' in one of the early fields
-    - instead of '_' using '-' to divide fields
-    """
-    ret = subprocess.run(['onyo', 'new', '--path', variant],
-                         capture_output=True, text=True)
-    assert not ret.stdout
-    assert ret.returncode == 1
-    assert "must be in the format '<type>_<make>_<model>.<serial>'" in ret.stderr
-
-    # verify that no new assets were created and the repository state is clean
-    assert len(repo.asset_paths) == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

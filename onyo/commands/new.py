@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.commands import fsck, new as new_cmd
+from onyo.lib.inventory import Inventory
+from onyo.lib.commands import onyo_new
 from onyo.argparse_helpers import template, path, StoreKeyValuePairs
 from onyo.shared_arguments import shared_arg_message
 
@@ -39,18 +40,16 @@ args_new = {
 
     'path': dict(
         args=('-p', '--path'),
-        metavar='ASSET',
+        metavar='PATH',
         type=path,
-        nargs='*',
-        help='Path(s) of the new asset(s). Excludes usage of --tsv'),
+        help='directory to create asset(s) in'),
 
     'tsv': dict(
         args=('-tsv', '--tsv'),
         metavar='TSV',
         required=False,
         type=path,
-        help=('Path to a tsv file describing the new asset. Excludes the usage '
-              'of --path')),
+        help='Path to a tsv file describing the new asset.'),
 
     'message': shared_arg_message,
 }
@@ -65,8 +64,11 @@ def new(args: argparse.Namespace) -> None:
     After the contents are added, the new ``assets``\\(s) will be checked for
     the validity of its YAML syntax.
     """
-    repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo)
-    path = [Path(p).resolve() for p in args.path] if args.path else None
-    tsv = Path(args.tsv).resolve() if args.tsv else None
-    new_cmd(repo, path, args.template, tsv, args.keys, args.edit, args.message)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
+    onyo_new(inventory=inventory,
+             path=Path(args.path).resolve() if args.path else None,
+             template=args.template,
+             tsv=Path(args.tsv).resolve() if args.tsv else None,
+             keys=args.keys,
+             edit=args.edit,
+             message='\n'.join(m for m in args.message) if args.message else None)

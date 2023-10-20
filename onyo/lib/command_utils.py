@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-import csv
-import os
+import logging
 import re
 import shutil
 import sys
 from collections import Counter
 from pathlib import Path
-from shlex import quote
 from typing import Dict, Union, Generator, Iterable, Optional, Tuple
 
 from rich.console import Console
-from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
-from onyo import ui
+from .ui import ui
 from .onyo import OnyoRepo
-from .exceptions import OnyoProtectedPathError, OnyoInvalidFilterError
+from .exceptions import OnyoInvalidFilterError
 from .filters import Filter, UNSET_VALUE
 
+
+log: logging.Logger = logging.getLogger('onyo.command_utils')
 
 # Note: Several functions only stage changes. Implies: This function somewhat
 # assumes commit to be called later, which is out of its own control.
@@ -32,34 +31,8 @@ from .filters import Filter, UNSET_VALUE
 
 
 # Note: logging for user messaging rather than logging progress along internal
-# call paths. DataLad does, too, and it's bad. Conflates ebugging with "real"
+# call paths. DataLad does, too, and it's bad. Conflates debugging with "real"
 # output.
-
-
-def is_move_mode(sources: list[Path],
-                 destination: Path) -> bool:
-    """
-    `mv()` can be used to either move or rename a file/directory. The mode
-    is not explicitly declared by the user, and must be inferred from the
-    arguments.
-
-    Returns True if "move" mode and False if not.
-    """
-    # Note: This is internal `onyo mv` logic. Determine whether it's a move or a
-    #       renaming based on argument properties. Called in "sanitize", though.
-
-    # can only rename one item
-    if len(sources) > 1:
-        return True
-
-    if destination.is_dir():
-        return True
-
-    # explicitly restating the source name at the destination is a move
-    if sources[0].name == destination.name and not destination.exists():
-        return True
-
-    return False
 
 
 def sanitize_args_config(git_config_args: list[str]) -> list[str]:
@@ -89,49 +62,6 @@ def sanitize_args_config(git_config_args: list[str]) -> list[str]:
     return git_config_args
 
 
-def get_editor(repo: OnyoRepo) -> str:
-    """
-    Returns the editor, progressing through git, onyo, $EDITOR, and finally
-    fallback to "nano".
-    """
-    # onyo config and git config
-    editor = repo.git.get_config('onyo.core.editor')
-
-    # $EDITOR environment variable
-    if not editor:
-        ui.log_debug("onyo.core.editor is not set.")
-        editor = os.environ.get('EDITOR')
-
-    # fallback to nano
-    if not editor:
-        ui.log_debug("$EDITOR is also not set.")
-        editor = 'nano'
-
-    return editor
-
-
-def edit_asset(editor: str, asset: Path) -> bool:
-    """
-    Open an existing asset with `editor`. After changes are made, check the
-    asset for validity and check its YAML syntax. If valid, write the changes,
-    otherwise open a dialog and ask the user if the asset should be corrected
-    or the changes discarded.
-
-    Returns True when the asset was changed and saved without errors, and False
-    if the user wants to discard the changes.
-    """
-    while True:
-        os.system(f'{editor} {quote(str(asset))}')
-        try:
-            YAML(typ='rt').load(asset)
-            # TODO: add asset validity here
-            return True
-        except scanner.ScannerError:
-            ui.error(f"{asset} has invalid YAML syntax.")
-            if not ui.request_user_response("Continue editing? No discards changes. (y/n) "):
-                return False
-
-
 def sanitize_keys(k: Optional[list[str]],
                   defaults: list) -> list[str]:
     """
@@ -155,7 +85,7 @@ def set_filters(
             console = Console(stderr=True)
             console.print(f'[red]FAILED[/red] {exc}')
         else:
-            ui.error(exc)
+            ui.print(exc, file=sys.stderr)
         # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
         #       rendering/printing handled upstairs.
         raise
@@ -169,7 +99,7 @@ def set_filters(
             console.print(
                 f'[red]FAILED[/red] Duplicate filter keys: {duplicates}')
         else:
-            ui.error(f'Duplicate filter keys: {duplicates}')
+            ui.print(f'Duplicate filter keys: {duplicates}', file=sys.stderr)
         # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
         #       rendering/printing handled upstairs.
         raise ValueError
@@ -227,7 +157,7 @@ def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
     if not interactive or not sys.stdout.isatty():
         config_name = 'onyo.history.non-interactive'
 
-    history_cmd = repo.git.get_config(config_name)
+    history_cmd = repo.get_config(config_name)
     if not history_cmd:
         raise ValueError(f"'{config_name}' is unset and is required to display history.\n"
                          f"Please see 'onyo config --help' for information about how to set it.")
@@ -240,148 +170,13 @@ def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
     return history_cmd
 
 
-def validate_args_for_new(tsv: Optional[Path],
-                          path: Optional[list[Path]],
-                          template: Optional[str]) -> None:
-    """
-    Some arguments conflict with each other, e.g. it has to be checked that the
-    information from a tsv table does not conflict with the information from
-    the command line.
-    """
-    # have either tsv table describing paths and asset names, or have it as
-    # input argument, but not both.
-    if tsv and path:
-        raise ValueError("Can't have asset(s) and tsv file given.")
-    if not tsv and not path:
-        raise ValueError("Either asset(s) or a tsv file must be given.")
-
-    if tsv:
-        if not tsv.is_file():
-            raise ValueError(f"{str(tsv)} does not exist.")
-        with tsv.open('r') as tsv_file:
-            table = csv.reader(tsv_file, delimiter='\t')
-            # Note: Next lines can prob. be reduced to `header = table.next()`
-            header = []
-            # check that the first row (header) is complete
-            for row in table:
-                header = row
-                break
-            if not all(field in header for field in ['type', 'make', 'model', 'serial', 'directory']):
-                raise ValueError("onyo new --tsv needs columns 'type', 'make', 'model', 'serial' and 'directory'.")
-            if template and 'template' in header:
-                raise ValueError("Can't use --template and template column in tsv.")
-
-
-def rm(repo: OnyoRepo,
-       paths: Union[Iterable[Path], Path],
-       dryrun: bool = False) -> list[str]:
-    """
-    Delete ``asset``\\(s) and ``directory``\\(s).
-    """
-    # Note: This doesn't commit. For some reason this is done at the CLI layer
-    # in case of this command.
-
-    if not isinstance(paths, (list, set)):
-        paths = [paths]
-
-    paths_to_rm = []
-    invalid_paths = []
-    for p in paths:
-        if repo.is_asset_path(p) or repo.is_inventory_dir(p):
-            paths_to_rm.append(p)
-        else:
-            invalid_paths.append(p)
-    if invalid_paths:
-        raise ValueError("The following paths are neither inventory directories nor assets:\n%s"
-                         "\nNothing was deleted." % '\n'.join(map(str, invalid_paths)))
-
-    # Note: This comment is a lie - nothing's committed
-    # rm and commit
-    ret = repo.git.rm(paths_to_rm, dryrun=dryrun)
-
-    # TODO: change this to info
-    ui.log_debug('The following will be deleted:\n' +
-                 '\n'.join([str(x.relative_to(repo.git.root)) for x in paths_to_rm]))
-
-    # Note: The usual "invalidate everything because we don't know what we did".
-    repo.clear_caches()
-    # return a list of rm-ed assets
-    # TODO: should this also list the dirs?
-    # TODO: is this relative to opdir or root? (should be opdir)
-    # Note: NO. It's root!
-    # ben@tree in /tmp/some/some on git:master
-    # ❱ tree
-    # .
-    # └── where
-    #     └── file
-    #
-    # 2 directories, 1 file
-    # ben@tree in /tmp/some/some on git:master
-    # ❱ git rm where/file
-    # rm 'some/where/file'
-
-    # Note: Why is this parsing the output? The command didn't fail, we know
-    # what we told it, and we don't double-check whether the output matches
-    # expectation. Either don't bother at all, or simply let git-rm do the
-    # output, instead of catching and parsing it only in order to spit out the
-    # same thing again.
-    # The only reason to do it is, so we can swallow it the second time (running
-    # dry-run first and then for real)
-
-    return [r for r in re.findall("rm '(.*)'", ret)]
-
-
-def set_assets(repo: OnyoRepo,
-               paths: list[Path],
-               values: Dict[str, Union[str, int, float]]) -> Tuple[list[Tuple[Path, Dict, Iterable]], list[Tuple[Path, Path]]]:
-    """
-    Set values for a list of assets (or directories), or rename assets
-    through updating their name fields.
-
-    A flag enable to limit the depth of recursion for setting values in
-    directories.
-    """
-
-    from .assets import get_asset_content, dict_to_yaml, PSEUDO_KEYS, generate_new_asset_names
-
-    # Note: This separation may not be necessary.
-    # But represent ALL key-value pairs in one dict. An Asset object (or alike) can then consider what to do with a key
-    # based on whatever is configured to be a pseudo-key.
-    content_values = dict((field, values[field]) for field in values.keys() if field not in PSEUDO_KEYS)
-    name_values = dict((field, values[field]) for field in values.keys() if field in PSEUDO_KEYS)
-
-    moves = []
-    if name_values:
-        # generate_new_asset_names may raise
-        moves = [(old, new) for old, new in generate_new_asset_names(repo, repo.asset_paths, paths, name_values)]
-
-    modifications = []
-    if content_values:
-        for asset_path in paths:
-            contents = get_asset_content(asset_path)
-            prev_content = contents.copy()
-            contents.update(content_values)
-            if prev_content != contents:
-                from difflib import unified_diff
-                diff = unified_diff(dict_to_yaml(prev_content).splitlines(keepends=True),
-                                    dict_to_yaml(contents).splitlines(keepends=True),
-                                    fromfile=str(asset_path),
-                                    tofile="Update",
-                                    lineterm="")
-            else:
-                diff = []
-            modifications.append((asset_path, contents, diff))
-
-    return modifications, moves
-
-
 def unset(repo: OnyoRepo,
           paths: Iterable[Path],
           keys: list[str],
-          dryrun: bool,
           depth: Union[int, None]) -> list[Tuple[Path, Dict, Iterable]]:
 
-    from .assets import get_asset_files_by_path, PSEUDO_KEYS, get_asset_content, dict_to_yaml
+    from .assets import get_asset_files_by_path, PSEUDO_KEYS, get_asset_content
+    from .onyo import dict_to_yaml
     # set and unset should select assets exactly the same way
     assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
 
@@ -411,157 +206,3 @@ def unset(repo: OnyoRepo,
         modifications.append((asset_path, contents, diff))
 
     return modifications
-
-
-def sanitize_destination_for_mv(repo: OnyoRepo,
-                                sources: list[Path],
-                                destination: Path) -> Path:
-    """
-    Perform a sanity check on the destination. This includes protected
-    paths, conflicts, and other pathological scenarios.
-
-    Returns an absolute Path on success.
-    """
-
-    error_path_conflict = []
-
-    # Common checks
-    # protected paths
-
-    if not repo.is_inventory_dir(destination) and not repo.is_inventory_path(destination):  # 2nd condition sufficient to be rename target?
-        # Note: Questionable message. This piece of code has no clue whether
-        #       something was moved. That is done by the caller.
-        raise OnyoProtectedPathError('The following paths are protected by onyo:\n' +
-                                     f'{destination}\nNothing was moved.')
-
-    # destination cannot be a file
-    if destination.is_file():
-        # This intentionally raises FileExistsError rather than NotADirectoryError.
-        # It reduces the number of different exceptions that can be raised
-        # by `mv()`, and keeps the exception type unified with other similar
-        # situations (such as implicit conflict with the destination).
-        raise FileExistsError(f"The destination '{destination}' cannot be a file.\n" +
-                              'Nothing was moved.')
-
-    # check for conflicts and general insanity
-    for src in sources:
-        new_path = destination / src.name
-        if not destination.exists():
-            new_path = destination
-
-        # cannot rename/move into self
-        if src in new_path.parents:
-            raise ValueError(f"Cannot move '{src}' into itself.\n" +
-                             "Nothing was moved.")
-
-        # target paths cannot already exist
-        if new_path.exists():
-            error_path_conflict.append(new_path)
-            continue
-
-    if error_path_conflict:
-        # Note: See earlier; "Nothing was moved" has no business being here.
-        raise FileExistsError(
-            'The following destination paths exist and would conflict:\n{}'
-            '\nNothing was moved.'.format(
-                '\n'.join(map(str, error_path_conflict))))
-
-    # parent must exist
-    if not destination.parent.exists():
-        raise FileNotFoundError(
-            f"The destination '{destination.parent}' does not exist.\n"
-            f"Nothing was moved.")
-
-    if not is_move_mode(sources, destination):
-        """
-        Rename mode checks
-        """
-        ui.log_debug("'mv' in rename mode")
-        # renaming files is not allowed
-        src = sources[0]
-        if src.is_file() and src.name != destination.name:
-            raise ValueError(
-                f"Cannot rename asset '{src.name}' to "
-                f"'{destination.name}'.\nUse 'set()' to rename assets.\n"
-                f"Nothing was moved.")
-
-        # target cannot already exist
-        if destination.exists():
-            raise FileExistsError(
-                f"The destination '{destination}' exists and would "
-                f"conflict.\nNothing was moved.")
-    else:
-        """
-        Move mode checks
-        """
-        ui.log_debug("'mv' in move mode")
-
-        # check if same name is specified as the destination
-        # (e.g. rename to same name is a move)
-        if src.name != destination.name:
-            # dest must exist
-            if not destination.exists():
-                raise FileNotFoundError(
-                    f"The destination '{destination}' does not exist.\n"
-                    f"Nothing was moved.")
-
-        # cannot move onto self
-        if src.is_file() and destination.is_file() and src.samefile(destination):
-            raise FileExistsError(f"Cannot move '{src}' onto itself.\n" +
-                                  "Nothing was moved.")
-
-    return destination
-
-
-def onyo_mv(repo: OnyoRepo,
-            sources: Union[Iterable[Path], Path],
-            destination: Path,
-            dryrun: bool = False) -> list[tuple[str, str]]:
-    # Note: For clarity in history, I think renaming (locations) and moving (assets) should be separated operations.
-
-    if not isinstance(sources, (list, set)):
-        sources = [sources]
-    elif not isinstance(sources, list):
-        sources = list(sources)
-
-    # sanitize and validate arguments
-    invalid_sources = [p
-                       for p in sources
-                       if not repo.is_asset_path(p) and
-                       not repo.is_inventory_dir(p)]
-    if invalid_sources:
-        raise ValueError("The following paths are neither inventory " +
-                         "directories nor assets:\n" +
-                         '\n'.join(map(str, invalid_sources)) +
-                         "\nNothing was moved.")
-
-    dest_path = sanitize_destination_for_mv(repo, sources, destination)
-    ret = repo.git.mv(sources, dest_path, dryrun=dryrun)
-
-    # Note: This is invalidating everything, because it pretends to not know what was actually done.
-    #       That information lives in the sanitize functions for some reason.
-    repo.clear_caches()  # might move or rename templates
-
-    # return a list of mv-ed assets
-    return [r for r in re.findall('Renaming (.*) to (.*)', ret)]
-
-
-def rollback_untracked(new_files: Iterable[Path]) -> None:
-    """Remove newly created files/dirs
-
-    Helper for various commands rolling back newly created files (like mkdir, new).
-    This accounts for anchor files: If an anchor file was part of `new_files`, this
-    indicates that the directory it's in was newly created as well.
-    Hence, this is rm'd as well.
-    """
-    for f in sorted(new_files, reverse=True):
-        # Reverse sorted in order to first remove files and then possibly their containing dir.
-        # missing_ok, because we may have duplicates from overlapping paths.
-        f.unlink(missing_ok=True)
-        if f.name == OnyoRepo.ANCHOR_FILE:
-            try:
-                f.parent.rmdir()
-            except FileNotFoundError:
-                # Catching this is the equivalent to `missing_ok=True` above.
-                # If we already deleted it - fine.
-                pass

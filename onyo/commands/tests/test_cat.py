@@ -147,6 +147,9 @@ def test_invalid_yaml(repo: OnyoRepo, variant: list[str]) -> None:
     """
     Test that `onyo cat` fails for a file with invalid yaml content.
     """
+
+    raise RuntimeError("TODO: I don't think the tested behavior makes sense. Why should I not be able to print invalid "
+                       "content and see the problem?")
     # check that yaml is invalid
     with pytest.raises(OnyoInvalidRepoError):
         fsck(repo, ['asset-yaml'])

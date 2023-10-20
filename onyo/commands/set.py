@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.commands import fsck, set_ as set_cmd
+from onyo.lib.inventory import Inventory
+from onyo.lib.commands import onyo_set
 from onyo.argparse_helpers import path, StoreKeyValuePairs
 from onyo.shared_arguments import (
     shared_arg_depth,
@@ -60,8 +61,9 @@ def set(args: argparse.Namespace) -> None:
     can be used around ``value``, which is necessary when it contains a comma,
     whitespace, etc.
 
-    The ``type``, ``make``, ``model``, and ``serial`` pseudo-keys can be set
-    when the `--rename` flag is used. It will result in the file(s) being
+    Required keys as define by the 'onyo.assets.filename' config (by default
+    ``type``, ``make``, ``model``, and ``serial``) can be set when the
+    `--rename` flag is used. It will result in the file(s) being
     renamed.
 
     If no ``asset`` or ``directory`` is specified, the current working directory
@@ -75,14 +77,14 @@ def set(args: argparse.Namespace) -> None:
     immediately.
     """
 
-    repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path] if args.path else None
-    set_cmd(repo,
-            paths,
-            args.keys,
-            args.filter,
-            args.dry_run,
-            args.rename,
-            args.depth,
-            args.message)
+    assert len(args.keys) == 1
+    onyo_set(inventory=inventory,
+             paths=paths,
+             keys=args.keys[0],
+             filter_strings=args.filter,
+             dryrun=args.dry_run,
+             rename=args.rename,
+             depth=args.depth,
+             message='\n'.join(m for m in args.message) if args.message else None)

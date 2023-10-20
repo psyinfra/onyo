@@ -2,8 +2,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo.lib.commands import edit as edit_cmd
+from onyo.lib.commands import onyo_edit
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.inventory import Inventory
 from onyo.argparse_helpers import file
 from onyo.shared_arguments import shared_arg_message
 
@@ -34,5 +35,7 @@ def edit(args: argparse.Namespace) -> None:
     """
 
     paths = [Path(p).resolve() for p in args.asset]
-    repo = OnyoRepo(Path.cwd(), find_root=True)
-    edit_cmd(repo, paths, args.message)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
+    onyo_edit(inventory=inventory,
+              asset_paths=paths,
+              message='\n'.join(m for m in args.message) if args.message else None)

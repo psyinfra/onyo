@@ -2,13 +2,8 @@ import subprocess
 from pathlib import Path
 
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
-from onyo.lib.assets import PSEUDO_KEYS
 import pytest
 from typing import List
-
-files = ['laptop_apple_macbookpro',
-         'lap top_ap ple_mac book pro']
 
 directories = ['.',
                'simple',
@@ -17,16 +12,44 @@ directories = ['.',
                'r/e/c/u/r/s/i/v/e',
                'very/very/very/deep'
                ]
+asset_specs = [{'type': 'laptop',
+                'make': 'apple',
+                'model': 'macbookpro'},
+               {'type': 'lap top',
+                'make': 'ap ple',
+                'model': 'mac book pro'}
+               ]
 
-assets: List[str] = [f"{d}/{f}.{i}" for f in files
-                     for i, d in enumerate(directories)]
+assets = []
+for i, d in enumerate(directories):
+    for spec in asset_specs:
+        spec['serial'] = str(i)
+        name = f"{spec['type']}_{spec['make']}_{spec['model']}.{spec['serial']}"
+        content = "\n".join(f"{key}: {value}" for key, value in spec.items())
+        assets.append([f"{d}/{name}", content])
+
+asset_paths = [a[0] for a in assets]
 
 values = [["mode=single"],
           ["mode=double"], ["key=space bar"]]
 
+non_existing_assets: List[List[str]] = [
+    ["single_non_existing.asset"],
+    ["simple/single_non_existing.asset"],
+    [asset_paths[0], "single_non_existing.asset"]]
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+
+name_fields = [["type=desktop"],
+               ["make=lenovo"],
+               ["model=thinkpad"],
+               ["serial=1234"],
+               ["type=surface"], ["make=microsoft"], ["model=go"], ["serial=666"],
+               ["key=value"], ["type=server"], ["other=content"], ["serial=777"],
+               ["serial=faux"], ["different=value"]]
+
+
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
 def test_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -43,11 +66,11 @@ def test_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     # verify changes, and the repository clean
     for value in set_values:
         assert value.replace("=", ": ") in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
 def test_set_interactive(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -65,17 +88,17 @@ def test_set_interactive(repo: OnyoRepo, asset: str, set_values: list[str]) -> N
     # verify changes, and the repository clean
     for value in set_values:
         assert value.replace("=", ": ") in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
 def test_set_multiple_assets(repo: OnyoRepo, set_values: list[str]) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` can update the contents of multiple
     assets in a single call.
     """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', *asset_paths], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -83,20 +106,14 @@ def test_set_multiple_assets(repo: OnyoRepo, set_values: list[str]) -> None:
     assert ret.returncode == 0
 
     # verify that all assets are in output and updated, and the repository clean
-    for asset in assets:
+    for asset in asset_paths:
         assert str(Path(asset)) in ret.stdout
         for value in set_values:
             assert value.replace("=", ": ") in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-non_existing_assets: List[List[str]] = [
-    ["single_non_existing.asset"],
-    ["simple/single_non_existing.asset"],
-    [assets[0], "single_non_existing.asset"]]
-
-
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('no_assets', non_existing_assets)
 def test_set_error_non_existing_assets(repo: OnyoRepo,
                                        no_assets: list[str]) -> None:
@@ -113,10 +130,10 @@ def test_set_error_non_existing_assets(repo: OnyoRepo,
     assert not ret.stdout
     assert "The following paths are neither an inventory directory nor an asset:" in ret.stderr
     assert ret.returncode == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
 def test_set_with_dot_recursive(repo: OnyoRepo, set_values: list[str]) -> None:
     """
@@ -128,18 +145,18 @@ def test_set_with_dot_recursive(repo: OnyoRepo, set_values: list[str]) -> None:
 
     # verify that output mentions every asset
     assert "The following assets will be changed:" in ret.stdout
-    for asset in assets:
+    for asset in asset_paths:
         assert str(Path(asset)) in ret.stdout
 
     # output must contain "+key: value" one time for each asset in repository
     for value in set_values:
-        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(assets)
+        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(asset_paths)
     assert not ret.stderr
     assert ret.returncode == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
 def test_set_without_path(repo: OnyoRepo, set_values: list[str]) -> None:
     """
@@ -150,19 +167,19 @@ def test_set_without_path(repo: OnyoRepo, set_values: list[str]) -> None:
 
     # verify that output contains one line per asset
     assert "The following assets will be changed:" in ret.stdout
-    for asset in assets:
+    for asset in asset_paths:
         assert str(Path(asset)) in ret.stdout
 
     # one time for every asset in the repository
     # "+key: value" should mentioned one time for each asset in root
     for value in set_values:
-        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(assets)
+        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(asset_paths)
     assert not ret.stderr
     assert ret.returncode == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('directory', directories)
 @pytest.mark.parametrize('set_values', values)
 def test_set_recursive_directories(repo: OnyoRepo, directory: str, set_values: list[str]) -> None:
@@ -183,11 +200,11 @@ def test_set_recursive_directories(repo: OnyoRepo, directory: str, set_values: l
     for asset in [asset for asset in Path(directory).iterdir() if asset in repo_assets]:
         for value in set_values:
             assert value.replace("=", ": ") in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
 def test_set_discard_changes_single_assets(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -206,10 +223,10 @@ def test_set_discard_changes_single_assets(repo: OnyoRepo, asset: str, set_value
     for value in set_values:
         assert f"+{value.replace('=', ': ')}" in ret.stdout
         assert value.replace("=", ": ") not in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 def test_set_discard_changes_recursive(repo: OnyoRepo) -> None:
     """
     Test that `onyo set` discards changes for all assets successfully.
@@ -229,11 +246,11 @@ def test_set_discard_changes_recursive(repo: OnyoRepo) -> None:
     repo_assets = repo.asset_paths
     for asset in repo_assets:
         assert "key: discard" not in Path.read_text(asset)
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
 def test_set_yes_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -254,11 +271,11 @@ def test_set_yes_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None
     for value in set_values:
         assert f"+{value.replace('=', ': ')}" in ret.stdout
         assert value.replace("=", ": ") in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
 def test_set_message_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -275,19 +292,17 @@ def test_set_message_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> 
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
     assert msg in ret.stdout
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-asset = 'simple/laptop_apple_macbookpro.0'
-
-
-@pytest.mark.repo_files(asset)
+@pytest.mark.repo_contents(assets[2])
 def test_set_quiet_without_yes_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo set --quiet KEY=VALUE <asset>` errors correctly without the
     --yes flag.
     """
-    ret = subprocess.run(['onyo', '--quiet', 'set', '--keys', "mode=single", '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--quiet', 'set', '--keys', "mode=single", '--path', repo.asset_paths[0]],
+                         capture_output=True, text=True)
 
     # verify output
     assert not ret.stdout
@@ -295,11 +310,11 @@ def test_set_quiet_without_yes_flag(repo: OnyoRepo) -> None:
     assert ret.returncode == 1
 
     # verify that the repository is in a clean state
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
 def test_set_quiet_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -318,10 +333,10 @@ def test_set_quiet_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> No
         assert value.replace("=", ": ") in Path.read_text(Path(asset))
 
     # verify that the repository is in a clean state
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
 def test_set_dryrun_flag(repo: OnyoRepo, set_values: list[str]) -> None:
     """
@@ -329,7 +344,7 @@ def test_set_dryrun_flag(repo: OnyoRepo, set_values: list[str]) -> None:
     diff-output without actually changing any assets.
     """
     ret = subprocess.run(['onyo', 'set', '--dry-run', '--keys', *set_values,
-                          '--path', *assets], capture_output=True, text=True)
+                          '--path', *asset_paths], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -341,30 +356,21 @@ def test_set_dryrun_flag(repo: OnyoRepo, set_values: list[str]) -> None:
 
     # verify that all assets and changes are in diff output, but no changes in
     # the asset files are made
-    for asset in assets:
+    for asset in asset_paths:
         assert str(Path(asset)) in ret.stdout
         for value in set_values:
             assert f"+{value.replace('=', ': ')}" in ret.stdout
             assert value.replace("=", ": ") not in Path.read_text(Path(asset))
 
     # check that the repository is still clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(
-    "laptop_macbook_pro.0",
-    "dir1/laptop_macbook_pro.1",
-    "dir1/dir2/laptop_macbook_pro.2",
-    "dir1/dir2/dir3/laptop_macbook_pro.3",
-    "dir1/dir2/dir3/dir4/laptop_macbook_pro.4",
-    "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
-    "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6",)
+@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
-@pytest.mark.parametrize('depth,expected', [
-    ('0', 7), ('1', 1), ('3', 3), ('6', 6), ('10', 7)
-])
+@pytest.mark.parametrize('depth', ['0', '1', '3', '10'])
 def test_set_depth_flag(
-        repo: OnyoRepo, set_values: list[str], depth: str, expected: int) -> None:
+        repo: OnyoRepo, set_values: list[str], depth: str) -> None:
     """
     Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` for
     different values for `--depth N`.
@@ -375,29 +381,20 @@ def test_set_depth_flag(
     """
     cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
     ret = subprocess.run(cmd, input='n', capture_output=True, text=True)
-    asset_paths = [p.relative_to(repo.git.root) for p in repo.asset_paths]
-    n_assets = 0
 
     assert not ret.stderr
     assert ret.returncode == 0
 
-    for line in ret.stdout.splitlines():
-        for p in asset_paths:
-            if str(p) in line:
-                n_assets += 1
-                if depth != '0':
-                    assert len(p.parents) <= int(depth)
-    assert n_assets == expected
+    expected_paths = repo.asset_paths if depth == '0' \
+        else [p for p in repo.asset_paths if depth != '0' and len(p.relative_to(repo.git.root).parents) <= int(depth)]
+
+    for p in repo.asset_paths:
+        if p in expected_paths:
+            assert str(p) in ret.stdout
+        else:
+            assert str(p) not in ret.stdout
 
 
-@pytest.mark.repo_files(
-    "laptop_macbook_pro.0",
-    "dir1/laptop_macbook_pro.1",
-    "dir1/dir2/laptop_macbook_pro.2",
-    "dir1/dir2/dir3/laptop_macbook_pro.3",
-    "dir1/dir2/dir3/dir4/laptop_macbook_pro.4",
-    "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
-    "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6",)
 @pytest.mark.parametrize('set_values', values)
 @pytest.mark.parametrize('depth,expected', [
     ('-1', 'depth values must be positive, but is -1'),
@@ -415,8 +412,8 @@ def test_set_depth_flag_error(
     assert ret.returncode == 1
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 def test_add_new_key_to_existing_content(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` can be called two times with
@@ -452,11 +449,11 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo, asset: str) -> None:
     assert set_2.replace("=", ": ") in Path.read_text(Path(asset))
 
     # verify state of repo is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 def test_set_overwrite_key(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` can be called two times with
@@ -489,11 +486,11 @@ def test_set_overwrite_key(repo: OnyoRepo, asset: str) -> None:
     assert set_value_2.replace("=", ": ") in Path.read_text(Path(asset))
 
     # verify state of repo is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` updates contents of assets and adds
@@ -529,11 +526,11 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: st
     assert "different=key".replace("=", ": ") in Path.read_text(Path(asset))
 
     # verify state of repo is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(assets[0])
+@pytest.mark.parametrize('asset', asset_paths[0])
 @pytest.mark.parametrize('set_values', values)
 def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -541,6 +538,8 @@ def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -
     if called again with same valid values the command does display the correct
     info message without error, and the repository stays in a clean state.
     """
+
+    raise RuntimeError("TODO: detecting noop for modify_asset (edit, set, etc.)")
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
 
     # verify output
@@ -560,20 +559,11 @@ def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -
     assert ret.returncode == 0
 
     # verify state of repo is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-name_fields = [["type=desktop"],
-               ["make=lenovo"],
-               ["model=thinkpad"],
-               ["serial=1234"],
-               ["type=surface"], ["make=microsoft"], ["model=go"], ["serial=666"],
-               ["key=value"], ["type=server"], ["other=content"], ["serial=777"],
-               ["serial=faux"], ["different=value"]]
-
-
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', name_fields)
 def test_set_update_name_fields(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -582,6 +572,8 @@ def test_set_update_name_fields(repo: OnyoRepo, asset: str, set_values: list[str
     faux serials can be set and name fields are recognized and can be updated
     when they are `onyo set` together with a list of content fields.
     """
+    # TODO: This test is supposed to test whether we can set fields that are part of the
+    #       asset names. There are four such fields. This test function generates a whopping 168 test cases!
     ret = subprocess.run(['onyo', '--yes', 'set', '--rename', '--keys', *set_values,
                           '--path', asset], capture_output=True, text=True)
 
@@ -590,29 +582,26 @@ def test_set_update_name_fields(repo: OnyoRepo, asset: str, set_values: list[str
     assert not ret.stderr
     assert ret.returncode == 0
 
-    # verify that the name fields were not added to the contents
-    for file in repo.asset_paths:
-        contents = Path.read_text(Path(file))
-        assert not any(field in contents for field in PSEUDO_KEYS)
-
     # verify state of repo is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
     """
     Test that `onyo set --rename serial=faux <asset>` can successfully update
     many assets with new faux serial numbers in one call.
     """
+
+    raise RuntimeError("TODO: faux serials not yet considered outside new. Needs to move (modify_asset)")
     # remember old assets before renaming
     old_asset_names = repo.asset_paths
     ret = subprocess.run(['onyo', '--yes', 'set', '--rename', '--keys',
-                          'serial=faux', '--path', *assets], capture_output=True, text=True)
+                          'serial=faux', '--path', *asset_paths], capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert len(assets) == ret.stdout.count('.faux')
+    assert len(asset_paths) == ret.stdout.count('.faux')
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -626,7 +615,7 @@ def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
     for file in repo.asset_paths:
         contents = Path.read_text(Path(file))
         assert file not in old_asset_names
-        assert "serial" not in contents and "faux" not in contents
+        assert "faux" not in contents
 
     # verify state of repo is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

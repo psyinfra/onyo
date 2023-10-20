@@ -2,11 +2,13 @@ import os
 from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
-
-from onyo import OnyoRepo
 from typing import Generator, List, Type, Union
 import pytest
 from _pytest.mark.structures import MarkDecorator
+
+from onyo.lib.onyo import OnyoRepo
+from onyo.lib.inventory import Inventory
+from onyo.lib.assets import Asset
 
 
 def params(d: dict) -> MarkDecorator:
@@ -84,11 +86,38 @@ def repo(tmp_path: str, monkeypatch, request) -> Generator[OnyoRepo, None, None]
         repo_.git.stage_and_commit(paths=files,
                                    message="populate files for tests")
 
+    # TODO: Do we still need/want that? CWD should only ever be relevant for CLI tests.
+    #       Hence, should probably be done there.
     # cd into repo; to ease testing
     monkeypatch.chdir(repo_path)
 
     # hand it off
     yield repo_
+
+
+@pytest.fixture(scope="function")
+def inventory(repo) -> Generator:
+
+    # TODO: This is currently not in line with `repo`, where files and dirs are defined differently.
+    #       Paths to created items should be delivered somehow.
+    inventory = Inventory(repo=repo)
+    inventory.add_asset(Asset(some_key="some_value",
+                              type="TYPE",
+                              make="MAKER",
+                              model="MODEL",
+                              serial="SERIAL",
+                              other=1,
+                              path=repo.git.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL")
+                        )
+    inventory.add_directory(repo.git.root / 'empty')
+    inventory.add_directory(repo.git.root / 'different' / 'place')
+    inventory.commit("First asset added")
+
+    # Add some untracked stuff
+    (repo.git.root / "untracked" / "dir").mkdir(parents=True, exist_ok=True)
+    (repo.git.root / "untracked" / "file").touch(exist_ok=True)
+
+    yield inventory
 
 
 @pytest.fixture(scope="function", autouse=True)

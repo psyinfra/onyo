@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import subprocess
+import sys
+import logging
 from typing import Optional, Union, Iterable, Dict
 from pathlib import Path
 
@@ -8,14 +10,21 @@ from rich.console import Console
 from rich import box
 from rich.table import Table
 
-from onyo import ui
+from onyo.lib.ui import ui
+from onyo.lib.inventory import Inventory
 from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
-from onyo.lib.command_utils import get_editor, edit_asset, sanitize_keys, \
-    set_filters, fill_unset, natural_sort, validate_args_for_new, onyo_mv, \
-    rollback_untracked
-from onyo.lib.exceptions import OnyoInvalidRepoError
+from onyo.lib.command_utils import sanitize_keys, set_filters, \
+    fill_unset, natural_sort
+from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.utils import edit_asset
+
+log: logging.Logger = logging.getLogger('onyo.commands')
+
+
+# TODO: For python interface usage, *commands* should probably refuse to do anything if there are pending operations in
+#       the inventory.
 
 
 def fsck(repo: OnyoRepo, tests: Optional[list[str]] = None) -> None:
@@ -68,7 +77,7 @@ def fsck(repo: OnyoRepo, tests: Optional[list[str]] = None) -> None:
         ui.log_debug(f"'{key}' succeeded")
 
 
-def cat(repo: OnyoRepo, paths: Iterable[Path]) -> None:
+def onyo_cat(repo: OnyoRepo, paths: Iterable[Path]) -> None:
 
     non_asset_paths = [str(p) for p in paths if not repo.is_asset_path(p)]
     if non_asset_paths:
@@ -76,10 +85,14 @@ def cat(repo: OnyoRepo, paths: Iterable[Path]) -> None:
                          "\n".join(non_asset_paths))
     # open file and print to stdout
     for path in paths:
-        ui.print(path.read_text(), end='')
+        # TODO: Do we really not want to separate assets like print(f"{path.name}:{os.linesep}")?
+        # TODO: Probably better to simply print dict_to_yaml(repo.get_asset_content(path)) - no need to distinguish
+        #       asset and asset dir at this level. However, need to make sure to not print pointless empty lines.
+        f = path / OnyoRepo.ASSET_DIR_FILE if repo.is_asset_dir(path) else path
+        ui.print(f.read_text(), end='')
 
 
-def config(repo: OnyoRepo, config_args: list[str]) -> None:
+def onyo_config(repo: OnyoRepo, config_args: list[str]) -> None:
 
     from onyo.lib.command_utils import sanitize_args_config
     git_config_args = sanitize_args_config(config_args)
@@ -89,65 +102,65 @@ def config(repo: OnyoRepo, config_args: list[str]) -> None:
     # non-trivial with "subprocess". Here we capture them separately. They
     # won't be interwoven, but will be output to the correct destinations.
     ret = subprocess.run(["git", 'config', '-f', str(config_file)] + git_config_args,
-                         cwd=repo.git.root, capture_output=True, text=True)
+                         cwd=repo.git.root, capture_output=True, text=True, check=True)
 
     # print any output gathered
     if ret.stdout:
-        ui.print(ret.stdout, end="")
+        ui.print(ret.stdout, end='')
     if ret.stderr:
-        ui.error(ret.stderr, end="")
-
-    # bubble up error retval
-    if ret.returncode != 0:
-        exit(ret.returncode)
+        ui.print(ret.stderr, file=sys.stderr, end='')
 
     # commit, if there's anything to commit
     if repo.git.files_changed:
         repo.git.stage_and_commit(config_file, 'config: modify repository config')
 
 
-def edit(repo: OnyoRepo,
-         asset_paths: Iterable[Path],
-         message: list[str]) -> None:
-    # "onyo fsck" is intentionally not run here.
-    # This is so "onyo edit" can be used to fix an existing problem. This has
-    # benefits over just simply using `vim`, etc directly, as "onyo edit" will
-    # validate the contents of the file before saving and committing.
+def onyo_edit(inventory: Inventory,
+              asset_paths: Iterable[Path],
+              message: Optional[str]) -> None:
+    from onyo.lib.utils import edit_asset
 
     # check and set paths
     # Note: This command is an exception. It skips the invalid paths and proceeds to act upon the valid ones!
     valid_asset_paths = []
     for a in asset_paths:
-        if not repo.is_asset_path(a):
-            ui.error(f"\n{a} is not an asset.")
+        if not inventory.repo.is_asset_path(a):
+            ui.print(f"\n{a} is not an asset.", file=sys.stderr)
         else:
             valid_asset_paths.append(a)
     if not valid_asset_paths:
         raise RuntimeError("No asset updated.")
 
-    editor = get_editor(repo)
+    editor = inventory.repo.get_editor()
+    for path in valid_asset_paths:
+        asset = inventory.get_asset(path)
+        modified_asset = edit_asset(asset, editor)
+        # TODO: Would be good to detect that no modification was actually done.
+        #       edit_asset knows and could raise NoopError or return None or whatever.
+        #       Alternatively, operations could figure that there's nothing to be done
+        #       and simply not register. As a consequence, inventory could then be
+        #       queried for actually pending operations. That's actually better,
+        #       so we don't end up recording noop operations.
+        #       Implementing this implies to not rely on `valid_asset_paths` below
+        #       when building the commit message.
+        inventory.modify_asset(asset, modified_asset)
 
-    modified = []
-    for asset in valid_asset_paths:
-        if edit_asset(editor, asset):
-            modified.append(asset)
-        else:
-            # If user wants to discard changes, restore the asset's state
-            repo.git.restore(asset)
-            ui.print(f"'{asset}' not updated.")
-
-    diff = repo.git._diff_changes()
-    if diff:
-        # commit changes
-        ui.print(diff)
+    if valid_asset_paths:
+        ui.print("Changes:")
+        for line in inventory.diff():
+            ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-            repo.git.stage_and_commit(paths=modified,
-                                      message=repo.generate_commit_message(message=message,
-                                                                           cmd="edit")
-                                      )
+            # TODO: RF into re-usable functions (consider config format string for this):
+            if not message:
+                subject = "edit: "
+                paths = [p.relative_to(inventory.root) for p in valid_asset_paths]
+                full_paths = subject + ", ".join(p.as_posix() for p in paths)
+                if len(full_paths) < 80:
+                    message = full_paths
+                else:
+                    message = subject + ", ".join(p.name for p in paths)
+            inventory.commit(message=message)
             return
-        else:
-            repo.git.restore(modified)
     ui.print('No assets updated.')
 
 
@@ -161,13 +174,11 @@ def get(repo: OnyoRepo,
         keys: Optional[list[str]]) -> None:
 
     if sort_ascending and sort_descending:
-        msg = (
-            '--sort-ascending (-s) and --sort-descending (-S) cannot be used '
-            'together')
+        msg = ('--sort-ascending (-s) and --sort-descending (-S) cannot be used '
+               'together')
         if machine_readable:
-            ui.error(msg)
+            ui.print(msg, file=sys.stderr)
         else:
-            # TODO: do this with ui class too
             console = Console(stderr=True)
             console.print(f'[red]FAILED[/red] {msg}')
         raise ValueError
@@ -179,20 +190,36 @@ def get(repo: OnyoRepo,
     invalid_paths = set(p for p in paths if not repo.is_inventory_dir(p))
     if invalid_paths:
         err_str = '\n'.join([str(x) for x in invalid_paths])
-        raise ValueError(f"The following paths do not exist:\n{err_str}")
+        raise ValueError(f"The following paths are not part of the inventory:\n{err_str}")
     if not paths:
         raise ValueError("No assets selected.")
     if depth < 0:
         raise ValueError(f"-d, --depth must be 0 or larger, not '{depth}'")
 
+    # TODO: This removes duplicates AND returns pseudo-keys if `keys` is empty. Latter should be done by query.
+    #       Former superfluous - it's passed to query as a set anyways.
     keys = sanitize_keys(keys, defaults=PSEUDO_KEYS)
+
     filters = set_filters(
         filter_strings, repo=repo,
         rich=not machine_readable) if filter_strings else None
 
-    results = get_assets_by_query(
-        repo.asset_paths, keys=set(keys), paths=paths, depth=depth, filters=filters)
+    # TODO: This is once more convoluted. path limitation should be its own thing, not integrated in the query
+    #       Alternatively: path limiting could become just a filter. Implementation-wise that's easy, once pseudo-keys
+    #       are properly delivered by an Asset class and the path pseudo-key is implemented.
+    #       - This suggests a generic filter_assets method (for an Inventory)
+    #       - Gets filters, possibly arbitrary callables (see filter(callable, list) in get_assets_by_query)
+    #       - Check usecases for whether that can cover all the queries
+    results = get_assets_by_query(repo.asset_paths,
+                                  keys=set(keys),
+                                  paths=paths,
+                                  depth=depth,
+                                  filters=filters)
+    # TODO: Move this inside query. A returned asset (-dict) should be filled accordingly already.
+    #       See TODO for UNSET_VALUE definition.
     results = fill_unset(results, keys, UNSET_VALUE)
+
+    # TODO: use `natsort` package.
     results = natural_sort(
         assets=list(results),
         keys=keys if sort_ascending or sort_descending else None,
@@ -218,210 +245,398 @@ def get(repo: OnyoRepo,
             for asset, data in results:
                 values = [str(value) for value in data.values()]
                 table.add_row(*values, str(asset.relative_to(Path.cwd())))
-            # TODO: do this with ui class, too
+
             console.print(table)
         else:
             console.print('No assets matching the filter(s) were found')
 
 
-def mkdir(repo: OnyoRepo,
-          dirs: list[Path],
-          message: Union[list[str], None]) -> None:
+def onyo_mkdir(inventory: Inventory,
+               dirs: list[Path],
+               message: Optional[str]) -> None:
 
-    created_files = repo.mk_inventory_dirs(dirs)
-
-    if created_files:
-        # commit changes
-        created_dirs = [p.parent for p in created_files]
-        ui.print(['The following directories will be created:',
-                  *map(str, created_dirs)], sep='\n')
-
-        if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-            repo.git.stage_and_commit(
-                paths=created_files,
-                message=repo.generate_commit_message(message=message,
-                                                     cmd="mkdir",
-                                                     modified=created_files)
-            )
-            return
-        else:
-            rollback_untracked(created_files)
+    for d in set(dirs):  # explicit duplicates would make auto-generating message subject more complicated ATM
+        inventory.add_directory(d)
+    ui.print('The following directories will be created:')
+    for line in inventory.diff():
+        ui.print(line)
+    if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+        if not message:
+            prefix = "mkdir: "
+            # TODO: This does not actually account for implicitly created dirs (and therefore duplicates).
+            #       However, not mentioning implicit ones separately may be an advantage for a message subject
+            message = prefix + f"{', '.join(p.relative_to(inventory.root).as_posix() for p in dirs)}"
+            if len(message) > 80:
+                message = prefix + f" {', '.join(p.name for p in dirs)}"
+        inventory.commit(message=message)
+        return
     ui.print('No directories created.')
 
 
-def mv(repo: OnyoRepo,
-       source: Union[Iterable[Path], Path],
-       destination: Path,
-       message: Union[list[str], None]) -> None:
-
-    dryrun_list = onyo_mv(repo, source, destination, dryrun=True)
-    ui.print('The following will be moved:\n' +
-             '\n'.join(f"'{x[0]}' -> '{x[1]}'" for x in dryrun_list))
-
-    if not ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-        ui.print('Nothing was moved.')
-        return
-
-    onyo_mv(repo, source, destination)
-    repo.git.commit(repo.generate_commit_message(message=message, cmd="mv",
-                                                 destination=str(destination)))
+def move_asset_or_dir(inventory: Inventory, src: Path, dst: Path) -> None:
+    # TODO: method of Inventory?
+    try:
+        inventory.move_asset(src, dst)
+    except NotAnAssetError:
+        inventory.move_directory(src, dst)
 
 
-def new(repo: OnyoRepo,
-        path: Optional[list[Path]],
-        template: Optional[str],
-        tsv: Optional[Path],
-        keys: Dict[str, str],
-        edit: bool,
-        message: Union[list[str], None]) -> None:
+def onyo_mv(inventory: Inventory,
+            source: Union[list[Path], Path],
+            destination: Path,
+            message: Optional[str] = None) -> None:
+    """
 
-    from onyo.lib.assets import read_assets_from_tsv, create_assets_in_destination, read_assets_from_CLI
-    # verify that arguments do not conflict, otherwise exit
-    validate_args_for_new(tsv, path, template)
+    Parameters
+    ----------
+    inventory
+    source
+    destination
+    quiet
+    yes
+    message
 
-    # read and verify the information for new assets from TSV and CLI
-    # Note: Dict; keys are paths, values content
-    assets = {}
-    if tsv:
-        assets = read_assets_from_tsv(tsv, template, keys, repo)
-    elif path:
-        # Note, this is currently not an `else`, b/c static code analysis (i.e. pyre) can't figure out,
-        # that we would have failed before if neither `tsv` nor `path` was given.
-        assets = read_assets_from_CLI(path, template, keys, repo)
-    if not assets:
-        raise ValueError("No new assets given.")
+    Returns
+    -------
 
-    # create all assets (and non-existing folder), and set their contents
-    new_files = create_assets_in_destination(assets, repo)
+    """
+    sources = [source] if not isinstance(source, list) else source
 
-    if edit:
-        editor = get_editor(repo)
-        # Note: This is different from the `edit` command WRT validation. Prob. just call the edit command?
-        for asset in assets:
-            edit_asset(editor, asset)
-
-    # TODO: validate assets before offering to commit. This has to be done after
-    # they are build, their values are set, and they were opened to edit
-
-    # print diff-like output and remember new directories and assets
-    changes = []
-    if new_files:
-        ui.print("The following will be created:")
-        for path in new_files:
-            # display new folders, not anchors.
-            if path.name == repo.ANCHOR_FILE:
-                ui.print(path.parent)
-                changes.append(path.parent)
-            else:
-                ui.print(path)
-                changes.append(path)
-
-    # commit or discard changes
-    if new_files:
-        if ui.request_user_response("Create assets? (y/n) "):
-            repo.git.stage_and_commit(paths=new_files,
-                                      message=repo.generate_commit_message(message=message,
-                                                                           cmd="new",
-                                                                           modified=new_files)
-                                      )
-            return
+    # If destination exists, it as to be an inventory directory and we are dealing with a move.
+    # If it doesn't exist at all, we are dealing with a rename of a dir.
+    # Special case: One source and its name is explicitly restated as the destination. This is a move, too.
+    # TODO: Error reporting. Right now we just let the first exception from inventory operations bubble up.
+    #       We could catch them and collect all errors (use ExceptionGroup?)
+    if len(sources) == 1 and destination.name == sources[0].name:
+        # MOVE special case
+        subject = "mv:"
+        move_asset_or_dir(inventory, sources[0], destination.parent)
+    elif destination.exists():
+        # MOVE
+        subject = "mv:"
+        for s in sources:
+            move_asset_or_dir(inventory, s, destination)
+    else:
+        # RENAME
+        subject = "ren:"
+        if len(sources) != 1:
+            raise ValueError("Cannot rename multiple sources.")
         else:
-            rollback_untracked(new_files)
+            inventory.rename_directory(sources[0], destination)
+
+    ui.print('The following will be moved:')
+    for line in inventory.diff():
+        ui.print(line)
+    if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+        if not message:
+            message = subject + f" {', '.join(p.relative_to(inventory.root).as_posix() for p in sources)} -> " \
+                                f"{destination.relative_to(inventory.root).as_posix()}"
+            if len(message) > 80:
+                message = subject + f" {', '.join(p.name for p in sources)} -> {destination.name}"
+        inventory.commit(message=message)
+        return
+    ui.print('Nothing was moved.')
+
+
+def onyo_new(inventory: Inventory,
+             path: Optional[Path] = None,
+             template: Optional[str] = None,
+             tsv: Optional[Path] = None,
+             keys: Optional[list[Dict[str, str]]] = None,
+             edit: bool = False,
+             message: Optional[str] = None) -> None:
+    """Command to create new assets and add them to the inventory.
+
+
+    Either keys, tsv or edit must be given.
+    If keys and tsv and keys define multiple assets: Number of assets must match.
+    If only one value pair key: Update tsv assets with them.
+    If `keys` and tsv conflict: raise, there's no priority overwriting or something.
+    --path and `directory` reserved key given -> raise, no priority
+    pseudo-keys must not be given -> NEW_PSEUDO_KEYS
+
+    TODO: Document special keys (directory, asset dir, template, etc) -> RESERVED_KEYS
+
+    - path now is a directory to create stuff in, not a list of asset paths
+    - keys vs template: fill up? Write it down!
+    - edit: TODO: May lead to delay any error until we got the edit result? As in: Can start empty?
+    - message: mandatory, right? No. Default auto-generated (but by command!)
+    - template: if it can be given as a key, do we need a dedicated option?
+    - probably `Inventory` to come in instead of OnyoRepo
+
+    # TODO: This just copy pasta from StoreKeyValuePair, ATM. T some extend should go into help for `--key`.
+    # But: description of TSV and special keys required.
+    Every key appearing multiple times in `key=value` is applied to a new dictionary every time.
+    All keys appearing multiple times, must appear the same number of times (and thereby define the number of dicts
+    to be created). In case of different counts: raise.
+    Every key appearing once in `key_values` will be applied to all dictionaries.
+
+    Parameters
+    ----------
+    inventory
+    path: Path
+      path to directory to create asset(s) in. Defaults to CWD.
+      Note, that it technically is not a default (as per signature of this function),
+      because we need to be able to tell whether a path was given in order to check for conflict with a
+      possible 'directory' key or table column.
+    template
+    tsv
+    keys
+    edit
+    yes
+    message
+
+    Returns
+    -------
+
+    """
+    from onyo.lib.onyo import NEW_PSEUDO_KEYS
+    from copy import deepcopy
+
+    keys = keys or []
+    if not tsv and not keys and not edit:
+        # NOTE: edit requires path or directory key!
+        # Actually: No. `path` comes with a default (CWD)
+
+        # TODO: Why? We have --edit!  Could even start empty, but certainly from a template.
+        #       However, path is required with edit, b/c edit is supposed to edit the file content.
+        #       Hence, special keys (like `directory`, asset dir, template, etc.)
+        #       can't be set that way. (Although: We could make that work, too)
+        # Conclusion: allow for plain edit, but edit only asset file content, not special keys.
+        #       path -> default CWD
+        raise ValueError("Either key-value pairs or a tsv file must be given.")
+    # EDIT needs further validation. We need `directory` key or `path` given. Which sorta implies that this should be
+    # done later, after building the specs? -> Actually: No. Path comes with a default.
+
+    # Try to get editor early in case it's bound to fail;
+    # Empty string b/c pyre doesn't properly consider the condition and complains
+    # when we pass `editor` where it's not optional.
+    editor = inventory.repo.get_editor() if edit else ""
+
+    # read and verify the information for new assets from TSV
+    tsv_dicts = None
+    if tsv:
+        import csv
+        with tsv.open('r', newline='') as tsv_file:
+            reader = csv.DictReader(tsv_file, delimiter='\t')
+            if reader.fieldnames is None:
+                raise ValueError(f"No header fields in tsv {str(tsv_file)}")
+            if template and 'template' in reader.fieldnames:
+                raise ValueError("Can't use '--template' option and 'template' column in tsv.")
+            if path and 'directory' in reader.fieldnames:
+                raise ValueError("Can't use '--path' option and 'directory' column in tsv.")
+            tsv_dicts = [row for row in reader]
+            # Any line's remainder (values beyond available columns) would be stored in the `None` key.
+            # Note, that `i` is shifted by one in order to give the correct line number (header line + index of dict):
+            for d, i in zip(tsv_dicts, range(1, len(tsv_dicts) + 1)):
+                if None in d.keys() and d[None] != ['']:
+                    raise ValueError(f"Values exceed number of columns in {str(tsv)} at line {i}: {d[None]}")
+
+    if tsv_dicts and len(keys) > 1 and len(keys) != len(tsv_dicts):
+        raise ValueError(f"Number of assets in tsv ({len(tsv_dicts)}) doesn't match "
+                         f"number of assets given via --keys ({len(keys)}).")
+
+    if tsv_dicts and len(keys) == 1:
+        # Fill up to number of assets
+        keys = [keys[0] for i in range(len(tsv_dicts))]
+
+    if tsv_dicts and keys:
+        # merge both to get the actual asset specification
+        duplicate_keys = set(tsv_dicts[0].keys()).intersection(set(keys[0].keys()))
+        if duplicate_keys:
+            # TODO: We could list the entire asset (including duplicate key-values) to better identify where the
+            # problem is.
+            raise ValueError(f"Asset keys specified twice: {duplicate_keys}")
+        [tsv_dicts[i].update(keys[i]) for i in range(len(tsv_dicts))]
+        specs = tsv_dicts
+    else:
+        # We have either keys given or a TSV, not both. Note, however, that neither one could be given
+        # (plain edit-based onyo_new). In this case we get `keys` default into `specs` here, which should be an empty
+        # list, thus preventing any iteration further down the road.
+        specs = tsv_dicts if tsv_dicts else deepcopy(keys)  # we don't want to change the caller's `keys` dictionaries
+
+    # TODO: These validations could probably be more efficient and neat.
+    #       For ex., only first dict is actually relevant. It's either TSV (columns exist for all) or came from --key,
+    #       where everything after the first one comes from repetition (However, what about python interface where one
+    #       could pass an arbitrary list of dicts?).
+    if any('directory' in d.keys() for d in specs):
+        if path:
+            raise ValueError("Can't use '--path' option and specify 'directory' key.")
+    else:
+        # default
+        path = path or Path.cwd()
+
+    for pseudo_key in NEW_PSEUDO_KEYS:
+        for d in specs:
+            if pseudo_key in d.keys():
+                raise ValueError(f"Pseudo key '{pseudo_key}' must not be specified.")
+
+    # Prepare faux serials
+    # TODO: Adjust get_faux_serials to accept num=0 and return empty
+    #       Does it save anything to create them bulk?
+    #       Only thing seems to be: Easy to check against other just generated ones.
+    #       Entire business also makes me wonder about configured fallbacks for naming scheme (triggered by KeyError)
+    #       Use case: Us. Serial -> FZJ Inventory number -> faux
+    # TODO: This needs to be more generic. Like configure callables to a key? 'serial' -> callable('faux')
+    # TODO: Turn the entire replacement into function
+    faux_number = sum(1 for d in specs if d.get('serial') == 'faux')
+    if faux_number > 0:
+        faux_serials = inventory.get_faux_serials(num=faux_number)
+        for d in specs:
+            if d.get('serial') == 'faux':
+                d['serial'] = faux_serials.pop()
+
+    # Generate actual assets:
+    if edit and not specs:
+        # Special case: No asset specification defined via --keys or --tsv, but we have --edit.
+        # This implies a single asset, starting with a (possibly empty) template.
+        specs = [{}]
+
+    assets = []
+    for spec in specs:
+        # 1. start from template
+        template_name = spec.get('template', None) or template
+        asset = inventory.get_asset_from_template(template_name)
+        # 2. fill in asset specification
+        asset.update(spec)
+
+        if edit:
+            asset = edit_asset(asset, editor)
+
+        # 3. generate asset name (raises on missing required fields)
+        name = inventory.generate_asset_name(asset)
+
+        # arguably: faux serials after editing as well, so one can give 'faux' via edit!
+
+        # 4. generate 'path' and pop 'directory' key
+        # TODO: Double-check! Is directory guaranteed at this point? No,but we could from path
+        #       Also: do we have a default for `path`? Yes.
+
+        dir = path if path else inventory.repo.git.root / asset.get('directory', '')
+        asset['path'] = dir / name
+        asset.pop('directory', None)
+        assets.append(asset)
+
+    # TODO: Editing too late. Verification for name, etc. needs to come afterwards!
+    #       But: Interactively editing a bunch, implies you want to know and correct something invalidate right away
+    #       before proceeding to the next one. Hence, editor validation needs to include name generation path
+    #       availability, etc.
+
+    # verify that the asset paths are unique/available
+    inventory.asset_paths_available(assets)
+
+    for asset in assets:
+        # TODO: validate assets before offering to commit. This has to be done after
+        # they are build, their values are set, and they were opened to edit
+        # Note: Availability was checked. If edited, YAML check was passed. Uniqueness?
+
+        inventory.add_asset(asset)
+
+    if assets:
+        ui.print("The following will be created:")
+        for line in inventory.diff():
+            ui.print(line)
+        if ui.request_user_response("Create assets? (y/n) "):
+
+            # TODO: RF into re-usable functions (consider config format string for this):
+            if not message:
+                subject = "new: "
+                paths = [a.get('path').relative_to(inventory.root) for a in assets]
+                full_paths = subject + ", ".join(p.as_posix() for p in paths)
+                if len(full_paths) < 80:
+                    message = full_paths
+                else:
+                    names = subject + ", ".join(p.name for p in paths)
+                    if len(names) < 80:
+                        message = names
+                    else:
+                        types = [a.get('type') for a in assets]
+                        number = subject + ", ".join(f"{t}({types.count(t)}" for t in set(types))
+                        message = number
+            inventory.commit(message=message)
+            return
     ui.print('No new assets created.')
 
 
-def rm(repo: OnyoRepo,
-       path: list[Path],
-       message: Union[list[str], None]) -> None:
-    from onyo.lib.command_utils import rm as onyo_rm
-    dryrun_list = onyo_rm(repo, path, dryrun=True)
-    ui.print('The following will be deleted:\n' + '\n'.join(dryrun_list))
+def onyo_rm(inventory: Inventory,
+            path: Union[Iterable[Path], Path],
+            message: Optional[str]) -> None:
 
-    if not ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-        ui.print('Nothing was deleted.')
+    paths = [path] if not isinstance(path, (list, set, tuple)) else path
+
+    for p in paths:
+        try:
+            inventory.remove_asset(p)
+        except NotAnAssetError:
+            inventory.remove_directory(p)
+
+    ui.print('The following will be deleted:')
+    for line in inventory.diff():
+        ui.print(line)
+    if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+        if not message:
+            message = f"rm: {', '.join(p.relative_to(inventory.root).as_posix() for p in paths)}"
+            if len(message) > 80:
+                message = f"rm: {', '.join(p.name for p in paths)}"
+        inventory.commit(message)
         return
-
-    onyo_rm(repo, path)
-    repo.git.commit(repo.generate_commit_message(message=message,
-                                                 cmd="rm"))
+    ui.print('Nothing was deleted.')
 
 
-def set_(repo: OnyoRepo,
-         paths: Optional[Iterable[Path]],
-         keys: Dict[str, Union[str, int, float]],
-         filter_strings: list[str],
-         dryrun: bool,
-         rename: bool,
-         depth: Union[int],
-         message: Union[list[str], None]) -> Union[str, None]:
-    from onyo.lib.command_utils import set_assets
-    from .assets import write_asset_file
+def onyo_set(inventory: Inventory,
+             paths: Optional[Iterable[Path]],
+             keys: Dict[str, Union[str, int, float]],
+             filter_strings: list[str],
+             dryrun: bool,
+             rename: bool,
+             depth: int,
+             message: Optional[str] = None) -> Union[str, None]:
 
     if not paths:
         paths = [Path.cwd()]
 
-    if not rename and any(k in PSEUDO_KEYS for k in keys.keys()):
-        raise ValueError("Can't change pseudo keys without --rename.")
+    if not rename and any(k in inventory.repo.get_required_asset_keys() for k in keys.keys()):
+        raise ValueError("Can't change required keys without --rename.")
+    # TODO: `keys` must not contain RESERVED_KEYS
 
-    non_inventory_paths = [str(p) for p in paths if not repo.is_asset_path(p) and not repo.is_inventory_dir(p)]
+    non_inventory_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p) and not inventory.repo.is_inventory_dir(p)]
     if non_inventory_paths:
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
+    filters = set_filters(filter_strings, repo=inventory.repo) if filter_strings else None
+    # TODO: We are only interested in paths here. Factor that in for changing get_asset_by_query, when
+    #       rewriting `onyo get`.
+    asset_paths_to_set = [p for p, _ in get_assets_by_query(
+        inventory.repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)]
 
-    filters = set_filters(filter_strings, repo=repo) if filter_strings else None
+    for path in asset_paths_to_set:
+        asset = inventory.get_asset(path)
+        new_content = asset.copy()
+        new_content.update(keys)
+        inventory.modify_asset(asset, new_content)
 
-    asset_paths_to_set = get_assets_by_query(
-        repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
-
-    asset_paths_to_set = [a[0] for a in asset_paths_to_set]
-
-    modifications, moves = set_assets(repo, asset_paths_to_set, keys)
-
-    diffs = [m[2] for m in modifications if m[2] != []]
     # display changes
-    if diffs or moves:
-        ui.print("The following assets will be changed:")
-        for src, dst in moves:
-            ui.print(f"Rename {src} to {dst}")
-        if diffs:
-            for d in diffs:
-                for line in d:
-                    ui.print(line)
-    else:
-        ui.print("The values are already set. No assets updated.")
-        return
+    ui.print("The following assets will be changed:")
+    for line in inventory.diff():
+        ui.print(line)
 
-    # Note: This needs to go again, when dryrun (gh-377) and convolution of name generation,
-    #       git-mv, etc. is resolved.
     if not dryrun:
-        if diffs:
-            to_add = []
-            for p, c, d in modifications:
-                if d is not []:
-                    write_asset_file(p, c)
-                    to_add.append(p)
-            repo.git.add(to_add)
-        if moves:
-            for old_path, new_path in moves:
-                repo.git.mv(old_path, new_path)
-
-        # commit or discard changes
-        if diffs or moves:
-            if ui.request_user_response("Update assets? (y/n) "):
-                repo.git.commit(repo.generate_commit_message(message=message,
-                                                             cmd="set",
-                                                             keys=[f"{k}={v}" for k, v in keys.items()]))
-                return
-            else:
-                to_restore = [m[0] for m in modifications]
-                for s, d in moves:
-                    to_restore.append(s)
-                    to_restore.append(d)
-                repo.git.restore_staged()
+        if ui.request_user_response("Update assets? (y/n) "):
+            # TODO: RF into re-usable functions (consider config format string for this):
+            if not message:
+                subject = "edit: "
+                paths = [p.relative_to(inventory.root) for p in asset_paths_to_set]
+                full_paths = subject + ", ".join(p.as_posix() for p in paths)
+                if len(full_paths) < 80:
+                    message = full_paths
+                else:
+                    message = subject + ", ".join(p.name for p in paths)
+            inventory.commit(message=message)
+            return
     ui.print("No assets updated.")
 
 
-def tree(repo: OnyoRepo, paths: list[Path]) -> None:
+def onyo_tree(repo: OnyoRepo, paths: list[Path]) -> None:
     # sanitize the paths
     non_inventory_dirs = [str(p) for p in paths if not repo.is_inventory_dir(p)]
     if non_inventory_dirs:
@@ -430,10 +645,7 @@ def tree(repo: OnyoRepo, paths: list[Path]) -> None:
 
     # run it
     ret = subprocess.run(
-        ['tree', *map(str, paths)], capture_output=True, text=True)
-    # check for errors
-    if ret.stderr:
-        raise RuntimeError(ret.stderr)
+        ['tree', *map(str, paths)], capture_output=True, text=True, check=True)
     # print tree output
     ui.print(ret.stdout)
 
@@ -461,7 +673,7 @@ def unset(repo: OnyoRepo,
         repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
     paths = [a[0] for a in paths]
 
-    modifications = ut_unset(repo, paths, keys, dryrun, depth)
+    modifications = ut_unset(repo, paths, keys, depth)
 
     diffs = [m[2] for m in modifications if m[2] != []]
     # display changes

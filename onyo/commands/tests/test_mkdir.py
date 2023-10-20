@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 
 
 directories = ['simple',
@@ -37,7 +36,7 @@ def test_mkdir(repo: OnyoRepo, directory: str) -> None:
         d = d.parent
 
     # verify that the repository is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_mkdir_multiple_inputs(repo: OnyoRepo) -> None:
@@ -60,7 +59,7 @@ def test_mkdir_multiple_inputs(repo: OnyoRepo) -> None:
             d = d.parent
 
     # verify that the repository is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_mkdir_no_response(repo: OnyoRepo) -> None:
@@ -81,7 +80,7 @@ def test_mkdir_no_response(repo: OnyoRepo) -> None:
         assert not Path(directory, ".anchor").is_file()
 
     # verify that the repository is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_mkdir_message_flag(repo: OnyoRepo) -> None:
@@ -102,7 +101,7 @@ def test_mkdir_message_flag(repo: OnyoRepo) -> None:
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I', directories[0]], capture_output=True, text=True)
     assert msg in ret.stdout
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
@@ -127,7 +126,7 @@ def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
             d = d.parent
 
     # verify that the repository is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs(*directories)
@@ -140,15 +139,15 @@ def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
     ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
 
     # verify output
-    assert "No directories created." in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
+    assert not ret.stdout
+    assert "already exists" in ret.stderr
+    assert ret.returncode == 1
 
     assert Path(directory).is_dir()
     assert Path(directory, ".anchor").is_file()
 
     # verify that the repository is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_files(*directories)  # used as files to test errors
@@ -161,13 +160,13 @@ def test_dir_exists_as_file(repo: OnyoRepo, file: str) -> None:
 
     # verify output
     assert not ret.stdout
-    assert "The following paths are existing files:" in ret.stderr
+    assert "already exists" in ret.stderr
     assert ret.returncode == 1
 
     assert Path(file).is_file()
 
     # verify that the repository is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 protected_paths = [".anchor",
@@ -188,12 +187,12 @@ def test_dir_protected(repo: OnyoRepo, protected_path: str) -> None:
 
     # verify output
     assert not ret.stdout
-    assert 'protected by onyo' in ret.stderr
+    assert f"{protected_path} is not a valid inventory path" in ret.stderr
     assert ret.returncode == 1
 
     # verify that the directory was not created and the repository is clean
     assert not Path(protected_path).is_dir()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs("simple")
@@ -211,4 +210,4 @@ def test_mkdir_relative_path(repo: OnyoRepo) -> None:
     # verify that the correct directory was created and the repository is clean
     assert Path("./relative").exists()
     assert not Path('simple/\\.\\./relative').exists()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

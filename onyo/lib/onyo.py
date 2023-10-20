@@ -1,14 +1,44 @@
+from __future__ import annotations
+
 import logging
 import shutil
 import subprocess
+import os
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional, Union, List, Dict
 
+from ruamel.yaml import YAML  # pyre-ignore[21]
+
+from .ui import ui
 from .git import GitRepo
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
-log.setLevel(logging.INFO)
+
+
+# TODO: pseudo-key generation mapping
+NEW_PSEUDO_KEYS = ['path']  # TODO: name temporary b/c RF (old idea of pseudo-keys doesn't match)
+
+
+def dict_to_yaml(d: Dict[str, Union[float, int, str]]) -> str:
+    content = {k: v for k, v in d.items() if k not in NEW_PSEUDO_KEYS}  # RESERVED_KEYS
+    if not content:
+        return ""
+    from io import StringIO
+    yaml = YAML(typ='rt')
+    s = StringIO()
+    yaml.dump(content,
+              s)
+    return s.getvalue()
+
+
+def yaml_to_dict(path: Path) -> dict:
+    yaml = YAML(typ='rt', pure=True)
+    content = yaml.load(path)  # raises scanner.ScannerError
+    # TODO: Exception was caught and printed but didn't interrupt. Double-check why.
+    if content is None:
+        content = dict()
+    return content
 
 
 class OnyoRepo(object):
@@ -29,7 +59,7 @@ class OnyoRepo(object):
         The path to the `.onyo/` directory containing templates, the config file
         and other onyo specific information.
 
-    asset_paths: Set of Path
+    asset_paths: list of Path
         The paths to all assets in the Repository.
         This property is cached and consistent when only the public functions of
         OnyoRepo are called. Usage of private or external functions might
@@ -37,8 +67,10 @@ class OnyoRepo(object):
     """
 
     ONYO_DIR = Path('.onyo')
+    ONYO_CONFIG = ONYO_DIR / 'config'
     TEMPLATE_DIR = 'templates'
     ANCHOR_FILE = '.anchor'
+    ASSET_DIR_FILE = '.onyo-asset-dir'
 
     def __init__(self,
                  path: Path,
@@ -84,10 +116,69 @@ class OnyoRepo(object):
             if not self.is_valid_onyo_repo():
                 raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
 
-        log.debug(f"Onyo repo found at '{self.git.root}'")
+        ui.log_debug(f"Onyo repo found at '{self.git.root}'")
 
         # caches
-        self._asset_paths: Optional[set[Path]] = None
+        self._asset_paths: Optional[list[Path]] = None
+
+    def get_config(self, name: str) -> Union[str, None]:
+        """
+        """
+        # TODO: lru_cache?
+        # TODO: This needs to account for both .onyo/config + all git configs with correct prios
+        # Where do we inject onyo/.config in the order of priority?
+        # editor tests say git > onyo. Fine for now, but doesn't seem entirely intuitive. Why would a system config take
+        # precedence over a committed setting specific to the inventory repo?
+        return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
+
+    def get_required_asset_keys(self) -> list[str]:
+        """Get a list of keys required for generating asset names
+
+        Name generation is configured by a python format string.
+        Hence, this gets the config finds all keys referenced in it.
+
+        Returns
+        -------
+        list of str
+          list containing the names of all keys found
+        """
+        # Regex for finding key references in a python format string.
+        # This is relying on every such usage starting with a '{', followed by a key name, which is then either closed
+        # directly via '}' or first followed by some formatting options in which case there's '[', '.', '!', etc.
+        # Note, that `\w` should include alphanumeric characters as well as underscores, therefore matching python
+        # variable name restrictions. This is relevant, because we want to get a dict from the YAML and making the
+        # values available to name generation stored in "onyo.assets.filename" by passing the dict to
+        # `config_str.format(**yaml_dict)`.
+        # Hence, keys need to be able to be python variables.
+
+        # TODO: Make an issue about implications for usable format strings
+        #       (incl. nested dicts in the YAML - possible but not currently supported - wait for usecase)
+
+        search_regex = r"\{(\w+)"
+
+        import re
+        config_str = self.get_config("onyo.assets.filename")
+        return re.findall(search_regex, config_str) if config_str else []  # TODO: raise, return None or return []?
+
+    def get_editor(self) -> str:
+        """
+        Returns the editor, progressing through git, onyo, $EDITOR, and finally
+        fallback to "nano".
+        """
+        # onyo config and git config
+        editor = self.get_config('onyo.core.editor')
+
+        # $EDITOR environment variable
+        if not editor:
+            ui.log_debug("onyo.core.editor is not set.")
+            editor = os.environ.get('EDITOR')
+
+        # fallback to nano
+        if not editor:
+            ui.log_debug("$EDITOR is also not set.")
+            editor = 'nano'
+
+        return editor
 
     def clear_caches(self,
                      assets: bool = True) -> None:
@@ -270,7 +361,7 @@ class OnyoRepo(object):
         return msg
 
     @property
-    def asset_paths(self) -> set[Path]:
+    def asset_paths(self) -> list[Path]:
         """
         Get a `set` containing the absolute `Path`s of all assets of a
         repository.
@@ -365,7 +456,7 @@ class OnyoRepo(object):
         # add and commit
         self.git.stage_and_commit(self.dot_onyo,
                                   message='Initialize as an Onyo repository')
-        log.info(f'Initialized Onyo repository in {self.dot_onyo}/')
+        ui.log(f'Initialized Onyo repository in {self.dot_onyo}/')
 
     def is_onyo_path(self,
                      path: Path) -> bool:
@@ -385,6 +476,7 @@ class OnyoRepo(object):
         boolean
           True if `path` is inside `.onyo/`, otherwise False.
         """
+        # TODO: Should this include anchor files?
         return path == self.dot_onyo or self.dot_onyo in path.parents or \
             path.name.startswith('.onyo')  # see .onyoignore
 
@@ -401,8 +493,9 @@ class OnyoRepo(object):
         # TODO: check for .onyoignore
         # TODO: possibly nested assets; hence "asset path", not "asset file"
         # TODO: We are currently ignoring .gitignore w/ underlying globbing
+        # TODO: Only account for tracked files!
         return self.is_inventory_path(path) and \
-            path.is_file()
+            (path.is_file() or (path / self.ASSET_DIR_FILE).is_file())
 
     def is_inventory_path(self,
                           path: Path) -> bool:
@@ -418,21 +511,26 @@ class OnyoRepo(object):
             not self.is_onyo_path(path) and \
             self.ANCHOR_FILE not in path.parts
 
-    def get_template_file(self,
-                          name: Optional[str] = None) -> Path:
+    def is_asset_dir(self, path: Path) -> bool:
+        return self.is_inventory_dir(path) and self.is_asset_path(path)
+
+    def get_template(self,
+                     name: Optional[str] = None) -> dict:
         """
-        Select and return a template file from the directory `.onyo/templates/`.
+        Select and return a template from the directory `.onyo/templates/`.
 
         Parameters
         ----------
-        name: Path
+        name: str
             The name of the template to look for. If no name is given, the
             template defined in the config file `.onyo/config` is returned.
 
         Returns
         -------
-        Path
-            The template path on success
+        dict
+            dictionary representing the content of the template. If `name`
+            is not specified and there's no `onyo.new.template` config set
+            the dictionary will be empty.
 
         Raises
         ------
@@ -440,15 +538,18 @@ class OnyoRepo(object):
             If the requested template can't be found or is not a file.
         """
         if not name:
-            name = self.git.get_config('onyo.new.template')
+            name = self.get_config('onyo.new.template')
             if name is None:
-                raise ValueError("Either --template must be given or 'onyo.new.template' must be set.")
+                return dict()  # equivalent to previous empty default template
+                # TODO: is this sane or do we fail? Not raising seems advantageous,
+                #       b/c it allows for generic calls -> no template requested, no problem.
+                #       Empty dict can still be used as baseline for assembling the "real" dict.
 
         # Note: Protect against providing absolute path in `template_name`?
         template_file = self.git.root / self.ONYO_DIR / self.TEMPLATE_DIR / name
         if not template_file.is_file():
             raise ValueError(f"Template {name} does not exist.")
-        return template_file
+        return yaml_to_dict(template_file)
 
     def validate_anchors(self) -> bool:
         """
@@ -485,13 +586,60 @@ class OnyoRepo(object):
 
         return True
 
-    def get_asset_paths(self) -> set[Path]:
-        # TODO: make if asset-style name (i.e. README won't match)
+    def get_asset_paths(self, subtrees: Optional[Iterable[Path]] = None, depth: Optional[int] = None) -> List[Path]:
 
-        # Note: Why the hell suddenly use repo.files? This is so inconsistent ...
-        # actual asset files
-        assets = {x for x in self.git.files if self.is_asset_path(x)}
-        return assets
+        # TODO: Adjust docstring
+        """
+        Check and normalize a list of paths. Select all assets in the
+        repository that are relative to the given `paths` descending at most
+        `depth` directories. A `depth` of 0 or `None` descends without a limit.
+        """
+        if depth and depth < 0:
+            raise ValueError(f"depth values must be positive, but is {depth}.")
+
+        files = self.git.get_subtrees(subtrees)
+        if not subtrees:
+            asset_paths = [f for f in files
+                           if self.is_asset_path(f) and
+                           (len(f.parents) - len(self.git.root.parents) <= depth if depth else True)
+                           ]
+        else:
+            asset_paths = [f for f in files
+                           if self.is_asset_path(f) and
+                           any([f.is_relative_to(p) and
+                                (len(f.parents) - len(p.parents) <= depth if depth else True)
+                                for p in subtrees]
+                               )
+                           ]
+        return asset_paths
+
+    def get_asset_content(self, path: Path) -> dict:
+        if not self.is_asset_path(path):
+            raise ValueError(f"{path} is not an asset path")
+        if self.is_asset_dir(path):
+            a = yaml_to_dict(path / self.ASSET_DIR_FILE)
+            a['is_asset_directory'] = True
+        else:
+            a = yaml_to_dict(path)
+        # Add pseudo-keys:
+        a['path'] = path
+        return a
+
+    def write_asset_content(self, asset: dict) -> dict:
+        path = asset.get('path')
+        if not path:
+            raise RuntimeError("Trying to write asset to unknown path")
+        if self.is_inventory_path(path):
+            if asset.get('is_asset_directory', False) and path.name != self.ASSET_DIR_FILE:
+                path = path / self.ASSET_DIR_FILE
+            # TODO: potential rename, based on config??
+            path.open('w').write(dict_to_yaml(asset))
+        else:
+            raise ValueError(f"{path} is not a valid inventory path")
+            # TODO: What?
+
+        # TODO: Potentially return/modify updated (pseudo-keys: last modified, etc.!) asset dict.
+        return asset
 
     def mk_inventory_dirs(self,
                           dirs: Union[Iterable[Path], Path]) -> list[Path]:

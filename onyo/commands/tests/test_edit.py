@@ -2,15 +2,14 @@ import os
 import subprocess
 from pathlib import Path
 
-from onyo.lib.command_utils import get_editor
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 import pytest
 
-assets = ['laptop_apple_macbookpro.0',
-          'simple/laptop_apple_macbookpro.1',
-          's p a/c e s/laptop_apple_macbookpro.2',
-          'very/very/very/deep/spe\"c_ial\\ch_ar\'ac.teஞrs'
+assets = [['laptop_apple_macbookpro.0', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 0"],
+          ['simple/laptop_apple_macbookpro.1', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 1"],
+          ['s p a/c e s/laptop_apple_macbookpro.2', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 2"],
+          ['very/very/very/deep/spe\"c_ial\\ch_ar\'ac.teஞrs',
+           "type: spe\"c\nmake: ial\\ch\nmodel: ar\'ac\nserial: teஞrs"],
           ]
 
 
@@ -22,7 +21,7 @@ def test_get_editor_git(repo: OnyoRepo, variant: str) -> None:
     repo.git.set_config('onyo.core.editor', variant, location=variant)
 
     # test
-    editor = get_editor(repo)
+    editor = repo.get_editor()
     assert editor == variant
 
 
@@ -31,11 +30,11 @@ def test_get_editor_envvar(repo: OnyoRepo) -> None:
     Get the editor from $EDITOR.
     """
     # verify that onyo.core.editor is not set
-    assert not repo.git.get_config('onyo.core.editor')
+    assert not repo.get_config('onyo.core.editor')
 
     # test
     os.environ['EDITOR'] = 'editor'
-    assert get_editor(repo) == 'editor'
+    assert repo.get_editor() == 'editor'
 
 
 def test_get_editor_fallback(repo: OnyoRepo) -> None:
@@ -43,14 +42,14 @@ def test_get_editor_fallback(repo: OnyoRepo) -> None:
     When no editor is set, nano is the fallback.
     """
     # verify that onyo.core.editor is not set
-    assert not repo.git.get_config('onyo.core.editor')
+    assert not repo.get_config('onyo.core.editor')
     try:
         assert not os.environ['EDITOR']
     except KeyError:
         pass
 
     # test
-    assert get_editor(repo) == 'nano'
+    assert repo.get_editor() == 'nano'
 
 
 def test_get_editor_precedence(repo: OnyoRepo) -> None:
@@ -63,21 +62,21 @@ def test_get_editor_precedence(repo: OnyoRepo) -> None:
     os.environ['EDITOR'] = 'editor'
 
     # git should win
-    assert get_editor(repo) == 'local'
+    assert repo.get_editor() == 'local'
 
     # onyo should win
     ret = subprocess.run(["git", "config", '--unset', "onyo.core.editor"])
     assert ret.returncode == 0
-    assert get_editor(repo) == 'onyo'
+    assert repo.get_editor() == 'onyo'
 
     # $EDITOR is all that's left
     ret = subprocess.run(["onyo", "config", '--unset', "onyo.core.editor"])
     assert ret.returncode == 0
-    assert get_editor(repo) == 'editor'
+    assert repo.get_editor() == 'editor'
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
     """
     Test that for different paths it is possible to call `onyo edit` on a single
@@ -94,10 +93,10 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
 
     # verify the changes were actually written and the repo is in a clean state:
     assert 'key: single_asset' in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 def test_edit_multiple_assets(repo: OnyoRepo) -> None:
     """
     Test that it is possible to call `onyo edit` with a list of multiple assets
@@ -116,10 +115,10 @@ def test_edit_multiple_assets(repo: OnyoRepo) -> None:
     # verify the changes were saved for all assets and the repository is clean
     for asset in repo_assets:
         assert 'key: multiple_assets' in Path.read_text(asset)
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 def test_edit_with_user_response(repo: OnyoRepo) -> None:
     """
     Test that without the --yes flag, `onyo edit` requests a user response
@@ -128,18 +127,18 @@ def test_edit_with_user_response(repo: OnyoRepo) -> None:
     os.environ['EDITOR'] = "printf 'key: user_response' >"
 
     # test edit for a list of assets all at once
-    ret = subprocess.run(['onyo', 'edit', *assets],
+    ret = subprocess.run(['onyo', 'edit', *repo.asset_paths],
                          input='y', capture_output=True, text=True)
     assert ret.returncode == 0
 
     # verify that the user response is requested
     assert "Save changes?" in ret.stdout
     assert not ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_message_flag(repo: OnyoRepo, asset: str) -> None:
     """
     Test that `onyo edit --message msg` overwrites the default commit message
@@ -158,10 +157,10 @@ def test_edit_message_flag(repo: OnyoRepo, asset: str) -> None:
     ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
     assert msg in ret.stdout
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 def test_quiet_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo edit --yes --quiet` does not print anything.
@@ -169,7 +168,7 @@ def test_quiet_flag(repo: OnyoRepo) -> None:
     os.environ['EDITOR'] = "printf 'key: quiet' >"
 
     # edit a list of assets all at once
-    ret = subprocess.run(['onyo', '--yes', '--quiet', 'edit', *assets],
+    ret = subprocess.run(['onyo', '--yes', '--quiet', 'edit', *repo.asset_paths],
                          capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -180,10 +179,10 @@ def test_quiet_flag(repo: OnyoRepo) -> None:
     # verify the changes were saved for all assets and the repository is clean
     for asset in repo.asset_paths:
         assert 'key: quiet' in Path.read_text(asset)
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo edit --quiet` does error without --yes flag.
@@ -191,18 +190,18 @@ def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
     os.environ['EDITOR'] = "printf 'key: quiet' >"
 
     # edit a list of assets all at once
-    ret = subprocess.run(['onyo', '--quiet', 'edit', *assets],
+    ret = subprocess.run(['onyo', '--quiet', 'edit', *repo.asset_paths],
                          capture_output=True, text=True)
 
     # verify correct error.
     assert not ret.stdout
     assert ret.returncode == 1
     assert 'The --quiet flag requires --yes.' in ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_discard(repo: OnyoRepo, asset: str) -> None:
     """
     Test that if an asset got correctly changed, but the user answers to the
@@ -221,7 +220,7 @@ def test_edit_discard(repo: OnyoRepo, asset: str) -> None:
 
     # verify that the changes got discarded and the repository is clean afterwards
     assert "key: discard" not in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_dirs('simple/', 's p a c e s/', 's p a/c e s/',
@@ -246,10 +245,9 @@ def test_edit_protected(repo: OnyoRepo, no_asset: str) -> None:
     assert not ret.stdout
     assert "is not an asset" in ret.stderr
     assert Path(no_asset).is_file()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files('simple/laptop_apple_macbookpro.1')
 @pytest.mark.repo_dirs('very/very/very/deep/')
 @pytest.mark.parametrize('no_asset', [
     "non_existing_asset.0",
@@ -270,11 +268,11 @@ def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
     assert not ret.stdout
     assert "is not an asset" in ret.stderr
     assert not Path(no_asset).is_file()
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
     """
     Test that Onyo detects yaml-errors, and responds correctly if the user
@@ -284,35 +282,35 @@ def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
 
     # Change the asset to invalid yaml, and respond 'n' to "further edit" dialog
     ret = subprocess.run(['onyo', 'edit', asset],
-                         input='n', capture_output=True, text=True)
+                         input='n\nn',  # currently two 'n': don't continue editing and don't save any changes.
+                         capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "not updated" in ret.stdout
+    assert "No assets updated" in ret.stdout
     assert "has invalid YAML syntax" in ret.stderr
 
     # Verify that the changes are not written in to the file, and that the
     # repository stays in a clean state
     assert 'YAML: ERROR: STRING' not in Path.read_text(Path(asset))
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
+@pytest.mark.repo_contents(*assets)
 def test_edit_without_changes(repo: OnyoRepo) -> None:
     """
-    Test that onyo not fails when no changes were made
+    Test that onyo does not fail when no changes were made
     """
     os.environ['EDITOR'] = "cat"
 
     # open assets with `cat`, but do not change them
-    assets = [str(asset) for asset in repo.asset_paths]
-    ret = subprocess.run(['onyo', 'edit', *assets],
+    ret = subprocess.run(['onyo', 'edit'] + [str(asset) for asset in repo.asset_paths],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
+@pytest.mark.repo_contents(*assets)
+@pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_with_dot_dot(repo: OnyoRepo, asset: str) -> None:
     """
     Check that in an onyo repository it is possible to call `onyo edit` on an
@@ -333,4 +331,4 @@ def test_edit_with_dot_dot(repo: OnyoRepo, asset: str) -> None:
 
     # verify that the change did happen and the repository is clean afterwards
     assert 'key: dot_dot' in Path.read_text(path)
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

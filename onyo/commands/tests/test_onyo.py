@@ -2,7 +2,6 @@ import subprocess
 from itertools import product
 
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 import pytest
 
 
@@ -13,7 +12,7 @@ def test_onyo_debug(repo: OnyoRepo, variant: str) -> None:
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert 'DEBUG:onyo' in ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('variant', ['-h', '--help'])
@@ -22,7 +21,7 @@ def test_onyo_help(repo: OnyoRepo, variant: str) -> None:
     assert ret.returncode == 0
     assert 'usage: onyo [-h]' in ret.stdout
     assert not ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
 # TODO: this would be better if parametrized
@@ -39,4 +38,4 @@ def test_onyo_without_subcommand(repo: OnyoRepo, helpers) -> None:
             assert ret.returncode == 1
             assert 'usage: onyo [-h]' in ret.stdout
             assert not ret.stderr
-    fsck(repo)
+    assert repo.git.is_clean_worktree()

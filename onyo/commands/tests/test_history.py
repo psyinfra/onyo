@@ -100,7 +100,7 @@ def test_history_config_unset(repo: OnyoRepo) -> None:
                               message="Unset in .onyo/config: 'onyo.history.non-interactive'")
 
     # verify unset
-    assert not repo.git.get_config('onyo.history.non-interactive')
+    assert not repo.get_config('onyo.history.non-interactive')
 
     # test
     ret = subprocess.run(['onyo', 'history', '-I', assets[0]],

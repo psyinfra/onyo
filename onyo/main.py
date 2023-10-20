@@ -3,7 +3,8 @@ import os
 import sys
 import textwrap
 
-from onyo import commands, ui
+from onyo import commands
+from onyo.lib.ui import ui
 from pathlib import Path
 from typing import Union
 
@@ -303,7 +304,8 @@ def main() -> None:
             # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
             #       non-zero here, in order to have this generic last catcher.
             ui.error(e)
-            sys.exit(1)
+            code = e.returncode if hasattr(e, 'returncode') else 1  # pyre-ignore
+            sys.exit(code)
         finally:
             os.chdir(old_cwd)
 

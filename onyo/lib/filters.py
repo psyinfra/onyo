@@ -7,7 +7,8 @@ from onyo.lib.exceptions import OnyoInvalidFilterError
 
 
 # TODO: Move this to a place specifically meant for defaults, along with
-#  other defaults like <list>, <dict>, and potentially <none> or <null>
+#       other defaults like <list>, <dict>, and potentially <none> or <null>
+#       Actually: This should be covered by an Asset class (providing the content of an asset)
 UNSET_VALUE = '<unset>'
 
 

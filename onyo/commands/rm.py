@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.commands import fsck, rm as rm_cmd
+from onyo.lib.inventory import Inventory
+from onyo.lib.commands import onyo_rm
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import shared_arg_message
 
@@ -28,7 +29,8 @@ def rm(args: argparse.Namespace) -> None:
     A list of all files and directories to delete will be presented, and the
     user prompted for confirmation.
     """
-    repo = OnyoRepo(Path.cwd(), find_root=True)
-    fsck(repo)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path]
-    rm_cmd(repo, paths, args.message)
+    onyo_rm(inventory,
+            path=paths,
+            message='\n'.join(m for m in args.message) if args.message else None)
