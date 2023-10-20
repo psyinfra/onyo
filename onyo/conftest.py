@@ -29,7 +29,7 @@ def params(d: dict) -> MarkDecorator:
 
 
 @pytest.fixture(scope='function')
-def repo(tmp_path: str, monkeypatch, request) -> Generator[OnyoRepo, None, None]:
+def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None]:
     """
     This fixture:
     - creates a new repository in a temporary directory
@@ -41,7 +41,7 @@ def repo(tmp_path: str, monkeypatch, request) -> Generator[OnyoRepo, None, None]
     - repo_files()
       - parent directories of files are automatically created
     """
-    repo_path = Path(tmp_path)
+    repo_path = tmp_path
     dirs = set()
     files = set()
     contents = list()
