@@ -4,7 +4,7 @@ Installation
 Non-Python Dependencies
 ***********************
 
-In addition to Python >= 3.9 and a few Python modules, Onyo depends on a few
+In addition to Python >= 3.11 and a few Python modules, Onyo depends on a few
 system utilities.
 
 **Debian/Ubuntu**:

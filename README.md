@@ -17,7 +17,7 @@ and general information about Onyo.
 ### Installation
 
 #### Non-Python Dependencies:
-In addition to Python >= 3.9, Onyo depends on a few system utilities.
+In addition to Python >= 3.11, Onyo depends on a few system utilities.
 
 Debian/Ubuntu:
 ```
