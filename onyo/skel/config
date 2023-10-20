@@ -3,3 +3,7 @@
 	non-interactive = git --no-pager log --follow
 [onyo "new"]
 	template = empty
+[onyo "assets"]
+	filename = "{type}_{make}_{model}.{serial}"
+[onyo "repo"]
+	version = 1
