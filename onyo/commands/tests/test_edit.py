@@ -290,7 +290,7 @@ def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
 
     # Verify that the changes are not written in to the file, and that the
     # repository stays in a clean state
-    assert 'YAML: ERROR: STRING' not in Path.read_text(Path(asset))
+    assert 'YAML: ERROR: STRING' not in Path(asset).read_text()
     assert repo.git.is_clean_worktree()
 
 
