@@ -33,7 +33,8 @@ def test_init_cwd(tmp_path: Path) -> None:
     ret = subprocess.run(["onyo", "init"], capture_output=True, text=True)
 
     # verify output and that initializing the new repository was successful.
-    assert "Initialized Onyo repository in" in ret.stderr
+    assert "Initialized Onyo repository in" in ret.stdout
+    assert not ret.stderr
     assert ret.returncode == 0
     assert fully_populated_dot_onyo(tmp_path)
     repo = OnyoRepo(tmp_path)
@@ -52,7 +53,8 @@ def test_init_with_path(tmp_path: Path) -> None:
     # verify output and that initializing the new repository was successful.
     assert ret.returncode == 0
     assert fully_populated_dot_onyo(tmp_path)
-    assert "Initialized Onyo repository in" in ret.stderr
+    assert "Initialized Onyo repository in" in ret.stdout
+    assert not ret.stderr
     repo = OnyoRepo(repo_path)
     assert repo.git.root == repo_path
     assert repo.git.is_clean_worktree()
