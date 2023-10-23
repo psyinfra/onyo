@@ -306,6 +306,9 @@ def main() -> None:
             ui.error(e)
             code = e.returncode if hasattr(e, 'returncode') else 1  # pyre-ignore
             sys.exit(code)
+        except KeyboardInterrupt:
+            ui.error("User interrupted.")
+            sys.exit(1)
         finally:
             os.chdir(old_cwd)
 
