@@ -284,7 +284,7 @@ class OnyoRepo(object):
                 #       turns it into absolute and back into relative.
                 #       Double-check where `destination` is used and remove
                 #       resolution:
-                dest = Path(self.git.root, destination).relative_to(self.git.root)
+                dest = (self.git.root / destination).relative_to(self.git.root)
             if dest and dest.name == self.ANCHOR_FILE:
                 dest = dest.parent
 
@@ -439,7 +439,7 @@ class OnyoRepo(object):
 
         # Note: Why is this a requirement? Why not only add what's missing in
         # case of apparent re-init? cannot already be an .onyo repo
-        dot_onyo = Path(path, '.onyo')
+        dot_onyo = path / '.onyo'
         if dot_onyo.exists():
             raise FileExistsError(f"'{dot_onyo}' already exists.")
 

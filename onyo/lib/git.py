@@ -291,7 +291,7 @@ class GitRepo(object):
         target_dir.mkdir(exist_ok=True)
 
         # git init (if needed)
-        if Path(target_dir, '.git').exists():
+        if (target_dir / '.git').exists():
             log.info(f"'{target_dir}' is already a git repository.")
         else:
             ret = self._git(['init'], cwd=target_dir)
@@ -360,7 +360,7 @@ class GitRepo(object):
             tgts = [str(targets)]
 
         for t in tgts:
-            if not Path(self.root, t).exists():
+            if not (self.root / t).exists():
                 raise FileNotFoundError(f"'{t}' does not exist.")
 
         self._git(['add'] + tgts)
@@ -478,7 +478,7 @@ class GitRepo(object):
             If the config file was not found to set the value in.
         """
         location_options = {
-            'onyo': ['--file', str(Path(self.root, '.onyo/config'))],
+            'onyo': ['--file', str(self.root / '.onyo/config')],
             'system': ['--system'],
             'global': ['--global'],
             'local': ['--local'],

@@ -31,8 +31,8 @@ def test_mkdir(repo: OnyoRepo, directory: str) -> None:
     # verify folders and anchors exist
     d = Path(directory)
     while not d.samefile(repo.git.root):
-        assert Path(d).is_dir()
-        assert Path(d, ".anchor").is_file()
+        assert d.is_dir()
+        assert (d / ".anchor").is_file()
         d = d.parent
 
     # verify that the repository is clean
@@ -54,8 +54,8 @@ def test_mkdir_multiple_inputs(repo: OnyoRepo) -> None:
         assert directory in ret.stdout
         d = Path(directory)
         while not d.samefile(repo.git.root):
-            assert Path(d).is_dir()
-            assert Path(d, ".anchor").is_file()
+            assert d.is_dir()
+            assert (d / ".anchor").is_file()
             d = d.parent
 
     # verify that the repository is clean
@@ -76,8 +76,9 @@ def test_mkdir_no_response(repo: OnyoRepo) -> None:
     # verify folders and anchors were not created, but are mentioned in output
     for directory in directories:
         assert directory in ret.stdout
-        assert not Path(directory).is_dir()
-        assert not Path(directory, ".anchor").is_file()
+        d = Path(directory)
+        assert not d.is_dir()
+        assert not (d / ".anchor").is_file()
 
     # verify that the repository is clean
     assert repo.git.is_clean_worktree()
@@ -121,8 +122,8 @@ def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
     for directory in directories:
         d = Path(directory)
         while not d.samefile(repo.git.root):
-            assert Path(d).is_dir()
-            assert Path(d, ".anchor").is_file()
+            assert d.is_dir()
+            assert (d / ".anchor").is_file()
             d = d.parent
 
     # verify that the repository is clean
@@ -143,8 +144,9 @@ def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
     assert "already exists" in ret.stderr
     assert ret.returncode == 1
 
-    assert Path(directory).is_dir()
-    assert Path(directory, ".anchor").is_file()
+    d = Path(directory)
+    assert d.is_dir()
+    assert (d / ".anchor").is_file()
 
     # verify that the repository is clean
     assert repo.git.is_clean_worktree()
