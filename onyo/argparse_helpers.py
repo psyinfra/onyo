@@ -26,14 +26,18 @@ class StoreKeyValuePairs(argparse.Action):
         Every key appearing once in `key_values` will be applied to all dictionaries.
         """
 
+        for kv in key_values:
+            if "=" not in kv:
+                parser.error(f"Invalid argument '{kv}'. Expected key-value pairs '<key>=<value>'.")
         pairs = [p.split('=', maxsplit=1) for p in key_values]
         register_dict = {k: [] for k, v in pairs}
         [register_dict[k].append(v) for k, v in pairs]
         number_of_dicts = max(len(v) for v in register_dict.values())
         invalid_keys = [(k, len(v)) for k, v in register_dict.items() if 1 < len(v) < number_of_dicts]
         if invalid_keys:
-            raise ValueError(f"All keys given multiple times must be provided the same number of times.{os.linesep}"
-                             f"Got: {', '.join(['{}: {}'.format(k, c) for k, c in invalid_keys])}")
+            parser.error(f"All keys given multiple times must be provided the same number of times."
+                         f"Max. times a key was given: {number_of_dicts}.{os.linesep}"
+                         f"But also got: {', '.join(['{} {} times'.format(k, c) for k, c in invalid_keys])}")
 
         def cvt(v: str) -> Union[int, float, str]:
             try:
