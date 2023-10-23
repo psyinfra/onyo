@@ -266,8 +266,6 @@ class OnyoRepo(object):
         modified = list(set(modified))
 
         message_subject = ""
-        message_body = ""
-        message_appendix = ""
 
         # staged files and directories (without ".anchor") in alphabetical order
         changes_to_record = [x if not x.name == self.ANCHOR_FILE else x.parent
@@ -275,7 +273,7 @@ class OnyoRepo(object):
 
         if message:
             message_subject = message[0][0]
-            message_body = '\n'.join(map(str, [x[0] for x in message[1:]]))
+            message_subject += '\n'.join(map(str, [x[0] for x in message[1:]]))
         else:
             # get variables for the begin of the commit message `msg_dummy`
             dest = None
@@ -298,8 +296,7 @@ class OnyoRepo(object):
             message_subject = self._generate_commit_message_subject(
                 msg_dummy, changes_to_record, dest, max_length)
 
-        message_appendix = '\n'.join(map(str, changes_to_record))
-        return f"{message_subject}\n\n{message_body}\n\n{message_appendix}"
+        return f"{message_subject}"
 
     @staticmethod
     def _generate_commit_message_subject(msg_dummy: str,
