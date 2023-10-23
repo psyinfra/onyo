@@ -25,7 +25,7 @@ from onyo.lib.onyo import OnyoRepo
 
 def record_item(repo: OnyoRepo, item: Union[Path, dict]) -> str:
     path = item if isinstance(item, Path) else item['path']
-    return f"\t- {path.relative_to(repo.git.root).as_posix()}{linesep}"
+    return f"- {path.relative_to(repo.git.root).as_posix()}{linesep}"
 
 
 def record_move(repo: OnyoRepo, src: Union[Path, dict], dst: Path) -> str:
@@ -34,7 +34,7 @@ def record_move(repo: OnyoRepo, src: Union[Path, dict], dst: Path) -> str:
     src_path = src if isinstance(src, Path) else src['path']
     dst_path = (dst / src_path.name).relative_to(repo.git.root).as_posix()
     src_path = src_path.relative_to(repo.git.root).as_posix()
-    return f"\t- {src_path} -> {dst_path}{linesep}"
+    return f"- {src_path} -> {dst_path}{linesep}"
 
 
 def record_new_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
