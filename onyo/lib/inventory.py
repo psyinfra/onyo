@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Union, Iterable, Optional, Set, Generator
 from dataclasses import dataclass
 from typing import Callable
+from functools import partial
 
 from onyo.lib.assets import Asset
 from onyo.lib.onyo import OnyoRepo
@@ -17,7 +18,8 @@ from onyo.lib.executors import (
     exec_rename_assets,
     exec_remove_directories,
     exec_rename_directories,
-    exec_move_directories
+    exec_move_directories,
+    generic_executor,
 )
 from onyo.lib.recorders import (
     record_new_assets,
@@ -298,12 +300,28 @@ class Inventory(object):
 
     def remove_directory(self, directory: Path) -> None:
         if not self.repo.is_inventory_dir(directory):
-            raise ValueError(f"Not an inventory directory: {directory}")
-        # TODO: `force` for removing non-empty??? (-> implicit remove_asset OPs)
-        #       But: What about non-asset files (.onyoignore)
-        if [p for p in directory.iterdir()
-                if p.name != self.repo.ANCHOR_FILE and not self.repo.is_onyo_path(p)]:
-            raise InvalidInventoryOperation(f"Cannot remove inventory directory {directory}: Not empty.")
+            raise InvalidInventoryOperation(f"Not an inventory directory: {directory}")
+        for p in directory.iterdir():
+            try:
+                self.remove_asset(p)
+                is_asset = True
+            except NotAnAssetError:
+                is_asset = False
+            if self.repo.is_inventory_dir(p):
+                self.remove_directory(p)
+            elif not is_asset and p.name not in [self.repo.ANCHOR_FILE, self.repo.ASSET_DIR_FILE]:
+                # not an asset and not an inventory dir
+                # (hence also not an asset dir) implies
+                # we have a non-inventory file.
+                self.operations.append(
+                    InventoryOperation(
+                        operator=InventoryOperator(
+                            executor=partial(generic_executor, lambda x: x[0].unlink()),
+                            recorder=lambda x: dict(),  # no operations record for this
+                            differ=differ_remove_assets),
+                        operands=(p,),
+                        repo=self.repo))
+
         self._add_operation('remove_directories', (directory,))
 
     def move_directory(self, src: Path, dst: Path) -> None:

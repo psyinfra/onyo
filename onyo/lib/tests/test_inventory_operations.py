@@ -296,9 +296,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     inventory.commit("First asset added")
 
     # raise on non-dir
-    pytest.raises(ValueError, inventory.remove_directory, asset_file)
-    # raise on non-empty
-    pytest.raises(InvalidInventoryOperation, inventory.remove_directory, newdir1)
+    pytest.raises(InvalidInventoryOperation, inventory.remove_directory, asset_file)
 
     inventory.remove_directory(emptydir)
     assert num_operations(inventory, 'remove_directories') == 1
@@ -314,7 +312,15 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     inventory.commit("Remove directory")
     assert not emptydir.exists()
 
-    # TODO: recursive? Or leave that to the caller? See also: remove asset_dir
+    # recursive
+    inventory.remove_directory(newdir1)
+    assert num_operations(inventory, 'remove_directories') == 2
+    assert num_operations(inventory, 'remove_assets') == 1
+
+    inventory.commit("Remove dir recursively")
+    assert not asset_file.exists()
+    assert not newdir2.exists()
+    assert not newdir1.exists()
 
 
 def test_move_directory(repo: OnyoRepo) -> None:

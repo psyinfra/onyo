@@ -145,11 +145,10 @@ def test_no_trailing_newline_with_many_empty_assets(repo: OnyoRepo) -> None:
                          [["bad_yaml_file.test", "I: \nam:bad:\nbad:yaml\n"]])
 def test_invalid_yaml(repo: OnyoRepo, variant: list[str]) -> None:
     """
-    Test that `onyo cat` fails for a file with invalid yaml content.
+    Test that `onyo cat` returns non-zero for a file with invalid yaml content,
+    but does print the content plus an error message.
     """
 
-    raise RuntimeError("TODO: I don't think the tested behavior makes sense. Why should I not be able to print invalid "
-                       "content and see the problem?")
     # check that yaml is invalid
     with pytest.raises(OnyoInvalidRepoError):
         fsck(repo, ['asset-yaml'])
@@ -158,5 +157,6 @@ def test_invalid_yaml(repo: OnyoRepo, variant: list[str]) -> None:
     ret = subprocess.run(['onyo', 'cat', variant[0]],
                          capture_output=True, text=True)
     assert ret.returncode == 1
-    assert ret.stderr
-    assert not ret.stdout
+    assert "YAML validation" in ret.stderr
+    assert variant[0] in ret.stderr
+    assert variant[1] in ret.stdout

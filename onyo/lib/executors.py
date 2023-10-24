@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Callable
 from onyo.lib.onyo import OnyoRepo
 
 # Executors signature: (repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]
@@ -112,3 +113,11 @@ def exec_modify_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], lis
     new = operands[1]
     repo.write_asset_content(new)
     return [new['path']], []
+
+
+def generic_executor(func: Callable, repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
+    """This is intended for simple FS operations on non-inventory files
+
+    only current usecase is recursive remove_directory. Not yet meant to be a stable implementation"""
+    func(operands)
+    return [operands[0]], []

@@ -30,6 +30,9 @@ content_str: str = "\n".join([f"{elem}: {content_dict.get(elem)}"
 contents: List[List[str]] = [[x, content_str] for x in assets]
 
 
+pytest.skip("UNSET not currently implemented", allow_module_level=True)
+
+
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 def test_unset(repo: OnyoRepo, asset: str) -> None:
