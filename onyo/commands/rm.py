@@ -33,4 +33,4 @@ def rm(args: argparse.Namespace) -> None:
     paths = [Path(p).resolve() for p in args.path]
     onyo_rm(inventory,
             path=paths,
-            message='\n'.join(m for m in args.message) if args.message else None)
+            message='\n\n'.join(m for m in args.message) if args.message else None)

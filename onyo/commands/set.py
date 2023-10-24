@@ -87,4 +87,4 @@ def set(args: argparse.Namespace) -> None:
              dryrun=args.dry_run,
              rename=args.rename,
              depth=args.depth,
-             message='\n'.join(m for m in args.message) if args.message else None)
+             message='\n\n'.join(m for m in args.message) if args.message else None)
