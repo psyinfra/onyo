@@ -262,6 +262,9 @@ class OnyoRepo(object):
         if modified is None:
             modified = self.git.files_staged
 
+        # ensure uniqueness of modified paths
+        modified = list(set(modified))
+
         message_subject = ""
         message_body = ""
         message_appendix = ""
