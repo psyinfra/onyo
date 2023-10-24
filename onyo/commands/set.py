@@ -61,7 +61,7 @@ def set(args: argparse.Namespace) -> None:
     can be used around ``value``, which is necessary when it contains a comma,
     whitespace, etc.
 
-    Required keys as define by the 'onyo.assets.filename' config (by default
+    Required keys as defined by the 'onyo.assets.filename' config (by default
     ``type``, ``make``, ``model``, and ``serial``) can be set when the
     `--rename` flag is used. It will result in the file(s) being
     renamed.
