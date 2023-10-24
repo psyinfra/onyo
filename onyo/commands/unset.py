@@ -69,4 +69,4 @@ def unset(args: argparse.Namespace) -> None:
               args.filter,
               args.dry_run,
               args.depth,
-              args.message)
+              message='\n\n'.join(m for m in args.message) if args.message else None)

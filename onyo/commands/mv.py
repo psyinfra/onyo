@@ -43,4 +43,4 @@ def mv(args: argparse.Namespace) -> None:
     onyo_mv(inventory=inventory,
             source=sources,
             destination=destination,
-            message='\n'.join(m for m in args.message) if args.message else None)
+            message='\n\n'.join(m for m in args.message) if args.message else None)

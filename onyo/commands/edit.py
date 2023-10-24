@@ -38,4 +38,4 @@ def edit(args: argparse.Namespace) -> None:
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     onyo_edit(inventory=inventory,
               asset_paths=paths,
-              message='\n'.join(m for m in args.message) if args.message else None)
+              message='\n\n'.join(m for m in args.message) if args.message else None)

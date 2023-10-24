@@ -71,4 +71,4 @@ def new(args: argparse.Namespace) -> None:
              tsv=Path(args.tsv).resolve() if args.tsv else None,
              keys=args.keys,
              edit=args.edit,
-             message='\n'.join(m for m in args.message) if args.message else None)
+             message='\n\n'.join(m for m in args.message) if args.message else None)
