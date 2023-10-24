@@ -211,9 +211,9 @@ class OnyoRepo(object):
                                 message: Optional[list[str]] = None,
                                 cmd: str = "",
                                 keys: Optional[list[str]] = None,
-                                destination: str = "",
+                                destination: Optional[Path] = None,
                                 max_length: int = 80,
-                                modified: Optional[list[Path]] = None) -> str:
+                                modified: Optional[Iterable[Path]] = None) -> str:
         """
         Generate a commit message subject and body suitable for use with
         `git commit`.

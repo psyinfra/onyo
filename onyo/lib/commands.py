@@ -337,7 +337,6 @@ def onyo_mv(inventory: Inventory,
                 op.operator == OPERATIONS_MAPPING['move_directories'] or
                 op.operator == OPERATIONS_MAPPING['rename_directories']]
             message = inventory.repo.generate_commit_message(
-                message="",
                 cmd=subject,
                 destination=destination,
                 modified=operation_paths)
@@ -551,7 +550,6 @@ def onyo_new(inventory: Inventory,
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_assets']]
                 message = inventory.repo.generate_commit_message(
-                    message="",
                     cmd="new",
                     modified=operation_paths)
             inventory.commit(message=message)
@@ -662,7 +660,7 @@ def unset(repo: OnyoRepo,
           filter_strings: list[str],
           dryrun: bool,
           depth: Union[int, None],
-          message: Union[list[str], None]) -> None:
+          message: Optional[str]) -> None:
     from onyo.lib.command_utils import unset as ut_unset
     from .assets import write_asset_file
 
