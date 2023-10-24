@@ -11,7 +11,7 @@ from rich import box
 from rich.table import Table
 
 from onyo.lib.ui import ui
-from onyo.lib.inventory import Inventory
+from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
 from onyo.lib.command_utils import sanitize_keys, set_filters, \
     fill_unset, natural_sort
@@ -150,15 +150,14 @@ def onyo_edit(inventory: Inventory,
         for line in inventory.diff():
             ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-            # TODO: RF into re-usable functions (consider config format string for this):
             if not message:
-                subject = "edit: "
-                paths = [p.relative_to(inventory.root) for p in valid_asset_paths]
-                full_paths = subject + ", ".join(p.as_posix() for p in paths)
-                if len(full_paths) < 80:
-                    message = full_paths
-                else:
-                    message = subject + ", ".join(p.name for p in paths)
+                operation_paths = [
+                    op.operands[0].get("path")
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['modify_assets']]
+                message = inventory.repo.generate_commit_message(
+                    cmd="edit",
+                    modified=operation_paths)
             inventory.commit(message=message)
             return
     ui.print('No assets updated.')
@@ -262,12 +261,13 @@ def onyo_mkdir(inventory: Inventory,
         ui.print(line)
     if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
         if not message:
-            prefix = "mkdir: "
-            # TODO: This does not actually account for implicitly created dirs (and therefore duplicates).
-            #       However, not mentioning implicit ones separately may be an advantage for a message subject
-            message = prefix + f"{', '.join(p.relative_to(inventory.root).as_posix() for p in dirs)}"
-            if len(message) > 80:
-                message = prefix + f" {', '.join(p.name for p in dirs)}"
+            operation_paths = [
+                op.operands[0]
+                for op in inventory.operations
+                if op.operator == OPERATIONS_MAPPING['new_directories']]
+            message = inventory.repo.generate_commit_message(
+                cmd="mkdir",
+                modified=operation_paths)
         inventory.commit(message=message)
         return
     ui.print('No directories created.')
@@ -309,16 +309,16 @@ def onyo_mv(inventory: Inventory,
     #       We could catch them and collect all errors (use ExceptionGroup?)
     if len(sources) == 1 and destination.name == sources[0].name:
         # MOVE special case
-        subject = "mv:"
+        subject = "mv"
         move_asset_or_dir(inventory, sources[0], destination.parent)
     elif destination.exists():
         # MOVE
-        subject = "mv:"
+        subject = "mv"
         for s in sources:
             move_asset_or_dir(inventory, s, destination)
     else:
         # RENAME
-        subject = "ren:"
+        subject = "ren"
         if len(sources) != 1:
             raise ValueError("Cannot rename multiple sources.")
         else:
@@ -329,10 +329,17 @@ def onyo_mv(inventory: Inventory,
         ui.print(line)
     if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
         if not message:
-            message = subject + f" {', '.join(p.relative_to(inventory.root).as_posix() for p in sources)} -> " \
-                                f"{destination.relative_to(inventory.root).as_posix()}"
-            if len(message) > 80:
-                message = subject + f" {', '.join(p.name for p in sources)} -> {destination.name}"
+            operation_paths = [
+                op.operands[0]
+                for op in inventory.operations
+                if op.operator == OPERATIONS_MAPPING['rename_assets'] or
+                op.operator == OPERATIONS_MAPPING['move_assets'] or
+                op.operator == OPERATIONS_MAPPING['move_directories'] or
+                op.operator == OPERATIONS_MAPPING['rename_directories']]
+            message = inventory.repo.generate_commit_message(
+                cmd=subject,
+                destination=destination,
+                modified=operation_paths)
         inventory.commit(message=message)
         return
     ui.print('Nothing was moved.')
@@ -537,22 +544,14 @@ def onyo_new(inventory: Inventory,
         for line in inventory.diff():
             ui.print(line)
         if ui.request_user_response("Create assets? (y/n) "):
-
-            # TODO: RF into re-usable functions (consider config format string for this):
             if not message:
-                subject = "new: "
-                paths = [a.get('path').relative_to(inventory.root) for a in assets]
-                full_paths = subject + ", ".join(p.as_posix() for p in paths)
-                if len(full_paths) < 80:
-                    message = full_paths
-                else:
-                    names = subject + ", ".join(p.name for p in paths)
-                    if len(names) < 80:
-                        message = names
-                    else:
-                        types = [a.get('type') for a in assets]
-                        number = subject + ", ".join(f"{t}({types.count(t)}" for t in set(types))
-                        message = number
+                operation_paths = [
+                    op.operands[0].get("path")
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['new_assets']]
+                message = inventory.repo.generate_commit_message(
+                    cmd="new",
+                    modified=operation_paths)
             inventory.commit(message=message)
             return
     ui.print('No new assets created.')
@@ -575,9 +574,14 @@ def onyo_rm(inventory: Inventory,
         ui.print(line)
     if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
         if not message:
-            message = f"rm: {', '.join(p.relative_to(inventory.root).as_posix() for p in paths)}"
-            if len(message) > 80:
-                message = f"rm: {', '.join(p.name for p in paths)}"
+            operation_paths = [
+                op.operands[0]
+                for op in inventory.operations
+                if op.operator == OPERATIONS_MAPPING['remove_assets'] or
+                op.operator == OPERATIONS_MAPPING['remove_directories']]
+            message = inventory.repo.generate_commit_message(
+                cmd="rm",
+                modified=operation_paths)
         inventory.commit(message)
         return
     ui.print('Nothing was deleted.')
@@ -622,15 +626,15 @@ def onyo_set(inventory: Inventory,
 
     if not dryrun:
         if ui.request_user_response("Update assets? (y/n) "):
-            # TODO: RF into re-usable functions (consider config format string for this):
             if not message:
-                subject = "edit: "
-                paths = [p.relative_to(inventory.root) for p in asset_paths_to_set]
-                full_paths = subject + ", ".join(p.as_posix() for p in paths)
-                if len(full_paths) < 80:
-                    message = full_paths
-                else:
-                    message = subject + ", ".join(p.name for p in paths)
+                operation_paths = [
+                    op.operands[0].get("path")
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['modify_assets']]
+                message = inventory.repo.generate_commit_message(
+                    cmd="set",
+                    keys=[str(k) for k in keys.keys()],
+                    modified=operation_paths)
             inventory.commit(message=message)
             return
     ui.print("No assets updated.")
@@ -656,7 +660,7 @@ def unset(repo: OnyoRepo,
           filter_strings: list[str],
           dryrun: bool,
           depth: Union[int, None],
-          message: Union[list[str], None]) -> None:
+          message: Optional[str]) -> None:
     from onyo.lib.command_utils import unset as ut_unset
     from .assets import write_asset_file
 
@@ -693,10 +697,18 @@ def unset(repo: OnyoRepo,
             for m in modifications:
                 write_asset_file(m[0], m[1])
                 to_commit.append(m[0])
-            repo.git.stage_and_commit(paths=to_commit,
-                                      message=repo.generate_commit_message(message=message,
-                                                                           cmd="unset",
-                                                                           keys=keys)
-                                      )
+                if not message:
+                    paths = [p for p in to_commit]
+                    # TODO: change after refactoring to:
+                    # operation_paths = [
+                    #    op.operands[0].get("path")
+                    #    for op in inventory.operations
+                    #    if op.operator == OPERATIONS_MAPPING['modify_assets']]
+                    message = repo.generate_commit_message(
+                        cmd="unset",
+                        keys=keys,
+                        modified=paths)
+                repo.git.stage_and_commit(paths=to_commit,
+                                          message=message)
             return
     ui.print("No assets updated.")
