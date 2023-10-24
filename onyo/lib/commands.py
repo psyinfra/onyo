@@ -78,18 +78,21 @@ def fsck(repo: OnyoRepo, tests: Optional[list[str]] = None) -> None:
 
 
 def onyo_cat(repo: OnyoRepo, paths: Iterable[Path]) -> None:
-
+    from .assets import validate_yaml
     non_asset_paths = [str(p) for p in paths if not repo.is_asset_path(p)]
     if non_asset_paths:
         raise ValueError("The following paths are not asset files:\n%s",
                          "\n".join(non_asset_paths))
+    # TODO: "Full" asset validation. Address when fsck is reworked
+    assets_valid = validate_yaml(set(paths))
     # open file and print to stdout
     for path in paths:
-        # TODO: Do we really not want to separate assets like print(f"{path.name}:{os.linesep}")?
         # TODO: Probably better to simply print dict_to_yaml(repo.get_asset_content(path)) - no need to distinguish
         #       asset and asset dir at this level. However, need to make sure to not print pointless empty lines.
         f = path / OnyoRepo.ASSET_DIR_FILE if repo.is_asset_dir(path) else path
         ui.print(f.read_text(), end='')
+    if not assets_valid:
+        raise OnyoInvalidRepoError("Invalid assets")
 
 
 def onyo_config(repo: OnyoRepo, config_args: list[str]) -> None:
