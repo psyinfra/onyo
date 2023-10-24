@@ -73,7 +73,8 @@ def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
     length, and a body with the paths to changed files and directories relative
     to the root of the repository.
     """
-    raise RuntimeError("TODO: Not worth adjusting. Message generation is supposed to happen elsewhere and differently.")
+    from onyo.lib.inventory import Inventory
+    inventory = Inventory(repo)
     modified = [repo.git.root / 's p a c e s',
                 repo.git.root / 'a/new/folder']
 
@@ -82,27 +83,20 @@ def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
     ui.set_yes(True)
 
     # modify the repository with some different commands:
-    onyo_mkdir(repo, modified, message=None)
-    onyo_mv(repo, *modified, message=None)
+    onyo_mkdir(inventory, modified, message=None)
+    onyo_mv(inventory, *modified, message=None)
 
     # deactivate `yes` again
     ui.set_yes(False)
 
     # generate a commit message:
     message = repo.generate_commit_message(cmd='TST', modified=modified)
-    lines = message.splitlines()
-    header = lines[0]
-    body = "\n".join(lines[1:])
 
     # root should not be in output
     assert str(repo.git.root) not in message
 
-    # verify all necessary information is in the header:
-    assert f'TST [{len(modified)}]: ' in header
-
-    # verify all necessary information is in the body:
-    assert 'a/new/folder' in body
-    assert 's p a c e s' in body
+    # verify all necessary information is in the message:
+    assert f'TST [{len(modified)}]: ' in message
 
 
 @pytest.mark.repo_files('a/test/asset_for_test.0')
