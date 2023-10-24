@@ -570,7 +570,10 @@ def onyo_rm(inventory: Inventory,
     for p in paths:
         try:
             inventory.remove_asset(p)
+            is_asset = True
         except NotAnAssetError:
+            is_asset = False
+        if not is_asset or inventory.repo.is_asset_dir(p):
             inventory.remove_directory(p)
 
     ui.print('The following will be deleted:')
