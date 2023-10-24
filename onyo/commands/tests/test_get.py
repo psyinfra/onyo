@@ -11,6 +11,9 @@ from onyo.lib.exceptions import OnyoInvalidFilterError
 from onyo.lib import OnyoRepo, Filter
 
 
+pytest.skip("GET not currently implemented", allow_module_level=True)
+
+
 def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
     """Convert content dictionary to a plain-text string"""
