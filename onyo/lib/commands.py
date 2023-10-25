@@ -400,7 +400,7 @@ def onyo_new(inventory: Inventory,
     -------
 
     """
-    from onyo.lib.onyo import NEW_PSEUDO_KEYS
+    from onyo.lib.consts import NEW_PSEUDO_KEYS
     from copy import deepcopy
 
     keys = keys or []

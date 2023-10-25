@@ -8,8 +8,7 @@ from shlex import quote
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from onyo.lib.ui import ui
-from onyo.lib.inventory import RESERVED_KEYS
-from onyo.lib.onyo import NEW_PSEUDO_KEYS
+from onyo.lib.consts import NEW_PSEUDO_KEYS, RESERVED_KEYS
 
 
 def anything2bool(val):

@@ -49,9 +49,6 @@ from onyo.lib.exceptions import (
     InvalidInventoryOperation,
 )
 
-# The following keys have functional meaning for onyo and must not be part of user-defined asset content
-RESERVED_KEYS = ['directory', 'is_asset_directory', 'template']
-
 
 @dataclass
 class InventoryOperator:
