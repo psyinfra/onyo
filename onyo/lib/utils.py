@@ -8,8 +8,7 @@ from shlex import quote
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from onyo.lib.ui import ui
-from onyo.lib.inventory import RESERVED_KEYS
-from onyo.lib.onyo import NEW_PSEUDO_KEYS
+from onyo.lib.consts import NEW_PSEUDO_KEYS, RESERVED_KEYS
 
 
 def anything2bool(val):
@@ -91,3 +90,9 @@ def edit_asset_file(editor: str, path: Path) -> bool:
             ui.print(f"{path} has invalid YAML syntax.", file=sys.stderr)
             if not ui.request_user_response("Continue editing? No discards changes. (y/n) "):
                 return False
+
+
+def deduplicate(sequence: list) -> list:
+    """Get a deduplicated list, while preserving order"""
+    seen = set()
+    return [x for x in sequence if not (x in seen or seen.add(x))]

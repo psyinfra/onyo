@@ -68,8 +68,8 @@ def sanitize_keys(k: Optional[list[str]],
     Remove duplicates from k while preserving key order and return default
     (pseudo) keys if k is empty
     """
-    seen = set()
-    return [x for x in k if not (x in seen or seen.add(x))] if k else defaults
+    from .utils import deduplicate
+    return deduplicate(k) if k else defaults
 
 
 def set_filters(

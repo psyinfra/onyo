@@ -9,15 +9,12 @@ from typing import Iterable, Optional, Union, List, Dict
 
 from ruamel.yaml import YAML  # pyre-ignore[21]
 
+from .consts import NEW_PSEUDO_KEYS
 from .ui import ui
 from .git import GitRepo
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
-
-
-# TODO: pseudo-key generation mapping
-NEW_PSEUDO_KEYS = ['path']  # TODO: name temporary b/c RF (old idea of pseudo-keys doesn't match)
 
 
 def dict_to_yaml(d: Dict[str, Union[float, int, str]]) -> str:

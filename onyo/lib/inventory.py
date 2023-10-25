@@ -48,9 +48,7 @@ from onyo.lib.exceptions import (
     NoopError,
     InvalidInventoryOperation,
 )
-
-# The following keys have functional meaning for onyo and must not be part of user-defined asset content
-RESERVED_KEYS = ['directory', 'is_asset_directory', 'template']
+from onyo.lib.utils import deduplicate
 
 
 @dataclass
@@ -151,7 +149,7 @@ class Inventory(object):
                     operations_record[k].extend(v)
 
         for title, snippets in operations_record.items():
-            commit_msg += title + ''.join(sorted(line for line in set(snippets)))
+            commit_msg += title + ''.join(sorted(line for line in deduplicate(snippets)))
 
         # TODO: Actually: staging (only new) should be done in execute. committing is then unified
         self.repo.git.stage_and_commit(set(paths_to_commit + paths_to_stage), commit_msg)
