@@ -530,7 +530,7 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: st
 
 
 @pytest.mark.repo_contents(assets[0])
-@pytest.mark.parametrize('asset', asset_paths[0])
+@pytest.mark.parametrize('asset', [asset_paths[0]])
 @pytest.mark.parametrize('set_values', values)
 def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
@@ -539,7 +539,6 @@ def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -
     info message without error, and the repository stays in a clean state.
     """
 
-    raise RuntimeError("TODO: detecting noop for modify_asset (edit, set, etc.)")
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
 
     # verify output
@@ -554,7 +553,7 @@ def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
 
     # verify second output
-    assert "The values are already set. No assets updated." in ret.stdout
+    assert "No assets updated." in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 

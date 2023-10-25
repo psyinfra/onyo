@@ -19,6 +19,9 @@ class InvalidInventoryOperation(Exception):
 
 class NoopError(Exception):
     """Thrown if a requested operation is a Noop."""
+    # This is intended to signal that an inventory operation would not result in any change, so that callers can decide
+    # on their failure paradigm:
+    # "Result oriented already-fine-no-failure" vs "Task oriented can't-do-failure".
 
 
 class NotAnAssetError(Exception):
