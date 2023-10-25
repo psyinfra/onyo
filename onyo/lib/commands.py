@@ -18,7 +18,7 @@ from onyo.lib.command_utils import sanitize_keys, set_filters, \
 from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import edit_asset
+from onyo.lib.utils import edit_asset, deduplicate
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -257,7 +257,7 @@ def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
                message: Optional[str]) -> None:
 
-    for d in set(dirs):  # explicit duplicates would make auto-generating message subject more complicated ATM
+    for d in deduplicate(dirs):  # explicit duplicates would make auto-generating message subject more complicated ATM
         inventory.add_directory(d)
     ui.print('The following directories will be created:')
     for line in inventory.diff():
