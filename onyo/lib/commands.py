@@ -427,7 +427,7 @@ def onyo_new(inventory: Inventory,
         with tsv.open('r', newline='') as tsv_file:
             reader = csv.DictReader(tsv_file, delimiter='\t')
             if reader.fieldnames is None:
-                raise ValueError(f"No header fields in tsv {str(tsv_file)}")
+                raise ValueError(f"No header fields in tsv {str(tsv)}")
             if template and 'template' in reader.fieldnames:
                 raise ValueError("Can't use '--template' option and 'template' column in tsv.")
             if path and 'directory' in reader.fieldnames:
