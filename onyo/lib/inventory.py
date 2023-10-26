@@ -71,11 +71,6 @@ class InventoryOperation(object):
         return self.operator.executor(repo=self.repo, operands=self.operands)
 
 
-# NOTE: Order of keys in this mapping matters! It's the order of execution during `Inventory.commit`.
-#       We'd need new directories before new assets for example. Or remove something before putting something else in
-#       its place.
-#       Solution may be to change implementation and really register a single list of operations so call-order is
-#       preserved.  -> speaks for class InventoryOperation?
 OPERATIONS_MAPPING: dict = {'new_directories': InventoryOperator(executor=exec_new_directories,
                                                                  differ=differ_new_directories,
                                                                  recorder=record_new_directories),

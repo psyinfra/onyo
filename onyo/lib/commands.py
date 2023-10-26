@@ -595,7 +595,6 @@ def onyo_set(inventory: Inventory,
              paths: Optional[Iterable[Path]],
              keys: Dict[str, Union[str, int, float]],
              filter_strings: list[str],
-             dryrun: bool,
              rename: bool,
              depth: int,
              message: Optional[str] = None) -> Union[str, None]:
@@ -632,19 +631,18 @@ def onyo_set(inventory: Inventory,
         for line in inventory.diff():
             ui.print(line)
 
-        if not dryrun:
-            if ui.request_user_response("Update assets? (y/n) "):
-                if not message:
-                    operation_paths = [
-                        op.operands[0].get("path")
-                        for op in inventory.operations
-                        if op.operator == OPERATIONS_MAPPING['modify_assets']]
-                    message = inventory.repo.generate_commit_message(
-                        cmd="set",
-                        keys=[str(k) for k in keys.keys()],
-                        modified=operation_paths)
-                inventory.commit(message=message)
-                return
+        if ui.request_user_response("Update assets? (y/n) "):
+            if not message:
+                operation_paths = [
+                    op.operands[0].get("path")
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['modify_assets']]
+                message = inventory.repo.generate_commit_message(
+                    cmd="set",
+                    keys=[str(k) for k in keys.keys()],
+                    modified=operation_paths)
+            inventory.commit(message=message)
+            return
     ui.print("No assets updated.")
 
 
