@@ -30,6 +30,7 @@ def test_onyo_new_invalid(inventory: Inventory) -> None:
     pytest.raises(FileNotFoundError, onyo_new, inventory, tsv=inventory.root / "nonexisting.tsv")
 
 
+@pytest.mark.ui({'yes': True})
 @pytest.mark.parametrize('tsv', prepared_tsvs)
 def test_onyo_new_tsv(inventory: Inventory, tsv: Path) -> None:
     if tsv.name.startswith('error'):
@@ -37,15 +38,12 @@ def test_onyo_new_tsv(inventory: Inventory, tsv: Path) -> None:
         pytest.raises(ValueError, onyo_new, inventory, tsv)
     else:
         # TODO: Same here; just ensures those tables still don't crash
-        from onyo.lib.ui import ui
-        ui.set_yes(True)
         onyo_new(inventory, tsv=tsv)
         inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
 
 
+@pytest.mark.ui({'yes': True})
 def test_onyo_new_keys(inventory: Inventory) -> None:
-    from onyo.lib.ui import ui
-    ui.set_yes(True)
     specs = [{'type': 'a type',
               'make': 'I made it',
               'model': 'a model',
@@ -126,9 +124,8 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         assert asset_content[k] is None
 
 
+@pytest.mark.ui({'yes': True})
 def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
-    from onyo.lib.ui import ui
-    ui.set_yes(True)
 
     directory = inventory.root / "edited"
     monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
