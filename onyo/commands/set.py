@@ -8,7 +8,6 @@ from onyo.lib.commands import onyo_set
 from onyo.argparse_helpers import path, StoreKeyValuePairs
 from onyo.shared_arguments import (
     shared_arg_depth,
-    shared_arg_dry_run,
     shared_arg_filter,
     shared_arg_message,
 )
@@ -44,7 +43,6 @@ args_set = {
         help='Asset(s) and/or directorie(s) to set KEY=VALUE in'),
 
     'depth': shared_arg_depth,
-    'dry_run': shared_arg_dry_run,
     'filter': shared_arg_filter,
     'message': shared_arg_message,
 }
@@ -84,7 +82,6 @@ def set(args: argparse.Namespace) -> None:
              paths=paths,
              keys=args.keys[0],
              filter_strings=args.filter,
-             dryrun=args.dry_run,
              rename=args.rename,
              depth=args.depth,
              message='\n\n'.join(m for m in args.message) if args.message else None)

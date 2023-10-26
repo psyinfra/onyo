@@ -338,36 +338,6 @@ def test_set_quiet_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> No
 
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
-def test_set_dryrun_flag(repo: OnyoRepo, set_values: list[str]) -> None:
-    """
-    Test that `onyo set --dry-run KEY=VALUE <asset>` displays correct
-    diff-output without actually changing any assets.
-    """
-    ret = subprocess.run(['onyo', 'set', '--dry-run', '--keys', *set_values,
-                          '--path', *asset_paths], capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # should not be asked if no real changes are made
-    assert "Update assets? (y/n) " not in ret.stdout
-
-    # verify that all assets and changes are in diff output, but no changes in
-    # the asset files are made
-    for asset in asset_paths:
-        assert str(Path(asset)) in ret.stdout
-        for value in set_values:
-            assert f"+{value.replace('=', ': ')}" in ret.stdout
-            assert value.replace("=", ": ") not in Path.read_text(Path(asset))
-
-    # check that the repository is still clean
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('set_values', values)
 @pytest.mark.parametrize('depth', ['0', '1', '3', '10'])
 def test_set_depth_flag(
         repo: OnyoRepo, set_values: list[str], depth: str) -> None:
