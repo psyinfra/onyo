@@ -12,7 +12,7 @@ from onyo.lib.consts import NEW_PSEUDO_KEYS, RESERVED_KEYS
 
 
 def anything2bool(val):
-    """Convert various representations of boolean values into actual bool"""
+    """Convert various representations of boolean values into actual bool."""
     # Credit: datalad
 
     if hasattr(val, 'lower'):
@@ -29,8 +29,9 @@ def anything2bool(val):
             % repr(val))
 
 
-def edit_asset(asset: dict, editor: str) -> dict:
-    """Edit `asset` with a file editor
+def edit_asset(asset: dict,
+               editor: str) -> dict:
+    """Edit `asset` with a file editor.
 
     This is using a temporary YAML file, prefilled with the current content
     of `asset`. Validation of the asset is included.
@@ -64,9 +65,9 @@ def edit_asset(asset: dict, editor: str) -> dict:
     return asset
 
 
-def edit_asset_file(editor: str, path: Path) -> bool:
-    """
-    Open an existing file at `path` with `editor`. After changes are made, check the
+def edit_asset_file(editor: str,
+                    path: Path) -> bool:
+    """Open an existing file at `path` with `editor`. After changes are made, check the
     file content for validity as an asset file. If valid, write the changes,
     otherwise open a dialog and ask the user if the asset should be corrected
     or the changes discarded.
@@ -93,6 +94,6 @@ def edit_asset_file(editor: str, path: Path) -> bool:
 
 
 def deduplicate(sequence: list) -> list:
-    """Get a deduplicated list, while preserving order"""
+    """Get a deduplicated list, while preserving order."""
     seen = set()
     return [x for x in sequence if not (x in seen or seen.add(x))]
