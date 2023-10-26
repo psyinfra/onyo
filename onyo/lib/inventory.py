@@ -266,8 +266,6 @@ class Inventory(object):
         if not name:
             name = generated_name
         if path.name == name:
-            # TODO: This should be a different exception, so that callers can decide on their failure paradigm:
-            #       "Result oriented already-fine-no-failure" vs "Task oriented can't-do-failure".
             raise NoopError(f"Cannot rename asset {name}: This is already its name.")
 
         destination = path.parent / name
@@ -277,15 +275,14 @@ class Inventory(object):
         self._add_operation('rename_assets', (path, destination))
 
     def modify_asset(self, asset: Union[Asset, Path], content: Asset) -> None:
-        # TODO: Straight-up dict for `content`?
-
         path = Path(asset.get('path')) if isinstance(asset, Asset) else asset
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
         asset = Asset(self.repo.get_asset_content(path)) if isinstance(asset, Path) else asset
         new_asset = asset.copy()
         new_asset.update(content)
-
+        if asset == new_asset:
+            raise NoopError
         self._add_operation('modify_assets', (asset, new_asset))
         # Abuse the fact that new_asset has the same 'path' at this point, regardless of potential renaming and let
         # rename handle it. Note, that this way the rename operation MUST come after the modification during execution.
@@ -342,6 +339,9 @@ class Inventory(object):
             raise InvalidInventoryOperation(f"Cannot rename {src} -> {dst}. Consider moving instead.")
         if not self.repo.is_inventory_path(dst) or dst.exists():
             raise ValueError(f"Not a valid destination: {dst}")
+        name = dst if isinstance(dst, str) else dst.name
+        if src.name == name:
+            raise NoopError(f"Cannot rename directory {str(src)}: This is already its name.")
 
         self._add_operation('rename_directories', (src, dst))
 

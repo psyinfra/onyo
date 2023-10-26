@@ -15,7 +15,7 @@ from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
 from onyo.lib.command_utils import sanitize_keys, set_filters, \
     fill_unset, natural_sort
-from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError
+from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import edit_asset, deduplicate
@@ -138,17 +138,12 @@ def onyo_edit(inventory: Inventory,
     for path in valid_asset_paths:
         asset = inventory.get_asset(path)
         modified_asset = edit_asset(asset, editor)
-        # TODO: Would be good to detect that no modification was actually done.
-        #       edit_asset knows and could raise NoopError or return None or whatever.
-        #       Alternatively, operations could figure that there's nothing to be done
-        #       and simply not register. As a consequence, inventory could then be
-        #       queried for actually pending operations. That's actually better,
-        #       so we don't end up recording noop operations.
-        #       Implementing this implies to not rely on `valid_asset_paths` below
-        #       when building the commit message.
-        inventory.modify_asset(asset, modified_asset)
+        try:
+            inventory.modify_asset(asset, modified_asset)
+        except NoopError:
+            pass
 
-    if valid_asset_paths:
+    if inventory.operations_pending():
         ui.print("Changes:")
         for line in inventory.diff():
             ui.print(line)
@@ -259,20 +254,21 @@ def onyo_mkdir(inventory: Inventory,
 
     for d in deduplicate(dirs):  # explicit duplicates would make auto-generating message subject more complicated ATM
         inventory.add_directory(d)
-    ui.print('The following directories will be created:')
-    for line in inventory.diff():
-        ui.print(line)
-    if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-        if not message:
-            operation_paths = [
-                op.operands[0]
-                for op in inventory.operations
-                if op.operator == OPERATIONS_MAPPING['new_directories']]
-            message = inventory.repo.generate_commit_message(
-                cmd="mkdir",
-                modified=operation_paths)
-        inventory.commit(message=message)
-        return
+    if inventory.operations_pending():
+        ui.print('The following directories will be created:')
+        for line in inventory.diff():
+            ui.print(line)
+        if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+            if not message:
+                operation_paths = [
+                    op.operands[0]
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['new_directories']]
+                message = inventory.repo.generate_commit_message(
+                    cmd="mkdir",
+                    modified=operation_paths)
+            inventory.commit(message=message)
+            return
     ui.print('No directories created.')
 
 
@@ -327,24 +323,25 @@ def onyo_mv(inventory: Inventory,
         else:
             inventory.rename_directory(sources[0], destination)
 
-    ui.print('The following will be moved:')
-    for line in inventory.diff():
-        ui.print(line)
-    if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-        if not message:
-            operation_paths = [
-                op.operands[0]
-                for op in inventory.operations
-                if op.operator == OPERATIONS_MAPPING['rename_assets'] or
-                op.operator == OPERATIONS_MAPPING['move_assets'] or
-                op.operator == OPERATIONS_MAPPING['move_directories'] or
-                op.operator == OPERATIONS_MAPPING['rename_directories']]
-            message = inventory.repo.generate_commit_message(
-                cmd=subject,
-                destination=destination,
-                modified=operation_paths)
-        inventory.commit(message=message)
-        return
+    if inventory.operations_pending():
+        ui.print('The following will be moved:')
+        for line in inventory.diff():
+            ui.print(line)
+        if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+            if not message:
+                operation_paths = [
+                    op.operands[0]
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['rename_assets'] or
+                    op.operator == OPERATIONS_MAPPING['move_assets'] or
+                    op.operator == OPERATIONS_MAPPING['move_directories'] or
+                    op.operator == OPERATIONS_MAPPING['rename_directories']]
+                message = inventory.repo.generate_commit_message(
+                    cmd=subject,
+                    destination=destination,
+                    modified=operation_paths)
+            inventory.commit(message=message)
+            return
     ui.print('Nothing was moved.')
 
 
@@ -542,7 +539,7 @@ def onyo_new(inventory: Inventory,
 
         inventory.add_asset(asset)
 
-    if assets:
+    if inventory.operations_pending():
         ui.print("The following will be created:")
         for line in inventory.diff():
             ui.print(line)
@@ -575,21 +572,22 @@ def onyo_rm(inventory: Inventory,
         if not is_asset or inventory.repo.is_asset_dir(p):
             inventory.remove_directory(p)
 
-    ui.print('The following will be deleted:')
-    for line in inventory.diff():
-        ui.print(line)
-    if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-        if not message:
-            operation_paths = [
-                op.operands[0]
-                for op in inventory.operations
-                if op.operator == OPERATIONS_MAPPING['remove_assets'] or
-                op.operator == OPERATIONS_MAPPING['remove_directories']]
-            message = inventory.repo.generate_commit_message(
-                cmd="rm",
-                modified=operation_paths)
-        inventory.commit(message)
-        return
+    if inventory.operations_pending():
+        ui.print('The following will be deleted:')
+        for line in inventory.diff():
+            ui.print(line)
+        if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+            if not message:
+                operation_paths = [
+                    op.operands[0]
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['remove_assets'] or
+                    op.operator == OPERATIONS_MAPPING['remove_directories']]
+                message = inventory.repo.generate_commit_message(
+                    cmd="rm",
+                    modified=operation_paths)
+            inventory.commit(message)
+            return
     ui.print('Nothing was deleted.')
 
 
@@ -623,26 +621,30 @@ def onyo_set(inventory: Inventory,
         asset = inventory.get_asset(path)
         new_content = asset.copy()
         new_content.update(keys)
-        inventory.modify_asset(asset, new_content)
+        try:
+            inventory.modify_asset(asset, new_content)
+        except NoopError:
+            pass
 
-    # display changes
-    ui.print("The following assets will be changed:")
-    for line in inventory.diff():
-        ui.print(line)
+    if inventory.operations_pending():
+        # display changes
+        ui.print("The following assets will be changed:")
+        for line in inventory.diff():
+            ui.print(line)
 
-    if not dryrun:
-        if ui.request_user_response("Update assets? (y/n) "):
-            if not message:
-                operation_paths = [
-                    op.operands[0].get("path")
-                    for op in inventory.operations
-                    if op.operator == OPERATIONS_MAPPING['modify_assets']]
-                message = inventory.repo.generate_commit_message(
-                    cmd="set",
-                    keys=[str(k) for k in keys.keys()],
-                    modified=operation_paths)
-            inventory.commit(message=message)
-            return
+        if not dryrun:
+            if ui.request_user_response("Update assets? (y/n) "):
+                if not message:
+                    operation_paths = [
+                        op.operands[0].get("path")
+                        for op in inventory.operations
+                        if op.operator == OPERATIONS_MAPPING['modify_assets']]
+                    message = inventory.repo.generate_commit_message(
+                        cmd="set",
+                        keys=[str(k) for k in keys.keys()],
+                        modified=operation_paths)
+                inventory.commit(message=message)
+                return
     ui.print("No assets updated.")
 
 
