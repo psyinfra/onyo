@@ -65,8 +65,7 @@ def fsck(repo: OnyoRepo, tests: Optional[list[str]] = None) -> None:
 
     # run the selected tests
     for key in tests:
-        # TODO: these should be INFO
-        ui.log_debug(f"'{key}' starting")
+        ui.log(f"'{key}' starting")
 
         if not all_tests[key]():
             # Note: What's that debug message adding? Alone it lacks the identifying path and in combination with
@@ -74,7 +73,7 @@ def fsck(repo: OnyoRepo, tests: Optional[list[str]] = None) -> None:
             ui.log_debug(f"'{key}' failed")
             raise OnyoInvalidRepoError(f"'{repo.git.root}' failed fsck test '{key}'")
 
-        ui.log_debug(f"'{key}' succeeded")
+        ui.log(f"'{key}' succeeded")
 
 
 def onyo_cat(repo: OnyoRepo, paths: Iterable[Path]) -> None:
