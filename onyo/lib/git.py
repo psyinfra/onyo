@@ -18,7 +18,7 @@ class GitRepo(object):
     root: Path
         The absolute path to the directory of the git worktree root.
 
-    files: set of Paths
+    files: set of Path
         A property containing the absolute Path to all files saved in git.
         This property is cached and consistent when only the public functions of
         GitRepo are called. Usage of private or external functions might
@@ -28,8 +28,7 @@ class GitRepo(object):
     def __init__(self,
                  path: Path,
                  find_root: bool = False) -> None:
-        """
-        Instantiates a `GitRepo` object with `path` as the root directory.
+        """Instantiates a `GitRepo` object with `path` as the root directory.
 
         Parameters
         ----------
@@ -46,8 +45,7 @@ class GitRepo(object):
 
     @staticmethod
     def find_root(path: Path) -> Path:
-        """
-        Returns the git worktree root `path` belongs to.
+        """Returns the git worktree root `path` belongs to.
 
         Parameters
         ----------
@@ -80,20 +78,19 @@ class GitRepo(object):
              args: list[str], *,
              cwd: Optional[Path] = None,
              raise_error: bool = True) -> str:
-        """
-        A wrapper function for git calls that runs commands from the root
+        """A wrapper function for git calls that runs commands from the root
         directory and returns the output of commands.
 
         Parameters
         ----------
-        args: List of strings
+        args: list of str
             Arguments to specify the git call to run, e.g. args=['add', <file>]
             leads to a system call `git add <file>` from the root of git.
 
-        cwd: Optional Path
+        cwd: Path, optional
             Run git commands from `cwd` instead of the root of the repository.
 
-        raise_error: boolean
+        raise_error: bool
             Specify if `subprocess.run()` is allowed to raise errors.
 
         Returns
@@ -112,8 +109,7 @@ class GitRepo(object):
 
     @property
     def files(self) -> set[Path]:
-        """
-        Get a `set` containing the absolute `Paths` of all files of a
+        """Get a `set` containing the absolute `Path`s of all files of a
         repository.
 
         This property is cached, and the cache is consistent with the state of
@@ -127,8 +123,7 @@ class GitRepo(object):
 
     def clear_caches(self,
                      files: bool = True) -> None:
-        """
-        Clear caches of the instance of the GitRepo object.
+        """Clear caches of the instance of the GitRepo object.
 
         Paths to files in git are cached, and can become stale when the
         repository contents are modified. By default, this function clears the
@@ -141,15 +136,14 @@ class GitRepo(object):
 
         Parameters
         ----------
-        files: boolean
+        files: bool
             Whether to reset the file cache.
         """
         if files:
             self._files = None
 
     def restore_staged(self) -> None:
-        """
-        Restore all staged files with uncommitted changes in the repository.
+        """Restore all staged files with uncommitted changes in the repository.
 
         If nothing is staged, returns with no error.
         """
@@ -167,12 +161,11 @@ class GitRepo(object):
 
     def restore(self,
                 paths: list[Path] | Path) -> None:
-        """
-        Call git-restore on `paths`.
+        """Call git-restore on `paths`.
 
         Parameters
         ----------
-        paths: List of Paths
+        paths: list of Path
             The absolute Paths to the files or directories which are to be
             `git restore`d.
         """
@@ -183,7 +176,8 @@ class GitRepo(object):
             paths = [paths]
         self._git(['restore'] + [str(p) for p in paths])
 
-    def get_subtrees(self, paths: Optional[Iterable[Path]] = None) -> set[Path]:
+    def get_subtrees(self,
+                     paths: Optional[Iterable[Path]] = None) -> set[Path]:
         """"""
         # TODO: - We might want to consider untracked files as well. Would need `--others` in addition.
         #       - turn into issue
@@ -195,8 +189,7 @@ class GitRepo(object):
         return files
 
     def _get_files_changed(self) -> set[Path]:
-        """
-        Return a set of all absolute `Path`s to unstaged changes in the
+        """Return a set of all absolute `Path`s to unstaged changes in the
         repository.
         """
         ui.log_debug('Acquiring list of changed files')
@@ -204,8 +197,7 @@ class GitRepo(object):
         return changed
 
     def _get_files_staged(self) -> set[Path]:
-        """
-        Return a set of all absolute `Path`s to staged changes in the
+        """Return a set of all absolute `Path`s to staged changes in the
         repository.
         """
         ui.log_debug('Acquiring list of staged files')
@@ -213,8 +205,7 @@ class GitRepo(object):
         return staged
 
     def _get_files_untracked(self) -> set[Path]:
-        """
-        Return a set of all absolute `Path`s to untracked files in the
+        """Return a set of all absolute `Path`s to untracked files in the
         repository.
         """
         ui.log_debug('Acquiring list of untracked files')
@@ -223,35 +214,31 @@ class GitRepo(object):
 
     @property
     def files_changed(self) -> set[Path]:
-        """
-        Get a `set` containing the absolute `Path`s of all changed files
+        """Get a `set` containing the absolute `Path`s of all changed files
         (according to git) of a repository.
         """
         return self._get_files_changed()
 
     @property
     def files_staged(self) -> set[Path]:
-        """
-        Get a `set` containing the absolute `Path`s of all staged files
+        """Get a `set` containing the absolute `Path`s of all staged files
         (according to git) of a repository.
         """
         return self._get_files_staged()
 
     @property
     def files_untracked(self) -> set[Path]:
-        """
-        Get a `set` containing the absolute `Path`s of all untracked files
+        """Get a `set` containing the absolute `Path`s of all untracked files
         (according to git) of a repository.
         """
         return self._get_files_untracked()
 
     def is_clean_worktree(self) -> bool:
-        """
-        Check if the working tree for git is clean.
+        """Check if the working tree for git is clean.
 
         Returns
         -------
-        Boolean
+        bool
             True if the git worktree is clean, otherwise False.
         """
 
@@ -278,8 +265,7 @@ class GitRepo(object):
 
     def maybe_init(self,
                    target_dir: Path) -> None:
-        """
-        Initialize a directory as a git repository if it is not already one.
+        """Initialize a directory as a git repository if it is not already one.
 
         Parameters
         ----------
@@ -302,12 +288,11 @@ class GitRepo(object):
     def stage_and_commit(self,
                          paths: Iterable[Path] | Path,
                          message: str) -> None:
-        """
-        Stage and commit changes in git.
+        """Stage and commit changes in git.
 
         Parameters
         ----------
-        paths: Paths
+        paths: Path or Iterable of Path
             List of paths to files or directories for which to commit changes to
             git.
 
@@ -321,8 +306,7 @@ class GitRepo(object):
 
     @staticmethod
     def is_git_path(path: Path) -> bool:
-        """
-        Identifies if a path is a git file or directory, e.g.
+        """Identifies if a path is a git file or directory, e.g.
         `.git/*`, `.gitignore`, `.gitattributes`, `.gitmodules`, etc.
 
         Parameters
@@ -332,21 +316,20 @@ class GitRepo(object):
 
         Returns
         -------
-        boolean
+        bool
             True if path is a git file or directory, otherwise False.
         """
         return '.git' in path.parts or path.name.startswith('.git')
 
     def add(self,
             targets: Iterable[Path] | Path) -> None:
-        """
-        Perform ``git add`` to stage files.
+        """Perform ``git add`` to stage files.
 
         If called on files without changes, it does not raise an error.
 
         Parameters
         ----------
-        targets: List of paths
+        targets: Path or Iterable of Path
             Paths are relative to ``repo.root``.
 
         Raises
@@ -372,8 +355,7 @@ class GitRepo(object):
 
     def commit(self,
                *args) -> None:
-        """
-        Perform a ``git commit``.
+        """Perform a ``git commit``.
 
         Parameters
         ----------
@@ -406,8 +388,7 @@ class GitRepo(object):
     def get_config(self,
                    name: str,
                    file_: Optional[Path] = None) -> Optional[str]:
-        """
-        Get the value for a configuration option specified by `name`.
+        """Get the value for a configuration option specified by `name`.
 
         By default, git-config is checked following its order of precedence (worktree,
         local, global, system). If a `file_` is given, this is checked instead.
@@ -451,25 +432,24 @@ class GitRepo(object):
                    name: str,
                    value: str,
                    location: str = 'onyo') -> bool:
-        """
-        Set the configuration option `name` to `value`.
+        """Set the configuration option `name` to `value`.
 
         Parameters
         ----------
-        name: string
+        name: str
             The name of the configuration option to set.
 
-        value: string
+        value: str
             The value to set for the configuration option.
 
-        location: string
+        location: str
             The location of the configuration for which the value should be set.
             Defaults to `onyo`. Other git config locations are: `system`,
             `global`, `local`, and `worktree`.
 
         Returns
         -------
-        boolean
+        bool
             True on success, otherwise raises an exception.
 
         Raises
@@ -499,12 +479,11 @@ class GitRepo(object):
         return True
 
     def _diff_changes(self) -> str:
-        """
-        Query git for information about all uncommitted changes.
+        """Query git for information about all uncommitted changes.
 
         Returns
         -------
-        string
+        str
             A diff of all uncommitted changes. The format is a simplified
             version of `git diff`.
         """
@@ -519,24 +498,23 @@ class GitRepo(object):
            source: Path | Iterable[Path],
            destination: Path,
            dryrun: bool = False) -> str:
-        """
-        Call git-mv on paths provided by `source` and `destination`.
+        """Call git-mv on paths provided by `source` and `destination`.
 
         Parameters
         ----------
-        source: List of Paths
+        source: list of Path
             Absolute paths of source files to move.
 
         destination: Path
             The absolute path of the destination to move `source` to.
 
-        dryrun: boolean
+        dryrun: bool
             To perform an interactive dry-run of the `git mv` without modifying
             the repository.
 
         Returns
         -------
-        string
+        str
             The standard output from running the `git mv` command subprocess.
         """
         if isinstance(source, Path):
@@ -553,25 +531,24 @@ class GitRepo(object):
            paths: list[Path] | Path,
            force: bool = False,
            dryrun: bool = False) -> str:
-        """
-        Call `git rm` on `paths`.
+        """Call `git rm` on `paths`.
 
         Parameters
         ----------
-        paths: List of Paths
+        paths: Path or list of Path
             Absolute paths of files or directories to delete.
 
-        force: boolean
+        force: bool
             Run `git rm` with option `--force`.
 
-        dryrun: boolean
+        dryrun: bool
             To perform an interactive dry-run of the `git rm` without modifying
             the repository.
 
         Returns
         -------
-        string
-          The standard output from running the `git rm` command subprocess.
+        str
+            The standard output from running the `git rm` command subprocess.
         """
         if not isinstance(paths, list):
             paths = [paths]
@@ -582,24 +559,27 @@ class GitRepo(object):
         return self._git(rm_cmd)
 
     # Credit: Datalad
-    def get_hexsha(self, commitish: Optional[str] = None, short: bool = False) -> Optional[str]:
+    def get_hexsha(self,
+                   commitish: Optional[str] = None,
+                   short: bool = False) -> Optional[str]:
         """Return a hexsha for a given commit-ish.
 
         Parameters
         ----------
         commitish: str, optional
-          Any identifier that refers to a commit (defaults to "HEAD").
+            Any identifier that refers to a commit (defaults to "HEAD").
         short: bool
-          Whether to return the abbreviated form of the hexsha.
+            Whether to return the abbreviated form of the hexsha.
 
         Returns
         -------
-        str or, if no commitish was given and there are no commits yet, None.
+        str or None
+            Returns string if no commitish was given and there are no commits yet, None.
 
         Raises
         ------
         ValueError
-          if commit-ish is unknown
+            If commit-ish is unknown.
         """
         # use --quiet because the 'Needed a single revision' error message
         # that is the result of running this in a repo with no commits
@@ -615,17 +595,18 @@ class GitRepo(object):
                 return None
             raise ValueError("Unknown commit identifier: %s" % commitish)
 
-    def get_commit_msg(self, commitish: Optional[str] = None) -> str:
-        """Returns the full commit message of a commit-ish
+    def get_commit_msg(self,
+                       commitish: Optional[str] = None) -> str:
+        """Returns the full commit message of a commit-ish.
 
         Parameters
         ----------
         commitish: str, optional
-          Any identifier that refers to a commit (defaults to "HEAD").
+            Any identifier that refers to a commit (defaults to "HEAD").
 
         Returns
         -------
         str
-          the commit message including the subject line
+            the commit message including the subject line.
         """
         return self._git(['log', commitish or 'HEAD', '-n1', '--pretty=%B'])

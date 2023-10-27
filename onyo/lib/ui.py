@@ -17,10 +17,12 @@ class UI(object):
     ----------
     log: Logger
         The logger to display information with.
-    quiet: boolean
+
+    quiet: bool
         Activate the quiet mode (requires that `yes=True`).
         This will suppresses all output generation.
-    yes: boolean
+
+    yes: bool
         Activate the yes mode, which suppresses all interactive requests to the
         user, and instead answers them with yes.
     """
@@ -31,20 +33,19 @@ class UI(object):
                  yes: bool = False) -> None:
         # TODO: interactive mode with default values or autodetecting tty? And
         # should this be unified with the whole business of rich-coloring etc?
-        """
-        Initialize the User Interface object for user communication of Onyo.
+        """Initialize the User Interface object for user communication of Onyo.
 
         Parameters
         ----------
-        debug: boolean
+        debug: bool
             Activate the debug mode to display additional information via Onyo,
             and to print the full traceback stack if errors occur.
 
-        quiet: boolean
+        quiet: bool
             Activate the quiet mode (requires that `yes=True`) to suppress all
             output generation.
 
-        yes: boolean
+        yes: bool
             Activate the yes mode to suppress all interactive requests to the
             user, and instead answers them with yes.
         """
@@ -62,12 +63,11 @@ class UI(object):
 
     def set_debug(self,
                   debug: bool = False) -> None:
-        """
-        Set the log level to activate debug mode.
+        """Toggle debug mode.
 
         Parameters
         ----------
-        debug: boolean
+        debug: bool
             Activates debug mode, and configures the log level of the logger.
         """
         if debug:
@@ -77,12 +77,11 @@ class UI(object):
 
     def set_quiet(self,
                   quiet: bool = False) -> None:
-        """
-        Set `quiet` to suppress terminal output.
+        """Toggle quiet mode.
 
         Parameters
         ----------
-        quiet: boolean
+        quiet: bool
             `True` suppresses of all user output.
             Requires `yes` mode to be active.
 
@@ -98,12 +97,11 @@ class UI(object):
 
     def set_yes(self,
                 yes: bool = False) -> None:
-        """
-        Set `yes` to answer all requests to user with "yes".
+        """Toggle auto-response 'yes' to all questions.
 
         Parameters
         ----------
-        yes: boolean
+        yes: bool
             Activate yes mode, which suppresses all user requests and answers
             them positively. Allows the activation of the quiet mode.
         """
@@ -112,12 +110,11 @@ class UI(object):
     def error(self,
               error: str | Exception,
               end: str = os.linesep) -> None:
-        """
-        Print an error message, if the UI is not set to `quiet`.
+        """Print an error message, if the `UI` is not set to quiet mode.
 
         Parameters
         ----------
-        error: string or Exception
+        error: str or Exception
             Prints the string, or the message of an error.
             If debug mode is activated, displays the full traceback of an
             exception.
@@ -138,44 +135,47 @@ class UI(object):
 
     def log(self,
             message: str) -> None:
-        """
-        Display a message via the logger if the log level is at least `info`.
+        """Log a message at `logging.INFO` level.
 
         Parameters
         ----------
-        message: string
-            The string to display as an info.
+        message: str
+            The message to log.
         """
         self.logger.info(message)
 
-    def log_debug(self, *args, **kwargs) -> None:
-        """
-        Display debug information if debug mode is activated.
+    def log_debug(self,
+                  *args,
+                  **kwargs) -> None:
+        """Log at `logging.DEBUG` level.
 
         Parameters
         ----------
         args:
             passed to Logger.debug
+
         kwargs:
             passed to Logger.debug
         """
         self.logger.debug(*args, **kwargs)
 
-    def print(self, *args, **kwargs) -> None:
-        """
-        Print a message, if the UI is not set to `quiet`.
+    def print(self,
+              *args,
+              **kwargs) -> None:
+        """Print a message, if the `UI` is not set to quiet mode.
 
         Parameters
         ----------
-        args, kwargs: passed on to builtin `print`
+        args, kwargs:
+            passed on to builtin `print`.
         """
         if not self.quiet:
             print(*args, **kwargs)
 
     def request_user_response(self,
                               question: str) -> bool:
-        """
-        Opens a dialog for the user and reads an answer from the keyboard.
+        """Print `question` and read a response from `stdin`.
+
         Returns True when user answers yes, False when no, and asks again if the
         input is neither.
 
@@ -184,7 +184,7 @@ class UI(object):
 
         Parameters
         ----------
-        question: string
+        question: str
             A string asking the question to which the user should respond.
         """
         if self.yes:
