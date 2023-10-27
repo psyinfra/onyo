@@ -6,7 +6,7 @@ import textwrap
 from onyo import commands
 from onyo.lib.ui import ui
 from pathlib import Path
-from typing import Union
+from typing import Optional
 
 
 # credit: https://stackoverflow.com/a/13429281
@@ -248,7 +248,7 @@ def setup_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_subcmd_index(arglist, start: int = 1) -> Union[int, None]:
+def get_subcmd_index(arglist, start: int = 1) -> Optional[int]:
     """
     Get the index of the subcommand from a provided list of arguments (usually sys.argv).
 

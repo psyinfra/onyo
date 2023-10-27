@@ -6,7 +6,7 @@ import shutil
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Dict, Union, Generator, Iterable, Optional, Tuple
+from typing import Dict, Generator, Iterable, Optional, Tuple
 
 from rich.console import Console
 
@@ -119,7 +119,7 @@ def fill_unset(
 
 def natural_sort(
         assets: list[tuple[Path, dict[str, str]]],
-        keys: Union[list, None] = None, reverse: bool = False) -> list:
+        keys: Optional[list] = None, reverse: bool = False) -> list:
     """
     Sort the output of `Repo.get()` by a given list of `keys` or by the path
     of the `assets` if no `keys` are provided.
@@ -173,7 +173,7 @@ def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
 def unset(repo: OnyoRepo,
           paths: Iterable[Path],
           keys: list[str],
-          depth: Union[int, None]) -> list[Tuple[Path, Dict, Iterable]]:
+          depth: Optional[int]) -> list[Tuple[Path, Dict, Iterable]]:
 
     from .assets import get_asset_files_by_path, PSEUDO_KEYS, get_asset_content
     from .onyo import dict_to_yaml

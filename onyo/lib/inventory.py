@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union, Iterable, Optional, Set, Generator
+from typing import Generator, Iterable, Optional, Set
 from dataclasses import dataclass
 from typing import Callable
 from functools import partial
@@ -217,13 +217,13 @@ class Inventory(object):
         self._add_operation('new_directories', (path,))
         [self._add_operation('new_directories', (p,)) for p in path.parents if not p.exists()]
 
-    def remove_asset(self, asset: Union[Asset, Path]) -> None:
+    def remove_asset(self, asset: Asset | Path) -> None:
         path = asset if isinstance(asset, Path) else asset.get('path')
         if not self.repo.is_asset_path(path):
             raise NotAnAssetError(f"No such asset: {path}")
         self._add_operation('remove_assets', (asset,))
 
-    def move_asset(self, src: Union[Path, Asset], dst: Path) -> None:
+    def move_asset(self, src: Path | Asset, dst: Path) -> None:
         if isinstance(src, Asset):
             src = Path(src.get('path'))
         if not self.repo.is_asset_path(src):
@@ -236,7 +236,7 @@ class Inventory(object):
 
         self._add_operation('move_assets', (src, dst))
 
-    def rename_asset(self, asset: Union[Asset, Path], name: Optional[str] = None) -> None:
+    def rename_asset(self, asset: Asset | Path, name: Optional[str] = None) -> None:
         # ??? Do we need that? On the command level it's only accessible via modify_asset.
         # But: A config change is sufficient to make it not actually an asset modification.
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
@@ -269,7 +269,7 @@ class Inventory(object):
         # TODO: Do we need to update asset['path'] here? See also modify_asset!
         self._add_operation('rename_assets', (path, destination))
 
-    def modify_asset(self, asset: Union[Asset, Path], content: Asset) -> None:
+    def modify_asset(self, asset: Asset | Path, content: Asset) -> None:
         path = Path(asset.get('path')) if isinstance(asset, Asset) else asset
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
@@ -323,7 +323,7 @@ class Inventory(object):
             raise InvalidInventoryOperation(f"Cannot move {src} -> {dst}. Consider renaming instead.")
         self._add_operation('move_directories', (src, dst))
 
-    def rename_directory(self, src: Path, dst: Union[str, Path]) -> None:
+    def rename_directory(self, src: Path, dst: str | Path) -> None:
         if not self.repo.is_inventory_dir(src):
             raise ValueError(f"Not an inventory directory: {src}")
         if self.repo.is_asset_dir(src):
@@ -364,8 +364,8 @@ class Inventory(object):
     def get_assets_by_query(self,
                             keys: Optional[Set[str]],
                             paths: Iterable[Path],
-                            depth: Union[int, None] = None,
-                            filters: Union[list[Filter], None] = None) -> Generator:
+                            depth: Optional[int] = None,
+                            filters: Optional[list[Filter]] = None) -> Generator:
         # filters + path/depth limit (TODO: turn into filters as well)
         # self.repo.get_asset_paths(subtrees=, depth=)
 
@@ -404,7 +404,7 @@ class Inventory(object):
 
         return assets
 
-    def asset_paths_available(self, assets: Union[Asset, list[Asset]]) -> None:
+    def asset_paths_available(self, assets: Asset | list[Asset]) -> None:
         """Test whether path(s) used by `assets` are available in the inventory.
 
         Availability not only requires the path to not yet exist, but also the filename to be unique.

@@ -4,7 +4,7 @@ import logging
 
 from onyo.lib.ui import ui
 from onyo.lib.exceptions import OnyoInvalidRepoError
-from typing import Union, Iterable, Optional
+from typing import Iterable, Optional
 
 log: logging.Logger = logging.getLogger('onyo.git')
 
@@ -166,7 +166,7 @@ class GitRepo(object):
         self.clear_caches()
 
     def restore(self,
-                paths: Union[list[Path], Path]) -> None:
+                paths: list[Path] | Path) -> None:
         """
         Call git-restore on `paths`.
 
@@ -300,7 +300,7 @@ class GitRepo(object):
         self.root = target_dir
 
     def stage_and_commit(self,
-                         paths: Union[Iterable[Path], Path],
+                         paths: Iterable[Path] | Path,
                          message: str) -> None:
         """
         Stage and commit changes in git.
@@ -338,7 +338,7 @@ class GitRepo(object):
         return '.git' in path.parts or path.name.startswith('.git')
 
     def add(self,
-            targets: Union[Iterable[Path], Path]) -> None:
+            targets: Iterable[Path] | Path) -> None:
         """
         Perform ``git add`` to stage files.
 
@@ -405,7 +405,7 @@ class GitRepo(object):
 
     def get_config(self,
                    name: str,
-                   file_: Optional[Path] = None) -> Union[str, None]:
+                   file_: Optional[Path] = None) -> Optional[str]:
         """
         Get the value for a configuration option specified by `name`.
 
@@ -516,7 +516,7 @@ class GitRepo(object):
         return "\n".join(diff).strip()
 
     def mv(self,
-           source: Union[Path, Iterable[Path]],
+           source: Path | Iterable[Path],
            destination: Path,
            dryrun: bool = False) -> str:
         """
@@ -550,7 +550,7 @@ class GitRepo(object):
         return self._git(mv_cmd)
 
     def rm(self,
-           paths: Union[list[Path], Path],
+           paths: list[Path] | Path,
            force: bool = False,
            dryrun: bool = False) -> str:
         """

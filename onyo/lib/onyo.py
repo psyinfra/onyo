@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import os
 from pathlib import Path
-from typing import Iterable, Optional, Union, List, Dict
+from typing import Dict, Iterable, List, Optional
 
 from ruamel.yaml import YAML  # pyre-ignore[21]
 
@@ -17,7 +17,7 @@ from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 log: logging.Logger = logging.getLogger('onyo.onyo')
 
 
-def dict_to_yaml(d: Dict[str, Union[float, int, str]]) -> str:
+def dict_to_yaml(d: Dict[str, float | int | str]) -> str:
     content = {k: v for k, v in d.items() if k not in NEW_PSEUDO_KEYS}  # RESERVED_KEYS
     if not content:
         return ""
@@ -118,7 +118,7 @@ class OnyoRepo(object):
         # caches
         self._asset_paths: Optional[list[Path]] = None
 
-    def get_config(self, name: str) -> Union[str, None]:
+    def get_config(self, name: str) -> Optional[str]:
         """
         """
         # TODO: lru_cache?
@@ -639,7 +639,7 @@ class OnyoRepo(object):
         return asset
 
     def mk_inventory_dirs(self,
-                          dirs: Union[Iterable[Path], Path]) -> list[Path]:
+                          dirs: Iterable[Path] | Path) -> list[Path]:
         """Create inventory directories `dirs`
 
         Creates `dirs` including anchor files.

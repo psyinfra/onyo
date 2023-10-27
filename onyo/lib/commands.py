@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import logging
-from typing import Optional, Union, Iterable, Dict
+from typing import Dict, Iterable, Optional
 from pathlib import Path
 
 from rich.console import Console
@@ -281,7 +281,7 @@ def move_asset_or_dir(inventory: Inventory, src: Path, dst: Path) -> None:
 
 
 def onyo_mv(inventory: Inventory,
-            source: Union[list[Path], Path],
+            source: list[Path] | Path,
             destination: Path,
             message: Optional[str] = None) -> None:
     """
@@ -558,7 +558,7 @@ def onyo_new(inventory: Inventory,
 
 
 def onyo_rm(inventory: Inventory,
-            path: Union[Iterable[Path], Path],
+            path: Iterable[Path] | Path,
             message: Optional[str]) -> None:
 
     paths = [path] if not isinstance(path, (list, set, tuple)) else path
@@ -593,11 +593,11 @@ def onyo_rm(inventory: Inventory,
 
 def onyo_set(inventory: Inventory,
              paths: Optional[Iterable[Path]],
-             keys: Dict[str, Union[str, int, float]],
+             keys: Dict[str, str | int | float],
              filter_strings: list[str],
              rename: bool,
              depth: int,
-             message: Optional[str] = None) -> Union[str, None]:
+             message: Optional[str] = None) -> Optional[str]:
 
     if not paths:
         paths = [Path.cwd()]
@@ -665,7 +665,7 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           filter_strings: list[str],
           dryrun: bool,
-          depth: Union[int, None],
+          depth: Optional[int],
           message: Optional[str]) -> None:
     from onyo.lib.command_utils import unset as ut_unset
     from .assets import write_asset_file

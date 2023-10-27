@@ -1,14 +1,14 @@
 import argparse
 import os
 
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence
 
 
 class StoreKeyValuePairs(argparse.Action):
     def __init__(self,
                  option_strings: Sequence[str],
                  dest: str,
-                 nargs: Union[None, int, str] = None,
+                 nargs: Optional[int | str] = None,
                  **kwargs) -> None:
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
@@ -39,7 +39,7 @@ class StoreKeyValuePairs(argparse.Action):
                          f"Max. times a key was given: {number_of_dicts}.{os.linesep}"
                          f"But also got: {', '.join(['{} {} times'.format(k, c) for k, c in invalid_keys])}")
 
-        def cvt(v: str) -> Union[int, float, str]:
+        def cvt(v: str) -> int | float | str:
             try:
                 r = int(v)
             except ValueError:

@@ -3,7 +3,7 @@ import logging
 
 import re
 from pathlib import Path
-from typing import Dict, Union, Iterable, Set, Generator, Optional
+from typing import Dict, Generator, Iterable, Optional, Set
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
@@ -115,7 +115,7 @@ def valid_asset_name(asset_file: Path) -> bool:
 
 def get_asset_files_by_path(asset_files: list[Path],
                             paths: Iterable[Path],
-                            depth: Union[int, None]) -> list[Path]:
+                            depth: Optional[int]) -> list[Path]:
     """
     Check and normalize a list of paths. Select all assets in the
     repository that are relative to the given `paths` descending at most
@@ -141,7 +141,7 @@ def get_asset_files_by_path(asset_files: list[Path],
 
 
 def write_asset_file(asset_path: Path,
-                     asset_content: Dict[str, Union[float, int, str]]) -> None:
+                     asset_content: Dict[str, float | int | str]) -> None:
     if asset_content == {}:
         asset_path.open('w').write("")
     else:
@@ -149,7 +149,7 @@ def write_asset_file(asset_path: Path,
         yaml.dump(asset_content, asset_path)
 
 
-def get_asset_content(asset_file: Path) -> Dict[str, Union[float, int, str]]:
+def get_asset_content(asset_file: Path) -> Dict[str, float | int | str]:
     yaml = YAML(typ='rt', pure=True)
     contents = dict()
     try:
@@ -164,8 +164,8 @@ def get_asset_content(asset_file: Path) -> Dict[str, Union[float, int, str]]:
 def get_assets_by_query(asset_files: list[Path],
                         keys: Optional[Set[str]],
                         paths: Iterable[Path],
-                        depth: Union[int, None] = None,
-                        filters: Union[list[Filter], None] = None) -> Generator:
+                        depth: Optional[int] = None,
+                        filters: Optional[list[Filter]] = None) -> Generator:
     """
     Get keys from assets matching paths and filters.
     """

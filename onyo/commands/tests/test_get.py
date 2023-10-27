@@ -3,7 +3,7 @@ import subprocess
 import pytest
 
 from pathlib import Path
-from typing import Any, Generator, Union
+from typing import Any, Generator, Optional
 
 from onyo.lib.command_utils import sanitize_keys, set_filters, fill_unset, natural_sort
 from onyo.lib.assets import PSEUDO_KEYS
@@ -65,8 +65,8 @@ def test_get_defaults(repo: OnyoRepo) -> None:
 @pytest.mark.parametrize('sort', ['-s', None])
 def test_get_all(
         repo: OnyoRepo, filters: list[str], depth: str, keys: list[str],
-        paths: list[str], machine_readable: Union[str, None],
-        sort: Union[str, None]) -> None:
+        paths: list[str], machine_readable: Optional[str],
+        sort: Optional[str]) -> None:
     """
     Test `onyo get` with a combination of arguments.
     """
@@ -314,7 +314,7 @@ def test_get_depth_error(repo: OnyoRepo) -> None:
     (['./one/two/three/four', './another/dir'], None, 2),
     ([], None, 6)])
 def test_get_path_at_depth(
-        repo: OnyoRepo, paths: str, depth: Union[str, None],
+        repo: OnyoRepo, paths: str, depth: Optional[str],
         expected: int) -> None:
     """
     Test that `onyo get --path x --depth y` retrieves the expected assets by
@@ -378,8 +378,8 @@ def test_get_path_error(repo: OnyoRepo, path: str) -> None:
     (['unset', 'type'], ['a2cd', 'a13bc', 'a36ab']),
     ([], ['a2cd', 'a13bc', 'a36ab'])])
 def test_get_sort(
-        repo: OnyoRepo, sort: Union[str, None], keys: list[str],
-        expected: list[str], default: Union[int, None]) -> None:
+        repo: OnyoRepo, sort: Optional[str], keys: list[str],
+        expected: list[str], default: Optional[int]) -> None:
     """
     Test that `onyo get --keys x y z` with `-s` (ascending) or `-S`
     (descending)  retrieves assets in the expected 'natural sorted' order.
@@ -422,7 +422,7 @@ def test_get_sort_error(repo: OnyoRepo) -> None:
 @pytest.mark.parametrize('keys', [None, ['num'], ['str', 'num']])
 @pytest.mark.parametrize('reverse', [True, False])
 def test_natural_sort(
-        assets: list[tuple[Path, dict[str, str]]], keys: Union[list, None],
+        assets: list[tuple[Path, dict[str, str]]], keys: Optional[list],
         reverse: bool) -> None:
     """Test implementation of natural sorting algorithm"""
     sorted_assets = natural_sort(assets, keys=keys, reverse=reverse)
