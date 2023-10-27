@@ -5,13 +5,8 @@ from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.exceptions import InvalidInventoryOperation
 
-# Note: ui settings happen to be identical throughout this file.
-#       However, we should have a ui fixture instead.
-from onyo.lib.ui import ui
-ui.set_yes(True)
-ui.set_quiet(False)
 
-
+@pytest.mark.ui({'yes': True})
 def test_onyo_mv_into_self(inventory: Inventory) -> None:
 
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -76,6 +71,7 @@ def test_onyo_mv_into_self(inventory: Inventory) -> None:
                   message="some subject\n\nAnd a body")
 
 
+@pytest.mark.ui({'yes': True})
 def test_onyo_mv_move_simple(inventory: Inventory) -> None:
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
@@ -100,6 +96,7 @@ def test_onyo_mv_move_simple(inventory: Inventory) -> None:
     assert not dir_path.exists()
 
 
+@pytest.mark.ui({'yes': True})
 def test_onyo_mv_move_explicit(inventory: Inventory) -> None:
     dir_path = inventory.root / 'somewhere' / 'nested'
     # move by explicitly restating the source's name:
@@ -119,6 +116,7 @@ def test_onyo_mv_move_explicit(inventory: Inventory) -> None:
     assert not src.exists()
 
 
+@pytest.mark.ui({'yes': True})
 def test_onyo_mv_rename(inventory: Inventory) -> None:
     dir_path = inventory.root / 'somewhere' / 'nested'
     new_name = dir_path.parent / 'newname'

@@ -156,3 +156,14 @@ class Helpers:
 @pytest.fixture
 def helpers() -> Type[Helpers]:
     return Helpers
+
+
+@pytest.fixture(scope='function', autouse=True)
+def set_ui(request):
+    """Set up onyo.lib.ui according to a dict provided by the 'ui' marker"""
+    from onyo.lib.ui import ui
+    m = request.node.get_closest_marker('ui')
+    if m:
+        ui.set_yes(m.args[0].get('yes', False))
+        ui.set_quiet(m.args[0].get('quiet', False))
+        ui.set_debug(m.args[0].get('debug', False))
