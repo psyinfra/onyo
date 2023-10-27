@@ -704,16 +704,17 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
     table = prepared_tsvs / "error_empty_table.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
-    # Note: This is currently not a failure, just a no-op.
-    assert "No new assets created" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
+
+    assert not ret.stdout
+    assert "No header fields" in ret.stderr
+    assert str(table) in ret.stderr
+    assert ret.returncode == 1
 
     # <TSV> contains 5 assets, but each misses one field
     table = prepared_tsvs / "error_incomplete_rows.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
-    raise RuntimeError("TODO: 'Missing' fields, but unique asset names -> Feature or Bug?")
+    pytest.skip("TODO: 'Missing' fields, but unique asset names -> Feature or Bug?")
 
     assert not ret.stdout
     assert "The fields 'type', 'make', 'model', 'serial' and 'directory' are required" in ret.stderr

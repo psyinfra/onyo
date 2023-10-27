@@ -56,18 +56,18 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 2d. Assign newly purchased laptop to user
     laptop = member / "lenovo_thinkpad_laptop.123"
-    cmd = ['onyo', '--yes', 'new', '-p', str(laptop), '-m', "New purchase: ThinkPad", '--keys', 'memory=8GB']
+    cmd = ['onyo', '--yes', 'new', '-p', str(member), '-m', "New purchase: ThinkPad",
+           '--keys', 'memory=8GB', 'model=laptop', 'type=lenovo', 'make=thinkpad', 'serial=123']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # 2e. That was completely wrong data entry. Essentially all the wrong keys.
     # Let's remove asset entirely and redo.
-    cmd = ['onyo', '--yes', 'rm', str(laptop), '-m', "Delete asset due to erroneous data enty"]
+    cmd = ['onyo', '--yes', 'rm', str(laptop), '-m', "Delete asset due to erroneous data entry"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
-    laptop = member / "laptop_lenovo_thinkpad.SN123Z"
-    cmd = ['onyo', '--yes', 'new', '-p', str(laptop), '-m', "New purchase: ThinkPad",
-           '--keys', 'RAM=8GB', 'build-date=20160310']
+    cmd = ['onyo', '--yes', 'new', '-p', str(member), '-m', "New purchase: ThinkPad",
+           '--keys', 'RAM=8GB', 'build-date=20160310', 'type=laptop', 'make=lenovo', 'model=thinkpad', 'serial=SN123Z']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -171,7 +171,8 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     # One should remain:
     assert len(ret.stdout.splitlines()) == 1
 
-    # All assets not in "retired" location of a certain type, that match something like `"20160101 <= build-date <= 20171231"`
+    # All assets not in "retired" location of a certain type, that match something like
+    # `"20160101 <= build-date <= 20171231"`
     # Apple recall on battery of all 13" MacBook Pros built between 2016-2017
     # -> query for all matching laptops not in 'retired'.
 
