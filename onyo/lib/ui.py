@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 import traceback
-from typing import Union
 
 
 logging.basicConfig()
@@ -111,7 +110,7 @@ class UI(object):
         self.yes = yes
 
     def error(self,
-              error: Union[str, Exception],
+              error: str | Exception,
               end: str = os.linesep) -> None:
         """
         Print an error message, if the UI is not set to `quiet`.

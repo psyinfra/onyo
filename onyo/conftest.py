@@ -2,7 +2,7 @@ import os
 from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
-from typing import Generator, List, Type, Union
+from typing import Generator, List, Type
 import pytest
 from _pytest.mark.structures import MarkDecorator
 
@@ -141,7 +141,7 @@ class Helpers:
                 yield x
 
     @staticmethod
-    def onyo_flags() -> List[Union[List[List[str]], List[str]]]:
+    def onyo_flags() -> List[List[List[str]] | List[str]]:
         return [['-d', '--debug'],
                 [['-C', '/tmp'], ['--onyopath', '/tmp']],
                 ]

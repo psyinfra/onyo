@@ -1,6 +1,5 @@
 from os import linesep
 from pathlib import Path
-from typing import Union
 
 from onyo.lib.onyo import OnyoRepo
 
@@ -23,12 +22,12 @@ from onyo.lib.onyo import OnyoRepo
 # TODO: Double-check we always report posix paths!
 
 
-def record_item(repo: OnyoRepo, item: Union[Path, dict]) -> str:
+def record_item(repo: OnyoRepo, item: Path | dict) -> str:
     path = item if isinstance(item, Path) else item['path']
     return f"- {path.relative_to(repo.git.root).as_posix()}{linesep}"
 
 
-def record_move(repo: OnyoRepo, src: Union[Path, dict], dst: Path) -> str:
+def record_move(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
     # Attention: This currently expects `dst` to be the dir to move src into,
     # rather than already containing src' name at the destination. This may not be consistent yet.
     src_path = src if isinstance(src, Path) else src['path']

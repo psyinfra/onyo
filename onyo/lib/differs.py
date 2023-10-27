@@ -1,7 +1,7 @@
 from functools import partial
 from pathlib import Path
 from difflib import unified_diff
-from typing import Union, Generator
+from typing import Generator
 
 from onyo.lib.onyo import dict_to_yaml, OnyoRepo
 
@@ -29,7 +29,7 @@ diff_modified_asset = diff_assets
 diff_renamed_asset = diff_assets  # This is the same, because a rename requires a change in keys composing the name (or change in config).
 
 
-def diff_moved_asset(asset_old: Union[dict, Path], asset_new: Path):
+def diff_moved_asset(asset_old: dict | Path, asset_new: Path):
     # could be same. Just check isinstance?
     yield from diff_path_change(asset_old if isinstance(asset_old, Path) else asset_old.get('path'),
                                 asset_new)
