@@ -49,7 +49,7 @@ def fsck(repo: OnyoRepo,
     repo: OnyoRepo
         The Repository on which to perform the fsck on.
 
-    tests: list of str
+    tests: list of str, optional
         A list with the names of tests to perform. By default, all tests are
         performed on the repository.
 
@@ -185,7 +185,7 @@ def onyo_edit(inventory: Inventory,
     asset_paths: Path or Iterable of Path
         The assets to modify.
 
-    message: str
+    message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -342,7 +342,7 @@ def onyo_mkdir(inventory: Inventory,
     dirs: list of Path
         Paths to directories which to create.
 
-    message: str
+    message: str, optional
         An optional string to overwrite Onyo's default commit message.
     """
     for d in deduplicate(dirs):  # explicit duplicates would make auto-generating message subject more complicated ATM
@@ -404,7 +404,7 @@ def onyo_mv(inventory: Inventory,
         The path to which the source(s) will be moved, or a single
         source directory will be renamed.
 
-    message: str
+    message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -492,21 +492,21 @@ def onyo_new(inventory: Inventory,
     inventory: Inventory
         The Inventory in which to create new assets.
 
-    path: Path
+    path: Path, optional
         The directory to create new asset(s) in. Defaults to CWD.
         Note, that it technically is not a default (as per signature of this
         function), because we need to be able to tell whether a path was given
         in order to check for conflict with a possible 'directory' key or
         table column.
 
-    template: str
+    template: str, optional
         The name of a template file in ``.onyo/templates/`` that is copied as a
         base for the new assets to be created.
 
-    tsv: Path
+    tsv: Path, optional
         A path to a tsv table that describes new assets to be created.
 
-    keys: list of dict of str
+    keys: list of dict of str, optional
         List of dictionaries with key/value pairs that will be set in the newly
         created assets. The keys used in the ``onyo.assets.filename`` config
         ``.onyo/config`` (e.g. ``filename = "{type}_{make}_{model}.{serial}"``)
@@ -516,7 +516,7 @@ def onyo_new(inventory: Inventory,
         If True, newly created assets are opened in the editor before the
         changes are saved.
 
-    message: str
+    message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -698,7 +698,7 @@ def onyo_rm(inventory: Inventory,
         List of paths to assets and/or directories to delete from the Inventory.
         If any path given is not valid, none of them gets deleted.
 
-    message: str
+    message: str, optional
         An optional string to overwrite Onyo's default commit message.
     """
     paths = [path] if not isinstance(path, (list, set, tuple)) else path
@@ -745,7 +745,7 @@ def onyo_set(inventory: Inventory,
     inventory: Inventory
         The Inventory in which to set key/values for assets.
 
-    paths: Path or Iterable of Path
+    paths: Path or Iterable of Path, optional
         Paths to assets or directories for which to set key-value pairs.
         If paths are directories, the values will be set recursively in assets
         under the specified path.
@@ -769,7 +769,7 @@ def onyo_set(inventory: Inventory,
         Depth limit of recursion if a `path` is a directory.
         0 means no limit and is the default.
 
-    message: str
+    message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -870,7 +870,7 @@ def unset(repo: OnyoRepo,
     repo: OnyoRepo
         TODO
 
-    paths: Path or Iterable of Path
+    paths: Path or Iterable of Path, optional
         TODO
 
     keys: list of str
@@ -879,10 +879,10 @@ def unset(repo: OnyoRepo,
     filter_strings: list of str
         TODO
 
-    depth: int
+    depth: int, optional
         TODO
 
-    message: str
+    message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
     Raises

@@ -214,7 +214,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        message: list of str
+        message: list of str, optional
             If `message` is given, the function uses the first element of it to
             generate a message subject, and the following ones are joined for
             the message body.
@@ -230,11 +230,11 @@ class OnyoRepo(object):
         cmd: str
             Defines the beginning of a commit message subject.
 
-        keys: list of str
+        keys: list of str, optional
             Allow listing of e.g. changed keys in message subject.
             If given, they are listed at the beginning after `cmd`.
 
-        destination: Path
+        destination: Path, optional
             A string that can specify a destination for the message subject for
             moved assets and directories.
 
@@ -242,7 +242,7 @@ class OnyoRepo(object):
             An integer specifying the maximal length for generated commit
             message subjects.
 
-        modified: Iterable of Path
+        modified: Iterable of Path, optional
             A list of Paths to assets/directories modified in the commit, used
             to generate the commit message subject and body.
 
@@ -310,7 +310,7 @@ class OnyoRepo(object):
             The list of paths modified which should be mentioned in the commit
             message subject.
 
-        destination: Path
+        destination: Path, optional
             Destination for assets/directories when the commit contains `mv`s.
 
         max_length: int
@@ -510,7 +510,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        name: str
+        name: str, optional
             The name of the template to look for. If no name is given, the
             template defined in the config file `.onyo/config` is returned.
 
