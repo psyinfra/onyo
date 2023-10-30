@@ -32,5 +32,5 @@ def rm(args: argparse.Namespace) -> None:
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path]
     onyo_rm(inventory,
-            path=paths,
+            paths=paths,
             message='\n\n'.join(m for m in args.message) if args.message else None)

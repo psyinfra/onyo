@@ -5,7 +5,6 @@ import sys
 import logging
 from typing import Dict, Iterable, Optional
 from pathlib import Path
-
 from rich.console import Console
 from rich import box
 from rich.table import Table
@@ -95,7 +94,7 @@ def fsck(repo: OnyoRepo,
 
 
 def onyo_cat(repo: OnyoRepo,
-             paths: Iterable[Path]) -> None:
+             paths: list[Path]) -> None:
     """Print the contents of assets.
 
     Parameters
@@ -103,7 +102,7 @@ def onyo_cat(repo: OnyoRepo,
     repo: OnyoRepo
         The Onyo Repository containing the assets to print.
 
-    paths: Path or Iterable of Path
+    paths: Path or list of Path
         Path(s) to assets for which to print the contents.
 
     Raises
@@ -173,7 +172,7 @@ def onyo_config(repo: OnyoRepo,
 
 
 def onyo_edit(inventory: Inventory,
-              asset_paths: Iterable[Path],
+              paths: list[Path],
               message: Optional[str]) -> None:
     """Edit the content of assets.
 
@@ -182,7 +181,7 @@ def onyo_edit(inventory: Inventory,
     inventory: Inventory
         The inventory in which to edit assets.
 
-    asset_paths: Path or Iterable of Path
+    paths: Path or list of Path
         The assets to modify.
 
     message: str, optional
@@ -199,11 +198,11 @@ def onyo_edit(inventory: Inventory,
     # Note: This command is an exception. It skips the invalid paths and
     #       proceeds to act upon the valid ones!
     valid_asset_paths = []
-    for a in asset_paths:
-        if not inventory.repo.is_asset_path(a):
-            ui.print(f"\n{a} is not an asset.", file=sys.stderr)
+    for p in paths:
+        if not inventory.repo.is_asset_path(p):
+            ui.print(f"\n{p} is not an asset.", file=sys.stderr)
         else:
-            valid_asset_paths.append(a)
+            valid_asset_paths.append(p)
     if not valid_asset_paths:
         raise RuntimeError("No asset updated.")
 
@@ -366,22 +365,23 @@ def onyo_mkdir(inventory: Inventory,
 
 
 def move_asset_or_dir(inventory: Inventory,
-                      src: Path,
-                      dst: Path) -> None:
+                      source: Path,
+                      destination: Path) -> None:
     """Move a source asset or directory to a destination.
 
-    Parameters:
-    src: Path
+    Parameters
+    ----------
+    source: Path
         Path object to an asset or directory which to move to the destination.
 
-    dst: Path
+    destination: Path
         Path object to an asset or directory to which to move source.
     """
     # TODO: method of Inventory?
     try:
-        inventory.move_asset(src, dst)
+        inventory.move_asset(source, destination)
     except NotAnAssetError:
-        inventory.move_directory(src, dst)
+        inventory.move_directory(source, destination)
 
 
 def onyo_mv(inventory: Inventory,
@@ -685,7 +685,7 @@ def onyo_new(inventory: Inventory,
 
 
 def onyo_rm(inventory: Inventory,
-            path: Iterable[Path] | Path,
+            paths: list[Path] | Path,
             message: Optional[str]) -> None:
     """Delete assets and/or directories from the inventory.
 
@@ -694,14 +694,14 @@ def onyo_rm(inventory: Inventory,
     inventory: Inventory
         The inventory in which assets and/or directories will be deleted.
 
-    path: Path or Iterable of Path
+    paths: Path or list of Path
         List of paths to assets and/or directories to delete from the Inventory.
         If any path given is not valid, none of them gets deleted.
 
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
     """
-    paths = [path] if not isinstance(path, (list, set, tuple)) else path
+    paths = [paths] if not isinstance(paths, list) else paths
 
     for p in paths:
         try:
@@ -732,7 +732,7 @@ def onyo_rm(inventory: Inventory,
 
 
 def onyo_set(inventory: Inventory,
-             paths: Optional[Iterable[Path]],
+             paths: Optional[list[Path]],
              keys: Dict[str, str | int | float],
              filter_strings: list[str],
              rename: bool,
@@ -745,7 +745,7 @@ def onyo_set(inventory: Inventory,
     inventory: Inventory
         The Inventory in which to set key/values for assets.
 
-    paths: Path or Iterable of Path, optional
+    paths: Path or list of Path, optional
         Paths to assets or directories for which to set key-value pairs.
         If paths are directories, the values will be set recursively in assets
         under the specified path.
