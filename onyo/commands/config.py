@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
+from onyo.lib.inventory import Inventory
 from onyo.lib.commands import onyo_config
 from onyo.argparse_helpers import git_config
 
@@ -48,5 +49,6 @@ def config(args: argparse.Namespace) -> None:
 
     # TODO: Wouldn't we want to commit (implying message parameter)?
 
-    repo = OnyoRepo(Path.cwd(), find_root=True)
-    onyo_config(repo, args.git_config_args)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
+    onyo_config(inventory,
+                args.git_config_args)
