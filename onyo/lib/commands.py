@@ -221,13 +221,14 @@ def onyo_edit(inventory: Inventory,
             ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
-                operation_paths = [
-                    op.operands[0].get("path")
+                operation_paths = sorted(deduplicate([
+                    op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
-                    if op.operator == OPERATIONS_MAPPING['modify_assets']]
+                    if op.operator == OPERATIONS_MAPPING['modify_assets']]))
                 message = inventory.repo.generate_commit_message(
-                    cmd="edit",
-                    modified=operation_paths)
+                    format_string="edit [{len}]: {operation_paths}",
+                    len=len(operation_paths),
+                    operation_paths=operation_paths)
             inventory.commit(message=message)
             return
     ui.print('No assets updated.')
@@ -352,13 +353,14 @@ def onyo_mkdir(inventory: Inventory,
             ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
-                operation_paths = [
-                    op.operands[0]
+                operation_paths = sorted(deduplicate([
+                    op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
-                    if op.operator == OPERATIONS_MAPPING['new_directories']]
+                    if op.operator == OPERATIONS_MAPPING['new_directories']]))
                 message = inventory.repo.generate_commit_message(
-                    cmd="mkdir",
-                    modified=operation_paths)
+                    format_string="mkdir [{len}]: {operation_paths}",
+                    len=len(operation_paths),
+                    operation_paths=sorted(operation_paths))
             inventory.commit(message=message)
             return
     ui.print('No directories created.')
@@ -442,17 +444,19 @@ def onyo_mv(inventory: Inventory,
             ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
-                operation_paths = [
-                    op.operands[0]
+                operation_paths = sorted(deduplicate([
+                    op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['rename_assets'] or
                     op.operator == OPERATIONS_MAPPING['move_assets'] or
                     op.operator == OPERATIONS_MAPPING['move_directories'] or
-                    op.operator == OPERATIONS_MAPPING['rename_directories']]
+                    op.operator == OPERATIONS_MAPPING['rename_directories']]))
                 message = inventory.repo.generate_commit_message(
-                    cmd=subject,
-                    destination=destination,
-                    modified=operation_paths)
+                    format_string="{prefix} [{len}]: {operation_paths} -> {destination}",
+                    prefix=subject,
+                    len=len(operation_paths),
+                    operation_paths=operation_paths,
+                    destination=destination.relative_to(inventory.root))
             inventory.commit(message=message)
             return
     ui.print('Nothing was moved.')
@@ -646,7 +650,7 @@ def onyo_new(inventory: Inventory,
         # TODO: Double-check! Is directory guaranteed at this point? No,but we could from path
         #       Also: do we have a default for `path`? Yes.
 
-        dir = path if path else inventory.repo.git.root / asset.get('directory', '')
+        dir = path if path else inventory.root / asset.get('directory', '')
         asset['path'] = dir / name
         asset.pop('directory', None)
         assets.append(asset)
@@ -672,13 +676,14 @@ def onyo_new(inventory: Inventory,
             ui.print(line)
         if ui.request_user_response("Create assets? (y/n) "):
             if not message:
-                operation_paths = [
-                    op.operands[0].get("path")
+                operation_paths = sorted(deduplicate([
+                    op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
-                    if op.operator == OPERATIONS_MAPPING['new_assets']]
+                    if op.operator == OPERATIONS_MAPPING['new_assets']]))
                 message = inventory.repo.generate_commit_message(
-                    cmd="new",
-                    modified=operation_paths)
+                    format_string="new [{len}]: {operation_paths}",
+                    len=len(operation_paths),
+                    operation_paths=operation_paths)
             inventory.commit(message=message)
             return
     ui.print('No new assets created.')
@@ -718,14 +723,15 @@ def onyo_rm(inventory: Inventory,
             ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
-                operation_paths = [
-                    op.operands[0]
+                operation_paths = sorted(deduplicate([
+                    op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['remove_assets'] or
-                    op.operator == OPERATIONS_MAPPING['remove_directories']]
+                    op.operator == OPERATIONS_MAPPING['remove_directories']]))
                 message = inventory.repo.generate_commit_message(
-                    cmd="rm",
-                    modified=operation_paths)
+                    format_string="rm [{len}]: {operation_paths}",
+                    len=len(operation_paths),
+                    operation_paths=operation_paths)
             inventory.commit(message)
             return
     ui.print('Nothing was deleted.')
@@ -812,14 +818,15 @@ def onyo_set(inventory: Inventory,
 
         if ui.request_user_response("Update assets? (y/n) "):
             if not message:
-                operation_paths = [
-                    op.operands[0].get("path")
+                operation_paths = sorted(deduplicate([
+                    op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
-                    if op.operator == OPERATIONS_MAPPING['modify_assets']]
+                    if op.operator == OPERATIONS_MAPPING['modify_assets']]))
                 message = inventory.repo.generate_commit_message(
-                    cmd="set",
-                    keys=[str(k) for k in keys.keys()],
-                    modified=operation_paths)
+                    format_string="set [{len}] ({keys}): {operation_paths}",
+                    len=len(operation_paths),
+                    keys=list(keys.keys()),
+                    operation_paths=operation_paths)
             inventory.commit(message=message)
             return
     ui.print("No assets updated.")
@@ -927,16 +934,18 @@ def unset(repo: OnyoRepo,
                 write_asset_file(m[0], m[1])
                 to_commit.append(m[0])
                 if not message:
-                    paths = [p for p in to_commit]
+                    operation_paths = sorted(deduplicate(
+                        [p.relative_to(repo.git.root) for p in to_commit]))
                     # TODO: change after refactoring to:
                     # operation_paths = [
                     #    op.operands[0].get("path")
                     #    for op in inventory.operations
                     #    if op.operator == OPERATIONS_MAPPING['modify_assets']]
                     message = repo.generate_commit_message(
-                        cmd="unset",
+                        format_string="unset [{len}] ({keys}): {operation_paths}",
+                        len=len(operation_paths),
                         keys=keys,
-                        modified=paths)
+                        operation_paths=operation_paths)
                 repo.git.stage_and_commit(paths=to_commit,
                                           message=message)
             return
