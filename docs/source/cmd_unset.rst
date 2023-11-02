@@ -15,10 +15,3 @@ Example Usage
 .. code:: shell
 
     onyo unset --keys display touch --path accounting/Karl\ Krebs/laptop_apple_macbookpro.222
-
-
-**Show which values would be removed, but do not change the files yet**
-
-.. code:: shell
-
-     onyo unset --dry-run --keys touch --path accounting/

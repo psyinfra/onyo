@@ -41,8 +41,7 @@ def build_parser(parser, args: dict):
     Add arguments to a parser.
     """
     for cmd in args:
-        # note: `--dry-run` must lead to args.dry_run, the underscore is needed
-        args[cmd]['dest'] = cmd if cmd != "dry-run" else cmd.replace("-", "_")
+        args[cmd]['dest'] = cmd
         try:
             parser.add_argument(
                 *args[cmd]['args'],
