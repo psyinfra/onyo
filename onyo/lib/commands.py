@@ -860,7 +860,6 @@ def unset(repo: OnyoRepo,
           paths: Optional[Iterable[Path]],
           keys: list[str],
           filter_strings: list[str],
-          dryrun: bool,
           depth: Optional[int],
           message: Optional[str]) -> None:
     """Remove keys from assets.
@@ -879,9 +878,6 @@ def unset(repo: OnyoRepo,
 
     filter_strings: list of str
         TODO
-
-    dryrun: bool
-        TODO: will be removed
 
     depth: int
         TODO
@@ -924,7 +920,7 @@ def unset(repo: OnyoRepo,
         ui.print("No assets containing the specified key(s) could be found. No assets updated.")
         return
 
-    if diffs and not dryrun:
+    if diffs:
         if ui.request_user_response("Update assets? (y/n) "):
             to_commit = []
             for m in modifications:

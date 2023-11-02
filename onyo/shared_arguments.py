@@ -8,13 +8,6 @@ shared_arg_depth = dict(
         'Descent up to DEPTH levels into directories specified. DEPTH=0 '
         'descends recursively without limit'))
 
-shared_arg_dry_run = dict(
-    args=('-n', '--dry-run'),
-    required=False,
-    default=False,
-    action='store_true',
-    help='Perform a non-interactive trial-run without making any changes')
-
 shared_arg_filter = dict(
     args=('-f', '--filter'),
     metavar='FILTER',

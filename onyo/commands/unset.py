@@ -7,7 +7,6 @@ from onyo.lib.commands import unset as unset_cmd
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import (
     shared_arg_depth,
-    shared_arg_dry_run,
     shared_arg_filter,
     shared_arg_message,
 )
@@ -34,7 +33,6 @@ args_unset = {
         help='Asset(s) and/or directory(s) for which to unset values in'),
 
     'depth': shared_arg_depth,
-    'dry-run': shared_arg_dry_run,
     'filter': shared_arg_filter,
     'message': shared_arg_message,
 }
@@ -67,6 +65,5 @@ def unset(args: argparse.Namespace) -> None:
               paths,
               args.keys,
               args.filter,
-              args.dry_run,
               args.depth,
               message='\n\n'.join(m for m in args.message) if args.message else None)

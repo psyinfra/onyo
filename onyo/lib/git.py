@@ -496,8 +496,7 @@ class GitRepo(object):
 
     def mv(self,
            source: Path | Iterable[Path],
-           destination: Path,
-           dryrun: bool = False) -> str:
+           destination: Path) -> str:
         """Call git-mv on paths provided by `source` and `destination`.
 
         Parameters
@@ -508,10 +507,6 @@ class GitRepo(object):
         destination: Path
             The absolute path of the destination to move `source` to.
 
-        dryrun: bool
-            To perform an interactive dry-run of the `git mv` without modifying
-            the repository.
-
         Returns
         -------
         str
@@ -521,16 +516,13 @@ class GitRepo(object):
             source = [source]
 
         mv_cmd = ['mv']
-        if dryrun:
-            mv_cmd.append('--dry-run')
         mv_cmd.extend([str(p) for p in source])
         mv_cmd.append(str(destination))
         return self._git(mv_cmd)
 
     def rm(self,
            paths: list[Path] | Path,
-           force: bool = False,
-           dryrun: bool = False) -> str:
+           force: bool = False) -> str:
         """Call `git rm` on `paths`.
 
         Parameters
@@ -541,10 +533,6 @@ class GitRepo(object):
         force: bool
             Run `git rm` with option `--force`.
 
-        dryrun: bool
-            To perform an interactive dry-run of the `git rm` without modifying
-            the repository.
-
         Returns
         -------
         str
@@ -553,8 +541,6 @@ class GitRepo(object):
         if not isinstance(paths, list):
             paths = [paths]
         rm_cmd = ["rm", "-r" + ('f' if force else '')]
-        if dryrun:
-            rm_cmd.append("--dry-run")
         rm_cmd.extend([str(p) for p in paths])
         return self._git(rm_cmd)
 

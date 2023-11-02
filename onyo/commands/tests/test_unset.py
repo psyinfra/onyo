@@ -378,37 +378,6 @@ def test_unset_message_flag(repo: OnyoRepo, asset: str) -> None:
     fsck(repo)
 
 
-@pytest.mark.repo_contents(*contents)
-def test_unset_dryrun_flag(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo unset --dry-run --keys KEY --path ASSET` displays correct
-    diff-output without actually changing any assets.
-    """
-    key = list(content_dict.keys())[0]
-    # do a dry-run with unset, to check if the diff is correct without actually
-    # changing an asset
-    ret = subprocess.run(['onyo', 'unset', '--dry-run', '--keys', key,
-                          '--path', *assets], capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # should not be asked if no real changes are made
-    assert "Update assets? (y/n) " not in ret.stdout
-
-    # verify that all assets and changes are in diff output, but no changes in
-    # the asset files are made
-    for asset in assets:
-        assert str(Path(asset)) in ret.stdout
-        assert f"-{key}: {content_dict.get(key)}" in ret.stdout
-        assert f"{key}: {content_dict.get(key)}" in Path(asset).read_text()
-
-    # check that the repository is still clean
-    fsck(repo)
-
-
 depth_assets = ["laptop_macbook_pro.0",
                 "dir1/laptop_macbook_pro.1",
                 "dir1/dir2/laptop_macbook_pro.2",
