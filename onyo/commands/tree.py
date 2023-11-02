@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
+from onyo.lib.inventory import Inventory
 from onyo.lib.commands import onyo_tree
 from onyo.argparse_helpers import directory
 
@@ -23,6 +24,7 @@ def tree(args: argparse.Namespace) -> None:
     List the assets and directories in ``DIRECTORY`` in the ``tree`` format.
     """
 
-    repo = OnyoRepo(Path.cwd(), find_root=True)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.directory]
-    onyo_tree(repo, paths)
+    onyo_tree(inventory,
+              paths)

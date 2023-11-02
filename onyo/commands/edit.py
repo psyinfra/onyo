@@ -37,5 +37,5 @@ def edit(args: argparse.Namespace) -> None:
     paths = [Path(p).resolve() for p in args.asset]
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     onyo_edit(inventory=inventory,
-              asset_paths=paths,
+              paths=paths,
               message='\n\n'.join(m for m in args.message) if args.message else None)

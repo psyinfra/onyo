@@ -400,7 +400,7 @@ class GitRepo(object):
           "SECTION.NAME.KEY" to address a key in a git config file:
             [SECTION "NAME"]
               KEY = VALUE
-        file_: Path
+        file_: Path, optional
           path to a config file to read instead of Git's default locations.
 
         Returns

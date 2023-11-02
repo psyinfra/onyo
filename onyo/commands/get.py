@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 
 from onyo import OnyoRepo
+from onyo.lib.inventory import Inventory
 from onyo.lib.commands import get as get_cmd
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import shared_arg_depth, shared_arg_filter
@@ -70,10 +71,10 @@ def get(args: argparse.Namespace) -> None:
     By default, the returned assets are sorted by their paths.
     """
 
-    repo = OnyoRepo(Path.cwd(), find_root=True)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 
     paths = [Path(p).resolve() for p in args.path] if args.path else None
-    get_cmd(repo,
+    get_cmd(inventory,
             args.sort_ascending,
             args.sort_descending,
             paths,
