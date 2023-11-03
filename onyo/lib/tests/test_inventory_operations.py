@@ -4,6 +4,7 @@ from onyo.lib.onyo import OnyoRepo
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.assets import Asset
 from onyo.lib.exceptions import InvalidInventoryOperation, NoopError, NotAnAssetError
+from onyo.lib.consts import RESERVED_KEYS, NEW_PSEUDO_KEYS
 
 # TODO: - Inventory fixture(s)
 #       - mocks
@@ -37,10 +38,14 @@ def test_add_asset(repo: OnyoRepo) -> None:
 
     newdir1 = inventory.root / "somewhere"
     newdir2 = newdir1 / "new"
-    asset_file = newdir2 / "asset_file"
+    asset_file = newdir2 / "test_I_mk1.123"
     asset = Asset(some_key="some_value",
                   other=1,
-                  path=asset_file
+                  directory=newdir2,
+                  type="test",
+                  make="I",
+                  model="mk1",
+                  serial="123"
                   )
     assert num_operations(inventory, 'new_assets') == 0
     assert num_operations(inventory, 'new_directories') == 0
@@ -68,7 +73,9 @@ def test_add_asset(repo: OnyoRepo) -> None:
     assert repo.is_inventory_dir(newdir1)
     assert repo.is_inventory_dir(newdir2)
     assert repo.is_asset_path(asset_file)
-    assert repo.get_asset_content(asset_file) == dict(**asset)
+    asset_from_disc = repo.get_asset_content(asset_file)
+    assert asset_file == asset_from_disc.pop('path')
+    assert asset_from_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + NEW_PSEUDO_KEYS}
     # TODO: check commit message
 
     # To be added Asset requires a path:
@@ -130,10 +137,14 @@ def test_move_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
-    asset_file = newdir2 / "asset_file"
+    asset_file = newdir2 / "test_I_mk1.123"
     asset = Asset(some_key="some_value",
                   other=1,
-                  path=asset_file
+                  directory=newdir2,
+                  type="test",
+                  make="I",
+                  model="mk1",
+                  serial="123"
                   )
     inventory.add_asset(asset)
     inventory.commit("First asset added")
@@ -153,28 +164,27 @@ def test_move_asset(repo: OnyoRepo) -> None:
 
     # nothing done on disc yet:
     assert asset_file.is_file()
-    assert not (newdir1 / "asset_file").exists()
+    assert not (newdir1 / asset_file.name).exists()
 
     # TODO: test diff
 
     # now commit:
     inventory.commit("Move an asset")
     assert not asset_file.exists()
-    assert (newdir1 / "asset_file").is_file()
+    assert (newdir1 / asset_file.name).is_file()
 
 
 def test_rename_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
-    asset_file = newdir2 / "TYPE_MAKER_MODEL.SERIAL"
     asset = Asset(some_key="some_value",
                   type="TYPE",
                   make="MAKER",
                   model="MODEL",
                   serial="SERIAL",
                   other=1,
-                  path=asset_file
+                  directory=newdir2
                   )
     inventory.add_asset(asset)
     inventory.commit("First asset added")
@@ -182,8 +192,7 @@ def test_rename_asset(repo: OnyoRepo) -> None:
     # invalid name according to default config:
     pytest.raises(ValueError, inventory.rename_asset, asset, "new_name")
 
-    # rename to itself raises:  TODO: This test case currently adds nothing b/c the name is invalid until add_asset has
-    #                                 validation integrated and we start with a valid name.
+    # rename to itself raises:
     pytest.raises(NoopError, inventory.rename_asset, asset, "TYPE_MAKER_MODEL.SERIAL")
 
     # Note: No commit here. Valid rename only via modify ATM. Hence, tested in modify asset instead.
@@ -201,7 +210,7 @@ def test_modify_asset(repo: OnyoRepo) -> None:
                   model="MODEL",
                   serial="SERIAL",
                   other=1,
-                  path=asset_file
+                  directory=newdir2
                   )
     inventory.add_asset(asset)
     inventory.commit("First asset added")
@@ -232,7 +241,9 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     # nothing done on disc yet:
     assert asset_file.is_file()
     assert not new_asset_file.exists()
-    assert asset == Asset(**repo.get_asset_content(asset_file))
+    asset_on_disc = repo.get_asset_content(asset_file)
+    assert asset_file == asset_on_disc.pop('path')
+    assert asset_on_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + NEW_PSEUDO_KEYS}
 
     # TODO: diff
 
@@ -240,7 +251,7 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     inventory.commit("Modify an asset")
     assert not asset_file.exists()
     assert repo.is_asset_path(new_asset_file)
-    expected_asset = Asset(**new_asset)
+    expected_asset = {k: v for k, v in new_asset.items() if k not in RESERVED_KEYS}
     expected_asset['path'] = new_asset_file
     assert repo.get_asset_content(new_asset_file) == expected_asset
 
@@ -289,7 +300,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
                   model="MODEL",
                   serial="SERIAL",
                   other=1,
-                  path=asset_file
+                  directory=newdir2
                   )
     inventory.add_asset(asset)
     inventory.add_directory(emptydir)
@@ -335,7 +346,7 @@ def test_move_directory(repo: OnyoRepo) -> None:
                   model="MODEL",
                   serial="SERIAL",
                   other=1,
-                  path=asset_file
+                  directory=newdir2
                   )
     inventory.add_asset(asset)
     inventory.add_directory(emptydir)
@@ -375,7 +386,7 @@ def test_rename_directory(repo: OnyoRepo) -> None:
                   model="MODEL",
                   serial="SERIAL",
                   other=1,
-                  path=asset_file
+                  directory=newdir2
                   )
     inventory.add_asset(asset)
     inventory.add_directory(emptydir)

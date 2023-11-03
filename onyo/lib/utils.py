@@ -109,7 +109,7 @@ def get_temp_file() -> Path:
 
 def write_asset_file(path: Path,
                      asset: Dict[str, float | int | str | Path]) -> None:
-    content = None
+    content = dict()
     if path.exists():
         # For comment roundtrip mode, first read existing file content
         # to get ruamel.yaml's CommentedMap object and edit this rather

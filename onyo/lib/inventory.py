@@ -159,6 +159,32 @@ class Inventory(object):
         # Note: Seems superfluous now (operations is a list rather than dict of lists)
         return bool(self.operations)
 
+    def _get_pending_asset_names(self) -> list[str]:
+        """List of asset names that are targets of pending operations
+
+        This is extracting paths that would exist if the currently
+        pending operations were executed, in order to provide the
+        means to check for conflicts.
+
+        Current usecase: When adding/renaming assets, their
+        names and must not yet exist - neither committed nor pending.
+        """
+        # TODO: This needs to be better designed and generalized to
+        # include directory paths. Inventory methods need to check this
+        # instead of or in addition to something like Path.exists().
+        # The differs/executors/recorders already generate this
+        # information. Find a way to query that w/o executing in a
+        # structured way. Ideally, we should also account for paths
+        # that are being removed by pending operations and therefore
+        # are "free to use" for operations added to the queue.
+        names = []
+        for op in self.operations:
+            if op.operator == OPERATIONS_MAPPING['new_assets']:
+                names.append(op.operands[0].get('path').name)
+            elif op.operator == OPERATIONS_MAPPING['rename_assets']:
+                names.append(op.operands[1].name)
+        return names
+
     #
     # Operations
     #
@@ -172,29 +198,36 @@ class Inventory(object):
         return op
 
     def add_asset(self, asset: Asset) -> list[InventoryOperation]:
-        # TODO: This could actually contain a lot of what's in `new`. directory, template, validation, faux-serials, ...
-        #       Except this does not work because of --edit, which requires things being written to disc already.
-        #       Could use a temp file, but kinda weird for users seeing that path in their editor.
-        #       However, chat decision: temp path in editor is fine
-
-        # what if I call this with a modified (possibly moved) asset?
-
-        # validation (of path, name, etc) required! (Otherwise it would be delayed until execution!)
-        # TODO: Just like the validation should be included (see above), we also want to pass `directory` instead of
-        #       `path` since filename needs to be generated.
+        # TODO: what if I call this with a modified (possibly moved) asset?
+        # -> check for conflicts and raise InvalidInventoryOperation("something about either commit first or rest")
         operations = []
+        path = None
 
-        # TODO: Move {Generate name/path, faux serial, check path availability, etc.} here from onyo_new
-
-        path = asset.get('path', None)
+        # ### generate stuff - TODO: function - reuse in modify_asset
+        if asset.get('serial') == 'faux':
+            # TODO: RF this into something that gets a faux serial at a time. This needs to be done
+            #       accounting for pending operations in the Inventory.
+            asset['serial'] = self.get_faux_serials(length=6, num=1).pop()
+        name = self.generate_asset_name(asset)
+        if asset.get('is_asset_directory', False):
+            # 'path' needs to be given, if this is about an already existing dir.
+            # Otherwise, a 'directory' to create the asset in is expected as with
+            # any other asset.
+            path = asset.get('path')
+        if path is None:
+            path = asset['path'] = asset['directory'] / name
         if not path:
-            raise ValueError("Unknown asset path")
+            raise ValueError("Unable to determine asset path")
+
+        # ### validate - TODO: function - reuse in modify_asset
         if self.repo.is_asset_path(path):
             raise ValueError(f"Asset {path} already exists.")
             # Note: We may want to reconsider this case.
             # Shouldn't there be a way to write files (or asset dirs) directly and then add them as new assets?
         if not self.repo.is_inventory_path(path):
-            raise ValueError(f"{path} is not a valid inventory path.")
+            raise ValueError(f"{str(path)} is not a valid asset path.")
+        if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
+            raise ValueError(f"Asset name '{name}' already exists in inventory")
 
         if asset.get('is_asset_directory', False):
             if self.repo.is_inventory_dir(path):
@@ -449,6 +482,9 @@ class Inventory(object):
             raise ValueError("Missing config 'onyo.assets.filename'.")
         # TODO: Problem: Empty string could be a valid value for some keys. But not for the required name fields?!
         #       -> doesn't raise, because that's not something `format` would stumble upon.
+
+        # TODO: Enforce non-empty!
+
         try:
             name = config_str.format(**asset)  # TODO: Only pass non-pseudo keys?! What if there is no config?
         except KeyError as e:

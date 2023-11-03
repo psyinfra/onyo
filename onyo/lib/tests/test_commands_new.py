@@ -136,7 +136,6 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
               'type': 'TYPE',
               'serial': 'totally_random'}]
     onyo_new(inventory, keys=specs, path=directory, edit=True)
-
     expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
     assert inventory.repo.is_asset_path(expected_path)
     assert expected_path not in inventory.repo.git.files_untracked
@@ -145,6 +144,12 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
 
     # missing required fields:
     specs = [{'template': 'empty'}]
+
+    # Note, that when starting from an empty template, appending a
+    # "key: value" to the file doesn't work, b/c the empty YAML
+    # document is "{}" not "". Hence, appending would lead to a
+    # YAML parser error.
+    monkeypatch.setenv('EDITOR', "printf 'key: value' >")
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, path=directory, edit=True)
 
     # file already exists:
