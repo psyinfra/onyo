@@ -77,7 +77,11 @@ def set(args: argparse.Namespace) -> None:
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path] if args.path else None
-    assert len(args.keys) == 1
+    # TODO: The following check should be incorporated in the argparse Action.
+    #       IOW: This requires a variant of StoreKeyValuePairs, that does not
+    #       allow for key duplication (and can tell which keys are affected)
+    if len(args.keys) > 1:
+        raise ValueError("Keys must not be given multiple times.")
     onyo_set(inventory=inventory,
              paths=paths,
              keys=args.keys[0],
