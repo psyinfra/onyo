@@ -48,7 +48,7 @@ from onyo.lib.exceptions import (
     NoopError,
     InvalidInventoryOperation,
 )
-from onyo.lib.utils import deduplicate
+from onyo.lib.utils import deduplicate, get_asset_content
 
 
 @dataclass
@@ -390,7 +390,7 @@ class Inventory(object):
         """
         # TODO: This won't be necessary anymore
         from .filters import asset_name_to_keys
-        from .assets import PSEUDO_KEYS, get_asset_content
+        from .assets import PSEUDO_KEYS
 
         # filter assets by path and depth relative to paths
         asset_paths = self.repo.get_asset_paths(subtrees=paths, depth=depth)

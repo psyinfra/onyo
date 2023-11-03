@@ -5,6 +5,8 @@ import subprocess
 
 from pathlib import Path
 from shlex import quote
+from typing import Dict
+
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from onyo.lib.ui import ui
@@ -49,7 +51,6 @@ def edit_asset(asset: dict,
     # TODO: name generation/validation into edit routine! (Incl. available paths!)
     # get a tempfile
     from tempfile import mkstemp
-    from .assets import write_asset_file, get_asset_content
     fd, tmp_path = mkstemp(prefix='onyo_', text=True)
     tmp_path = Path(tmp_path)
     # We must not write pseudo-keys to the file:
@@ -97,3 +98,40 @@ def deduplicate(sequence: list) -> list:
     """Get a deduplicated list, while preserving order."""
     seen = set()
     return [x for x in sequence if not (x in seen or seen.add(x))]
+
+
+def get_temp_file() -> Path:
+    from tempfile import mkstemp
+    fd, tmp_path = mkstemp(prefix='onyo_', text=True)
+    return Path(tmp_path)
+
+
+def write_asset_file(path: Path,
+                     asset: Dict[str, float | int | str]) -> None:
+    content = dict()
+    if path.exists():
+        # For comment roundtrip mode, first read existing file content
+        # to get ruamel.yaml's CommentedMap object and edit this rather
+        # than dumping the incoming dict as is, which would kill
+        # existing comments.
+        content = get_asset_content(path)
+    content.update({k: v for k, v in asset.items() if k not in NEW_PSEUDO_KEYS + RESERVED_KEYS})
+    removed_keys = [k for k in content.keys() if k not in asset.keys()]
+    # TODO: Can we integrate the iteration in this case or do we need this copy?
+    for k in removed_keys:
+        del content[k]
+
+    yaml = YAML(typ='rt')
+    yaml.dump(content, path)
+
+
+def get_asset_content(asset_file: Path) -> Dict[str, float | int | str]:
+    yaml = YAML(typ='rt', pure=True)
+    contents = dict()
+    try:
+        contents = yaml.load(asset_file)
+    except scanner.ScannerError as e:
+        ui.print(e)
+    if contents is None:
+        return dict()
+    return contents

@@ -75,7 +75,7 @@ class Filter:
                 return True
             return False
 
-        from onyo.lib.assets import get_asset_content
+        from onyo.lib.utils import get_asset_content
         data = get_asset_content(asset)
 
         # Check if filter is <unset> and there is no data

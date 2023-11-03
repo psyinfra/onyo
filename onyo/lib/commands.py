@@ -17,7 +17,7 @@ from onyo.lib.command_utils import sanitize_keys, set_filters, \
 from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import edit_asset, deduplicate
+from onyo.lib.utils import edit_asset, deduplicate, write_asset_file
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -898,7 +898,6 @@ def unset(repo: OnyoRepo,
         TODO
     """
     from onyo.lib.command_utils import unset as ut_unset
-    from .assets import write_asset_file
 
     if not paths:
         paths = [Path.cwd()]
