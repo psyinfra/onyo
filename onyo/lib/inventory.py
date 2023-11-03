@@ -371,7 +371,7 @@ class Inventory(object):
 
     def get_asset_from_template(self, template: str) -> Asset:
         # TODO: Possibly join with get_asset (path optional)
-        return Asset(self.repo.get_template(template))
+        return self.repo.get_template(template)
 
     def get_assets_by_query(self,
                             keys: Optional[Set[str]],

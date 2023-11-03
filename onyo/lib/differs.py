@@ -3,7 +3,9 @@ from pathlib import Path
 from difflib import unified_diff
 from typing import Generator
 
-from onyo.lib.onyo import dict_to_yaml, OnyoRepo
+from onyo.lib.onyo import OnyoRepo
+from onyo.lib.utils import dict_to_yaml
+
 
 # Differs signature: (repo: OnyoRepo, operands: tuple) -> Generator[str, None, None]:
 # yielded strings are supposed to be lines of a diff for a given operation

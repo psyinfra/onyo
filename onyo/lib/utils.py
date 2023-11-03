@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import sys
 import subprocess
 
@@ -107,25 +108,26 @@ def get_temp_file() -> Path:
 
 
 def write_asset_file(path: Path,
-                     asset: Dict[str, float | int | str]) -> None:
-    content = dict()
+                     asset: Dict[str, float | int | str | Path]) -> None:
+    content = None
     if path.exists():
         # For comment roundtrip mode, first read existing file content
         # to get ruamel.yaml's CommentedMap object and edit this rather
         # than dumping the incoming dict as is, which would kill
         # existing comments.
         content = get_asset_content(path)
-    content.update({k: v for k, v in asset.items() if k not in NEW_PSEUDO_KEYS + RESERVED_KEYS})
-    removed_keys = [k for k in content.keys() if k not in asset.keys()]
-    # TODO: Can we integrate the iteration in this case or do we need this copy?
-    for k in removed_keys:
-        del content[k]
+        if content:
+            keys_to_remove = [k for k in content.keys() if k not in asset.keys()]
+            for k in keys_to_remove:
+                del content[k]
+            content.update(asset)
+    if not content:
+        # The file may have existed, but empty.
+        content = asset
+    path.open('w').write(dict_to_yaml(content))
 
-    yaml = YAML(typ='rt')
-    yaml.dump(content, path)
 
-
-def get_asset_content(asset_file: Path) -> Dict[str, float | int | str]:
+def get_asset_content(asset_file: Path) -> dict[str, float | int | str | Path]:
     yaml = YAML(typ='rt', pure=True)
     contents = dict()
     try:
@@ -135,3 +137,29 @@ def get_asset_content(asset_file: Path) -> Dict[str, float | int | str]:
     if contents is None:
         return dict()
     return contents
+
+
+# TODO: Fuse with above
+def yaml_to_dict(path: Path) -> dict[str, float | int | str | Path]:
+    yaml = YAML(typ='rt', pure=True)
+    content = yaml.load(path)  # raises scanner.ScannerError
+    if content is None:
+        content = dict()
+    return content
+
+
+def dict_to_yaml(d: Dict[str, float | int | str | Path]) -> str:
+    # ignore reserved keys and pseudo keys, but keep comments for roundtrip,
+    # when `d` is a `ruamel.yaml.comments.CommentedMap`
+    # TODO: This implies "dict_to_asset_yaml" instead?! (Or account for pseudo- and reserved keys outside)
+    content = copy.deepcopy(d)
+    for k in NEW_PSEUDO_KEYS + RESERVED_KEYS:
+        if k in content.keys():
+            del content[k]
+
+    from io import StringIO
+    yaml = YAML(typ='rt')
+    s = StringIO()
+    yaml.dump(content,
+              s)
+    return s.getvalue()

@@ -5,37 +5,14 @@ import shutil
 import subprocess
 import os
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable, List, Optional
 
-from ruamel.yaml import YAML  # pyre-ignore[21]
-
-from .consts import NEW_PSEUDO_KEYS
 from .ui import ui
 from .git import GitRepo
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
+from .utils import dict_to_yaml, yaml_to_dict, write_asset_file
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
-
-
-def dict_to_yaml(d: Dict[str, float | int | str]) -> str:
-    content = {k: v for k, v in d.items() if k not in NEW_PSEUDO_KEYS}  # RESERVED_KEYS
-    if not content:
-        return ""
-    from io import StringIO
-    yaml = YAML(typ='rt')
-    s = StringIO()
-    yaml.dump(content,
-              s)
-    return s.getvalue()
-
-
-def yaml_to_dict(path: Path) -> dict:
-    yaml = YAML(typ='rt', pure=True)
-    content = yaml.load(path)  # raises scanner.ScannerError
-    # TODO: Exception was caught and printed but didn't interrupt. Double-check why.
-    if content is None:
-        content = dict()
-    return content
 
 
 class OnyoRepo(object):
@@ -507,7 +484,7 @@ class OnyoRepo(object):
                           path: Path) -> dict:
         if not self.is_asset_path(path):
             raise ValueError(f"{path} is not an asset path")
-        if self.is_asset_dir(path):
+        if self.is_asset_dir(path):  # Performance: inventory dir should suffice here
             a = yaml_to_dict(path / self.ASSET_DIR_FILE)
             a['is_asset_directory'] = True
         else:
@@ -524,11 +501,9 @@ class OnyoRepo(object):
         if self.is_inventory_path(path):
             if asset.get('is_asset_directory', False) and path.name != self.ASSET_DIR_FILE:
                 path = path / self.ASSET_DIR_FILE
-            # TODO: potential rename, based on config??
-            path.open('w').write(dict_to_yaml(asset))
+            write_asset_file(path, asset)
         else:
             raise ValueError(f"{path} is not a valid inventory path")
-            # TODO: What?
 
         # TODO: Potentially return/modify updated (pseudo-keys: last modified, etc.!) asset dict.
         return asset
