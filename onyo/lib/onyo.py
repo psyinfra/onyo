@@ -447,7 +447,7 @@ class OnyoRepo(object):
         # add and commit
         self.git.stage_and_commit(self.dot_onyo,
                                   message='Initialize as an Onyo repository')
-        ui.print(f'Initialized Onyo repository in {self.dot_onyo}/')
+        ui.print(f'Initialized empty Onyo repository in {self.dot_onyo}/')
 
     def is_onyo_path(self,
                      path: Path) -> bool:
