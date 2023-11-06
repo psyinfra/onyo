@@ -61,7 +61,7 @@ def differ_move_directories(repo: OnyoRepo, operands: tuple) -> Generator[str, N
 
 
 def differ_rename_directories(repo: OnyoRepo, operands: tuple) -> Generator[str, None, None]:
-    yield from diff_path_change(operands[0], operands[1].name)
+    yield from diff_path_change(operands[0], operands[1])
 
 
 def differ_modify_assets(repo: OnyoRepo, operands: tuple) -> Generator[str, None, None]:
