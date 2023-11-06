@@ -90,7 +90,10 @@ def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
     ui.set_yes(False)
 
     # generate a commit message:
-    message = repo.generate_commit_message(cmd='TST', modified=modified)
+    message = repo.generate_commit_message(
+        format_string='TST [{length}]: {modified}',
+        length=len(modified),
+        modified=modified)
 
     # root should not be in output
     assert str(repo.git.root) not in message

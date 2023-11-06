@@ -203,155 +203,56 @@ class OnyoRepo(object):
             self.git.clear_caches(files=True)
 
     def generate_commit_message(self,
-                                message: Optional[list[str]] = None,
-                                cmd: str = "",
-                                keys: Optional[list[str]] = None,
-                                destination: Optional[Path] = None,
+                                format_string: str,
                                 max_length: int = 80,
-                                modified: Optional[Iterable[Path]] = None) -> str:
-        """Generate a commit message subject and body suitable for use with
-        `git commit`.
+                                **kwargs) -> str:
+        """Generate a commit message subject.
+
+        The function will shorten paths in the resulting string in order to try to fit into
+        `max_length`.
 
         Parameters
         ----------
-        message: list of str, optional
-            If `message` is given, the function uses the first element of it to
-            generate a message subject, and the following ones are joined for
-            the message body.
-
-            An optional message to use instead of the generated commit message.
-            If multiple elements are given, the first is used as the message
-            subject, and the following ones are joined for the message body.
-            If no `message` is given, generate a default commit message based on
-            the other parameters given, and the `files staged` in the
-            repository. The paths for the message are shortened if needed, so
-            that the resulting message subject does not exceed `max_length`.
-
-        cmd: str
-            Defines the beginning of a commit message subject.
-
-        keys: list of str, optional
-            Allow listing of e.g. changed keys in message subject.
-            If given, they are listed at the beginning after `cmd`.
-
-        destination: Path, optional
-            A string that can specify a destination for the message subject for
-            moved assets and directories.
+        format_string: str
+            A format string defining the commit message subject to generate.
 
         max_length: int
-            An integer specifying the maximal length for generated commit
-            message subjects.
+            An integer specifying the maximal length for generated commit message subjects.
 
-        modified: Iterable of Path, optional
-            A list of Paths to assets/directories modified in the commit, used
-            to generate the commit message subject and body.
+        **kwargs
+            Values to insert into the `format_string`. If values are paths, they will be shortened
+            to include as much user readable information as possible.
 
         Returns
         -------
         str
-            A massage suitable as a commit message for use with `git commit`.
+            A message suitable as a commit message subject.
         """
-        message = [] if message is None else message
-        keys = [] if keys is None else keys
-        if modified is None:
-            modified = self.git.files_staged
+        # long message: full paths
+        shortened_kwargs = {}
+        for key, value in kwargs.items():
+            if isinstance(value, list):
+                shortened_kwargs[key] = ','.join([str(x) for x in value])
+            else:
+                shortened_kwargs[key] = str(value)
+        message = format_string.format(**shortened_kwargs)
+        if len(message) < max_length:
+            return message
 
-        # ensure uniqueness of modified paths
-        modified = list(set(modified))
+        # shorter message: highest level (e.g. dir or asset name)
+        shortened_kwargs = {}
+        for key, value in kwargs.items():
+            if isinstance(value, list):
+                shortened_kwargs[key] = ','.join([x.name if isinstance(x, Path) else
+                                                  str(x) for x in value])
+            elif isinstance(value, Path):
+                shortened_kwargs[key] = value.name
+            else:
+                shortened_kwargs[key] = str(value)
+        message = format_string.format(**shortened_kwargs)
 
-        message_subject = ""
-
-        # staged files and directories (without ".anchor") in alphabetical order
-        changes_to_record = [x if not x.name == self.ANCHOR_FILE else x.parent
-                             for x in sorted(f.relative_to(self.git.root) for f in modified)]
-
-        if message:
-            message_subject = message[0][0]
-            message_subject += '\n'.join(map(str, [x[0] for x in message[1:]]))
-        else:
-            # get variables for the begin of the commit message `msg_dummy`
-            dest = None
-            keys_str = ""
-            if keys:
-                keys_str = f" ({','.join(str(x.split('=')[0]) for x in sorted(keys))})"
-            if destination:
-                # Note: This seems to expect relative path in `destination`,
-                #       turns it into absolute and back into relative.
-                #       Double-check where `destination` is used and remove
-                #       resolution:
-                dest = (self.git.root / destination).relative_to(self.git.root)
-            if dest and dest.name == self.ANCHOR_FILE:
-                dest = dest.parent
-
-            # the `msg_dummy` is the way all automatically generated commit
-            # message headers (independently of later adding/shortening of
-            # information) begin, for all commands.
-            msg_dummy = f"{cmd} [{len(changes_to_record)}]{keys_str}"
-            message_subject = self._generate_commit_message_subject(
-                msg_dummy, changes_to_record, dest, max_length)
-
-        return f"{message_subject}"
-
-    @staticmethod
-    def _generate_commit_message_subject(msg_dummy: str,
-                                         changes: list[Path],
-                                         destination: Optional[Path],
-                                         max_length: int = 80) -> str:
-        """Generates a "commit message subject" usable with `git commit`.
-        The function lists the paths of `changes` and will shorten the resulting
-        string to try to include as much user readable information as possible.
-
-        Parameters
-        ----------
-        msg_dummy: str
-            The first part of commit message subjects generated by Onyo.
-
-        changes: list of Path
-            The list of paths modified which should be mentioned in the commit
-            message subject.
-
-        destination: Path, optional
-            Destination for assets/directories when the commit contains `mv`s.
-
-        max_length: int
-            Limit the length of the generated message to `max_length` if
-            possible.
-
-        Returns
-        -------
-        str
-            A commit message subject to use with `git commit`.
-        """
-
-        # long message: full paths (relative to repo-root)
-        paths_str = ','.join([f"'{x}'" for x in changes])
-        msg = f"{msg_dummy}: {paths_str}"
-        if destination:
-            msg = f"{msg} -> '{destination}'"
-
-        if len(msg) < max_length:
-            return msg
-
-        # medium message: highest level (e.g. dir or asset name)
-        paths = [x.name for x in changes]
-        paths_str = ','.join(["'{}'".format(x) for x in paths])
-        msg = f"{msg_dummy}: {paths_str}"
-        if destination:
-            msg = f"{msg} -> '{destination.relative_to(destination.parent)}'"
-
-        if len(msg) < max_length:
-            return msg
-
-        # short message: "type" of devices in summary (e.g.  "laptop (2)")
-        paths = [x.name.split('_')[0] for x in changes]
-        paths_str = ','.join(sorted(["'{} ({})'".format(x, paths.count(x))
-                                     for x in set(paths)]))
-        msg = f"{msg_dummy}: {paths_str}"
-        if destination:
-            msg = f"{msg} -> '{destination.relative_to(destination.parent)}'"
-
-        # return the shortest possible version of the commit message as fallback
-        return msg
+        # return the short version of the commit message
+        return message
 
     @property
     def asset_paths(self) -> list[Path]:
