@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Generator, Iterable, Optional, Set
 from dataclasses import dataclass
@@ -207,8 +208,9 @@ class Inventory(object):
         if asset.get('serial') == 'faux':
             # TODO: RF this into something that gets a faux serial at a time. This needs to be done
             #       accounting for pending operations in the Inventory.
-            asset['serial'] = self.get_faux_serials(length=6, num=1).pop()
+            asset['serial'] = self.get_faux_serials(num=1).pop()
         name = self.generate_asset_name(asset)
+
         if asset.get('is_asset_directory', False):
             # 'path' needs to be given, if this is about an already existing dir.
             # Otherwise, a 'directory' to create the asset in is expected as with
@@ -305,25 +307,54 @@ class Inventory(object):
             raise NoopError(f"Cannot rename asset {name}: This is already its name.")
 
         destination = path.parent / name
+        if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
+            raise ValueError(f"Asset name '{name}' already exists in inventory")
         if destination.exists():
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
-        # TODO: Do we need to update asset['path'] here? See also modify_asset!
         return [self._add_operation('rename_assets', (path, destination))]
 
-    def modify_asset(self, asset: Asset | Path, content: Asset) -> list[InventoryOperation]:
+    def modify_asset(self, asset: Asset | Path, new_asset: Asset) -> list[InventoryOperation]:
         operations = []
         path = Path(asset.get('path')) if isinstance(asset, Asset) else asset
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
-        asset = Asset(self.repo.get_asset_content(path)) if isinstance(asset, Path) else asset
-        new_asset = asset.copy()
-        new_asset.update(content)
+        asset = self.repo.get_asset_content(path) if isinstance(asset, Path) else asset
+
+        # Raise on 'path' key in `new_asset`. It needs to be generated:
+        if 'path' in new_asset:
+            raise ValueError("Illegal key 'path' in new asset.")  # TODO: Figure better message (or change upstairs)
+
+        # ### generate stuff - TODO: function - reuse in add_asset
+        if new_asset.get('serial') == 'faux':
+            # TODO: RF this into something that gets a faux serial at a time. This needs to be done
+            #       accounting for pending operations in the Inventory.
+            new_asset['serial'] = self.get_faux_serials(num=1).pop()
+        name = self.generate_asset_name(asset)
+        new_asset['path'] = path.parent / name
+
+        if new_asset['path'] != path:
+            # ### validate - TODO: function - reuse in add_asset
+            if self.repo.is_asset_path(new_asset['path']):
+                raise ValueError(f"Asset {new_asset['path']} already exists.")
+                # Note: We may want to reconsider this case.
+                # Shouldn't there be a way to write files (or asset dirs) directly and then add them as new assets?
+            if not self.repo.is_inventory_path(new_asset['path']):
+                raise ValueError(f"{str(new_asset['path'])} is not a valid asset path.")
+            if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
+                raise ValueError(f"Asset name '{name}' already exists in inventory")
+
         if asset == new_asset:
             raise NoopError
-        operations.append(self._add_operation('modify_assets', (asset, new_asset)))
-        # Abuse the fact that new_asset has the same 'path' at this point, regardless of potential renaming and let
-        # rename handle it. Note, that this way the rename operation MUST come after the modification during execution.
-        # Otherwise, we'd move the old asset and write the modified one to the old place.
+
+        # Note, that paths for modify + rename can't be in same dict/CommentedMap object.
+        modified_asset = copy.deepcopy(new_asset)
+        modified_asset['path'] = path
+
+        operations.append(self._add_operation('modify_assets', (asset, modified_asset)))
+        # Modified_asset has the same 'path' at this point, regardless of potential renaming.
+        # We modify the content in place and only then perform a potential rename.
+        # Otherwise, we'd move the old asset and write the modified one to the old place or
+        # write an entirely new one w/o a git-trackable relation to the old one.
         try:
             operations.extend(self.rename_asset(new_asset))
         except NoopError:
@@ -392,7 +423,7 @@ class Inventory(object):
     def get_asset(self, path: Path):
         # read and return Asset
         if self.repo.is_asset_path(path):
-            return Asset(**self.repo.get_asset_content(path))
+            return self.repo.get_asset_content(path)
         else:
             raise ValueError(f"{path} is not an asset.")
 

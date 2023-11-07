@@ -218,18 +218,22 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     asset_changes = Asset(some_key="new_value",  # arbitrary content change
                           model="CORRECTED-MODEL"  # implies rename w/ default name config
                           )
-    # raises on non-existing asset
-    pytest.raises(ValueError, inventory.modify_asset, repo.git.root / "doesnotexist", asset_changes)
-    # raises on non-asset
-    pytest.raises(ValueError, inventory.modify_asset, newdir1, asset_changes)
+    new_asset = asset.copy()
+    new_asset.update(asset_changes)
 
-    inventory.modify_asset(asset, asset_changes)
+    # illegal to define 'path' in `new_asset`:
+    pytest.raises(ValueError, inventory.modify_asset, asset, new_asset)
+    new_asset.pop('path')
+    # raises on non-existing asset
+    pytest.raises(ValueError, inventory.modify_asset, repo.git.root / "doesnotexist", new_asset)
+    # raises on non-asset
+    pytest.raises(ValueError, inventory.modify_asset, newdir1, new_asset)
+
+    inventory.modify_asset(asset, new_asset)
     # modify operation:
     assert num_operations(inventory, 'modify_assets') == 1
     assert isinstance(inventory.operations[0].operands, tuple)
     assert asset in inventory.operations[0].operands
-    new_asset = asset.copy()
-    new_asset.update(asset_changes)
     new_asset_file = newdir2 / "TYPE_MAKER_CORRECTED-MODEL.SERIAL"
     assert new_asset in inventory.operations[0].operands
     # implicit rename operation:
@@ -707,12 +711,13 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     asset_changes = Asset(some_key="new_value",  # arbitrary content change
                           model="CORRECTED-MODEL"  # implies rename w/ default name config
                           )
-
-    inventory.modify_asset(asset, asset_changes)
-    # modify operation:
-    assert num_operations(inventory, 'modify_assets') == 1
     new_asset = asset.copy()
     new_asset.update(asset_changes)
+    new_asset.pop('path')
+
+    inventory.modify_asset(asset, new_asset)
+    # modify operation:
+    assert num_operations(inventory, 'modify_assets') == 1
     new_asset_path = newdir2 / "TYPE_MAKER_CORRECTED-MODEL.SERIAL"
     assert (asset, new_asset) == inventory.operations[0].operands
     # implicit rename operation:

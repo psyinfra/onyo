@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import copy
-import sys
-import subprocess
 
 from pathlib import Path
-from shlex import quote
 from typing import Dict
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
@@ -30,69 +27,6 @@ def anything2bool(val):
         raise TypeError(
             "Got value %s which could not be interpreted as a boolean"
             % repr(val))
-
-
-def edit_asset(asset: dict,
-               editor: str) -> dict:
-    """Edit `asset` with a file editor.
-
-    This is using a temporary YAML file, prefilled with the current content
-    of `asset`. Validation of the asset is included.
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-
-    Raises
-    ------
-    """
-    # TODO: WE DO NOT END UP HERE, WHEN THERE WAS NO ASSET CONTENT DEFINED YET!
-    # TODO: name generation/validation into edit routine! (Incl. available paths!)
-    # get a tempfile
-    from tempfile import mkstemp
-    fd, tmp_path = mkstemp(prefix='onyo_', text=True)
-    tmp_path = Path(tmp_path)
-    # We must not write pseudo-keys to the file:
-    asset_content = {k: v for k, v in asset.items() if k not in NEW_PSEUDO_KEYS + RESERVED_KEYS}
-    write_asset_file(tmp_path, dict(**asset_content))
-
-    edit_asset_file(editor, tmp_path)  # TODO: This returns False on "discard changes". Figure this out.
-    #       Also: May be useful to return content dict. Because `edit_asset` is
-    #       reading the content afterwards already for validation.
-    #       Hence, currently read twice (see below).
-    # reload from tempfile
-    asset = get_asset_content(tmp_path)
-    return asset
-
-
-def edit_asset_file(editor: str,
-                    path: Path) -> bool:
-    """Open an existing file at `path` with `editor`. After changes are made, check the
-    file content for validity as an asset file. If valid, write the changes,
-    otherwise open a dialog and ask the user if the asset should be corrected
-    or the changes discarded.
-
-    Returns True when the file was changed and saved without errors, and False
-    if the user wants to discard the changes.
-    """
-    # TODO: Fuse with edit_asset_file above (RF'd for `onyo new`, to be adjusted for `onyo edit`)
-
-    while True:
-        # Note: shell=True would be needed for a setting like the one used in tests:
-        #       EDITOR="printf 'some: thing' >>". Piping needs either shell, or we must
-        #       understand what needs piping at the python level here and create several
-        #       subprocesses piped together.
-        subprocess.run(f'{editor} {quote(str(path))}', check=True, shell=True)
-        try:
-            YAML(typ='rt').load(path)
-            # TODO: add asset validation here
-            return True
-        except scanner.ScannerError:
-            ui.print(f"{path} has invalid YAML syntax.", file=sys.stderr)
-            if not ui.request_user_response("Continue editing? No discards changes. (y/n) "):
-                return False
 
 
 def deduplicate(sequence: list) -> list:
@@ -133,13 +67,13 @@ def get_asset_content(asset_file: Path) -> dict[str, float | int | str | Path]:
     try:
         contents = yaml.load(asset_file)
     except scanner.ScannerError as e:
-        ui.print(e)
+        ui.error(f"{asset_file} has invalid YAML syntax: {str(e)}")
     if contents is None:
         return dict()
     return contents
 
 
-# TODO: Fuse with above
+# TODO: Fuse with get_asset_content. Note different error behavior, though.
 def yaml_to_dict(path: Path) -> dict[str, float | int | str | Path]:
     yaml = YAML(typ='rt', pure=True)
     content = yaml.load(path)  # raises scanner.ScannerError

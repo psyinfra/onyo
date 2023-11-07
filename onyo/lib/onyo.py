@@ -10,7 +10,7 @@ from typing import Iterable, List, Optional
 from .ui import ui
 from .git import GitRepo
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
-from .utils import dict_to_yaml, yaml_to_dict, write_asset_file
+from .utils import yaml_to_dict, write_asset_file
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
 
@@ -359,7 +359,6 @@ class OnyoRepo(object):
     def is_asset_path(self,
                       path: Path) -> bool:
         # TODO: check for .onyoignore
-        # TODO: possibly nested assets; hence "asset path", not "asset file"
         # TODO: We are currently ignoring .gitignore w/ underlying globbing
         # TODO: Only account for tracked files!
         return self.is_inventory_path(path) and \
