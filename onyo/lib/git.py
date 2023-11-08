@@ -282,7 +282,7 @@ class GitRepo(object):
         else:
             ret = self._git(['init'], cwd=target_dir)
             # Note: What is it about capturing output everywhere only to spit it out again?
-            ui.print(ret.strip())
+            ui.log_debug(ret.strip())
         self.root = target_dir
 
     def stage_and_commit(self,
