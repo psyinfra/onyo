@@ -49,7 +49,7 @@ from onyo.lib.exceptions import (
     NoopError,
     InvalidInventoryOperation,
 )
-from onyo.lib.utils import deduplicate, get_asset_content
+from onyo.lib.utils import deduplicate
 
 
 @dataclass
