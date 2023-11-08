@@ -862,8 +862,10 @@ def onyo_set(inventory: Inventory,
     filters = set_filters(filter_strings, repo=inventory.repo) if filter_strings else None
     # TODO: We are only interested in paths here. Factor that in for changing get_asset_by_query, when
     #       rewriting `onyo get`.
-    asset_paths_to_set = [p for p, _ in get_assets_by_query(
-        inventory.repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)]
+    asset_paths_to_set = [p for p, _ in inventory.get_assets_by_query(keys=None,
+                                                                      paths=paths,
+                                                                      depth=depth,
+                                                                      filters=filters)]
 
     for path in asset_paths_to_set:
         asset = inventory.get_asset(path)

@@ -443,7 +443,6 @@ class Inventory(object):
                             depth: Optional[int] = None,
                             filters: Optional[list[Filter]] = None) -> Generator:
         # filters + path/depth limit (TODO: turn into filters as well)
-        # self.repo.get_asset_paths(subtrees=, depth=)
 
         # Note: This is interested in the key-value pairs of assets, not their paths exactly.
         #       But tries to not read a file when pseudo keys are considered only.
@@ -452,10 +451,6 @@ class Inventory(object):
         """
         Get keys from assets matching paths and filters.
         """
-        # TODO: This won't be necessary anymore
-        from .filters import asset_name_to_keys
-        from .assets import PSEUDO_KEYS
-
         # filter assets by path and depth relative to paths
         asset_paths = self.repo.get_asset_paths(subtrees=paths, depth=depth)
 
@@ -471,12 +466,10 @@ class Inventory(object):
         if keys:
             assets = ((a, {
                 k: v
-                for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()
+                for k, v in self.get_asset(a).items()
                 if k in keys}) for a in asset_paths)
         else:
-            assets = ((a, {
-                k: v
-                for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()}) for a in asset_paths)
+            assets = ((a, self.get_asset(a)) for a in asset_paths)
 
         return assets
 
