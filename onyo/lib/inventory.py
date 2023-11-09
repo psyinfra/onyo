@@ -230,6 +230,8 @@ class Inventory(object):
             raise ValueError(f"{str(path)} is not a valid asset path.")
         if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
             raise ValueError(f"Asset name '{name}' already exists in inventory")
+        if self._required_key_empty(asset):
+            raise ValueError("Required asset keys must not have empty values.")
 
         if asset.get('is_asset_directory', False):
             if self.repo.is_inventory_dir(path):
@@ -342,6 +344,8 @@ class Inventory(object):
                 raise ValueError(f"{str(new_asset['path'])} is not a valid asset path.")
             if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
                 raise ValueError(f"Asset name '{name}' already exists in inventory")
+        if self._required_key_empty(new_asset):
+            raise ValueError("Required asset keys must not have empty values.")
 
         if asset == new_asset:
             raise NoopError
@@ -547,3 +551,10 @@ class Inventory(object):
                 faux_serials.add(f'faux{serial}')
 
         return faux_serials
+
+    def _required_key_empty(self, asset: dict) -> bool:
+        """Whether `asset` has an empty value for a required key.
+
+        Validation helper.
+        """
+        return any(not str(v) for k, v in asset.items() if k in self.repo.get_required_asset_keys())
