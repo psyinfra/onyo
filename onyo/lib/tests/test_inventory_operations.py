@@ -78,6 +78,10 @@ def test_add_asset(repo: OnyoRepo) -> None:
     assert asset_from_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + NEW_PSEUDO_KEYS}
     # TODO: check commit message
 
+    # required keys must not be empty
+    asset.update(dict(model=""))
+    pytest.raises(ValueError, inventory.add_asset, asset)
+
     # To be added Asset requires a path:
     asset = Asset(a_key='a_value')
     pytest.raises(ValueError, inventory.add_asset, asset)
@@ -216,10 +220,15 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     inventory.commit("First asset added")
 
     asset_changes = Asset(some_key="new_value",  # arbitrary content change
-                          model="CORRECTED-MODEL"  # implies rename w/ default name config
+                          model=""  # empty required key
                           )
     new_asset = asset.copy()
     new_asset.update(asset_changes)
+
+    # required keys must not be empty
+    pytest.raises(ValueError, inventory.add_asset, asset)
+
+    new_asset.update(dict(model="CORRECTED-MODEL"))  # implies rename w/ default name config
 
     # illegal to define 'path' in `new_asset`:
     pytest.raises(ValueError, inventory.modify_asset, asset, new_asset)
