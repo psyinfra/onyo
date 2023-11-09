@@ -95,7 +95,6 @@ def exec_move_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], 
 
 def renamer(src: Path, dst: Path) -> list[Path]:
     # expected: full path as dst
-    # TODO: Fuse w/ mover() - distinction superfluous by now
     src.rename(dst)
     return [src, dst]
 
