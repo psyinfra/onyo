@@ -175,8 +175,9 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           depth: Optional[int]) -> list[Tuple[Path, Dict, Iterable]]:
 
-    from .assets import get_asset_files_by_path, PSEUDO_KEYS, get_asset_content
-    from .onyo import dict_to_yaml
+    from .assets import get_asset_files_by_path, PSEUDO_KEYS
+    from .utils import get_asset_content
+    from .utils import dict_to_yaml
     # set and unset should select assets exactly the same way
     assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
 

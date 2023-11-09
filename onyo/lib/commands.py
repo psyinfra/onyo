@@ -3,7 +3,8 @@ from __future__ import annotations
 import subprocess
 import sys
 import logging
-from typing import Dict, Iterable, Optional
+import copy
+from typing import Callable, Dict, Iterable, Optional
 from pathlib import Path
 from rich.console import Console
 from rich import box
@@ -17,7 +18,8 @@ from onyo.lib.command_utils import sanitize_keys, set_filters, \
 from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
 from onyo.lib.filters import UNSET_VALUE
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import edit_asset, deduplicate
+from onyo.lib.utils import deduplicate, write_asset_file
+from onyo.lib.consts import NEW_PSEUDO_KEYS, RESERVED_KEYS
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -171,6 +173,112 @@ def onyo_config(inventory: Inventory,
                                             'config: modify repository config')
 
 
+def _edit_asset(inventory: Inventory,
+                asset: dict,
+                operation: Callable,
+                editor: Optional[str]) -> dict:
+    """Edit `asset` via configured editor and a temporary asset file.
+
+    Utility function for `onyo_edit` and `onyo_new(edit=True)`.
+    This is editing a temporary file initialized with `asset`. Once
+    the editor is done, `asset` is updated from the file content and
+    `operation` is tried in order to validate the content for a
+    particular purpose (Currently used: Either `Inventory.add_asset`
+    or `Inventory.modify_asset`).
+    User is asked to either keep editing or accept the changes
+    (if valid).
+
+    Parameters
+    ----------
+    inventory: Inventory
+      Inventory to edit `asset` for. This is primarily used to check
+      whether `operation` resulted in registered operations with that
+      inventory in order to remove them, if the edit was not accepted.
+    asset: dict
+      Asset to edit.
+    editor: string, optional
+      Editor to use. This is a to-be executed shell string, that gets
+      a path to a temporary file. Defaults to `OnyoRepo.get_editor()`.
+    operation: Callable
+      Function to call with the resulting asset. This function is
+      expected to raise, if the edited asset isn't valid for that
+      purpose.
+
+    Returns
+    -------
+    dict
+      The edited asset.
+    """
+    from shlex import quote
+    from onyo.lib.consts import RESERVED_KEYS
+    from onyo.lib.utils import get_temp_file, get_asset_content
+
+    if not editor:
+        editor = inventory.repo.get_editor()
+
+    # Store original reserved keys of `asset`, in order to re-assign
+    # them when loading edited file from disc. This is relevant, when
+    # `operation` uses them (`Inventory.add_asset`)
+    reserved_keys = {k: v for k, v in asset.items() if k in RESERVED_KEYS}
+
+    tmp_path = get_temp_file()
+    write_asset_file(tmp_path, asset)
+
+    # For validation of an edited asset, the operation is tried.
+    # This is to avoid repeating the same tests (both - code
+    # duplication and performance!).
+    # However, in order to be able to keep editing even if the
+    # operation was valid, a rollback of the changes to the operations
+    # queue is required.
+    queue_length = len(inventory.operations)
+    while True:
+        # ### fire up editor
+        # Note: shell=True would be needed for a setting like the one used in tests:
+        #       EDITOR="printf 'some: thing' >>". Piping needs either shell, or we must
+        #       understand what needs piping at the python level here and create several
+        #       subprocesses piped together.
+        subprocess.run(f'{editor} {quote(str(tmp_path))}', check=True, shell=True)
+        operations = None
+        try:
+            asset = get_asset_content(tmp_path)
+            # When reading from file, we don't get reserved keys back, since they are not
+            # part of the file content. We do need the object from reading the file to be
+            # the basis, though, to get comment roundtrip from ruamel.
+            asset.update(reserved_keys)
+            operations = operation(asset)
+        except NoopError:
+            pass  # If edit was a no-op, this is not a ValidationError
+        except Exception as e:  # TODO: dedicated type: OnyoValidationError or something # TODO: Ignore NoopError?
+            # remove possibly added operations from the queue:
+            if queue_length < len(inventory.operations):
+                inventory.operations = inventory.operations[:queue_length]
+            ui.error(e)
+            # TODO: This kind of phrasing the question is bad.
+            #       Have a different category of questions in `UI` instead,
+            if ui.request_user_response("Cancel command (y) or continue editing asset (n)? "):
+                # Error message was already passed to ui. Raise a different exception instead.
+                # TODO: Own exception class for that purpose? Can we have no message at all?
+                #       -> Make possible in main.py
+                raise ValueError("Command canceled.") from e
+            else:
+                continue
+        # ### show diff and ask for confirmation
+        if operations:
+            ui.print("Effective changes:")
+            for op in operations:
+                for line in op.diff():
+                    ui.print(line)
+        if ui.request_user_response("Accept changes? (y/n) "):
+            # TODO: We'd want a three-way question: "accept", "skip this asset (discard)" and "continue editing".
+            break
+        else:
+            # remove possibly added operations from the queue:
+            if queue_length < len(inventory.operations):
+                inventory.operations = inventory.operations[:queue_length]
+    tmp_path.unlink()
+    return asset
+
+
 def onyo_edit(inventory: Inventory,
               paths: list[Path],
               message: Optional[str]) -> None:
@@ -192,7 +300,7 @@ def onyo_edit(inventory: Inventory,
     RuntimeError
         If none of the assets specified are valid, e.g. the path does not exist.
     """
-    from onyo.lib.utils import edit_asset
+    from functools import partial
 
     # check and set paths
     # Note: This command is an exception. It skips the invalid paths and
@@ -209,13 +317,10 @@ def onyo_edit(inventory: Inventory,
     editor = inventory.repo.get_editor()
     for path in valid_asset_paths:
         asset = inventory.get_asset(path)
-        modified_asset = edit_asset(asset, editor)
-        try:
-            inventory.modify_asset(asset, modified_asset)
-        except NoopError:
-            pass
+        _edit_asset(inventory, asset, partial(inventory.modify_asset, path), editor)
 
     if inventory.operations_pending():
+        # TODO: Just like in `new` we don't need to repeat the diffs
         ui.print("Changes:")
         for line in inventory.diff():
             ui.print(line)
@@ -479,12 +584,13 @@ def onyo_new(inventory: Inventory,
     pseudo-keys must not be given -> NEW_PSEUDO_KEYS
 
     TODO: Document special keys (directory, asset dir, template, etc) -> RESERVED_KEYS
+    TODO: 'directory' -> relative to inventory root!
 
     - keys vs template: fill up? Write it down!
     - edit: TODO: May lead to delay any error until we got the edit result? As in: Can start empty?
     - template: if it can be given as a key, do we need a dedicated option?
 
-    # TODO: This just copy pasta from StoreKeyValuePair, ATM. T some extend should go into help for `--key`.
+    # TODO: This just copy pasta from StoreKeyValuePair, ATM. To some extend should go into help for `--key`.
     # But: description of TSV and special keys required.
     Every key appearing multiple times in `key=value` is applied to a new dictionary every time.
     All keys appearing multiple times, must appear the same number of times (and thereby define the number of dicts
@@ -533,18 +639,7 @@ def onyo_new(inventory: Inventory,
 
     keys = keys or []
     if not tsv and not keys and not edit:
-        # NOTE: edit requires path or directory key!
-        # Actually: No. `path` comes with a default (CWD)
-
-        # TODO: Why? We have --edit!  Could even start empty, but certainly from a template.
-        #       However, path is required with edit, b/c edit is supposed to edit the file content.
-        #       Hence, special keys (like `directory`, asset dir, template, etc.)
-        #       can't be set that way. (Although: We could make that work, too)
-        # Conclusion: allow for plain edit, but edit only asset file content, not special keys.
-        #       path -> default CWD
         raise ValueError("Either key-value pairs or a tsv file must be given.")
-    # EDIT needs further validation. We need `directory` key or `path` given. Which sorta implies that this should be
-    # done later, after building the specs? -> Actually: No. Path comes with a default.
 
     # Try to get editor early in case it's bound to fail;
     # Empty string b/c pyre doesn't properly consider the condition and complains
@@ -596,7 +691,7 @@ def onyo_new(inventory: Inventory,
     # TODO: These validations could probably be more efficient and neat.
     #       For ex., only first dict is actually relevant. It's either TSV (columns exist for all) or came from --key,
     #       where everything after the first one comes from repetition (However, what about python interface where one
-    #       could pass an arbitrary list of dicts?).
+    #       could pass an arbitrary list of dicts? -> requires consistency check like TSV + doc).
     if any('directory' in d.keys() for d in specs):
         if path:
             raise ValueError("Can't use '--path' option and specify 'directory' key.")
@@ -609,72 +704,37 @@ def onyo_new(inventory: Inventory,
             if pseudo_key in d.keys():
                 raise ValueError(f"Pseudo key '{pseudo_key}' must not be specified.")
 
-    # Prepare faux serials
-    # TODO: Adjust get_faux_serials to accept num=0 and return empty
-    #       Does it save anything to create them bulk?
-    #       Only thing seems to be: Easy to check against other just generated ones.
-    #       Entire business also makes me wonder about configured fallbacks for naming scheme (triggered by KeyError)
-    #       Use case: Us. Serial -> FZJ Inventory number -> faux
-    # TODO: This needs to be more generic. Like configure callables to a key? 'serial' -> callable('faux')
-    # TODO: Turn the entire replacement into function
-    faux_number = sum(1 for d in specs if d.get('serial') == 'faux')
-    if faux_number > 0:
-        faux_serials = inventory.get_faux_serials(num=faux_number)
-        for d in specs:
-            if d.get('serial') == 'faux':
-                d['serial'] = faux_serials.pop()
-
     # Generate actual assets:
     if edit and not specs:
-        # Special case: No asset specification defined via --keys or --tsv, but we have --edit.
+        # Special case: No asset specification defined via `keys` or `tsv`, but we have `edit`.
         # This implies a single asset, starting with a (possibly empty) template.
         specs = [{}]
 
-    assets = []
     for spec in specs:
-        # 1. start from template
-        template_name = spec.get('template', None) or template
+        # 1. Unify directory specification
+        directory = Path(spec.get('directory', path))
+        if not directory.is_absolute():
+            directory = inventory.root / directory
+        spec['directory'] = directory
+        # 2. start from template
+        template_name = spec.pop('template', None) or template
         asset = inventory.get_asset_from_template(template_name)
-        # 2. fill in asset specification
+        # 3. fill in asset specification
         asset.update(spec)
-
+        # 4. (try to) add to inventory
         if edit:
-            asset = edit_asset(asset, editor)
-
-        # 3. generate asset name (raises on missing required fields)
-        name = inventory.generate_asset_name(asset)
-
-        # arguably: faux serials after editing as well, so one can give 'faux' via edit!
-
-        # 4. generate 'path' and pop 'directory' key
-        # TODO: Double-check! Is directory guaranteed at this point? No,but we could from path
-        #       Also: do we have a default for `path`? Yes.
-
-        dir = path if path else inventory.root / asset.get('directory', '')
-        asset['path'] = dir / name
-        asset.pop('directory', None)
-        assets.append(asset)
-
-    # TODO: Editing too late. Verification for name, etc. needs to come afterwards!
-    #       But: Interactively editing a bunch, implies you want to know and correct something invalidate right away
-    #       before proceeding to the next one. Hence, editor validation needs to include name generation path
-    #       availability, etc.
-
-    # verify that the asset paths are unique/available
-    inventory.asset_paths_available(assets)
-
-    for asset in assets:
-        # TODO: validate assets before offering to commit. This has to be done after
-        # they are build, their values are set, and they were opened to edit
-        # Note: Availability was checked. If edited, YAML check was passed. Uniqueness?
-
-        inventory.add_asset(asset)
+            _edit_asset(inventory, asset, inventory.add_asset, editor)
+        else:
+            inventory.add_asset(asset)
 
     if inventory.operations_pending():
-        ui.print("The following will be created:")
-        for line in inventory.diff():
-            ui.print(line)
-        if ui.request_user_response("Create assets? (y/n) "):
+        if not edit:
+            # Note: If `edit` was given, the diffs where already confirmed per asset.
+            #       Don't ask again.
+            ui.print("The following will be created:")
+            for line in inventory.diff():
+                ui.print(line)
+        if edit or ui.request_user_response("Create assets? (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].get("path").relative_to(inventory.root)
@@ -789,22 +849,30 @@ def onyo_set(inventory: Inventory,
 
     if not rename and any(k in inventory.repo.get_required_asset_keys() for k in keys.keys()):
         raise ValueError("Can't change required keys without --rename.")
-    # TODO: `keys` must not contain RESERVED_KEYS
+    if any(k in RESERVED_KEYS for k in keys.keys()):
+        raise ValueError(f"Can't set reserved keys ({', '.join(RESERVED_KEYS)}).")
 
-    non_inventory_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p) and not inventory.repo.is_inventory_dir(p)]
+    non_inventory_paths = [str(p)
+                           for p in paths
+                           if not inventory.repo.is_asset_path(p) and
+                           not inventory.repo.is_inventory_dir(p)]
     if non_inventory_paths:
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
                          "\n".join(non_inventory_paths))
     filters = set_filters(filter_strings, repo=inventory.repo) if filter_strings else None
     # TODO: We are only interested in paths here. Factor that in for changing get_asset_by_query, when
     #       rewriting `onyo get`.
-    asset_paths_to_set = [p for p, _ in get_assets_by_query(
-        inventory.repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)]
+    asset_paths_to_set = [p for p, _ in inventory.get_assets_by_query(keys=None,
+                                                                      paths=paths,
+                                                                      depth=depth,
+                                                                      filters=filters)]
 
     for path in asset_paths_to_set:
         asset = inventory.get_asset(path)
-        new_content = asset.copy()
+        new_content = copy.deepcopy(asset)
         new_content.update(keys)
+        for k in NEW_PSEUDO_KEYS:
+            new_content.pop(k)
         try:
             inventory.modify_asset(asset, new_content)
         except NoopError:
@@ -898,7 +966,6 @@ def unset(repo: OnyoRepo,
         TODO
     """
     from onyo.lib.command_utils import unset as ut_unset
-    from .assets import write_asset_file
 
     if not paths:
         paths = [Path.cwd()]

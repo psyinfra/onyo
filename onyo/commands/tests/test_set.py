@@ -588,3 +588,23 @@ def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
 
     # verify state of repo is clean
     assert repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(assets[0])
+@pytest.mark.parametrize('asset', [asset_paths[0]])
+@pytest.mark.parametrize('set_values', values)
+def test_duplicate_keys(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
+    """
+    Test that `onyo set` fails, if the same key is given multiple times.
+    """
+
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, 'dup_key=1', 'dup_key=2', '--path', asset],
+                         capture_output=True, text=True)
+
+    # verify output
+    assert ret.returncode == 1
+    assert "Keys must not be given multiple times." in ret.stderr
+    assert not ret.stdout
+
+    # verify state of repo is clean
+    assert repo.git.is_clean_worktree()

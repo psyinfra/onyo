@@ -107,7 +107,7 @@ def inventory(repo) -> Generator:
                               model="MODEL",
                               serial="SERIAL",
                               other=1,
-                              path=repo.git.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL")
+                              directory=repo.git.root / "somewhere" / "nested")
                         )
     inventory.add_directory(repo.git.root / 'empty')
     inventory.add_directory(repo.git.root / 'different' / 'place')

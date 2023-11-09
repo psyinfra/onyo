@@ -82,7 +82,7 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
     Test that for different paths it is possible to call `onyo edit` on a single
     asset file.
     """
-    os.environ['EDITOR'] = "printf 'key: single_asset' >"
+    os.environ['EDITOR'] = "printf 'key: single_asset' >>"
 
     # test `onyo edit` on a single asset
     ret = subprocess.run(['onyo', '--yes', 'edit', asset],
@@ -102,14 +102,15 @@ def test_edit_multiple_assets(repo: OnyoRepo) -> None:
     Test that it is possible to call `onyo edit` with a list of multiple assets
     containing different file names at once.
     """
-    os.environ['EDITOR'] = "printf 'key: multiple_assets' >"
+    os.environ['EDITOR'] = "printf 'key: multiple_assets' >>"
     repo_assets = repo.asset_paths
 
     # test edit for a list of assets all at once
     ret = subprocess.run(['onyo', '--yes', 'edit', *repo_assets],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert ret.stdout.count("+key: multiple_assets") == len(repo_assets)
+    # diffs are currently listed twice: once per asset and in a summary at the end
+    assert ret.stdout.count("+key: multiple_assets") == 2 * len(repo_assets)
     assert not ret.stderr
 
     # verify the changes were saved for all assets and the repository is clean
@@ -124,11 +125,12 @@ def test_edit_with_user_response(repo: OnyoRepo) -> None:
     Test that without the --yes flag, `onyo edit` requests a user response
     before saving changes.
     """
-    os.environ['EDITOR'] = "printf 'key: user_response' >"
+    os.environ['EDITOR'] = "printf 'key: user_response' >>"
 
     # test edit for a list of assets all at once
+    input_string = '\n'.join('y' for i in range(len(repo.asset_paths) + 1))  # confirm per asset + summary
     ret = subprocess.run(['onyo', 'edit', *repo.asset_paths],
-                         input='y', capture_output=True, text=True)
+                         input=input_string, capture_output=True, text=True)
     assert ret.returncode == 0
 
     # verify that the user response is requested
@@ -144,7 +146,7 @@ def test_edit_message_flag(repo: OnyoRepo, asset: str) -> None:
     Test that `onyo edit --message msg` overwrites the default commit message
     with one specified by the user containing different special characters.
     """
-    os.environ['EDITOR'] = "printf 'key: value' >"
+    os.environ['EDITOR'] = "printf 'key: value' >>"
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     # test `onyo edit --message msg`
@@ -165,7 +167,7 @@ def test_quiet_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo edit --yes --quiet` does not print anything.
     """
-    os.environ['EDITOR'] = "printf 'key: quiet' >"
+    os.environ['EDITOR'] = "printf 'key: quiet' >>"
 
     # edit a list of assets all at once
     ret = subprocess.run(['onyo', '--yes', '--quiet', 'edit', *repo.asset_paths],
@@ -187,7 +189,7 @@ def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
     """
     Test that `onyo edit --quiet` does error without --yes flag.
     """
-    os.environ['EDITOR'] = "printf 'key: quiet' >"
+    os.environ['EDITOR'] = "printf 'key: quiet' >>"
 
     # edit a list of assets all at once
     ret = subprocess.run(['onyo', '--quiet', 'edit', *repo.asset_paths],
@@ -207,11 +209,12 @@ def test_edit_discard(repo: OnyoRepo, asset: str) -> None:
     Test that if an asset got correctly changed, but the user answers to the
     "Save changes?" dialog with 'n', that the changes get discarded.
     """
-    os.environ['EDITOR'] = "printf 'key: discard' >"
+    os.environ['EDITOR'] = "printf 'key: discard' >>"
 
     # change asset with `onyo edit` but don't save it
+    input_string = 'y\nn'  # 1. stop editing via 'y', 2. discard changes
     ret = subprocess.run(['onyo', 'edit', asset],
-                         input='n', capture_output=True, text=True)
+                         input=input_string, capture_output=True, text=True)
     assert ret.returncode == 0
     assert "Save changes?" in ret.stdout
     assert "+key: discard" in ret.stdout
@@ -237,7 +240,7 @@ def test_edit_protected(repo: OnyoRepo, no_asset: str) -> None:
     """
     Test the error behavior when called on protected files.
     """
-    os.environ['EDITOR'] = "printf 'key: NOT_USED' >"
+    os.environ['EDITOR'] = "printf 'key: NOT_USED' >>"
 
     ret = subprocess.run(['onyo', 'edit', no_asset],
                          capture_output=True, text=True)
@@ -260,7 +263,7 @@ def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
     Test the error behavior when called on non-existing files, that Onyo does
     not create the files, and the repository stays valid.
     """
-    os.environ['EDITOR'] = "printf 'key: DOES_NOT_EXIST' >"
+    os.environ['EDITOR'] = "printf 'key: DOES_NOT_EXIST' >>"
 
     ret = subprocess.run(['onyo', 'edit', no_asset],
                          capture_output=True, text=True)
@@ -276,16 +279,15 @@ def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
 def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
     """
     Test that Onyo detects yaml-errors, and responds correctly if the user
-    answers the "continue edit?" dialog with 'n' to discard the changes
+    answers the "cancel edit?" dialog with 'y' to discard the changes
     """
-    os.environ['EDITOR'] = "printf 'key: YAML: ERROR' >"
+    os.environ['EDITOR'] = "printf 'key: YAML: ERROR' >>"
 
-    # Change the asset to invalid yaml, and respond 'n' to "further edit" dialog
+    # Change the asset to invalid yaml, and respond 'y' to "cancel edit" dialog
     ret = subprocess.run(['onyo', 'edit', asset],
-                         input='n\nn',  # currently two 'n': don't continue editing and don't save any changes.
+                         input='y',
                          capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert "No assets updated" in ret.stdout
+    assert ret.returncode == 1
     assert "has invalid YAML syntax" in ret.stderr
 
     # Verify that the changes are not written in to the file, and that the
@@ -297,12 +299,13 @@ def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
 @pytest.mark.repo_contents(*assets)
 def test_edit_without_changes(repo: OnyoRepo) -> None:
     """
-    Test that onyo does not fail when no changes were made
+    Test that onyo does not fail when no changes were made.
+    This still requires a confirmation after editing an asset.
     """
     os.environ['EDITOR'] = "cat"
 
     # open assets with `cat`, but do not change them
-    ret = subprocess.run(['onyo', 'edit'] + [str(asset) for asset in repo.asset_paths],
+    ret = subprocess.run(['onyo', '--yes', 'edit'] + [str(asset) for asset in repo.asset_paths],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -316,7 +319,7 @@ def test_edit_with_dot_dot(repo: OnyoRepo, asset: str) -> None:
     Check that in an onyo repository it is possible to call `onyo edit` on an
     asset path that contains ".." leading outside and back into the repository.
     """
-    os.environ['EDITOR'] = "printf 'key: dot_dot' >"
+    os.environ['EDITOR'] = "printf 'key: dot_dot' >>"
 
     # check edit with a path containing a ".." that leads outside the onyo repo
     # and then inside again

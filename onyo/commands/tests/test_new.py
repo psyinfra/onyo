@@ -372,7 +372,7 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following will be created:" in ret.stdout
+    assert "Effective changes:" in ret.stdout
     assert str(asset) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -490,7 +490,7 @@ def test_error_two_identical_assets_in_input(
 
     # verify correct error
     assert not ret.stdout
-    assert f"Multiple {asset_a}" in ret.stderr
+    assert asset_a in ret.stderr and "already exists" in ret.stderr
     assert ret.returncode == 1
 
     # verify that no new assets were created and the repository stays clean
@@ -594,7 +594,7 @@ def test_tsv_with_flags_template_keys_edit(repo: OnyoRepo) -> None:
                           '--template', template],
                          capture_output=True, text=True)
 
-    assert "The following will be created:" in ret.stdout
+    assert "Effective changes:" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -767,7 +767,7 @@ def test_tsv_error_identical_entries(repo: OnyoRepo) -> None:
 
     # verify correct error
     assert not ret.stdout
-    assert "Multiple" in ret.stderr
+    assert "already exists" in ret.stderr
     assert ret.returncode == 1
 
     # verify that no new assets were created and the repository is still clean

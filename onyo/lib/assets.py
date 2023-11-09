@@ -3,13 +3,13 @@ import logging
 
 import re
 from pathlib import Path
-from typing import Dict, Generator, Iterable, Optional, Set
+from typing import Generator, Iterable, Optional, Set
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from onyo.lib.ui import ui
 from onyo.lib.filters import Filter
-
+from onyo.lib.utils import get_asset_content
 
 log: logging.Logger = logging.getLogger('onyo.assets')
 
@@ -138,27 +138,6 @@ def get_asset_files_by_path(asset_files: list[Path],
         raise ValueError('No assets selected.')
 
     return assets
-
-
-def write_asset_file(asset_path: Path,
-                     asset_content: Dict[str, float | int | str]) -> None:
-    if asset_content == {}:
-        asset_path.open('w').write("")
-    else:
-        yaml = YAML(typ='rt')
-        yaml.dump(asset_content, asset_path)
-
-
-def get_asset_content(asset_file: Path) -> Dict[str, float | int | str]:
-    yaml = YAML(typ='rt', pure=True)
-    contents = dict()
-    try:
-        contents = yaml.load(asset_file)
-    except scanner.ScannerError as e:
-        ui.print(e)
-    if contents is None:
-        return dict()
-    return contents
 
 
 def get_assets_by_query(asset_files: list[Path],

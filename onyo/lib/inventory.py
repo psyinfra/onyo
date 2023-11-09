@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Generator, Iterable, Optional, Set
 from dataclasses import dataclass
@@ -159,71 +160,113 @@ class Inventory(object):
         # Note: Seems superfluous now (operations is a list rather than dict of lists)
         return bool(self.operations)
 
+    def _get_pending_asset_names(self) -> list[str]:
+        """List of asset names that are targets of pending operations
+
+        This is extracting paths that would exist if the currently
+        pending operations were executed, in order to provide the
+        means to check for conflicts.
+
+        Current usecase: When adding/renaming assets, their
+        names and must not yet exist - neither committed nor pending.
+        """
+        # TODO: This needs to be better designed and generalized to
+        # include directory paths. Inventory methods need to check this
+        # instead of or in addition to something like Path.exists().
+        # The differs/executors/recorders already generate this
+        # information. Find a way to query that w/o executing in a
+        # structured way. Ideally, we should also account for paths
+        # that are being removed by pending operations and therefore
+        # are "free to use" for operations added to the queue.
+        names = []
+        for op in self.operations:
+            if op.operator == OPERATIONS_MAPPING['new_assets']:
+                names.append(op.operands[0].get('path').name)
+            elif op.operator == OPERATIONS_MAPPING['rename_assets']:
+                names.append(op.operands[1].name)
+        return names
+
     #
     # Operations
     #
 
-    def _add_operation(self, name: str, operands: tuple) -> None:
+    def _add_operation(self, name: str, operands: tuple) -> InventoryOperation:
         """Internal convenience helper to register an operation"""
-        self.operations.append(InventoryOperation(operator=OPERATIONS_MAPPING[name],
-                                                  operands=operands,
-                                                  repo=self.repo)
-                               )
+        op = InventoryOperation(operator=OPERATIONS_MAPPING[name],
+                                operands=operands,
+                                repo=self.repo)
+        self.operations.append(op)
+        return op
 
-    def add_asset(self, asset: Asset) -> None:
-        # TODO: This could actually contain a lot of what's in `new`. directory, template, validation, faux-serials, ...
-        #       Except this does not work because of --edit, which requires things being written to disc already.
-        #       Could use a temp file, but kinda weird for users seeing that path in their editor.
-        #       However, chat decision: temp path in editor is fine
+    def add_asset(self, asset: Asset) -> list[InventoryOperation]:
+        # TODO: what if I call this with a modified (possibly moved) asset?
+        # -> check for conflicts and raise InvalidInventoryOperation("something about either commit first or rest")
+        operations = []
+        path = None
 
-        # what if I call this with a modified (possibly moved) asset?
+        # ### generate stuff - TODO: function - reuse in modify_asset
+        if asset.get('serial') == 'faux':
+            # TODO: RF this into something that gets a faux serial at a time. This needs to be done
+            #       accounting for pending operations in the Inventory.
+            asset['serial'] = self.get_faux_serials(num=1).pop()
+        name = self.generate_asset_name(asset)
 
-        # validation (of path, name, etc) required! (Otherwise it would be delayed until execution!)
-        # TODO: Just like the validation should be included (see above), we also want to pass `directory` instead of
-        #       `path` since filename needs to be generated.
-        path = asset.get('path', None)
+        if asset.get('is_asset_directory', False):
+            # 'path' needs to be given, if this is about an already existing dir.
+            # Otherwise, a 'directory' to create the asset in is expected as with
+            # any other asset.
+            path = asset.get('path')
+        if path is None:
+            path = asset['path'] = asset['directory'] / name
         if not path:
-            raise ValueError("Unknown asset path")
+            raise ValueError("Unable to determine asset path")
+
+        # ### validate - TODO: function - reuse in modify_asset
         if self.repo.is_asset_path(path):
             raise ValueError(f"Asset {path} already exists.")
             # Note: We may want to reconsider this case.
             # Shouldn't there be a way to write files (or asset dirs) directly and then add them as new assets?
         if not self.repo.is_inventory_path(path):
-            raise ValueError(f"{path} is not a valid inventory path.")
+            raise ValueError(f"{str(path)} is not a valid asset path.")
+        if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
+            raise ValueError(f"Asset name '{name}' already exists in inventory")
 
         if asset.get('is_asset_directory', False):
             if self.repo.is_inventory_dir(path):
                 # We want to turn an existing dir into an asset dir.
-                self.rename_directory(path, self.generate_asset_name(asset))
+                operations.extend(self.rename_directory(path, self.generate_asset_name(asset)))
                 # Temporary hack: Adjust the asset's path to the renamed one.
                 # TODO: Actual solution: This entire method must not be based on the dict's 'path', but 'directory' +
                 #       generated name. This ties in with pulling parts of `onyo_new` in here.
                 asset['path'] = path.parent / self.generate_asset_name(asset)
             else:
                 # The directory does not yet exist.
-                self.add_directory(path)
+                operations.extend(self.add_directory(path))
         elif not self.repo.is_inventory_dir(path.parent):
-            self.add_directory(path.parent)
+            operations.extend(self.add_directory(path.parent))
 
         # record operation
-        self._add_operation('new_assets', (asset,))
+        operations.append(self._add_operation('new_assets', (asset,)))
+        return operations
 
-    def add_directory(self, path: Path) -> None:
+    def add_directory(self, path: Path) -> list[InventoryOperation]:
+        operations = []
         if not self.repo.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path.")
-        if path.exists():
+        if path.exists():  # What about adding an untracked dir?
             raise ValueError(f"{path} already exists.")
 
-        self._add_operation('new_directories', (path,))
-        [self._add_operation('new_directories', (p,)) for p in path.parents if not p.exists()]
+        operations.append(self._add_operation('new_directories', (path,)))
+        operations.extend([self._add_operation('new_directories', (p,)) for p in path.parents if not p.exists()])
+        return operations
 
-    def remove_asset(self, asset: Asset | Path) -> None:
+    def remove_asset(self, asset: Asset | Path) -> list[InventoryOperation]:
         path = asset if isinstance(asset, Path) else asset.get('path')
         if not self.repo.is_asset_path(path):
             raise NotAnAssetError(f"No such asset: {path}")
-        self._add_operation('remove_assets', (asset,))
+        return [self._add_operation('remove_assets', (asset,))]
 
-    def move_asset(self, src: Path | Asset, dst: Path) -> None:
+    def move_asset(self, src: Path | Asset, dst: Path) -> list[InventoryOperation]:
         if isinstance(src, Asset):
             src = Path(src.get('path'))
         if not self.repo.is_asset_path(src):
@@ -234,9 +277,9 @@ class Inventory(object):
         if not self.repo.is_inventory_dir(dst):
             raise ValueError(f"Cannot move {src}: Destination {dst} is not in inventory directory.")
 
-        self._add_operation('move_assets', (src, dst))
+        return [self._add_operation('move_assets', (src, dst))]
 
-    def rename_asset(self, asset: Asset | Path, name: Optional[str] = None) -> None:
+    def rename_asset(self, asset: Asset | Path, name: Optional[str] = None) -> list[InventoryOperation]:
         # ??? Do we need that? On the command level it's only accessible via modify_asset.
         # But: A config change is sufficient to make it not actually an asset modification.
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
@@ -264,66 +307,99 @@ class Inventory(object):
             raise NoopError(f"Cannot rename asset {name}: This is already its name.")
 
         destination = path.parent / name
+        if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
+            raise ValueError(f"Asset name '{name}' already exists in inventory")
         if destination.exists():
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
-        # TODO: Do we need to update asset['path'] here? See also modify_asset!
-        self._add_operation('rename_assets', (path, destination))
+        return [self._add_operation('rename_assets', (path, destination))]
 
-    def modify_asset(self, asset: Asset | Path, content: Asset) -> None:
+    def modify_asset(self, asset: Asset | Path, new_asset: Asset) -> list[InventoryOperation]:
+        operations = []
         path = Path(asset.get('path')) if isinstance(asset, Asset) else asset
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
-        asset = Asset(self.repo.get_asset_content(path)) if isinstance(asset, Path) else asset
-        new_asset = asset.copy()
-        new_asset.update(content)
+        asset = self.repo.get_asset_content(path) if isinstance(asset, Path) else asset
+
+        # Raise on 'path' key in `new_asset`. It needs to be generated:
+        if 'path' in new_asset:
+            raise ValueError("Illegal key 'path' in new asset.")  # TODO: Figure better message (or change upstairs)
+
+        # ### generate stuff - TODO: function - reuse in add_asset
+        if new_asset.get('serial') == 'faux':
+            # TODO: RF this into something that gets a faux serial at a time. This needs to be done
+            #       accounting for pending operations in the Inventory.
+            new_asset['serial'] = self.get_faux_serials(num=1).pop()
+        name = self.generate_asset_name(asset)
+        new_asset['path'] = path.parent / name
+
+        if new_asset['path'] != path:
+            # ### validate - TODO: function - reuse in add_asset
+            if self.repo.is_asset_path(new_asset['path']):
+                raise ValueError(f"Asset {new_asset['path']} already exists.")
+                # Note: We may want to reconsider this case.
+                # Shouldn't there be a way to write files (or asset dirs) directly and then add them as new assets?
+            if not self.repo.is_inventory_path(new_asset['path']):
+                raise ValueError(f"{str(new_asset['path'])} is not a valid asset path.")
+            if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
+                raise ValueError(f"Asset name '{name}' already exists in inventory")
+
         if asset == new_asset:
             raise NoopError
-        self._add_operation('modify_assets', (asset, new_asset))
-        # Abuse the fact that new_asset has the same 'path' at this point, regardless of potential renaming and let
-        # rename handle it. Note, that this way the rename operation MUST come after the modification during execution.
-        # Otherwise, we'd move the old asset and write the modified one to the old place.
+
+        # Note, that paths for modify + rename can't be in same dict/CommentedMap object.
+        modified_asset = copy.deepcopy(new_asset)
+        modified_asset['path'] = path
+
+        operations.append(self._add_operation('modify_assets', (asset, modified_asset)))
+        # Modified_asset has the same 'path' at this point, regardless of potential renaming.
+        # We modify the content in place and only then perform a potential rename.
+        # Otherwise, we'd move the old asset and write the modified one to the old place or
+        # write an entirely new one w/o a git-trackable relation to the old one.
         try:
-            self.rename_asset(new_asset)
+            operations.extend(self.rename_asset(new_asset))
         except NoopError:
             # Modification did not imply a rename
             pass
+        return operations
 
-    def remove_directory(self, directory: Path) -> None:
+    def remove_directory(self, directory: Path) -> list[InventoryOperation]:
+        operations = []
         if not self.repo.is_inventory_dir(directory):
             raise InvalidInventoryOperation(f"Not an inventory directory: {directory}")
         for p in directory.iterdir():
             try:
-                self.remove_asset(p)
+                operations.extend(self.remove_asset(p))
                 is_asset = True
             except NotAnAssetError:
                 is_asset = False
             if self.repo.is_inventory_dir(p):
-                self.remove_directory(p)
+                operations.extend(self.remove_directory(p))
             elif not is_asset and p.name not in [self.repo.ANCHOR_FILE, self.repo.ASSET_DIR_FILE]:
                 # not an asset and not an inventory dir
                 # (hence also not an asset dir) implies
                 # we have a non-inventory file.
-                self.operations.append(
-                    InventoryOperation(
-                        operator=InventoryOperator(
-                            executor=partial(generic_executor, lambda x: x[0].unlink()),
-                            recorder=lambda x: dict(),  # no operations record for this
-                            differ=differ_remove_assets),
-                        operands=(p,),
-                        repo=self.repo))
+                op = InventoryOperation(
+                    operator=InventoryOperator(
+                        executor=partial(generic_executor, lambda x: x[0].unlink()),
+                        recorder=lambda x: dict(),  # no operations record for this
+                        differ=differ_remove_assets),
+                    operands=(p,),
+                    repo=self.repo)
+                self.operations.append(op)  # execution queue
+                operations.append(op)  # return value
+        operations.append(self._add_operation('remove_directories', (directory,)))
+        return operations
 
-        self._add_operation('remove_directories', (directory,))
-
-    def move_directory(self, src: Path, dst: Path) -> None:
+    def move_directory(self, src: Path, dst: Path) -> list[InventoryOperation]:
         if not self.repo.is_inventory_dir(src):
             raise ValueError(f"Not an inventory directory: {src}")
         if not self.repo.is_inventory_dir(dst):
             raise ValueError(f"Destination is not an inventory directory: {dst}")
         if src.parent == dst:
             raise InvalidInventoryOperation(f"Cannot move {src} -> {dst}. Consider renaming instead.")
-        self._add_operation('move_directories', (src, dst))
+        return [self._add_operation('move_directories', (src, dst))]
 
-    def rename_directory(self, src: Path, dst: str | Path) -> None:
+    def rename_directory(self, src: Path, dst: str | Path) -> list[InventoryOperation]:
         if not self.repo.is_inventory_dir(src):
             raise ValueError(f"Not an inventory directory: {src}")
         if self.repo.is_asset_dir(src):
@@ -338,7 +414,7 @@ class Inventory(object):
         if src.name == name:
             raise NoopError(f"Cannot rename directory {str(src)}: This is already its name.")
 
-        self._add_operation('rename_directories', (src, dst))
+        return [self._add_operation('rename_directories', (src, dst))]
 
     #
     # non-operation methods
@@ -347,7 +423,7 @@ class Inventory(object):
     def get_asset(self, path: Path):
         # read and return Asset
         if self.repo.is_asset_path(path):
-            return Asset(**self.repo.get_asset_content(path))
+            return self.repo.get_asset_content(path)
         else:
             raise ValueError(f"{path} is not an asset.")
 
@@ -359,7 +435,7 @@ class Inventory(object):
 
     def get_asset_from_template(self, template: str) -> Asset:
         # TODO: Possibly join with get_asset (path optional)
-        return Asset(self.repo.get_template(template))
+        return self.repo.get_template(template)
 
     def get_assets_by_query(self,
                             keys: Optional[Set[str]],
@@ -367,7 +443,6 @@ class Inventory(object):
                             depth: Optional[int] = None,
                             filters: Optional[list[Filter]] = None) -> Generator:
         # filters + path/depth limit (TODO: turn into filters as well)
-        # self.repo.get_asset_paths(subtrees=, depth=)
 
         # Note: This is interested in the key-value pairs of assets, not their paths exactly.
         #       But tries to not read a file when pseudo keys are considered only.
@@ -376,10 +451,6 @@ class Inventory(object):
         """
         Get keys from assets matching paths and filters.
         """
-        # TODO: This won't be necessary anymore
-        from .filters import asset_name_to_keys
-        from .assets import PSEUDO_KEYS, get_asset_content
-
         # filter assets by path and depth relative to paths
         asset_paths = self.repo.get_asset_paths(subtrees=paths, depth=depth)
 
@@ -395,12 +466,10 @@ class Inventory(object):
         if keys:
             assets = ((a, {
                 k: v
-                for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()
+                for k, v in self.get_asset(a).items()
                 if k in keys}) for a in asset_paths)
         else:
-            assets = ((a, {
-                k: v
-                for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()}) for a in asset_paths)
+            assets = ((a, self.get_asset(a)) for a in asset_paths)
 
         return assets
 
@@ -437,6 +506,9 @@ class Inventory(object):
             raise ValueError("Missing config 'onyo.assets.filename'.")
         # TODO: Problem: Empty string could be a valid value for some keys. But not for the required name fields?!
         #       -> doesn't raise, because that's not something `format` would stumble upon.
+
+        # TODO: Enforce non-empty!
+
         try:
             name = config_str.format(**asset)  # TODO: Only pass non-pseudo keys?! What if there is no config?
         except KeyError as e:
