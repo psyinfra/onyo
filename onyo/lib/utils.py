@@ -11,24 +11,6 @@ from onyo.lib.ui import ui
 from onyo.lib.consts import NEW_PSEUDO_KEYS, RESERVED_KEYS
 
 
-def anything2bool(val):
-    """Convert various representations of boolean values into actual bool."""
-    # Credit: datalad
-
-    if hasattr(val, 'lower'):
-        val = val.lower()
-    if val in {"off", "no", "false", "0"} or not bool(val):
-        return False
-    elif val in {"on", "yes", "true", True} \
-            or (hasattr(val, 'isdigit') and val.isdigit() and int(val)) \
-            or isinstance(val, int) and val:
-        return True
-    else:
-        raise TypeError(
-            "Got value %s which could not be interpreted as a boolean"
-            % repr(val))
-
-
 def deduplicate(sequence: list) -> list:
     """Get a deduplicated list, while preserving order."""
     seen = set()
