@@ -119,7 +119,7 @@ def onyo_cat(inventory: Inventory,
     from .assets import validate_yaml
     non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
     if non_asset_paths:
-        raise ValueError("The following paths are not asset files:\n%s",
+        raise ValueError("The following paths are not asset files:\n%s" %
                          "\n".join(non_asset_paths))
     # TODO: "Full" asset validation. Address when fsck is reworked
     assets_valid = validate_yaml(set(paths))
@@ -857,7 +857,7 @@ def onyo_set(inventory: Inventory,
                            if not inventory.repo.is_asset_path(p) and
                            not inventory.repo.is_inventory_dir(p)]
     if non_inventory_paths:
-        raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
+        raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
                          "\n".join(non_inventory_paths))
     filters = set_filters(filter_strings, repo=inventory.repo) if filter_strings else None
     # TODO: We are only interested in paths here. Factor that in for changing get_asset_by_query, when
@@ -972,7 +972,7 @@ def unset(repo: OnyoRepo,
 
     non_inventory_paths = [str(p) for p in paths if not repo.is_asset_path(p) and not repo.is_inventory_dir(p)]
     if non_inventory_paths:
-        raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s",
+        raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
                          "\n".join(non_inventory_paths))
 
     filters = set_filters(filter_strings, repo=repo) if filter_strings else None
