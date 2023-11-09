@@ -1,7 +1,6 @@
 from __future__ import annotations
 import logging
 
-import re
 from pathlib import Path
 from typing import Generator, Iterable, Optional, Set
 
@@ -88,26 +87,6 @@ def validate_yaml(asset_files: Set[Path]) -> bool:
         ui.error('The following files fail YAML validation:\n{}'.format(
             '\n'.join(invalid_yaml)))
 
-        return False
-
-    return True
-
-
-def valid_asset_name(asset_file: Path) -> bool:
-    """
-    Verify that an asset name complies with the name scheme:
-    <type>_<make>_<model>.<serial>
-    Where the fields type, make, and model do not allow '.' or '_', serial
-    permits all characters, and no field can be empty.
-
-    Returns True for valid asset names, and False if invalid.
-    """
-    asset_file = Path(asset_file)
-
-    try:
-        re.findall(r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', asset_file.name)[0]
-    except (ValueError, IndexError):
-        ui.log(f"'{asset_file.name}' must be in the format '<type>_<make>_<model>.<serial>'")
         return False
 
     return True
