@@ -1,6 +1,4 @@
 import pytest
-from unittest import mock
-from pathlib import Path
 
 from onyo.lib import Filter, OnyoInvalidFilterError
 
@@ -12,33 +10,53 @@ def test_filter(filt: str) -> None:
     post-initialization behavior
     """
 
-    def read_asset_mock(asset: Path):
-        if asset.name == 'laptop_make_model.1':
-            return {'key': 'value'}
-        elif asset.name == 'monitor_make_model.2':
-            return {'foo': 'bar'}
-        elif asset.name == 'headphones_make_model.3':
-            return {}
-        elif asset.name == 'wheelchair_make_model.4':
-            return {'foo': None}
-        elif asset.name == 'wheelchair_make_model.4':
-            return {'foo': ''}
-
-    with mock.patch("onyo.lib.utils.get_asset_content", read_asset_mock):
-        f = Filter(filt)
-        assert f.key == filt.split('=', 1)[0]
-        assert f.value == filt.split('=', 1)[1]
-        assert f.is_pseudo if filt.split('=', 1)[0] in f._pseudo_keys \
-            else not f.is_pseudo
-        assert f.match(Path('laptop_make_model.1'))
-        assert not f.match(Path('monitor_make_model.2'))
-
-        if filt.split('=', 1)[1] == '<unset>':
-            assert f.match(Path('headphones_make_model.3'))
-            assert f.match(Path('wheelchair_make_model.4'))
+    def read_asset(name: str) -> dict:
+        if name == 'laptop_make_model.1':
+            return dict(type='laptop',
+                        make='make',
+                        model='model',
+                        serial='1',
+                        key='value')
+        elif name == 'monitor_make_model.2':
+            return dict(type='monitor',
+                        make='make',
+                        model='model',
+                        serial='2',
+                        foo='bar')
+        elif name == 'headphones_make_model.3':
+            return dict(type='headphones',
+                        make='make',
+                        model='model',
+                        serial='3')
+        elif name == 'wheelchair_make_model.4':
+            return dict(type='wheelchair',
+                        make='make',
+                        model='model',
+                        serial='4',
+                        foo=None)
+        elif name == 'wheelchair_make_model.5':
+            return dict(type='wheelchair',
+                        make='make',
+                        model='model',
+                        serial='5',
+                        foo='')
         else:
-            assert not f.match(Path('headphones_make_model.3'))
-            assert not f.match(Path('wheelchair_make_model.4'))
+            raise ValueError("Unknown asset")
+
+    f = Filter(filt)
+    assert f.key == filt.split('=', 1)[0]
+    assert f.value == filt.split('=', 1)[1]
+    assert f.match(read_asset('laptop_make_model.1'))
+    assert not f.match(read_asset('monitor_make_model.2'))
+
+    if filt.split('=', 1)[1] == '<unset>':
+        assert f.match(read_asset('headphones_make_model.3'))
+        assert f.match(read_asset('wheelchair_make_model.4'))
+        assert f.match(read_asset('wheelchair_make_model.5'))
+    else:
+        assert not f.match(read_asset('headphones_make_model.3'))
+        assert not f.match(read_asset('wheelchair_make_model.4'))
+        assert not f.match(read_asset('wheelchair_make_model.5'))
 
 
 @pytest.mark.parametrize('filt', ['key=<list>', 'key=<dict>'])
@@ -46,21 +64,28 @@ def test_filter_match_type(filt: str) -> None:
     """
     Test filtering by string type (e.g., <list> or <dict>)
     """
-    def read_asset_mock(asset: Path):
-        if asset.name == 'type_make_model.1':
-            return {'key': ['a', 'b', 'c']}
-        elif asset.name == 'type_make_model.2':
-            return {'key': {'a': 'b', 'c': 'd'}}
+    def read_asset(name: str):
+        if name == 'type_make_model.1':
+            return dict(type='type',
+                        make='make',
+                        model='model',
+                        serial='1',
+                        key=['a', 'b', 'c'])
+        elif name == 'type_make_model.2':
+            return dict(type='type',
+                        make='make',
+                        model='model',
+                        serial='2',
+                        key={'a': 'b', 'c': 'd'})
 
-    with mock.patch("onyo.lib.utils.get_asset_content", read_asset_mock):
-        string_type = filt.split('=', 1)[1]
-        f = Filter(filt)
-        if string_type == '<list>':
-            assert f.match(Path('type_make_model.1'))
-            assert not f.match(Path('type_make_model.2'))
-        elif string_type == '<dict>':
-            assert not f.match(Path('type_make_model.1'))
-            assert f.match(Path('type_make_model.2'))
+    string_type = filt.split('=', 1)[1]
+    f = Filter(filt)
+    if string_type == '<list>':
+        assert f.match(read_asset('type_make_model.1'))
+        assert not f.match(read_asset('type_make_model.2'))
+    elif string_type == '<dict>':
+        assert not f.match(read_asset('type_make_model.1'))
+        assert f.match(read_asset('type_make_model.2'))
 
 
 def test_filter_re_match() -> None:
@@ -75,11 +100,8 @@ def test_filter_re_match() -> None:
 def test_filter_invalid(filter_arg: str) -> None:
     """Test whether invalid filters raise the expected exception"""
 
-    def read_asset_mock(asset: Path):
-        return {'foo': 'bar', 'key': 'value and more'}
-    with mock.patch("onyo.lib.utils.get_asset_content", read_asset_mock), \
-            pytest.raises(OnyoInvalidFilterError) as exc:
-        _ = Filter('key')
+    with pytest.raises(OnyoInvalidFilterError) as exc:
+        Filter('key')
 
     assert 'Filters must be formatted as `key=value`' in str(exc.value)
 
