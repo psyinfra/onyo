@@ -431,50 +431,67 @@ class Inventory(object):
         else:
             raise ValueError(f"{path} is not an asset.")
 
-    def get_assets(self):
-        # plural/query/property?
-        # git ls-files?
-        # Redirect to get_assets_by_query (making paths optional)
-        pass
+    def get_assets(self,
+                   paths: Optional[list[Path]] = None,
+                   depth: int = 0) -> Generator:
+        """Yield all assets under `paths` up to `depth` directory levels.
+
+        Generator, because it needs to read file content. This allows to act upon
+        results while they are coming in.
+
+        Parameters
+        ----------
+        paths: list of Path, optional
+          Paths to look for assets under. Defaults to the root of the inventory.
+        depth: int, optional
+          Number of levels to descent into. Must be greater equal 0.
+          If 0, descend recursively without limit. Defaults to 0.
+
+        Returns
+        -------
+        Generator of dict
+           All matching assets in the inventory.
+        """
+        return (self.get_asset(p) for p in self.repo.get_asset_paths(subtrees=paths, depth=depth))
 
     def get_asset_from_template(self, template: str) -> Asset:
         # TODO: Possibly join with get_asset (path optional)
         return self.repo.get_template(template)
 
     def get_assets_by_query(self,
-                            keys: Optional[Set[str]],
-                            paths: Iterable[Path],
-                            depth: Optional[int] = None,
-                            filters: Optional[list[Filter]] = None) -> Generator:
-        # filters + path/depth limit (TODO: turn into filters as well)
+                            paths: Optional[list[Path]] = None,
+                            depth: Optional[int] = 0,
+                            filters: Optional[list[Callable[[dict], bool]]] = None) -> Generator | filter:
+        """Get assets matching paths and filters.
 
-        # Note: This is interested in the key-value pairs of assets, not their paths exactly.
-        #       But tries to not read a file when pseudo keys are considered only.
-        #       This is outdated but also requires adjustment of Filters.
+        Convenience to run the builtin `filter` on all assets retrieved by
+        `self.get(paths, depth)` for each callable in `filters`, thus
+        combining the filters by a logical AND.
 
+        Parameters
+        ----------
+        paths: list of Path, optional
+          Paths to look for assets under. Defaults to the root of
+          the inventory. Passed to `self.get_assets`.
+        depth: int, optional
+          Number of levels to descent into. Must be greater equal 0.
+          If 0, descend recursively without limit. Defaults to 0.
+          Passed to `self.get_assets`.
+        filters: list of Callable, optional
+          Callable suitable for the builtin `filter`, when called on a
+          list of assets (dictionaries).
+
+        Returns
+        -------
+        Generator of dict
+          All assets found underneath `paths` up to `depth` levels,
+          for which all `filters` returned `True`.
         """
-        Get keys from assets matching paths and filters.
-        """
-        # filter assets by path and depth relative to paths
-        asset_paths = self.repo.get_asset_paths(subtrees=paths, depth=depth)
-
+        assets = self.get_assets(paths=paths, depth=depth)
         if filters:
-            # Filters that do not require loading an asset are applied first
-            filters.sort(key=lambda x: x.is_pseudo, reverse=True)
-
             # Remove assets that do not match all filters
             for f in filters:
-                asset_paths[:] = filter(f.match, asset_paths)
-
-        # Obtain keys from remaining assets
-        if keys:
-            assets = ((a, {
-                k: v
-                for k, v in self.get_asset(a).items()
-                if k in keys}) for a in asset_paths)
-        else:
-            assets = ((a, self.get_asset(a)) for a in asset_paths)
-
+                assets = filter(f, assets)
         return assets
 
     def asset_paths_available(self, assets: Asset | list[Asset]) -> None:

@@ -288,7 +288,7 @@ def test_get_depth_error(repo: OnyoRepo) -> None:
     cmd = ['onyo', 'get', '--depth', '-1', '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.stderr
-    assert "-d, --depth must be 0 or larger, not '-1'" in ret.stderr
+    assert "-d, --depth must be greater or equal 0, not '-1'" in ret.stderr
     assert ret.returncode == 1
 
 

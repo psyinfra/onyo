@@ -106,11 +106,17 @@ def set_filters(
     return init_filters
 
 
-def fill_unset(
-        assets: Generator[tuple[Path, dict[str, str]], None, None],
-        keys: list, unset: str = UNSET_VALUE) -> Generator:
-    """
-    If a key is not present for an asset, define it as `unset`.
+def fill_unset(assets: Generator[dict, None, None] | filter, keys: list) -> Generator:
+    """Fill values for missing `keys` in `assets` with `UNSET_VALUE`.
+
+    Helper for the onyo-get command.
+
+    Parameters
+    ----------
+    assets: Generator
+      Asset dictionaries to fill.
+    keys: list of str
+      Keys for which to set `UNSET_VALUE` if not present in an asset.
     """
     unset_keys = {key: unset for key in keys}
     for asset, data in assets:

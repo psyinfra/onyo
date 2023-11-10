@@ -119,6 +119,7 @@ def get_asset_files_by_path(asset_files: list[Path],
     return assets
 
 
+# TODO: Remove! Still used by get and unset. Use Inventory.get_assets_by_query instead.
 def get_assets_by_query(asset_files: list[Path],
                         keys: Optional[Set[str]],
                         paths: Iterable[Path],

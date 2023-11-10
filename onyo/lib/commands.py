@@ -356,6 +356,13 @@ def get(inventory: Inventory,
     Raises
     ------
     """
+
+    # TODO: JSON output? Is this done somewhere?
+    # TODO: ^ Can we "get" a single asset easily and cheaply?
+
+    # TODO: It might be better for python usage, if filters came in as callables (f.match);
+    #       This should enable `match=lambda x: 1 < x < 5` as parameter.
+
     if sort_ascending and sort_descending:
         msg = ('--sort-ascending (-s) and --sort-descending (-S) cannot be '
                'used together')
@@ -381,25 +388,29 @@ def get(inventory: Inventory,
 
     # TODO: This removes duplicates AND returns pseudo-keys if `keys` is empty. Latter should be done by query.
     #       Former superfluous - it's passed to query as a set anyways.
-    keys = sanitize_keys(keys, defaults=PSEUDO_KEYS)
+    # TODO: Keeping duplicate keys could be interpreted as 'AND': two criteria for that key
+    keys = sanitize_keys(keys, defaults=inventory.repo.get_required_asset_keys())
 
     filters = set_filters(
         filter_strings, repo=inventory.repo,
         rich=not machine_readable) if filter_strings else None
 
+    # TODO: check git subtree for this  -> part of inventory.get_assets_by_query
     # TODO: This is once more convoluted. path limitation should be its own thing, not integrated in the query
     #       Alternatively: path limiting could become just a filter. Implementation-wise that's easy, once pseudo-keys
     #       are properly delivered by an Asset class and the path pseudo-key is implemented.
     #       - This suggests a generic filter_assets method (for an Inventory)
     #       - Gets filters, possibly arbitrary callables (see filter(callable, list) in get_assets_by_query)
     #       - Check usecases for whether that can cover all the queries
-    results = get_assets_by_query(inventory.repo.asset_paths,
-                                  keys=set(keys),
-                                  paths=paths,
-                                  depth=depth,
-                                  filters=filters)
+    results = inventory.get_assets_by_query(paths=paths,
+                                            depth=depth,
+                                            filters=[f.match for f in filters])
     # TODO: Move this inside query. A returned asset (-dict) should be filled accordingly already.
     #       See TODO for UNSET_VALUE definition.
+    #       -> NOPE. This is for output!
+
+    # TODO: filter keys for output
+
     results = fill_unset(results, keys, UNSET_VALUE)
 
     # TODO: use `natsort` package.
@@ -844,6 +855,7 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true.
     """
+    # TODO: Change to take callables as filters and move filter evaluation to CLI layer.
     if not paths:
         paths = [Path.cwd()]
 
@@ -859,16 +871,12 @@ def onyo_set(inventory: Inventory,
     if non_inventory_paths:
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
                          "\n".join(non_inventory_paths))
-    filters = set_filters(filter_strings, repo=inventory.repo) if filter_strings else None
-    # TODO: We are only interested in paths here. Factor that in for changing get_asset_by_query, when
-    #       rewriting `onyo get`.
-    asset_paths_to_set = [p for p, _ in inventory.get_assets_by_query(keys=None,
-                                                                      paths=paths,
-                                                                      depth=depth,
-                                                                      filters=filters)]
+    filters = [f.match for f in set_filters(filter_strings, repo=inventory.repo)] if filter_strings else None
+    assets = inventory.get_assets_by_query(paths=paths,
+                                           depth=depth,
+                                           filters=filters)
 
-    for path in asset_paths_to_set:
-        asset = inventory.get_asset(path)
+    for asset in assets:
         new_content = copy.deepcopy(asset)
         new_content.update(keys)
         for k in NEW_PSEUDO_KEYS:

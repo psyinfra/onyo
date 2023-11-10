@@ -453,15 +453,25 @@ class OnyoRepo(object):
 
     def get_asset_paths(self,
                         subtrees: Optional[Iterable[Path]] = None,
-                        depth: Optional[int] = None) -> List[Path]:
+                        depth: int = 0) -> List[Path]:
+        """Select all assets in the repository that are relative to the given
+        `subtrees` descending at most `depth` directories.
 
-        # TODO: Adjust docstring
-        """Check and normalize a list of paths. Select all assets in the
-        repository that are relative to the given `paths` descending at most
-        `depth` directories. A `depth` of 0 or `None` descends without a limit.
+        Parameters
+        ----------
+        subtrees: Iterable of Path, optional
+          Paths to look for assets under. Defaults to the root of the inventory.
+        depth: int, optional
+          Number of levels to descent into. Must be greater equal 0.
+          If 0, descend recursively without limit. Defaults to 0.
+
+        Returns
+        -------
+          list of Path
+            Paths to all matching assets in the repository.
         """
-        if depth and depth < 0:
-            raise ValueError(f"depth values must be positive, but is {depth}.")
+        if depth < 0:
+            raise ValueError(f"depth must be greater or equal 0, but is '{depth}'")
 
         files = self.git.get_subtrees(subtrees)
         if not subtrees:

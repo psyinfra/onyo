@@ -427,7 +427,7 @@ def test_unset_depth_flag(repo: OnyoRepo) -> None:
     assert ret.stdout.count(f"-{key}") == 1
     assert "laptop_macbook_pro.0" in ret.stdout
     assert "dir1/laptop_macbook_pro.1" not in ret.stdout
-    assert "--depth must be bigger than 0" not in ret.stderr
+    assert "depth must be greater or equal 0" not in ret.stderr
     assert ret.returncode == 0
     fsck(repo)
 
