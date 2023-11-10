@@ -12,8 +12,7 @@ from rich.table import Table
 
 from onyo.lib.ui import ui
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
-from onyo.lib.assets import PSEUDO_KEYS, get_assets_by_query
-from onyo.lib.command_utils import sanitize_keys, set_filters, \
+from onyo.lib.command_utils import sanitize_keys, \
     fill_unset, natural_sort
 from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
 from onyo.lib.filters import UNSET_VALUE
@@ -345,7 +344,7 @@ def get(inventory: Inventory,
         paths: Optional[list[Path]],
         depth: int,
         machine_readable: bool,
-        filter_strings: list[str],
+        filters: Optional[list[Callable[[dict], bool]]],
         keys: Optional[list[str]]) -> None:
     """Query the repository to get information from assets.
 
@@ -391,10 +390,6 @@ def get(inventory: Inventory,
     # TODO: Keeping duplicate keys could be interpreted as 'AND': two criteria for that key
     keys = sanitize_keys(keys, defaults=inventory.repo.get_required_asset_keys())
 
-    filters = set_filters(
-        filter_strings, repo=inventory.repo,
-        rich=not machine_readable) if filter_strings else None
-
     # TODO: check git subtree for this  -> part of inventory.get_assets_by_query
     # TODO: This is once more convoluted. path limitation should be its own thing, not integrated in the query
     #       Alternatively: path limiting could become just a filter. Implementation-wise that's easy, once pseudo-keys
@@ -404,7 +399,7 @@ def get(inventory: Inventory,
     #       - Check usecases for whether that can cover all the queries
     results = inventory.get_assets_by_query(paths=paths,
                                             depth=depth,
-                                            filters=[f.match for f in filters])
+                                            filters=filters)
     # TODO: Move this inside query. A returned asset (-dict) should be filled accordingly already.
     #       See TODO for UNSET_VALUE definition.
     #       -> NOPE. This is for output!
@@ -809,11 +804,11 @@ def onyo_rm(inventory: Inventory,
 
 
 def onyo_set(inventory: Inventory,
-             paths: Optional[list[Path]],
              keys: Dict[str, str | int | float],
-             filter_strings: list[str],
-             rename: bool,
-             depth: int,
+             paths: Optional[list[Path]] = None,
+             filters: Optional[list[Callable[[dict], bool]]] = None,
+             rename: bool = False,
+             depth: int = 0,
              message: Optional[str] = None) -> Optional[str]:
     """Set key-value pairs of assets, and change asset names.
 
@@ -821,31 +816,25 @@ def onyo_set(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to set key/values for assets.
-
     paths: Path or list of Path, optional
         Paths to assets or directories for which to set key-value pairs.
         If paths are directories, the values will be set recursively in assets
         under the specified path.
         If no paths are specified, CWD is used as default.
-
     keys: dict
         Key-value pairs that will be set in assets. If keys already exist in an
         asset their value will be overwritten, if they do not exist the values
         are added.
         If keys are specified which appear in asset names the rename option is
         needed and changes the file names.
-
-    filter_strings: list of str
+    filters: list of Callable
         TODO: Understand filtering. This might still be refactored.
-
     rename: bool
         Whether to allow changing of keys that are part of the asset name.
         If False, such a change raises a `ValueError`.
-
     depth: int
         Depth limit of recursion if a `path` is a directory.
         0 means no limit and is the default.
-
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
@@ -855,9 +844,7 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true.
     """
-    # TODO: Change to take callables as filters and move filter evaluation to CLI layer.
-    if not paths:
-        paths = [Path.cwd()]
+    paths = paths or []
 
     if not rename and any(k in inventory.repo.get_required_asset_keys() for k in keys.keys()):
         raise ValueError("Can't change required keys without --rename.")
@@ -871,7 +858,6 @@ def onyo_set(inventory: Inventory,
     if non_inventory_paths:
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
                          "\n".join(non_inventory_paths))
-    filters = [f.match for f in set_filters(filter_strings, repo=inventory.repo)] if filter_strings else None
     assets = inventory.get_assets_by_query(paths=paths,
                                            depth=depth,
                                            filters=filters)
@@ -939,10 +925,10 @@ def onyo_tree(inventory: Inventory,
     ui.print(ret.stdout)
 
 
-def unset(repo: OnyoRepo,
+def unset(inventory: Inventory,
           paths: Optional[Iterable[Path]],
           keys: list[str],
-          filter_strings: list[str],
+          filters: Optional[list[Callable[[dict], bool]]],
           depth: Optional[int],
           message: Optional[str]) -> None:
     """Remove keys from assets.
@@ -978,17 +964,17 @@ def unset(repo: OnyoRepo,
     if not paths:
         paths = [Path.cwd()]
 
-    non_inventory_paths = [str(p) for p in paths if not repo.is_asset_path(p) and not repo.is_inventory_dir(p)]
+    non_inventory_paths = [str(p) for p in paths
+                           if not inventory.repo.is_asset_path(p) and
+                           not inventory.repo.is_inventory_dir(p)]
     if non_inventory_paths:
         raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
                          "\n".join(non_inventory_paths))
 
-    filters = set_filters(filter_strings, repo=repo) if filter_strings else None
-    paths = get_assets_by_query(
-        repo.asset_paths, keys=None, paths=paths, depth=depth, filters=filters)
+    paths = inventory.get_assets_by_query(paths=paths, depth=depth, filters=filters)
     paths = [a[0] for a in paths]
 
-    modifications = ut_unset(repo, paths, keys, depth)
+    modifications = ut_unset(inventory.repo, paths, keys, depth)
 
     diffs = [m[2] for m in modifications if m[2] != []]
     # display changes
@@ -1010,18 +996,18 @@ def unset(repo: OnyoRepo,
                 to_commit.append(m[0])
                 if not message:
                     operation_paths = sorted(deduplicate(
-                        [p.relative_to(repo.git.root) for p in to_commit]))
+                        [p.relative_to(inventory.root) for p in to_commit]))
                     # TODO: change after refactoring to:
                     # operation_paths = [
                     #    op.operands[0].get("path")
                     #    for op in inventory.operations
                     #    if op.operator == OPERATIONS_MAPPING['modify_assets']]
-                    message = repo.generate_commit_message(
+                    message = inventory.repo.generate_commit_message(
                         format_string="unset [{len}] ({keys}): {operation_paths}",
                         len=len(operation_paths),
                         keys=keys,
                         operation_paths=operation_paths)
-                repo.git.stage_and_commit(paths=to_commit,
+                inventory.repo.git.stage_and_commit(paths=to_commit,
                                           message=message)
             return
     ui.print("No assets updated.")

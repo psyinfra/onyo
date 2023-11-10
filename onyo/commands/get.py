@@ -5,6 +5,7 @@ from pathlib import Path
 from onyo import OnyoRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.commands import get as get_cmd
+from onyo.lib.command_utils import set_filters
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import shared_arg_depth, shared_arg_filter
 
@@ -74,11 +75,16 @@ def get(args: argparse.Namespace) -> None:
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 
     paths = [Path(p).resolve() for p in args.path] if args.path else None
+    # TODO: set filters wants machine.readable!
+    filters = [f.match for f in set_filters(args.filter, repo=inventory.repo)] if args.filter else None
     get_cmd(inventory,
             args.sort_ascending,
             args.sort_descending,
             paths,
             args.depth,
             args.machine_readable,
-            args.filter,
+            # Type annotation for callables as filters, somehow
+            # doesn't work with the bound method `Filter.match`.
+            # Not clear, what's the problem.
+            filters,  # pyre-ignore[6]
             args.keys)

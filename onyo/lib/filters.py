@@ -3,12 +3,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from onyo.lib.consts import UNSET_VALUE
 from onyo.lib.exceptions import OnyoInvalidFilterError
-
-
-# TODO: Move this to a place specifically meant for defaults, along with
-#       other defaults like <list>, <dict>, and potentially <none> or <null>
-UNSET_VALUE = '<unset>'
 
 
 def asset_name_to_keys(path: Path, pseudo_keys: list[str]) -> dict[str, str]:

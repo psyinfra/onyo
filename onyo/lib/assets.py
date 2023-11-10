@@ -2,12 +2,11 @@ from __future__ import annotations
 import logging
 
 from pathlib import Path
-from typing import Generator, Iterable, Optional, Set
+from typing import Iterable, Optional, Set
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from onyo.lib.ui import ui
-from onyo.lib.filters import Filter
 from onyo.lib.utils import get_asset_content
 
 log: logging.Logger = logging.getLogger('onyo.assets')
@@ -117,45 +116,6 @@ def get_asset_files_by_path(asset_files: list[Path],
         raise ValueError('No assets selected.')
 
     return assets
-
-
-# TODO: Remove! Still used by get and unset. Use Inventory.get_assets_by_query instead.
-def get_assets_by_query(asset_files: list[Path],
-                        keys: Optional[Set[str]],
-                        paths: Iterable[Path],
-                        depth: Optional[int] = None,
-                        filters: Optional[list[Filter]] = None) -> Generator:
-    """
-    Get keys from assets matching paths and filters.
-    """
-    from .filters import asset_name_to_keys
-    # Note: This is interested in the key-value pairs of assets, not their paths exactly.
-    #       But tries to not read a file when pseudo keys are considered only
-
-    # filter assets by path and depth relative to paths
-    assets = get_asset_files_by_path(asset_files, paths, depth) or []
-
-    if filters:
-        # Filters that do not require loading an asset are applied first
-        filters.sort(key=lambda x: x.is_pseudo, reverse=True)
-
-        # Remove assets that do not match all filters
-        for f in filters:
-            assets[:] = filter(f.match, assets)
-
-    # Obtain keys from remaining assets
-    if keys:
-        assets = ((a, {
-            k: v
-            for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()
-            if k in keys}) for a in assets)
-    else:
-        assets = ((a, {
-            k: v
-            for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()}) for a in assets)
-
-    return assets
-
 
 # The idea of an Asset class is currently abandoned. If not re-introduced, can go entirely.
 # It would, however, be a dict-like in any case (prob. derived from UserDict, though)

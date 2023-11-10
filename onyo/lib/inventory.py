@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
-from typing import Generator, Iterable, Optional, Set
+from typing import Generator, Optional
 from dataclasses import dataclass
 from typing import Callable
 from functools import partial
 
 from onyo.lib.assets import Asset
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.filters import Filter
 from onyo.lib.executors import (
     exec_new_assets,
     exec_new_directories,

@@ -2,8 +2,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.inventory import Inventory
+from onyo.lib.filters import Filter
 from onyo.lib.commands import onyo_set
 from onyo.argparse_helpers import path, StoreKeyValuePairs
 from onyo.shared_arguments import (
@@ -82,10 +83,14 @@ def set(args: argparse.Namespace) -> None:
     #       allow for key duplication (and can tell which keys are affected)
     if len(args.keys) > 1:
         raise ValueError("Keys must not be given multiple times.")
+    filters = [Filter(f).match for f in args.filter] if args.filter else None
     onyo_set(inventory=inventory,
              paths=paths,
              keys=args.keys[0],
-             filter_strings=args.filter,
+             # Type annotation for callables as filters, somehow
+             # doesn't work with the bound method `Filter.match`.
+             # Not clear, what's the problem.
+             filters=filters,  # pyre-ignore[6]
              rename=args.rename,
              depth=args.depth,
              message='\n\n'.join(m for m in args.message) if args.message else None)

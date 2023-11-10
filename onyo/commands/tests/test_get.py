@@ -5,10 +5,9 @@ import pytest
 from pathlib import Path
 from typing import Any, Generator, Optional
 
-from onyo.lib.command_utils import sanitize_keys, set_filters, fill_unset, natural_sort
+from onyo.lib.command_utils import sanitize_keys, fill_unset, natural_sort
 from onyo.lib.assets import PSEUDO_KEYS
-from onyo.lib.exceptions import OnyoInvalidFilterError
-from onyo.lib import OnyoRepo, Filter
+from onyo.lib import OnyoRepo
 
 
 pytest.skip("GET not currently implemented", allow_module_level=True)
@@ -461,42 +460,6 @@ def test_fill_unset(
 
     assert filled[1][1]['str'] == unset_value
     assert filled[2][1]['num'] == unset_value
-
-
-@pytest.mark.parametrize('filters', [
-    ['type=laptop'], ['type=laptop', 'make=foo', 'bar=1']])
-def test_set_filters(repo: OnyoRepo, filters: list[str]) -> None:
-    """
-    Test that the `set_filters()` function creates Filter objects with
-    the expected properties
-    """
-    validated_filters = set_filters(filters, repo=repo)
-    filter_dict = {k: v for k, v in [f.split('=', 1) for f in filters]}
-    for f in validated_filters:
-        assert f.value == filter_dict[f.key]
-
-    assert len(validated_filters) == len(filters)
-    assert all(isinstance(f, Filter) for f in validated_filters)
-
-
-@pytest.mark.parametrize(
-    'filters,expected', [
-        (['badfilter'], 'Filters must be formatted as `key=value`'),
-        (['type=laptop', 'type=laptop'], 'Duplicate filter keys: ')])
-@pytest.mark.parametrize('rich', [True, False])
-def test_set_filters_error(
-        capsys, repo: OnyoRepo, filters: list[str], expected: str,
-        rich: bool) -> None:
-    """
-    Test that when invalid filters (i.e., not conforming to the `key=value`
-    format) or duplicate filters are passed to `set_filters()` the
-    appropriate error response is returned.
-    """
-    with pytest.raises((ValueError, OnyoInvalidFilterError)):
-        _ = set_filters(filters, repo=repo, rich=rich)
-
-    captured = capsys.readouterr()
-    assert expected in captured.err
 
 
 def test_sanitize_keys() -> None:

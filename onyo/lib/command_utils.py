@@ -4,7 +4,6 @@ import logging
 import re
 import shutil
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Dict, Generator, Iterable, Optional, Tuple
 
@@ -12,9 +11,7 @@ from rich.console import Console
 
 from .ui import ui
 from .onyo import OnyoRepo
-from .exceptions import OnyoInvalidFilterError
-from .filters import Filter, UNSET_VALUE
-
+from .consts import UNSET_VALUE
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
@@ -70,40 +67,6 @@ def sanitize_keys(k: Optional[list[str]],
     """
     from .utils import deduplicate
     return deduplicate(k) if k else defaults
-
-
-def set_filters(
-        filters: list[str], repo: OnyoRepo, rich: bool = False) -> list[Filter]:
-    """Create filters and check if there are no duplicate filter keys"""
-    # Note: This is part of the get command
-
-    init_filters = []
-    try:
-        init_filters = [Filter(f) for f in filters]
-    except OnyoInvalidFilterError as exc:
-        if rich:
-            console = Console(stderr=True)
-            console.print(f'[red]FAILED[/red] {exc}')
-        else:
-            ui.print(exc, file=sys.stderr)
-        # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
-        #       rendering/printing handled upstairs.
-        raise
-
-    # ensure there are no duplicate filter keys
-    duplicates = [
-        x for x, i in Counter([f.key for f in init_filters]).items() if i > 1]
-    if duplicates:
-        if rich:
-            console = Console(stderr=True)
-            console.print(
-                f'[red]FAILED[/red] Duplicate filter keys: {duplicates}')
-        else:
-            ui.print(f'Duplicate filter keys: {duplicates}', file=sys.stderr)
-        # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
-        #       rendering/printing handled upstairs.
-        raise ValueError
-    return init_filters
 
 
 def fill_unset(assets: Generator[dict, None, None] | filter, keys: list) -> Generator:
