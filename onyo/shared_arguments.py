@@ -8,15 +8,17 @@ shared_arg_depth = dict(
         'Descent up to DEPTH levels into directories specified. DEPTH=0 '
         'descends recursively without limit'))
 
-shared_arg_filter = dict(
-    args=('-f', '--filter'),
-    metavar='FILTER',
+shared_arg_match = dict(
+    args=('-M', '--match'),
+    metavar='MATCH',
     nargs='+',
     type=str,
     default=None,
     help=(
-        'Add a filter to only show assets matching KEY=VALUE. Multiple '
-        'filters, regular expressions, and pseudo-keys can be used.'))
+        "Matching criteria for assets in teh form 'KEY=VALUE',"
+        "where VALUE is a python regular expression. Special values"
+        "supported are '<unset>', '<list>', and '<dict>'."
+        "Pseudo-keys like 'path' can be used."))
 
 shared_arg_message = dict(
     args=('-m', '--message'),

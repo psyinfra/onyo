@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 from typing import Dict, Generator, Iterable, Optional, Tuple
 
-from rich.console import Console
 
 from .ui import ui
 from .onyo import OnyoRepo
@@ -59,54 +58,47 @@ def sanitize_args_config(git_config_args: list[str]) -> list[str]:
     return git_config_args
 
 
-def sanitize_keys(k: Optional[list[str]],
-                  defaults: list) -> list[str]:
-    """
-    Remove duplicates from k while preserving key order and return default
-    (pseudo) keys if k is empty
-    """
-    from .utils import deduplicate
-    return deduplicate(k) if k else defaults
-
-
-def fill_unset(assets: Generator[dict, None, None] | filter, keys: list) -> Generator:
+def fill_unset(assets: Generator[dict, None, None] | filter,
+               keys: list[str]) -> Generator[dict, None, None]:
     """Fill values for missing `keys` in `assets` with `UNSET_VALUE`.
 
     Helper for the onyo-get command.
 
     Parameters
     ----------
-    assets: Generator
+    assets: Generator of dict
       Asset dictionaries to fill.
     keys: list of str
       Keys for which to set `UNSET_VALUE` if not present in an asset.
     """
-    unset_keys = {key: unset for key in keys}
-    for asset, data in assets:
-        yield asset, unset_keys | data
+    for asset in assets:
+        yield {k: UNSET_VALUE for k in keys} | asset
 
 
-def natural_sort(
-        assets: list[tuple[Path, dict[str, str]]],
-        keys: Optional[list] = None, reverse: bool = False) -> list:
+def natural_sort(assets: list[dict],
+                 keys: Optional[list] = None,
+                 reverse: bool = False) -> list[dict]:
+    """Sort an asset list by a given list of `keys`.
+
+    Parameters
+    ----------
+    assets: list of dict
+      Assets to sort.
+    keys: list of str
+      Keys to sort `assets` by. Default: ['path'].
+    reverse: bool
+      Whether to sort in reverse order.
     """
-    Sort the output of `Repo.get()` by a given list of `keys` or by the path
-    of the `assets` if no `keys` are provided.
-    """
-    if keys:
-        for key in reversed(keys):
-            assets = sorted(
-                assets,
-                key=lambda x: [
-                    int(s) if s.isdigit() else s.lower() for s in
-                    re.split('([0-9]+)', str(x[1][key]))],
-                reverse=reverse)
-    else:
+    keys = keys or ['path']
+
+    def sort_order(x, k):
+        return [int(s) if s.isdigit() else s.lower()
+                for s in re.split('([0-9]+)', str(x[k]))]
+
+    for key in reversed(keys):
         assets = sorted(
             assets,
-            key=lambda x: [
-                int(s) if s.isdigit() else s.lower()
-                for s in re.split('([0-9]+)', str(x[0]))],
+            key=lambda x: sort_order(x, key),
             reverse=reverse)
 
     return assets

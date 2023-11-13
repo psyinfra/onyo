@@ -144,7 +144,10 @@ class Inventory(object):
                     operations_record[k].extend(v)
 
         for title, snippets in operations_record.items():
-            commit_msg += title + ''.join(sorted(line for line in deduplicate(snippets)))
+            # Note, for pyre exception: `deduplicate` returns None,
+            # if None was passed to it. This should never happen here.
+            commit_msg += title + ''.join(
+                sorted(line for line in deduplicate(snippets)))  # pyre-ignore[16]
 
         # TODO: Actually: staging (only new) should be done in execute. committing is then unified
         self.repo.git.stage_and_commit(set(paths_to_commit + paths_to_stage), commit_msg)
@@ -432,7 +435,7 @@ class Inventory(object):
 
     def get_assets(self,
                    paths: Optional[list[Path]] = None,
-                   depth: int = 0) -> Generator:
+                   depth: int = 0) -> Generator[dict, None, None]:
         """Yield all assets under `paths` up to `depth` directory levels.
 
         Generator, because it needs to read file content. This allows to act upon
@@ -460,7 +463,7 @@ class Inventory(object):
     def get_assets_by_query(self,
                             paths: Optional[list[Path]] = None,
                             depth: Optional[int] = 0,
-                            filters: Optional[list[Callable[[dict], bool]]] = None) -> Generator | filter:
+                            match: Optional[list[Callable[[dict], bool]]] = None) -> Generator | filter:
         """Get assets matching paths and filters.
 
         Convenience to run the builtin `filter` on all assets retrieved by
@@ -473,10 +476,10 @@ class Inventory(object):
           Paths to look for assets under. Defaults to the root of
           the inventory. Passed to `self.get_assets`.
         depth: int, optional
-          Number of levels to descent into. Must be greater equal 0.
+          Number of levels to descent into. Must be greater or equal 0.
           If 0, descend recursively without limit. Defaults to 0.
           Passed to `self.get_assets`.
-        filters: list of Callable, optional
+        match: list of Callable, optional
           Callable suitable for the builtin `filter`, when called on a
           list of assets (dictionaries).
 
@@ -486,10 +489,11 @@ class Inventory(object):
           All assets found underneath `paths` up to `depth` levels,
           for which all `filters` returned `True`.
         """
+        depth = 0 if depth is None else depth
         assets = self.get_assets(paths=paths, depth=depth)
-        if filters:
+        if match:
             # Remove assets that do not match all filters
-            for f in filters:
+            for f in match:
                 assets = filter(f, assets)
         return assets
 

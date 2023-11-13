@@ -117,6 +117,7 @@ def get_asset_files_by_path(asset_files: list[Path],
 
     return assets
 
+
 # The idea of an Asset class is currently abandoned. If not re-introduced, can go entirely.
 # It would, however, be a dict-like in any case (prob. derived from UserDict, though)
 Asset = dict

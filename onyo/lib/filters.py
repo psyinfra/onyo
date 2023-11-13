@@ -1,17 +1,9 @@
 from __future__ import annotations
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from onyo.lib.consts import UNSET_VALUE
 from onyo.lib.exceptions import OnyoInvalidFilterError
-
-
-def asset_name_to_keys(path: Path, pseudo_keys: list[str]) -> dict[str, str]:
-    """Convert an asset name to pseudo key values"""
-    return dict(zip(
-        pseudo_keys,
-        re.findall(r'(^[^._]+?)_([^._]+?)_([^._]+?)\.(.+)', path.name)[0]))
 
 
 @dataclass

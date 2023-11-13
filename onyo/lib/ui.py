@@ -4,8 +4,20 @@ import sys
 import traceback
 
 
+from rich.console import Console
+
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
+
+
+# TODO:
+# - Logging: Provide Formatter/Handler raise default level and maybe target file (~/.onyo/logs/  (config))?
+#          logging errors -> print (rich) + actual log? Nope. Do both from within code - > different phrasing/details
+#          special log_exception? Log when raised or when catched? (we have the traceback!)
+# - How does the quiet flag behave (with and w/o to-be- introduced non-interactive)? What about "result" outputs that
+# could be piped? Does it suppress everything but these? How to distinguish? Commands could return (or yield) a
+# result object.
+# - main.py could tell `UI` that we are in CLI (Paths -> render relative to CWD, otherwise absolute)
 
 
 class UI(object):
@@ -60,6 +72,9 @@ class UI(object):
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
+
+        self.stderr_console = Console(stderr=True)
+        self.stdout_console = Console(stderr=False)
 
     def set_debug(self,
                   debug: bool = False) -> None:
@@ -196,6 +211,24 @@ class UI(object):
                 return True
             elif answer in ['n', 'N', 'no']:
                 return False
+
+    def rich_print(self, *args, **kwargs) -> None:
+        """Refactoring helper to print via the `rich` package.
+
+        Proxy for `rich.Console.print`.
+        Takes `stderr: bool` option to use a stderr `Console`
+        instead of a stdout Console.
+
+        Notes
+        -----
+        This is to be fused with the regular `UI.print`, `UI.error`,
+        etc. so that `UI` decides whether and how to use `rich`.
+        The stderr option should consequently be replaced by `print`'s
+        standard `file` option.
+        """
+        stderr = kwargs.pop('stderr') if 'stderr' in kwargs.keys() else False
+        console = self.stderr_console if stderr else self.stdout_console
+        console.print(*args, **kwargs)
 
 
 # create a shared UI object to import by classes/commands

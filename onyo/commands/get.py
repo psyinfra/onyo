@@ -4,10 +4,10 @@ from pathlib import Path
 
 from onyo import OnyoRepo
 from onyo.lib.inventory import Inventory
-from onyo.lib.commands import get as get_cmd
-from onyo.lib.command_utils import set_filters
+from onyo.lib.filters import Filter
+from onyo.lib.commands import onyo_get
 from onyo.argparse_helpers import path
-from onyo.shared_arguments import shared_arg_depth, shared_arg_filter
+from onyo.shared_arguments import shared_arg_depth, shared_arg_match
 
 if TYPE_CHECKING:
     import argparse
@@ -48,7 +48,7 @@ args_get = {
         help='Sort output in descending order (excludes --sort-ascending)'),
 
     'depth': shared_arg_depth,
-    'filter': shared_arg_filter
+    'match': shared_arg_match
 }
 
 
@@ -57,34 +57,35 @@ def get(args: argparse.Namespace) -> None:
     Return matching ``ASSET``\(s) and values corresponding to the requested
     ``KEY``\(s).
 
-    If no key(s) are given, the pseudo-keys are returned instead.
-    If no ``asset`` or ``directory`` is specified, the current working directory
-    is used.
+    If no key(s) are given, the required keys used for asset names are returned
+    instead. If no ``asset`` or ``directory`` is specified, the current working
+    directory is used.
 
-    Filters can make use of pseudo-keys (i.e., keys for which the values are
-    only stored in the asset name). Values of the dictionary or list type, as
-    well as assets missing a value can be referenced as '<dict>', '<list>',
-    or '<unset>' instead of their contents, respectively. If a requested key
-    does not exist, its output is displayed as '<unset>'.
+    Filters can make use of pseudo-keys (i.e., properties of assets, that are
+    provided by onyo rather than the asset file, like 'path'). Values of the
+    dictionary or list type, as well as assets missing a value can be referenced
+    as '<dict>', '<list>', or '<unset>' instead of their contents, respectively.
+    If a requested key does not exist, its output is displayed as '<unset>'.
 
     The ``value`` of filters can be a string or a Python regular expression.
 
     By default, the returned assets are sorted by their paths.
     """
-
+    if args.sort_ascending and args.sort_descending:
+        raise ValueError('--sort-ascending (-s) and --sort-descending (-S) cannot be '
+                         'used together')
+    sort = 'descending' if args.sort_descending else 'ascending'
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 
-    paths = [Path(p).resolve() for p in args.path] if args.path else None
-    # TODO: set filters wants machine.readable!
-    filters = [f.match for f in set_filters(args.filter, repo=inventory.repo)] if args.filter else None
-    get_cmd(inventory,
-            args.sort_ascending,
-            args.sort_descending,
-            paths,
-            args.depth,
-            args.machine_readable,
-            # Type annotation for callables as filters, somehow
-            # doesn't work with the bound method `Filter.match`.
-            # Not clear, what's the problem.
-            filters,  # pyre-ignore[6]
-            args.keys)
+    paths = [Path(p).resolve() for p in args.path] if args.path else [Path.cwd()]
+    filters = [Filter(f).match for f in args.match] if args.match else None
+    onyo_get(inventory=inventory,
+             sort=sort,
+             paths=paths,
+             depth=args.depth,
+             machine_readable=args.machine_readable,
+             # Type annotation for callables as filters, somehow
+             # doesn't work with the bound method `Filter.match`.
+             # Not clear, what's the problem.
+             match=filters,  # pyre-ignore[6]
+             keys=args.keys)
