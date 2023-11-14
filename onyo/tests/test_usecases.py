@@ -5,23 +5,32 @@ from pathlib import Path
 from onyo.lib.onyo import OnyoRepo
 
 
-prefilled_assets = [["warehouse/monitor_dell_PH123.86JZho",
-                     "display: 22.0\nfzj_inventory: '45FZ18'\n"],
-                    ["warehouse/monitor_dell_NoIdea.S0M3",
-                     "display: 27.0\n"],
-                    ["warehouse/laptop_apple_macbook.oiw629",
-                     "RAM: '8GB'\ndisplay: 13.3\nUSB_A: 2\nfzj_inventory: '28FZ34'\nbuild-date: '20160501'\n"],
-                    ["warehouse/laptop_apple_macbook.9r32he",
-                     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '28FJ34'\nbuild-date: '20180501'\n"],
-                    ["somegroup/userA/laptop_apple_macbook.9r5qlk",
-                     "RAM: '8GB'\ndisplay: 15.0\nhostname: 'first.host'\n"],
-                    ["somegroup/userB/laptop_lenovo_thinkpad.owh8e2",
-                     "RAM: '8GB'\ndisplay: 14.6\nfzj_inventory: '13BH9F'\n"],
-                    ["warehouse/laptop_lenovo_thinkpad.iu7h6d",
-                     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '63AH90'\n"],
-                    ["warehouse/laptop_microsoft_surface.oq782j",
-                     "RAM: '8GB'\ndisplay: 12.4\nfzj_inventory: '73CDA45'\ntouchscreen: 'yes'\n"],
-                    ]
+prefilled_assets = [
+    ['warehouse/monitor_dell_PH123.86JZho',
+     "type: 'monitor'\nmake: 'dell'\nmodel: 'PH123'\nserial: '86JZho'\n"
+     "display: 22.0\nfzj_inventory: '45FZ18'\n"],
+    ['warehouse/monitor_dell_NoIdea.S0M3',
+     "type: 'monitor'\nmake: 'dell'\nmodel: 'NoIdea'\nserial: 'S0M3'\n"
+     "display: 27.0\n"],
+    ['warehouse/laptop_apple_macbook.oiw629',
+     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: 'oiw629'\n"
+     "RAM: '8GB'\ndisplay: 13.3\nUSB_A: 2\nfzj_inventory: '28FZ34'\nbuild-date: '20160501'\n"],
+    ['warehouse/laptop_apple_macbook.9r32he',
+     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: '9r32he'\n"
+     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '28FJ34'\nbuild-date: '20180501'\n"],
+    ['somegroup/userA/laptop_apple_macbook.9r5qlk',
+     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: '9r5qlk'\n"
+     "RAM: '8GB'\ndisplay: 15.0\nhostname: 'first.host'\n"],
+    ['somegroup/userB/laptop_lenovo_thinkpad.owh8e2',
+     "type: 'laptop'\nmake: 'lenovo'\nmodel: 'thinkpad'\nserial: 'owh8e2'\n"
+     "RAM: '8GB'\ndisplay: 14.6\nfzj_inventory: '13BH9F'\n"],
+    ['warehouse/laptop_lenovo_thinkpad.iu7h6d',
+     "type: 'laptop'\nmake: 'lenovo'\nmodel: 'thinkpad'\nserial: 'iu7h6d'\n"
+     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '63AH90'\n"],
+    ['warehouse/laptop_microsoft_surface.oq782j',
+     "type: 'laptop'\nmake: 'microsoft'\nmodel: 'surface'\nserial: 'oq782j'\n"
+     "RAM: '8GB'\ndisplay: 12.4\nfzj_inventory: '73CDA45'\ntouchscreen: 'yes'\n"]]
+
 preset_dirs = ['retired', 'lost']
 
 
