@@ -488,7 +488,7 @@ def test_error_unset_name_fields(repo: OnyoRepo, asset: str, name_field: list[st
 
     # verify output
     assert not ret.stdout
-    assert "Can't unset pseudo keys (name fields are required)." in ret.stderr
+    assert "Can't unset keys used in asset name." in ret.stderr
     assert ret.returncode == 1
 
     # verify state of repo is clean

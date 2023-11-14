@@ -23,7 +23,7 @@ args_set = {
         default=False,
         action='store_true',
         help=(
-            'Permit assigning values to pseudo-keys that would result in the '
+            'Permit assigning values to keys that would result in the '
             'asset(s) being renamed.')),
 
     'keys': dict(

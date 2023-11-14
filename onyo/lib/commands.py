@@ -15,7 +15,7 @@ from onyo.lib.command_utils import fill_unset, natural_sort
 from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import deduplicate, write_asset_file
-from onyo.lib.consts import NEW_PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -60,7 +60,7 @@ def fsck(repo: OnyoRepo,
     """
 
     from functools import partial
-    from .assets import has_unique_names, validate_yaml, validate_assets, contains_no_pseudo_keys
+    from .assets import has_unique_names, validate_yaml, validate_assets, contains_no_name_keys
 
     all_tests = {
         "clean-tree": repo.git.is_clean_worktree,
@@ -68,7 +68,7 @@ def fsck(repo: OnyoRepo,
         "asset-unique": partial(has_unique_names, repo.asset_paths),
         "asset-yaml": partial(validate_yaml, {repo.git.root / a for a in repo.asset_paths}),
         "asset-validity": partial(validate_assets, repo.asset_paths),
-        "pseudo-keys": partial(contains_no_pseudo_keys, repo.asset_paths)
+        "pseudo-keys": partial(contains_no_name_keys, repo.asset_paths)
     }
     if tests:
         # only known tests are accepted
@@ -586,7 +586,7 @@ def onyo_new(inventory: Inventory,
     If only one value pair key: Update tsv assets with them.
     If `keys` and tsv conflict: raise, there's no priority overwriting or something.
     --path and `directory` reserved key given -> raise, no priority
-    pseudo-keys must not be given -> NEW_PSEUDO_KEYS
+    pseudo-keys must not be given -> PSEUDO_KEYS
 
     TODO: Document special keys (directory, asset dir, template, etc) -> RESERVED_KEYS
     TODO: 'directory' -> relative to inventory root!
@@ -639,7 +639,7 @@ def onyo_new(inventory: Inventory,
     ValueError
         If information is invalid, missing, or contradictory.
     """
-    from onyo.lib.consts import NEW_PSEUDO_KEYS
+    from onyo.lib.consts import PSEUDO_KEYS
     from copy import deepcopy
 
     keys = keys or []
@@ -704,7 +704,7 @@ def onyo_new(inventory: Inventory,
         # default
         path = path or Path.cwd()
 
-    for pseudo_key in NEW_PSEUDO_KEYS:
+    for pseudo_key in PSEUDO_KEYS:
         for d in specs:
             if pseudo_key in d.keys():
                 raise ValueError(f"Pseudo key '{pseudo_key}' must not be specified.")
@@ -845,8 +845,8 @@ def onyo_set(inventory: Inventory,
     """
     paths = paths or []
 
-    if not rename and any(k in inventory.repo.get_required_asset_keys() for k in keys.keys()):
-        raise ValueError("Can't change required keys without --rename.")
+    if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
+        raise ValueError("Can't change asset name keys without --rename.")
     if any(k in RESERVED_KEYS for k in keys.keys()):
         raise ValueError(f"Can't set reserved keys ({', '.join(RESERVED_KEYS)}).")
 
@@ -864,7 +864,7 @@ def onyo_set(inventory: Inventory,
     for asset in assets:
         new_content = copy.deepcopy(asset)
         new_content.update(keys)
-        for k in NEW_PSEUDO_KEYS:
+        for k in PSEUDO_KEYS:
             new_content.pop(k)
         try:
             inventory.modify_asset(asset, new_content)

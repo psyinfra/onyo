@@ -48,8 +48,9 @@ def unset(args: argparse.Namespace) -> None:
     can be used around ``value``, which is necessary when it contains a comma,
     whitespace, etc.
 
-    The ``type``, ``make``, ``model``, and ``serial`` pseudo-keys cannot be
-    changed, to rename a file(s) use ``onyo set --rename``.
+    Keys that are used in asset names as specified in the
+    ``onyo.assets.filename`` configuration cannot be unset.
+    To rename a file(s) use ``onyo set --rename``.
 
     If no ``asset`` or ``directory`` is specified, the current working directory
     is used.

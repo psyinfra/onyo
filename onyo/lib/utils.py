@@ -8,7 +8,7 @@ from typing import Dict, Optional
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from onyo.lib.ui import ui
-from onyo.lib.consts import NEW_PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 
 
 def deduplicate(sequence: Optional[list]) -> Optional[list]:
@@ -74,7 +74,7 @@ def dict_to_yaml(d: Dict[str, float | int | str | Path]) -> str:
     # when `d` is a `ruamel.yaml.comments.CommentedMap`
     # TODO: This implies "dict_to_asset_yaml" instead?! (Or account for pseudo- and reserved keys outside)
     content = copy.deepcopy(d)
-    for k in NEW_PSEUDO_KEYS + RESERVED_KEYS:
+    for k in PSEUDO_KEYS + RESERVED_KEYS:
         if k in content.keys():
             del content[k]
 

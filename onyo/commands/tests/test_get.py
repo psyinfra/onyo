@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Generator, Optional
 
 from onyo.lib.command_utils import fill_unset, natural_sort
-from onyo.lib.assets import PSEUDO_KEYS
 from onyo.lib import OnyoRepo
 
 
@@ -142,7 +141,7 @@ def test_get_all(
     """
     Test `onyo get` with a combination of arguments.
     """
-    keys = keys if keys else PSEUDO_KEYS
+    keys = keys if keys else repo.get_asset_name_keys()
     cmd = ['onyo', 'get', '--path', *paths, '--depth', depth]
     cmd += ['--keys', *keys] if keys else []
     cmd += ['--match', *matches] if matches else []
@@ -192,7 +191,7 @@ def test_get_filter(
     Test that `onyo get --match KEY=VALUE` retrieves the expected
     files.
     """
-    keys = PSEUDO_KEYS + ['num', 'str', 'bool', 'unset']
+    keys = repo.get_asset_name_keys() + ['num', 'str', 'bool', 'unset']
     cmd = ['onyo', 'get', '--keys', *keys, '-H']
     cmd += ['--match', *matches] if matches else []
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -289,9 +288,9 @@ def test_get_keys(
     ret = subprocess.run(cmd, capture_output=True, text=True)
     output = [output.split('\t') for output in ret.stdout.split('\n')][:-1]
 
-    # required keys returned if no keys were specified
+    # Asset name keys returned if no keys were specified
     if not keys:
-        keys = repo.get_required_asset_keys()
+        keys = repo.get_asset_name_keys()
 
     # Get all the key values and make sure they match
     for line in output:

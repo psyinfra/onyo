@@ -26,7 +26,7 @@ args_get = {
         nargs='+',
         help=(
             'Key value(s) to return. Pseudo-keys (information not stored in '
-            'the asset file, e.g. filename) are also available for queries')),
+            'the asset file) are also available for queries')),
 
     'path': dict(
         args=('-p', '--path'),
@@ -57,8 +57,8 @@ def get(args: argparse.Namespace) -> None:
     Return matching ``ASSET``\(s) and values corresponding to the requested
     ``KEY``\(s).
 
-    If no key(s) are given, the required keys used for asset names are returned
-    instead. If no ``asset`` or ``directory`` is specified, the current working
+    If no key(s) are given, the keys used in asset names are returned.
+    If no ``asset`` or ``directory`` is specified, the current working
     directory is used.
 
     Filters can make use of pseudo-keys (i.e., properties of assets, that are

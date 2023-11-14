@@ -105,7 +105,7 @@ class OnyoRepo(object):
         # precedence over a committed setting specific to the inventory repo?
         return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
 
-    def get_required_asset_keys(self) -> list[str]:
+    def get_asset_name_keys(self) -> list[str]:
         """Get a list of keys required for generating asset names
 
         Name generation is configured by a python format string.

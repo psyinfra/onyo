@@ -576,5 +576,12 @@ class Inventory(object):
         """Whether `asset` has an empty value for a required key.
 
         Validation helper.
+
+        Notes
+        -----
+        This is currently considering asset name keys only. However,
+        proper asset validation with ways to declare other keys
+        required is anticipated. This would need to account for those
+        as well.
         """
-        return any(not str(v) for k, v in asset.items() if k in self.repo.get_required_asset_keys())
+        return any(not str(v) for k, v in asset.items() if k in self.repo.get_asset_name_keys())

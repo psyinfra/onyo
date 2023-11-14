@@ -136,14 +136,14 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           depth: Optional[int]) -> list[Tuple[Path, Dict, Iterable]]:
 
-    from .assets import get_asset_files_by_path, PSEUDO_KEYS
+    from .assets import get_asset_files_by_path
     from .utils import get_asset_content
     from .utils import dict_to_yaml
     # set and unset should select assets exactly the same way
     assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
 
-    if any([key in PSEUDO_KEYS for key in keys]):
-        raise ValueError("Can't unset pseudo keys (name fields are required).")
+    if any([key in repo.get_asset_name_keys() for key in keys]):
+        raise ValueError("Can't unset asset name keys.")
 
     modifications = []
     for asset_path in assets_to_unset:
