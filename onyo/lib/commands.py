@@ -455,7 +455,8 @@ def onyo_mkdir(inventory: Inventory,
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
     """
-    for d in deduplicate(dirs):  # explicit duplicates would make auto-generating message subject more complicated ATM
+    for d in deduplicate(dirs):  # pyre-ignore[16]  deduplicate would return None only of `dirs` was None.
+        # explicit duplicates would make auto-generating message subject more complicated ATM
         inventory.add_directory(d)
     if inventory.operations_pending():
         ui.print('The following directories will be created:')
