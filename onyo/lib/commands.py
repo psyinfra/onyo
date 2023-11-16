@@ -142,31 +142,26 @@ def onyo_config(inventory: Inventory,
     ----------
     inventory: Inventory
         The inventory in question.
-
     config_args: list of str
         The options to be passed to the underlying call of ``git config``.
     """
     from onyo.lib.command_utils import sanitize_args_config
     git_config_args = sanitize_args_config(config_args)
 
-    config_file = inventory.repo.dot_onyo / 'config'
-    # NOTE: streaming stdout and stderr directly to the terminal seems to be
-    # non-trivial with "subprocess". Here we capture them separately. They
-    # won't be interwoven, but will be output to the correct destinations.
-    ret = subprocess.run(["git", 'config', '-f', str(config_file)] +
-                         git_config_args, cwd=inventory.repo.git.root,
-                         capture_output=True, text=True, check=True)
+    subprocess.run(["git", 'config', '-f', str(inventory.repo.ONYO_CONFIG)] +
+                   git_config_args, cwd=inventory.repo.git.root, check=True)
 
-    # print any output gathered
-    if ret.stdout:
-        ui.print(ret.stdout, end='')
-    if ret.stderr:
-        ui.print(ret.stderr, file=sys.stderr, end='')
-
-    # commit, if there's anything to commit
-    if inventory.repo.git.files_changed:
-        inventory.repo.git.stage_and_commit(config_file,
-                                            'config: modify repository config')
+    if not any(a.startswith('--get') or a == '--list' for a in git_config_args):
+        # It's a write operation, and we'd want to commit
+        # if there were any changes.
+        try:
+            inventory.repo.git.stage_and_commit(inventory.repo.ONYO_CONFIG,
+                                                'config: modify repository config')
+        except subprocess.CalledProcessError as e:
+            if "no changes added to commit" in e.stdout or "nothing to commit" in e.stdout:
+                ui.print("No changes to commit.")
+                return
+            raise
 
 
 def _edit_asset(inventory: Inventory,
