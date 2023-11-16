@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
-from typing import Generator, Iterable, Optional, Set
+from typing import Generator, Optional
 from dataclasses import dataclass
 from typing import Callable
 from functools import partial
 
 from onyo.lib.assets import Asset
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.filters import Filter
 from onyo.lib.executors import (
     exec_new_assets,
     exec_new_directories,
@@ -145,7 +144,10 @@ class Inventory(object):
                     operations_record[k].extend(v)
 
         for title, snippets in operations_record.items():
-            commit_msg += title + ''.join(sorted(line for line in deduplicate(snippets)))
+            # Note, for pyre exception: `deduplicate` returns None,
+            # if None was passed to it. This should never happen here.
+            commit_msg += title + ''.join(
+                sorted(line for line in deduplicate(snippets)))  # pyre-ignore[16]
 
         # TODO: Actually: staging (only new) should be done in execute. committing is then unified
         self.repo.git.stage_and_commit(set(paths_to_commit + paths_to_stage), commit_msg)
@@ -431,50 +433,68 @@ class Inventory(object):
         else:
             raise ValueError(f"{path} is not an asset.")
 
-    def get_assets(self):
-        # plural/query/property?
-        # git ls-files?
-        # Redirect to get_assets_by_query (making paths optional)
-        pass
+    def get_assets(self,
+                   paths: Optional[list[Path]] = None,
+                   depth: int = 0) -> Generator[dict, None, None]:
+        """Yield all assets under `paths` up to `depth` directory levels.
+
+        Generator, because it needs to read file content. This allows to act upon
+        results while they are coming in.
+
+        Parameters
+        ----------
+        paths: list of Path, optional
+          Paths to look for assets under. Defaults to the root of the inventory.
+        depth: int, optional
+          Number of levels to descent into. Must be greater equal 0.
+          If 0, descend recursively without limit. Defaults to 0.
+
+        Returns
+        -------
+        Generator of dict
+           All matching assets in the inventory.
+        """
+        return (self.get_asset(p) for p in self.repo.get_asset_paths(subtrees=paths, depth=depth))
 
     def get_asset_from_template(self, template: str) -> Asset:
         # TODO: Possibly join with get_asset (path optional)
         return self.repo.get_template(template)
 
     def get_assets_by_query(self,
-                            keys: Optional[Set[str]],
-                            paths: Iterable[Path],
-                            depth: Optional[int] = None,
-                            filters: Optional[list[Filter]] = None) -> Generator:
-        # filters + path/depth limit (TODO: turn into filters as well)
+                            paths: Optional[list[Path]] = None,
+                            depth: Optional[int] = 0,
+                            match: Optional[list[Callable[[dict], bool]]] = None) -> Generator | filter:
+        """Get assets matching paths and filters.
 
-        # Note: This is interested in the key-value pairs of assets, not their paths exactly.
-        #       But tries to not read a file when pseudo keys are considered only.
-        #       This is outdated but also requires adjustment of Filters.
+        Convenience to run the builtin `filter` on all assets retrieved by
+        `self.get(paths, depth)` for each callable in `filters`, thus
+        combining the filters by a logical AND.
 
+        Parameters
+        ----------
+        paths: list of Path, optional
+          Paths to look for assets under. Defaults to the root of
+          the inventory. Passed to `self.get_assets`.
+        depth: int, optional
+          Number of levels to descent into. Must be greater or equal 0.
+          If 0, descend recursively without limit. Defaults to 0.
+          Passed to `self.get_assets`.
+        match: list of Callable, optional
+          Callable suitable for the builtin `filter`, when called on a
+          list of assets (dictionaries).
+
+        Returns
+        -------
+        Generator of dict
+          All assets found underneath `paths` up to `depth` levels,
+          for which all `filters` returned `True`.
         """
-        Get keys from assets matching paths and filters.
-        """
-        # filter assets by path and depth relative to paths
-        asset_paths = self.repo.get_asset_paths(subtrees=paths, depth=depth)
-
-        if filters:
-            # Filters that do not require loading an asset are applied first
-            filters.sort(key=lambda x: x.is_pseudo, reverse=True)
-
+        depth = 0 if depth is None else depth
+        assets = self.get_assets(paths=paths, depth=depth)
+        if match:
             # Remove assets that do not match all filters
-            for f in filters:
-                asset_paths[:] = filter(f.match, asset_paths)
-
-        # Obtain keys from remaining assets
-        if keys:
-            assets = ((a, {
-                k: v
-                for k, v in self.get_asset(a).items()
-                if k in keys}) for a in asset_paths)
-        else:
-            assets = ((a, self.get_asset(a)) for a in asset_paths)
-
+            for f in match:
+                assets = filter(f, assets)
         return assets
 
     def asset_paths_available(self, assets: Asset | list[Asset]) -> None:
@@ -556,5 +576,12 @@ class Inventory(object):
         """Whether `asset` has an empty value for a required key.
 
         Validation helper.
+
+        Notes
+        -----
+        This is currently considering asset name keys only. However,
+        proper asset validation with ways to declare other keys
+        required is anticipated. This would need to account for those
+        as well.
         """
-        return any(not str(v) for k, v in asset.items() if k in self.repo.get_required_asset_keys())
+        return any(not str(v) for k, v in asset.items() if k in self.repo.get_asset_name_keys())

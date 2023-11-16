@@ -4,17 +4,13 @@ import logging
 import re
 import shutil
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Dict, Generator, Iterable, Optional, Tuple
 
-from rich.console import Console
 
 from .ui import ui
 from .onyo import OnyoRepo
-from .exceptions import OnyoInvalidFilterError
-from .filters import Filter, UNSET_VALUE
-
+from .consts import UNSET_VALUE
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
@@ -62,82 +58,47 @@ def sanitize_args_config(git_config_args: list[str]) -> list[str]:
     return git_config_args
 
 
-def sanitize_keys(k: Optional[list[str]],
-                  defaults: list) -> list[str]:
+def fill_unset(assets: Generator[dict, None, None] | filter,
+               keys: list[str]) -> Generator[dict, None, None]:
+    """Fill values for missing `keys` in `assets` with `UNSET_VALUE`.
+
+    Helper for the onyo-get command.
+
+    Parameters
+    ----------
+    assets: Generator of dict
+      Asset dictionaries to fill.
+    keys: list of str
+      Keys for which to set `UNSET_VALUE` if not present in an asset.
     """
-    Remove duplicates from k while preserving key order and return default
-    (pseudo) keys if k is empty
+    for asset in assets:
+        yield {k: UNSET_VALUE for k in keys} | asset
+
+
+def natural_sort(assets: list[dict],
+                 keys: Optional[list] = None,
+                 reverse: bool = False) -> list[dict]:
+    """Sort an asset list by a given list of `keys`.
+
+    Parameters
+    ----------
+    assets: list of dict
+      Assets to sort.
+    keys: list of str
+      Keys to sort `assets` by. Default: ['path'].
+    reverse: bool
+      Whether to sort in reverse order.
     """
-    from .utils import deduplicate
-    return deduplicate(k) if k else defaults
+    keys = keys or ['path']
 
+    def sort_order(x, k):
+        return [int(s) if s.isdigit() else s.lower()
+                for s in re.split('([0-9]+)', str(x[k]))]
 
-def set_filters(
-        filters: list[str], repo: OnyoRepo, rich: bool = False) -> list[Filter]:
-    """Create filters and check if there are no duplicate filter keys"""
-    # Note: This is part of the get command
-
-    init_filters = []
-    try:
-        init_filters = [Filter(f) for f in filters]
-    except OnyoInvalidFilterError as exc:
-        if rich:
-            console = Console(stderr=True)
-            console.print(f'[red]FAILED[/red] {exc}')
-        else:
-            ui.print(exc, file=sys.stderr)
-        # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
-        #       rendering/printing handled upstairs.
-        raise
-
-    # ensure there are no duplicate filter keys
-    duplicates = [
-        x for x, i in Counter([f.key for f in init_filters]).items() if i > 1]
-    if duplicates:
-        if rich:
-            console = Console(stderr=True)
-            console.print(
-                f'[red]FAILED[/red] Duplicate filter keys: {duplicates}')
-        else:
-            ui.print(f'Duplicate filter keys: {duplicates}', file=sys.stderr)
-        # TODO: This raise replaces a sys.exit; Ultimately error messages above should be integrated in exception and
-        #       rendering/printing handled upstairs.
-        raise ValueError
-    return init_filters
-
-
-def fill_unset(
-        assets: Generator[tuple[Path, dict[str, str]], None, None],
-        keys: list, unset: str = UNSET_VALUE) -> Generator:
-    """
-    If a key is not present for an asset, define it as `unset`.
-    """
-    unset_keys = {key: unset for key in keys}
-    for asset, data in assets:
-        yield asset, unset_keys | data
-
-
-def natural_sort(
-        assets: list[tuple[Path, dict[str, str]]],
-        keys: Optional[list] = None, reverse: bool = False) -> list:
-    """
-    Sort the output of `Repo.get()` by a given list of `keys` or by the path
-    of the `assets` if no `keys` are provided.
-    """
-    if keys:
-        for key in reversed(keys):
-            assets = sorted(
-                assets,
-                key=lambda x: [
-                    int(s) if s.isdigit() else s.lower() for s in
-                    re.split('([0-9]+)', str(x[1][key]))],
-                reverse=reverse)
-    else:
+    for key in reversed(keys):
         assets = sorted(
             assets,
-            key=lambda x: [
-                int(s) if s.isdigit() else s.lower()
-                for s in re.split('([0-9]+)', str(x[0]))],
+            key=lambda x: sort_order(x, key),
             reverse=reverse)
 
     return assets
@@ -175,14 +136,14 @@ def unset(repo: OnyoRepo,
           keys: list[str],
           depth: Optional[int]) -> list[Tuple[Path, Dict, Iterable]]:
 
-    from .assets import get_asset_files_by_path, PSEUDO_KEYS
+    from .assets import get_asset_files_by_path
     from .utils import get_asset_content
     from .utils import dict_to_yaml
     # set and unset should select assets exactly the same way
     assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
 
-    if any([key in PSEUDO_KEYS for key in keys]):
-        raise ValueError("Can't unset pseudo keys (name fields are required).")
+    if any([key in repo.get_asset_name_keys() for key in keys]):
+        raise ValueError("Can't unset asset name keys.")
 
     modifications = []
     for asset_path in assets_to_unset:

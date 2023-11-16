@@ -367,7 +367,7 @@ def test_set_depth_flag(
 
 @pytest.mark.parametrize('set_values', values)
 @pytest.mark.parametrize('depth,expected', [
-    ('-1', 'depth values must be positive, but is -1'),
+    ('-1', "depth must be greater or equal 0, but is '-1'"),
 ])
 def test_set_depth_flag_error(
         repo: OnyoRepo, set_values: list[str], depth: str, expected: str) -> None:

@@ -2,13 +2,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.inventory import Inventory
+from onyo.lib.filters import Filter
 from onyo.lib.commands import onyo_set
 from onyo.argparse_helpers import path, StoreKeyValuePairs
 from onyo.shared_arguments import (
     shared_arg_depth,
-    shared_arg_filter,
+    shared_arg_match,
     shared_arg_message,
 )
 
@@ -22,7 +23,7 @@ args_set = {
         default=False,
         action='store_true',
         help=(
-            'Permit assigning values to pseudo-keys that would result in the '
+            'Permit assigning values to keys that would result in the '
             'asset(s) being renamed.')),
 
     'keys': dict(
@@ -43,7 +44,7 @@ args_set = {
         help='Asset(s) and/or directorie(s) to set KEY=VALUE in'),
 
     'depth': shared_arg_depth,
-    'filter': shared_arg_filter,
+    'match': shared_arg_match,
     'message': shared_arg_message,
 }
 
@@ -82,10 +83,14 @@ def set(args: argparse.Namespace) -> None:
     #       allow for key duplication (and can tell which keys are affected)
     if len(args.keys) > 1:
         raise ValueError("Keys must not be given multiple times.")
+    filters = [Filter(f).match for f in args.match] if args.match else None
     onyo_set(inventory=inventory,
              paths=paths,
              keys=args.keys[0],
-             filter_strings=args.filter,
+             # Type annotation for callables as filters, somehow
+             # doesn't work with the bound method `Filter.match`.
+             # Not clear, what's the problem.
+             match=filters,  # pyre-ignore[6]
              rename=args.rename,
              depth=args.depth,
              message='\n\n'.join(m for m in args.message) if args.message else None)

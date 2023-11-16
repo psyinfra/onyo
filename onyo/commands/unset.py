@@ -3,11 +3,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
+from onyo.lib.inventory import Inventory
+from onyo.lib.filters import Filter
 from onyo.lib.commands import unset as unset_cmd
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import (
     shared_arg_depth,
-    shared_arg_filter,
+    shared_arg_match,
     shared_arg_message,
 )
 
@@ -33,7 +35,7 @@ args_unset = {
         help='Asset(s) and/or directory(s) for which to unset values in'),
 
     'depth': shared_arg_depth,
-    'filter': shared_arg_filter,
+    'match': shared_arg_match,
     'message': shared_arg_message,
 }
 
@@ -46,8 +48,9 @@ def unset(args: argparse.Namespace) -> None:
     can be used around ``value``, which is necessary when it contains a comma,
     whitespace, etc.
 
-    The ``type``, ``make``, ``model``, and ``serial`` pseudo-keys cannot be
-    changed, to rename a file(s) use ``onyo set --rename``.
+    Keys that are used in asset names as specified in the
+    ``onyo.assets.filename`` configuration cannot be unset.
+    To rename a file(s) use ``onyo set --rename``.
 
     If no ``asset`` or ``directory`` is specified, the current working directory
     is used.
@@ -59,11 +62,15 @@ def unset(args: argparse.Namespace) -> None:
     immediately.
     """
 
-    repo = OnyoRepo(Path.cwd(), find_root=True)
+    inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path] if args.path else None
-    unset_cmd(repo,
+    filters = [Filter(f).match for f in args.match] if args.match else None
+    unset_cmd(inventory,
               paths,
               args.keys,
-              args.filter,
+              # Type annotation for callables as filters, somehow
+              # doesn't work with the bound method `Filter.match`.
+              # Not clear, what's the problem.
+              filters,  # pyre-ignore[6]
               args.depth,
               message='\n\n'.join(m for m in args.message) if args.message else None)

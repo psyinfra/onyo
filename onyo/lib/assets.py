@@ -2,37 +2,36 @@ from __future__ import annotations
 import logging
 
 from pathlib import Path
-from typing import Generator, Iterable, Optional, Set
+from typing import Iterable, Optional, Set
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
 from onyo.lib.ui import ui
-from onyo.lib.filters import Filter
 from onyo.lib.utils import get_asset_content
 
 log: logging.Logger = logging.getLogger('onyo.assets')
 
-# Note: Order in this definition likely matters, since the filename is made of them:
-PSEUDO_KEYS = ["type", "make", "model", "serial"]
 
-
-def contains_no_pseudo_keys(asset_files: Set[Path]) -> bool:
+def contains_no_name_keys(asset_files: Set[Path]) -> bool:
     # Note: This actually operates on content, not on files/paths
-
+    # TODO: This is probably the last place using the old NAME_KEYS
+    #       as hte ones whose values are only stored in asset names.
+    #       Fix in context of `fsck`.
+    NAME_KEYS = ["type", "make", "model", "serial"]
     assets_failed = {}
 
     for asset in asset_files:
         violation_list = [
-            x for x in PSEUDO_KEYS if x in get_asset_content(asset)]
+            x for x in NAME_KEYS if x in get_asset_content(asset)]
         if violation_list:
             assets_failed[asset] = violation_list
 
     if assets_failed:
         ui.error(
-            "Pseudo keys {0} are reserved for asset file names, and are "
+            "The keys {0} are reserved for asset file names, and are "
             "not allowed in the asset's contents. The following assets "
-            "contain pseudo keys:\n{1}".format(
-                tuple(PSEUDO_KEYS),
+            "contain asset name keys:\n{1}".format(
+                tuple(NAME_KEYS),
                 '\n'.join(
                     f'{k}: {", ".join(v)}'
                     for k, v in assets_failed.items())))
@@ -115,43 +114,6 @@ def get_asset_files_by_path(asset_files: list[Path],
     #       caller.
     if not assets:
         raise ValueError('No assets selected.')
-
-    return assets
-
-
-def get_assets_by_query(asset_files: list[Path],
-                        keys: Optional[Set[str]],
-                        paths: Iterable[Path],
-                        depth: Optional[int] = None,
-                        filters: Optional[list[Filter]] = None) -> Generator:
-    """
-    Get keys from assets matching paths and filters.
-    """
-    from .filters import asset_name_to_keys
-    # Note: This is interested in the key-value pairs of assets, not their paths exactly.
-    #       But tries to not read a file when pseudo keys are considered only
-
-    # filter assets by path and depth relative to paths
-    assets = get_asset_files_by_path(asset_files, paths, depth) or []
-
-    if filters:
-        # Filters that do not require loading an asset are applied first
-        filters.sort(key=lambda x: x.is_pseudo, reverse=True)
-
-        # Remove assets that do not match all filters
-        for f in filters:
-            assets[:] = filter(f.match, assets)
-
-    # Obtain keys from remaining assets
-    if keys:
-        assets = ((a, {
-            k: v
-            for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()
-            if k in keys}) for a in assets)
-    else:
-        assets = ((a, {
-            k: v
-            for k, v in (get_asset_content(a) | asset_name_to_keys(a, PSEUDO_KEYS)).items()}) for a in assets)
 
     return assets
 

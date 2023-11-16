@@ -5,23 +5,32 @@ from pathlib import Path
 from onyo.lib.onyo import OnyoRepo
 
 
-prefilled_assets = [["warehouse/monitor_dell_PH123.86JZho",
-                     "display: 22.0\nfzj_inventory: '45FZ18'\n"],
-                    ["warehouse/monitor_dell_NoIdea.S0M3",
-                     "display: 27.0\n"],
-                    ["warehouse/laptop_apple_macbook.oiw629",
-                     "RAM: '8GB'\ndisplay: 13.3\nUSB_A: 2\nfzj_inventory: '28FZ34'\nbuild-date: '20160501'\n"],
-                    ["warehouse/laptop_apple_macbook.9r32he",
-                     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '28FJ34'\nbuild-date: '20180501'\n"],
-                    ["somegroup/userA/laptop_apple_macbook.9r5qlk",
-                     "RAM: '8GB'\ndisplay: 15.0\nhostname: 'first.host'\n"],
-                    ["somegroup/userB/laptop_lenovo_thinkpad.owh8e2",
-                     "RAM: '8GB'\ndisplay: 14.6\nfzj_inventory: '13BH9F'\n"],
-                    ["warehouse/laptop_lenovo_thinkpad.iu7h6d",
-                     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '63AH90'\n"],
-                    ["warehouse/laptop_microsoft_surface.oq782j",
-                     "RAM: '8GB'\ndisplay: 12.4\nfzj_inventory: '73CDA45'\ntouchscreen: 'yes'\n"],
-                    ]
+prefilled_assets = [
+    ['warehouse/monitor_dell_PH123.86JZho',
+     "type: 'monitor'\nmake: 'dell'\nmodel: 'PH123'\nserial: '86JZho'\n"
+     "display: 22.0\nfzj_inventory: '45FZ18'\n"],
+    ['warehouse/monitor_dell_NoIdea.S0M3',
+     "type: 'monitor'\nmake: 'dell'\nmodel: 'NoIdea'\nserial: 'S0M3'\n"
+     "display: 27.0\n"],
+    ['warehouse/laptop_apple_macbook.oiw629',
+     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: 'oiw629'\n"
+     "RAM: '8GB'\ndisplay: 13.3\nUSB_A: 2\nfzj_inventory: '28FZ34'\nbuild-date: '20160501'\n"],
+    ['warehouse/laptop_apple_macbook.9r32he',
+     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: '9r32he'\n"
+     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '28FJ34'\nbuild-date: '20180501'\n"],
+    ['somegroup/userA/laptop_apple_macbook.9r5qlk',
+     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: '9r5qlk'\n"
+     "RAM: '8GB'\ndisplay: 15.0\nhostname: 'first.host'\n"],
+    ['somegroup/userB/laptop_lenovo_thinkpad.owh8e2',
+     "type: 'laptop'\nmake: 'lenovo'\nmodel: 'thinkpad'\nserial: 'owh8e2'\n"
+     "RAM: '8GB'\ndisplay: 14.6\nfzj_inventory: '13BH9F'\n"],
+    ['warehouse/laptop_lenovo_thinkpad.iu7h6d',
+     "type: 'laptop'\nmake: 'lenovo'\nmodel: 'thinkpad'\nserial: 'iu7h6d'\n"
+     "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '63AH90'\n"],
+    ['warehouse/laptop_microsoft_surface.oq782j',
+     "type: 'laptop'\nmake: 'microsoft'\nmodel: 'surface'\nserial: 'oq782j'\n"
+     "RAM: '8GB'\ndisplay: 12.4\nfzj_inventory: '73CDA45'\ntouchscreen: 'yes'\n"]]
+
 preset_dirs = ['retired', 'lost']
 
 
@@ -44,7 +53,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
 
     # 2b. Check the warehouse for a display
-    cmd = ['onyo', 'get', '-p', 'warehouse', '-H', '--filter', 'type=monitor', "display=22.0"]
+    cmd = ['onyo', 'get', '-p', 'warehouse', '-H', '--match', 'type=monitor', "display=22.0"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     monitor = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -73,7 +82,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 3. Laptop got an FZJ inventory number
     # 3a. Find the laptop based on serial number:
-    cmd = ['onyo', 'get', '--filter', 'serial=SN123Z', '-H']
+    cmd = ['onyo', 'get', '--match', 'serial=SN123Z', '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -85,7 +94,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 4. Member switches workgroup
     # 4a. Member left display behind -> assign to their former group
-    cmd = ['onyo', 'get', '-H', '-p', str(member), '--filter', 'type=monitor']
+    cmd = ['onyo', 'get', '-H', '-p', str(member), '--match', 'type=monitor']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     display = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -101,7 +110,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 5. Laptop gets an upgrade
     # 5a. Find based on inventory number
-    cmd = ['onyo', 'get', '-H', '--filter', 'fzj_inventory=123A4']
+    cmd = ['onyo', 'get', '-H', '--match', 'fzj_inventory=123A4']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -119,7 +128,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 7. Member leaves institute
     # 7a. Retire laptop
-    cmd = ['onyo', 'get', '-H', '-p', str(member), '--filter', "type=laptop"]
+    cmd = ['onyo', 'get', '-H', '-p', str(member), '--match', "type=laptop"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -141,14 +150,14 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert len(ret.stdout.splitlines()) == 5
 
     # 2. List all assets that have an FZJ inventory number
-    cmd = ['onyo', 'get', '-H', '--filter', 'fzj_inventory=.*']
+    cmd = ['onyo', 'get', '-H', '--match', 'fzj_inventory=.*']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # Prefilled assets had 6, we purchased an additional laptop that got an inventory too
     assert len(ret.stdout.splitlines()) == 7
 
     # 3. Find an asset based on a key
-    cmd = ['onyo', 'get', '-H', '--filter', 'hostname=first.host']
+    cmd = ['onyo', 'get', '-H', '--match', 'hostname=first.host']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     output_lines = ret.stdout.splitlines()
@@ -156,14 +165,14 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert "somegroup/userA/laptop_apple_macbook.9r5qlk" in output_lines[0]
 
     # 4. Find an asset bases on pseudo keys (particular laptop model)
-    cmd = ['onyo', 'get', '-H', '--filter', 'type=laptop', 'model=macbook']
+    cmd = ['onyo', 'get', '-H', '--match', 'type=laptop', 'model=macbook']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # We set up the repo with 3 macbooks
     assert len(ret.stdout.splitlines()) == 3
 
     # 5. Find all lenovo laptops used in a workgroup
-    cmd = ['onyo', 'get', '-H', '-p', 'somegroup', '--filter', 'make=lenovo']
+    cmd = ['onyo', 'get', '-H', '-p', 'somegroup', '--match', 'make=lenovo']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # 'somegroup' got an apple and a lenovo from the start;
@@ -177,9 +186,9 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     # -> query for all matching laptops not in 'retired'.
 
     # TODO: Not directly possible via CLI at the moment. Best I can think of is
-    # `onyo get -H --filter type=laptop --keys build-date -s | grep -v retired | grep -v unset`
+    # `onyo get -H --match type=laptop --keys build-date -s | grep -v retired | grep -v unset`
     # and do the date comparison in a loop over its output.
-    cmd = ['onyo', 'get', '-H', '--filter', 'type=laptop', '--keys', 'build-date']
+    cmd = ['onyo', 'get', '-H', '--match', 'type=laptop', '--keys', 'build-date']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     results = []

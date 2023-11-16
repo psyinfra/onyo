@@ -4,7 +4,7 @@ from onyo.lib.onyo import OnyoRepo
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.assets import Asset
 from onyo.lib.exceptions import InvalidInventoryOperation, NoopError, NotAnAssetError
-from onyo.lib.consts import RESERVED_KEYS, NEW_PSEUDO_KEYS
+from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
 
 # TODO: - Inventory fixture(s)
 #       - mocks
@@ -75,7 +75,7 @@ def test_add_asset(repo: OnyoRepo) -> None:
     assert repo.is_asset_path(asset_file)
     asset_from_disc = repo.get_asset_content(asset_file)
     assert asset_file == asset_from_disc.pop('path')
-    assert asset_from_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + NEW_PSEUDO_KEYS}
+    assert asset_from_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + PSEUDO_KEYS}
     # TODO: check commit message
 
     # required keys must not be empty
@@ -256,7 +256,7 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     assert not new_asset_file.exists()
     asset_on_disc = repo.get_asset_content(asset_file)
     assert asset_file == asset_on_disc.pop('path')
-    assert asset_on_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + NEW_PSEUDO_KEYS}
+    assert asset_on_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + PSEUDO_KEYS}
 
     # TODO: diff
 
