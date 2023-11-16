@@ -57,7 +57,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     for s in specs:
         p = inventory.root / "empty" / f"{s['type']}_{s['make']}_{s['model']}.{s['serial']}"
         assert inventory.repo.is_asset_path(p)
-        assert p not in inventory.repo.git.files_untracked
+        assert p in inventory.repo.git.files
         new_asset = inventory.get_asset(p)
         assert new_asset.get("path") == p
         assert all(new_asset[k] == s[k] for k in s.keys())
@@ -91,7 +91,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         # expected filename (except serial):
         assert files[0].name.startswith(f"{s['type']}_{s['make']}_{s['model']}.")
         assert inventory.repo.is_asset_path(files[0])
-        assert files[0] not in inventory.repo.git.files_untracked
+        assert files[0] in inventory.repo.git.files
         new_asset = inventory.get_asset(files[0])
         assert new_asset.get("path") == files[0]
         # reserved key 'directory' is not part of the asset's content
@@ -136,7 +136,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     onyo_new(inventory, keys=specs, path=directory, edit=True)
     expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
     assert inventory.repo.is_asset_path(expected_path)
-    assert expected_path not in inventory.repo.git.files_untracked
+    assert expected_path in inventory.repo.git.files
     asset_content = inventory.repo.get_asset_content(expected_path)
     assert asset_content['key'] == 'value'
 

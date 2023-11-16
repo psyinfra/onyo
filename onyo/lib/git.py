@@ -17,8 +17,7 @@ class GitRepo(object):
     ----------
     root: Path
         The absolute path to the directory of the git worktree root.
-
-    files: set of Path
+    files: list of Path
         A property containing the absolute Path to all files saved in git.
         This property is cached and consistent when only the public functions of
         GitRepo are called. Usage of private or external functions might
@@ -41,7 +40,7 @@ class GitRepo(object):
         """
         self.root = GitRepo.find_root(path) if find_root else path.resolve()
 
-        self._files: Optional[set[Path]] = None
+        self._files: Optional[list[Path]] = None
 
     @staticmethod
     def find_root(path: Path) -> Path:
@@ -108,9 +107,8 @@ class GitRepo(object):
         return ret.stdout
 
     @property
-    def files(self) -> set[Path]:
-        """Get a `set` containing the absolute `Path`s of all files of a
-        repository.
+    def files(self) -> list[Path]:
+        """Get the absolute `Path`s of all tracked files.
 
         This property is cached, and the cache is consistent with the state of
         the repository when only `Repo`s public functions are used. Use of
@@ -142,42 +140,8 @@ class GitRepo(object):
         if files:
             self._files = None
 
-    def restore_staged(self) -> None:
-        """Restore all staged files with uncommitted changes in the repository.
-
-        If nothing is staged, returns with no error.
-        """
-        staged = self.files_staged
-        if not staged:
-            return
-        self._git(['restore', '--source=HEAD', '--staged', '--worktree'] +
-                  [str(file) for file in staged])
-        # `Repo.restore()` gets used by all most commands that might change the
-        # repository to revert changes, especially when users answer "no" to
-        # user dialogs. It might also be used by the API to reset the repository
-        # variable after doing some manual changes on files (e.g. with
-        # subprocess).
-        self.clear_caches()
-
-    def restore(self,
-                paths: list[Path] | Path) -> None:
-        """Call git-restore on `paths`.
-
-        Parameters
-        ----------
-        paths: list of Path
-            The absolute Paths to the files or directories which are to be
-            `git restore`d.
-        """
-        if not paths:
-            ui.log_debug("No paths passed to restore. Nothing to do.")
-            return
-        if not isinstance(paths, list):
-            paths = [paths]
-        self._git(['restore'] + [str(p) for p in paths])
-
     def get_subtrees(self,
-                     paths: Optional[Iterable[Path]] = None) -> set[Path]:
+                     paths: Optional[Iterable[Path]] = None) -> list[Path]:
         """"""
         # TODO: - We might want to consider untracked files as well. Would need `--others` in addition.
         #       - turn into issue
@@ -186,83 +150,18 @@ class GitRepo(object):
         git_cmd = ['ls-files', '-z']
         if paths:
             git_cmd.extend([str(p) for p in paths])
-        files = {self.root / x for x in self._git(git_cmd).split('\0') if x}
+        files = [self.root / x for x in self._git(git_cmd).split('\0') if x]
         return files
 
-    def _get_files_changed(self) -> set[Path]:
-        """Return a set of all absolute `Path`s to unstaged changes in the
-        repository.
-        """
-        ui.log_debug('Acquiring list of changed files')
-        changed = {self.root / x for x in self._git(['diff', '-z', '--name-only']).split('\0') if x}
-        return changed
-
-    def _get_files_staged(self) -> set[Path]:
-        """Return a set of all absolute `Path`s to staged changes in the
-        repository.
-        """
-        ui.log_debug('Acquiring list of staged files')
-        staged = {self.root / x for x in self._git(['diff', '--name-only', '-z', '--staged']).split('\0') if x}
-        return staged
-
-    def _get_files_untracked(self) -> set[Path]:
-        """Return a set of all absolute `Path`s to untracked files in the
-        repository.
-        """
-        ui.log_debug('Acquiring list of untracked files')
-        untracked = {self.root / x for x in self._git(['ls-files', '-z', '--others', '--exclude-standard']).split('\0') if x}
-        return untracked
-
-    @property
-    def files_changed(self) -> set[Path]:
-        """Get a `set` containing the absolute `Path`s of all changed files
-        (according to git) of a repository.
-        """
-        return self._get_files_changed()
-
-    @property
-    def files_staged(self) -> set[Path]:
-        """Get a `set` containing the absolute `Path`s of all staged files
-        (according to git) of a repository.
-        """
-        return self._get_files_staged()
-
-    @property
-    def files_untracked(self) -> set[Path]:
-        """Get a `set` containing the absolute `Path`s of all untracked files
-        (according to git) of a repository.
-        """
-        return self._get_files_untracked()
-
     def is_clean_worktree(self) -> bool:
-        """Check if the working tree for git is clean.
+        """Check whether the git worktree is clean.
 
         Returns
         -------
         bool
             True if the git worktree is clean, otherwise False.
         """
-
-        changed = {str(x) for x in self.files_changed}
-        staged = {str(x) for x in self.files_staged}
-        untracked = {str(x) for x in self.files_untracked}
-
-        if changed or staged or untracked:
-            log.error('The working tree is not clean.')
-            if changed:
-                log.error('Changes not staged for commit:\n{}'.format(
-                    '\n'.join(map(str, changed))))
-            if staged:
-                log.error('Changes to be committed:\n{}'.format(
-                    '\n'.join(map(str, staged))))
-            if untracked:
-                log.error('Untracked files:\n{}'.format(
-                    '\n'.join(map(str, untracked))))
-            log.error(
-                'Please commit all changes or add untracked files to '
-                '.gitignore')
-            return False
-        return True
+        return not bool(self._git(['status', '--porcelain']))
 
     def maybe_init(self,
                    target_dir: Path) -> None:
@@ -286,9 +185,9 @@ class GitRepo(object):
             ui.log_debug(ret.strip())
         self.root = target_dir
 
-    def stage_and_commit(self,
-                         paths: Iterable[Path] | Path,
-                         message: str) -> None:
+    def commit(self,
+               paths: Iterable[Path] | Path,
+               message: str) -> None:
         """Stage and commit changes in git.
 
         Parameters
@@ -304,6 +203,7 @@ class GitRepo(object):
             paths = [paths]
         self._git(['add'] + [str(p) for p in paths])
         self._git(['commit', '-m', message])
+        self.clear_caches()
 
     @staticmethod
     def is_git_path(path: Path) -> bool:
@@ -321,70 +221,6 @@ class GitRepo(object):
             True if path is a git file or directory, otherwise False.
         """
         return '.git' in path.parts or path.name.startswith('.git')
-
-    def add(self,
-            targets: Iterable[Path] | Path) -> None:
-        """Perform ``git add`` to stage files.
-
-        If called on files without changes, it does not raise an error.
-
-        Parameters
-        ----------
-        targets: Path or Iterable of Path
-            Paths are relative to ``repo.root``.
-
-        Raises
-        ------
-        FileNotFoundError
-            If a path in `targets` does not exist.
-        """
-        if isinstance(targets, (list, set)):
-            tgts = [str(x) for x in targets]
-        else:
-            tgts = [str(targets)]
-
-        for t in tgts:
-            if not (self.root / t).exists():
-                raise FileNotFoundError(f"'{t}' does not exist.")
-
-        self._git(['add'] + tgts)
-        # `Repo.add()` is used by most repo-changing commands, and it might be
-        # used often by the API to change the repository, before manually
-        # calling clear_cache() or after a file was changed with a subprocess
-        # call. To always secure the integrity of the caches, we reset them all.
-        self.clear_caches()
-
-    def commit(self,
-               *args) -> None:
-        """Perform a ``git commit``.
-
-        Parameters
-        ----------
-        args: tuple
-            Components to compose the commit message from. At least one is
-            required. The first argument is the title; each argument after it is
-            a new paragraph. Lists and sets are printed one item per line.
-
-        Raises
-        ------
-        ValueError
-            If no commit message is provided.
-        """
-        if not args:
-            raise ValueError('at least one commit message is required')
-
-        messages = []
-        for i in args:
-            if not i:
-                raise ValueError('commit messages cannot be empty')
-
-            messages.append('-m')
-            if isinstance(i, (list, set)):
-                messages.append('\n'.join(map(str, i)))
-            else:
-                messages.append(str(i))
-
-        self._git(['commit'] + messages)
 
     def get_config(self,
                    name: str,

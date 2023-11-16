@@ -64,6 +64,8 @@ def fsck(repo: OnyoRepo,
     from .assets import has_unique_names, validate_yaml, validate_assets, contains_no_name_keys
 
     all_tests = {
+        # TODO: fsck would probably want to relay or analyze `git-status` output, rather
+        # than just get a bool for clean worktree:
         "clean-tree": repo.git.is_clean_worktree,
         "anchors": repo.validate_anchors,
         "asset-unique": partial(has_unique_names, repo.asset_paths),
@@ -156,8 +158,8 @@ def onyo_config(inventory: Inventory,
         # It's a write operation, and we'd want to commit
         # if there were any changes.
         try:
-            inventory.repo.git.stage_and_commit(inventory.repo.ONYO_CONFIG,
-                                                'config: modify repository config')
+            inventory.repo.git.commit(inventory.repo.ONYO_CONFIG,
+                                      'config: modify repository config')
         except subprocess.CalledProcessError as e:
             if "no changes added to commit" in e.stdout or "nothing to commit" in e.stdout:
                 ui.print("No changes to commit.")

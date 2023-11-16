@@ -84,14 +84,12 @@ def test_onyo_mv_move_simple(inventory: Inventory) -> None:
 
     # asset was moved
     assert inventory.repo.is_asset_path(destination_path / asset_path.name)
-    assert (destination_path / asset_path.name) not in inventory.repo.git.files_untracked
-    assert (destination_path / asset_path.name) not in inventory.repo.git.files_staged
+    assert (destination_path / asset_path.name) in inventory.repo.git.files
     assert not asset_path.exists()
     # dir was moved
     assert inventory.repo.is_inventory_dir(destination_path / dir_path.name)
     assert (destination_path / dir_path.name / OnyoRepo.ANCHOR_FILE).is_file()
-    assert (destination_path / dir_path.name / OnyoRepo.ANCHOR_FILE) not in inventory.repo.git.files_untracked
-    assert (destination_path / dir_path.name / OnyoRepo.ANCHOR_FILE) not in inventory.repo.git.files_staged
+    assert (destination_path / dir_path.name / OnyoRepo.ANCHOR_FILE) in inventory.repo.git.files
     assert not dir_path.exists()
 
 
@@ -110,8 +108,7 @@ def test_onyo_mv_move_explicit(inventory: Inventory) -> None:
             message="some subject\n\nAnd a body")
 
     assert inventory.repo.is_inventory_dir(dst)
-    assert (dst / OnyoRepo.ANCHOR_FILE) not in inventory.repo.git.files_untracked
-    assert (dst / OnyoRepo.ANCHOR_FILE) not in inventory.repo.git.files_staged
+    assert (dst / OnyoRepo.ANCHOR_FILE) in inventory.repo.git.files
     assert not src.exists()
 
 
@@ -126,6 +123,5 @@ def test_onyo_mv_rename(inventory: Inventory) -> None:
             message="some subject\n\nAnd a body")
 
     assert inventory.repo.is_inventory_dir(new_name)
-    assert (new_name / OnyoRepo.ANCHOR_FILE) not in inventory.repo.git.files_untracked
-    assert (new_name / OnyoRepo.ANCHOR_FILE) not in inventory.repo.git.files_staged
+    assert (new_name / OnyoRepo.ANCHOR_FILE) in inventory.repo.git.files
     assert not dir_path.exists()

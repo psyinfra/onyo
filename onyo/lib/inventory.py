@@ -150,7 +150,7 @@ class Inventory(object):
                 sorted(line for line in deduplicate(snippets)))  # pyre-ignore[16]
 
         # TODO: Actually: staging (only new) should be done in execute. committing is then unified
-        self.repo.git.stage_and_commit(set(paths_to_commit + paths_to_stage), commit_msg)
+        self.repo.git.commit(set(paths_to_commit + paths_to_stage), commit_msg)
         self.reset()
 
     def diff(self) -> Generator[str, None, None]:

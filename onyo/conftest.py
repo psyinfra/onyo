@@ -74,8 +74,8 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
     # populate the repo
     if dirs:
         anchors = repo_.mk_inventory_dirs([repo_path / d for d in dirs])
-        repo_.git.stage_and_commit(paths=anchors,
-                                   message="populate dirs for tests")
+        repo_.git.commit(paths=anchors,
+                         message="populate dirs for tests")
 
     for i in files:
         i.touch()
@@ -84,8 +84,8 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
         if contents:
             for file in contents:
                 (repo_path / file[0]).write_text(file[1])
-        repo_.git.stage_and_commit(paths=files,
-                                   message="populate files for tests")
+        repo_.git.commit(paths=files,
+                         message="populate files for tests")
 
     # TODO: Do we still need/want that? CWD should only ever be relevant for CLI tests.
     #       Hence, should probably be done there.

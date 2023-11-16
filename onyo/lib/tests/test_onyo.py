@@ -171,7 +171,7 @@ def test_Repo_validate_anchors(repo: OnyoRepo) -> None:
 
     # Delete an .anchor, commit changes, reload object
     Path.unlink(repo.git.root / "a" / "test" / ".anchor")
-    repo.git.stage_and_commit(repo.git.root / "a" / "test" / ".anchor", "TEST")
+    repo.git.commit(repo.git.root / "a" / "test" / ".anchor", "TEST")
     repo = OnyoRepo(repo.git.root)
 
     # Must return False, because an .anchor is missing

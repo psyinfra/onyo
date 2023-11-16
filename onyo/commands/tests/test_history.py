@@ -96,8 +96,8 @@ def test_history_config_unset(repo: OnyoRepo) -> None:
     """
     # unset config for history tool
     repo.git.set_config('onyo.history.non-interactive', '')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Unset in .onyo/config: 'onyo.history.non-interactive'")
+    repo.git.commit(paths=repo.dot_onyo / 'config',
+                    message="Unset in .onyo/config: 'onyo.history.non-interactive'")
 
     # verify unset
     assert not repo.get_config('onyo.history.non-interactive')
@@ -119,8 +119,8 @@ def test_history_config_invalid(repo: OnyoRepo) -> None:
     """
     # set to invalid
     repo.git.set_config('onyo.history.non-interactive', 'does-not-exist-in-path')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Set non-existing: 'onyo.history.non-interactive'")
+    repo.git.commit(paths=repo.dot_onyo / 'config',
+                    message="Set non-existing: 'onyo.history.non-interactive'")
 
     # run history
     ret = subprocess.run(['onyo', 'history', '-I', assets[0]],
@@ -139,8 +139,8 @@ def test_history_fake_noninteractive_stdout(repo: OnyoRepo, asset: str) -> None:
     run commands different from the default options.
     """
     repo.git.set_config('onyo.history.non-interactive', '/usr/bin/env printf')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Update config: 'onyo.history.non-interactive'")
+    repo.git.commit(paths=repo.dot_onyo / 'config',
+                    message="Update config: 'onyo.history.non-interactive'")
 
     # test
     ret = subprocess.run(['onyo', 'history', '-I', asset],
@@ -159,8 +159,8 @@ def test_history_fake_noninteractive_stderr(repo: OnyoRepo, asset: str) -> None:
     stderr instead of stdout.
     """
     repo.git.set_config('onyo.history.non-interactive', '/usr/bin/env printf >&2')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Update config: 'onyo.history.non-interactive'")
+    repo.git.commit(paths=repo.dot_onyo / 'config',
+                    message="Update config: 'onyo.history.non-interactive'")
 
     # test
     ret = subprocess.run(['onyo', 'history', '-I', asset],
@@ -184,8 +184,8 @@ def test_history_fake_noninteractive_bubble_exit_code(repo: OnyoRepo, variant: d
     tools configured return.
     """
     repo.git.set_config('onyo.history.non-interactive', variant['cmd'])
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Update config: 'onyo.history.non-interactive'")
+    repo.git.commit(paths=repo.dot_onyo / 'config',
+                    message="Update config: 'onyo.history.non-interactive'")
 
     # test
     ret = subprocess.run(['onyo', 'history', '-I', assets[0]],
