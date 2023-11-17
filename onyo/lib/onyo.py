@@ -84,6 +84,7 @@ class OnyoRepo(object):
         if init:
             if find_root:
                 raise ValueError("`find_root=True` must not be used with `init=True`")
+            # TODO: Remove path?
             self._init(path)
         else:
             if not self.is_valid_onyo_repo():
@@ -94,15 +95,39 @@ class OnyoRepo(object):
         # caches
         self._asset_paths: Optional[list[Path]] = None
 
+    def set_config(self,
+                   name: str,
+                   value: str,
+                   location: str = 'onyo') -> None:
+        """Set the configuration option `name` to `value`.
+
+        Parameters
+        ----------
+        name: str
+          The name of the configuration option to set.
+        value: str
+          The value to set for the configuration option.
+        location: str, optional
+          The location of the configuration for which the value
+          should be set. Standard Git config locations: 'system',
+          'global', 'local', and 'worktree'.
+          The location 'onyo' is available in addition and refers
+          to a committed config file at `OnyoRepo.ONYO_CONFIG`.
+          Default: 'onyo'.
+
+        Raises
+        ------
+        ValueError
+          If `location` is unknown.
+        """
+        loc = self.ONYO_CONFIG if location == 'onyo' else location
+        return self.git.set_config(name=name, value=value, location=loc)
+
     def get_config(self,
                    name: str) -> Optional[str]:
         """
         """
-        # TODO: lru_cache?
-        # TODO: This needs to account for both .onyo/config + all git configs with correct prios
-        # Where do we inject onyo/.config in the order of priority?
-        # editor tests say git > onyo. Fine for now, but doesn't seem entirely intuitive. Why would a system config take
-        # precedence over a committed setting specific to the inventory repo?
+        # TODO: (lru_)cache?
         return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
 
     def get_asset_name_keys(self) -> list[str]:
@@ -177,7 +202,7 @@ class OnyoRepo(object):
         """
         if assets:
             self._asset_paths = None
-            self.git.clear_caches(files=True)
+            self.git.clear_cache()
 
     def generate_commit_message(self,
                                 format_string: str,
@@ -241,6 +266,9 @@ class OnyoRepo(object):
         private functions might require a manual reset of the caches, see
         `OnyoRepo.clear_caches()`.
         """
+
+        # TODO:
+
         if self._asset_paths is None:
             self._asset_paths = self.get_asset_paths()
         return self._asset_paths
@@ -312,7 +340,7 @@ class OnyoRepo(object):
         if dot_onyo.exists():
             raise FileExistsError(f"'{dot_onyo}' already exists.")
 
-        self.git.maybe_init(path)
+        self.git.maybe_init()
 
         # Note: pheewww - No. Installed resource needs to be found differently.
         #       Who the hell is supposed to maintain that? One cannot simply

@@ -21,7 +21,7 @@ def test_get_editor_git(repo: OnyoRepo, variant: str) -> None:
     """
     Get the editor from git or onyo configs.
     """
-    repo.git.set_config('onyo.core.editor', variant, location=variant)
+    repo.set_config('onyo.core.editor', variant, location=variant)
 
     # test
     editor = repo.get_editor()
@@ -60,8 +60,8 @@ def test_get_editor_precedence(repo: OnyoRepo) -> None:
     The order of precedence should be git > onyo > $EDITOR.
     """
     # set locations
-    repo.git.set_config('onyo.core.editor', 'local', location='local')
-    repo.git.set_config('onyo.core.editor', 'onyo', location='onyo')
+    repo.set_config('onyo.core.editor', 'local', location='local')
+    repo.set_config('onyo.core.editor', 'onyo', location='onyo')
     os.environ['EDITOR'] = 'editor'
 
     # git should win
