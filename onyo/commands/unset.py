@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from onyo import OnyoRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.filters import Filter
-from onyo.lib.commands import unset as unset_cmd
+from onyo.lib.commands import onyo_unset as unset_cmd
 from onyo.argparse_helpers import path
 from onyo.shared_arguments import (
     shared_arg_depth,
@@ -66,11 +66,11 @@ def unset(args: argparse.Namespace) -> None:
     paths = [Path(p).resolve() for p in args.path] if args.path else None
     filters = [Filter(f).match for f in args.match] if args.match else None
     unset_cmd(inventory,
-              paths,
-              args.keys,
+              keys=args.keys,
+              paths=paths,
               # Type annotation for callables as filters, somehow
               # doesn't work with the bound method `Filter.match`.
               # Not clear, what's the problem.
-              filters,  # pyre-ignore[6]
-              args.depth,
+              match=filters,  # pyre-ignore[6]
+              depth=args.depth,
               message='\n\n'.join(m for m in args.message) if args.message else None)

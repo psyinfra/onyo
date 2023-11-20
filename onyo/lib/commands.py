@@ -920,89 +920,91 @@ def onyo_tree(inventory: Inventory,
     ui.print(ret.stdout)
 
 
-def unset(inventory: Inventory,
-          paths: Optional[list[Path]],
-          keys: list[str],
-          match: Optional[list[Callable[[dict], bool]]],
-          depth: Optional[int],
-          message: Optional[str]) -> None:
+def onyo_unset(inventory: Inventory,
+               keys: list[str],
+               match: Optional[list[Callable[[dict], bool]]],
+               paths: Optional[list[Path]] = None,
+               depth: int = 0,
+               message: Optional[str] = None) -> None:
     """Remove keys from assets.
-    TODO: Needs complete re-factoring, thereby the doc-string is incomplete.
 
     Parameters
     ----------
-    repo: OnyoRepo
-        TODO
-
-    paths: Path or Iterable of Path, optional
-        TODO
-
-    keys: list of str
-        TODO
-
-    filter_strings: list of str
-        TODO
-
-    depth: int, optional
-        TODO
-
+    inventory: Inventory
+        The Inventory in which to unset key/values for assets.
+    keys: list
+        The keys that will be unset in assets.
+        If keys do not exist in an asset, a debug message is logged.
+        If keys are specified which appear in asset names an error is raised.
+    match: list of Callable, optional
+      Callables suited for use with builtin `filter`. They are
+      passed an asset dictionary and expected to return a `bool`,
+      where `True` indicates a match. `keys` will be removed from
+      all assets that are matched by all callables in this list.
+    paths: Path or list of Path, optional
+        Paths to assets or directories for which to unset key-value pairs.
+        If paths are directories, the values will be unset recursively in assets
+        under the specified path.
+        If no paths are specified, CWD is used as default.
+    depth: int
+        Depth limit of recursion if a `path` is a directory.
+        0 means no limit and is the default.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
-
-    Raises
-    ------
-    ValueError
-        TODO
     """
-    from onyo.lib.command_utils import unset as ut_unset
-
-    if not paths:
-        paths = [Path.cwd()]
+    paths = paths or []
 
     non_inventory_paths = [str(p) for p in paths
                            if not inventory.repo.is_asset_path(p) and
                            not inventory.repo.is_inventory_dir(p)]
+
     if non_inventory_paths:
-        raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
-                         "\n".join(non_inventory_paths))
+        raise ValueError("The following paths are neither an inventory directory nor an ",
+                         "asset:\n%s" % "\n".join(non_inventory_paths))
 
-    assets = inventory.get_assets_by_query(paths=paths, depth=depth, match=match)
-    paths = [a['path'] for a in assets]
+    if any(k in inventory.repo.get_asset_name_keys() for k in keys):
+        raise ValueError("Can't unset asset name keys.")
+    if any(k in RESERVED_KEYS for k in keys):
+        raise ValueError(f"Can't unset reserved keys ({', '.join(RESERVED_KEYS)}).")
 
-    modifications = ut_unset(inventory.repo, paths, keys, depth)
+    asset_paths_to_unset = inventory.get_assets_by_query(paths=paths,
+                                                         depth=depth,
+                                                         match=match)
 
-    diffs = [m[2] for m in modifications if m[2] != []]
-    # display changes
-    if diffs:
+    for asset in asset_paths_to_unset:
+        new_content = copy.deepcopy(asset)
+        # remove keys to unset, if they exist
+        for key in keys:
+            try:
+                new_content.pop(key)
+            except KeyError:
+                ui.log_debug(f"{key} not in {asset}")
+        # remove keys illegal to write
+        for k in PSEUDO_KEYS:
+            new_content.pop(k)
+        try:
+            inventory.modify_asset(asset, new_content)
+        except NoopError:
+            pass
+
+    if inventory.operations_pending():
+        # display changes
         ui.print("The following assets will be changed:")
-        if diffs:
-            for d in diffs:
-                for line in d:
-                    ui.print(line)
-    else:
-        ui.print("No assets containing the specified key(s) could be found. No assets updated.")
-        return
+        for line in inventory.diff():
+            ui.print(line)
 
-    if diffs:
         if ui.request_user_response("Update assets? (y/n) "):
-            to_commit = []
-            for m in modifications:
-                write_asset_file(m[0], m[1])
-                to_commit.append(m[0])
-                if not message:
-                    operation_paths = sorted(deduplicate(
-                        [p.relative_to(inventory.root) for p in to_commit]))
-                    # TODO: change after refactoring to:
-                    # operation_paths = [
-                    #    op.operands[0].get("path")
-                    #    for op in inventory.operations
-                    #    if op.operator == OPERATIONS_MAPPING['modify_assets']]
-                    message = inventory.repo.generate_commit_message(
-                        format_string="unset [{len}] ({keys}): {operation_paths}",
-                        len=len(operation_paths),
-                        keys=keys,
-                        operation_paths=operation_paths)
-                inventory.repo.git.stage_and_commit(paths=to_commit,
-                                                    message=message)
+            if not message:
+                operation_paths = sorted(deduplicate([
+                    op.operands[0].get("path").relative_to(inventory.root)
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING[
+                        'modify_assets']]))
+                message = inventory.repo.generate_commit_message(
+                    format_string="unset [{len}] ({keys}): {operation_paths}",
+                    len=len(operation_paths),
+                    keys=keys,
+                    operation_paths=operation_paths)
+            inventory.commit(message=message)
             return
     ui.print("No assets updated.")

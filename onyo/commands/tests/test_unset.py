@@ -2,372 +2,323 @@ import subprocess
 from pathlib import Path
 
 from onyo.lib import OnyoRepo
-from onyo.lib.commands import fsck
 import pytest
-from typing import List
-
-files = ['laptop_apple_macbookpro',
-         'lap top_ap ple_mac book pro']
-
-directories = ['.',
-               's p a c e s',
-               'r/e/c/u/r/s/i/v/e',
-               'overlap/one',
-               'overlap/two',
-               'very/very/very/deep',
-               ]
-
-assets: List[str] = [f"{d}/{f}.{i}" for f in files
-                     for i, d in enumerate(directories)]
-
-content_dict = {"one_key": "one_value",
-                "two_key": "two_value",
-                "three_key": "three_value"}
-
-content_str: str = "\n".join([f"{elem}: {content_dict.get(elem)}"
-                              for elem in content_dict]) + "\n"
-
-contents: List[List[str]] = [[x, content_str] for x in assets]
+from typing import Any, Generator
 
 
-pytest.skip("UNSET not currently implemented", allow_module_level=True)
+def convert_contents(
+        raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
+    """Convert content dictionary to a plain-text string."""
+    for file, raw_contents in raw_assets:
+        contents = ''
+        for k, v in raw_contents.items():
+            if isinstance(v, str):
+                v = f"'{v}'"
+            elif isinstance(v, bool):
+                v = str(v).lower()
+            contents += f'{k}: {v}\n'
+        yield [file, contents]
 
 
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset KEY <asset>` removes keys from of assets.
-    """
-    key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', asset], capture_output=True, text=True)
+asset_contents = [
+    ('laptop_apple_macbookpro.1', {'num': 8,
+                                   'str': 'foo',
+                                   'bool': True,
+                                   'type': 'laptop',
+                                   'make': 'apple',
+                                   'model': 'macbookpro',
+                                   'serial': '1'}),
+    ('one/laptop_dell_precision.2', {'num': '16',
+                                     'str': 'bar',
+                                     'bool': False,
+                                     'type': 'laptop',
+                                     'make': 'dell',
+                                     'model': 'precision',
+                                     'serial': '2'}),
+    ('one/two/headphones_apple_pro.3', {'num': '8',
+                                        'str': 'bar',
+                                        'bool': 'True',
+                                        'type': 'headphones',
+                                        'make': 'apple',
+                                        'model': 'pro',
+                                        'serial': '3'}),
+    ('abc/def/monitor_dell_pro.4', {'str': 'foo=bar',
+                                    'type': 'monitor',
+                                    'make': 'dell',
+                                    'model': 'pro',
+                                    'serial': '4'}),
+    ('laptop_dell_precision.2', {'num': '16',
+                                 'str': 'bar',
+                                 'bool': False,
+                                 'type': 'laptop',
+                                 'make': 'dell',
+                                 'model': 'precision',
+                                 'serial': '2'}),
+    ('headphones_apple_pro.3', {'num': '8',
+                                'str': 'bar',
+                                'bool': 'True',
+                                'type': 'headphones',
+                                'make': 'apple',
+                                'model': 'pro',
+                                'serial': '3'}),
+    ('monitor_dell_pro.4', {'str': 'foo=bar',
+                            'type': 'monitor',
+                            'make': 'dell',
+                            'model': 'pro',
+                            'serial': '4'}),
+    ('headphones_dell_pro.4', {'num': '10GB',
+                               'str': 'bar',
+                               'type': 'headphones',
+                               'make': 'dell',
+                               'model': 'pro',
+                               'serial': '4'}),
+    ('one/two/three/headphones_apple_pro.4', {'num': '10GB',
+                                              'type': 'headphones',
+                                              'make': 'apple',
+                                              'model': 'pro',
+                                              'serial': '4'}),
+    ('one/two/three/four/headphones_apple_pro.5', {'num': '10GB',
+                                                   'type': 'headphones',
+                                                   'make': 'apple',
+                                                   'model': 'pro',
+                                                   'serial': '5'}),
+    ('another/dir/headphones_apple_pro.5', {'type': 'headphones',
+                                            'make': 'apple',
+                                            'model': 'pro',
+                                            'serial': '5'}),
+    ('a13bc_foo_bar.1', {'num': 'num-3',
+                         'type': 'a13bc',
+                         'make': 'foo',
+                         'model': 'bar',
+                         'serial': '1'}),
+    ('a2cd_foo_bar.2', {'num': 'num-16',
+                        'type': 'a2cd',
+                        'make': 'foo',
+                        'model': 'bar',
+                        'serial': '2'}),
+    ('a36ab_foo_bar.3', {'num': 'num-20',
+                         'type': 'a36ab',
+                         'make': 'foo',
+                         'model': 'bar',
+                         'serial': '3'}),
+]
 
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert str(Path(asset)) in ret.stdout
-    assert f"-{key}" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
 
-    # verify changes, and the repository clean
-    assert f"{key}: {content_dict.get(key)}" not in Path(asset).read_text()
-    fsck(repo)
-
-
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_interactive(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset KEY <asset>` removes keys from of assets.
-    """
-    key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', 'unset', '--keys', key, '--path', asset], input='y', capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
-    assert str(Path(asset)) in ret.stdout
-    assert f"-{key}: {content_dict.get(key)}" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify changes, and the repository clean
-    assert f"{key}: {content_dict.get(key)}" not in Path(asset).read_text()
-    fsck(repo)
-
-
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_subset_of_keys(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset KEY <asset>` removes just the keys specified from
-    assets with many other keys.
-    """
-    key = list(content_dict.keys())[0]
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
+@pytest.mark.parametrize('key', ['num'])
+def test_unset(repo: OnyoRepo,
+               asset: str,
+               key: str) -> None:
+    """Test that `onyo unset KEY <asset>` removes keys from of assets."""
     ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', asset],
                          capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    assert str(Path(asset)) in ret.stdout
+    assert asset in ret.stdout
     assert f"-{key}" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
-    # verify the right key is removed and the others still exist, and that the
-    # repository is still in a clean state
-    asset_contents = Path(asset).read_text()
-    assert f"{key}: {content_dict.get(key)}" not in asset_contents
-    for k in list(content_dict.keys())[1:]:
-        assert f"{k}: {content_dict.get(k)}" in asset_contents
-    fsck(repo)
+    # verify changes, and the repository clean
+    assert key not in Path(asset).read_text()
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_info_empty_asset(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset --keys KEY --path ASSET` prints the correct info,
-    when one of the KEYs does not exist, because the given asset is empty.
-    """
-    no_key = "non_existing"
-
-    # test un-setting a non-existing key from an empty file
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', no_key,
-                          '--path', asset], capture_output=True, text=True)
-
-    # verify reaction of onyo
-    assert "No assets containing the specified key(s) could be found. No assets updated." in ret.stdout
-    assert f"Field {no_key} does not exist in " in ret.stderr
-    assert ret.returncode == 0
-    fsck(repo)
-
-
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_key_does_not_exist(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset --keys KEY --path ASSET` prints the correct info,
-    when one of the KEYs does not exist, but the asset is not empty.
-    """
-    no_key = "non_existing"
-
-    # test un-setting a non-existing key from an empty file
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', no_key,
-                          '--path', asset], capture_output=True, text=True)
-
-    # verify reaction of onyo
-    assert "No assets containing the specified key(s) could be found. No assets updated." in ret.stdout
-    assert f"Field {no_key} does not exist in " in ret.stderr
-    assert ret.returncode == 0
-    fsck(repo)
-
-
-@pytest.mark.repo_contents(*contents)
-def test_unset_multiple_assets(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo unset --keys KEY --path ASSET` removes keys from of assets.
-    """
-    key = list(content_dict.keys())[0]
-
-    # test unsetting keys for multiple assets:
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', *assets], capture_output=True, text=True)
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_interactive(repo: OnyoRepo,
+                           asset: str,
+                           key: str) -> None:
+    """Test that `onyo unset KEY <asset>` removes keys from of assets."""
+    ret = subprocess.run(['onyo', 'unset', '--keys', key, '--path', asset], input='y',
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
-    for asset in [p.relative_to(repo.git.root) for p in repo.asset_paths]:
+    assert "Update assets? (y/n) " in ret.stdout
+    assert asset in ret.stdout
+    assert f"-{key}" in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify changes, and the repository clean
+    assert key not in Path(asset).read_text()
+    assert repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" not in t[1]]))
+@pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" not in t[1]])
+def test_unset_key_does_not_exist(repo: OnyoRepo,
+                                  asset: str) -> None:
+    """Test that `onyo unset --keys KEY --path ASSET` does not error when one of the KEYs does not
+    exist."""
+    no_key = "non_existing"
+
+    # test un-setting a non-existing key from an empty file
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', no_key, '--path', asset],
+                         capture_output=True, text=True)
+
+    # verify reaction of onyo
+    assert "No assets" in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+    assert repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_multiple_assets(repo: OnyoRepo,
+                               key: str) -> None:
+    """Test that `onyo unset --keys KEY --path ASSET [ASSET2 ...]` removes keys from of assets."""
+    assets = repo.get_asset_paths()
+
+    # test unsetting keys for multiple assets:
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', *assets],
+                         capture_output=True, text=True)
+
+    # verify output
+    assert "The following assets will be changed:" in ret.stdout
+    for asset in [a.relative_to(repo.git.root) for a in assets]:
         assert str(asset) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify changes, and the repository clean
-    for asset in repo.asset_paths:
-        assert key not in Path(asset).read_text()
-    fsck(repo)
+    for asset in assets:
+        assert key not in asset.read_text()
+    assert repo.git.is_clean_worktree()
 
 
-non_existing_assets: List[List[str]] = [
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('no_assets', [
     ["single_non_existing.asset"],
     ["simple/single_non_existing.asset"],
-    [assets[0], "single_non_existing.asset"]]
-
-
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('no_assets', non_existing_assets)
+    [asset_contents[0][0], "single_non_existing.asset"]])
+@pytest.mark.parametrize('key', ['num'])
 def test_unset_error_non_existing_assets(repo: OnyoRepo,
-                                         no_assets: list[str]) -> None:
-    """
-    Test that `onyo unset --keys KEY --path ASSET` errors correctly for
-    non-existing assets on root, in directories, or if an invalid asset name is
-    in a list of valid ones.
-    """
-    key = list(content_dict.keys())[0]
+                                         no_assets: list[str],
+                                         key: str) -> None:
+    """Test that `onyo unset --keys KEY --path ASSET` errors correctly for non-existing assets."""
     ret = subprocess.run(['onyo', 'unset', '--keys', key, '--path', *no_assets],
                          capture_output=True, text=True)
 
     # verify output
     assert not ret.stdout
-    assert "The following paths are neither an inventory directory nor an asset:" in ret.stderr
+    assert no_assets[-1] in ret.stderr
     assert ret.returncode == 1
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(*contents)
-def test_unset_with_dot(repo: OnyoRepo) -> None:
-    """
-    Test that when `onyo unset --keys KEY=VALUE --path .` is called from the
-    repository root, onyo uses all assets in the completely repo recursively.
-    """
-    key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key,
-                          '--path', "."], capture_output=True, text=True)
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_with_dot(repo: OnyoRepo,
+                        key: str) -> None:
+    """Test that when `onyo unset --keys KEY=VALUE --path .` is called from the repository root,
+    onyo uses all assets in the complete repo recursively."""
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', "."],
+                         capture_output=True, text=True)
 
     assert "The following assets will be changed:" in ret.stdout
     # verify that output contains one line per asset
-    assert ret.stdout.count(f"-{key}: {content_dict.get(key)}") == len(assets)
+    assert ret.stdout.count(f"-{key}") == len(repo.get_asset_paths())
     assert not ret.stderr
     assert ret.returncode == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(*contents)
-def test_unset_without_path(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo unset --keys KEY` without a given path argument selects all
-    assets recursively.
-    """
-    key = list(content_dict.keys())[0]
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_without_path(repo: OnyoRepo,
+                            key: str) -> None:
+    """Test that `onyo unset --keys KEY` without a given path selects all assets recursively."""
     ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key],
                          capture_output=True, text=True)
 
     # verify the output
     assert "The following assets will be changed:" in ret.stdout
-    assert ret.stdout.count(f"-{key}: {content_dict.get(key)}") == len(assets)
+    assert ret.stdout.count(f"-{key}") == len(repo.get_asset_paths())
     assert not ret.stderr
     assert ret.returncode == 0
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('directory', directories)
-def test_unset_recursive_directories(repo: OnyoRepo, directory: str) -> None:
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('directory', [Path('one/'), Path('another/'), Path('one/two/three/four/')])
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_recursive_directories(repo: OnyoRepo,
+                                     directory: Path,
+                                     key: str) -> None:
+    """Test that `onyo unset --keys KEY --path DIRECTORY` updates contents of assets in DIRECTORY.
     """
-    Test that `onyo unset --keys KEY --path DIRECTORY` updates contents of
-    assets in DIRECTORY.
-    """
-    key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', directory], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', directory],
+                         capture_output=True, text=True)
 
-    # verify changes, and the repository clean
-    # TODO: update this after solving #259
-    repo_assets = repo.asset_paths
-    for asset in [asset for asset in Path(directory).iterdir() if asset in repo_assets]:
-        assert key not in Path(asset).read_text()
-        assert f"-{key}: {content_dict.get(key)}" in ret.stdout
-    fsck(repo)
+    # verify changes, output, and that the repository is clean
+    for asset in repo.get_asset_paths([repo.git.root / directory]):
+        assert key not in asset.read_text()
+    assert ret.stdout.count(f"-{key}") == len(repo.get_asset_paths([repo.git.root / directory]))
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_discard_changes_single_assets(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset` discards changes for assets successfully.
-    """
-    key = list(content_dict.keys())[0]
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_discard_changes_single_assets(repo: OnyoRepo,
+                                             asset: str,
+                                             key: str) -> None:
+    """Test that `onyo unset` discards changes for assets successfully."""
     # do an `onyo unset`, but answer "n" to discard the changes done by unset
-    ret = subprocess.run(['onyo', 'unset', '--keys', key, '--path', asset], input='n', capture_output=True, text=True)
-    assert f"-{key}: {content_dict.get(key)}" in ret.stdout
+    ret = subprocess.run(['onyo', 'unset', '--keys', key, '--path', asset], input='n',
+                         capture_output=True, text=True)
+
+    assert f"-{key}" in ret.stdout
     assert "No assets updated." in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify that the key was not removed
-    assert f"{key}: {content_dict.get(key)}" in Path(asset).read_text()
-    fsck(repo)
+    assert f"{key}" in Path(asset).read_text()
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(*contents)
-def test_unset_discard_changes_recursive(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo unset` discards changes for all assets successfully.
-    """
-    key = list(content_dict.keys())[0]
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_discard_changes_recursive(repo: OnyoRepo,
+                                         key: str) -> None:
+    """Test that `onyo unset` discards changes for all assets successfully."""
     # call `unset`, but discard changes
-    ret = subprocess.run(['onyo', 'unset', '--keys', key], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'unset', '--keys', key], input='n',
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
     assert "Update assets? (y/n) " in ret.stdout
     assert "No assets updated." in ret.stdout
-    assert ret.stdout.count(f"-{key}: {content_dict.get(key)}") == len(repo.asset_paths)
+    assert ret.stdout.count(f"-{key}") == len(repo.asset_paths)
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify that the removal was not written but discarded
     repo_assets = repo.asset_paths
     for asset in repo_assets:
-        assert f"{key}: {content_dict.get(key)}" in Path.read_text(asset)
-    fsck(repo)
+        assert f"{key}" in Path.read_text(asset)
+    assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_yes_flag(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset --yes KEY <asset>` updates assets without prompt.
-    """
-    key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', asset], capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert str(Path(asset)) in ret.stdout
-    assert f"-{key}" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # should not be asked with --yes flag
-    assert "Update assets? (y/n) " not in ret.stdout
-
-    # verify that the removal did happen, and the repository is still clean
-    assert f"{key}" not in Path(asset).read_text()
-    fsck(repo)
-
-
-asset = 'simple/laptop_apple_macbookpro.0'
-
-
-@pytest.mark.repo_files(asset)
-def test_unset_quiet_without_yes_flag(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo unset --quiet --keys KEY --path ASSET` errors correctly
-    without the --yes flag.
-    """
-    ret = subprocess.run(['onyo', '--quiet', 'unset', '--keys', 'dummy_key',
-                          '--path', asset], capture_output=True, text=True)
-
-    # verify output
-    assert not ret.stdout
-    assert "The --quiet flag requires --yes." in ret.stderr
-    assert ret.returncode == 1
-
-    # verify that the repository is in a clean state
-    fsck(repo)
-
-
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_quiet_flag(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset --quiet --yes --keys KEY --path ASSET` works correctly
-    without output and user-response.
-    """
-    key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', '--yes', '--quiet', 'unset', '--keys', key,
-                          '--path', asset], capture_output=True, text=True)
-    # verify that output is completely empty
-    assert not ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify that asset contents are updated
-    assert f"{key}" not in Path(asset).read_text()
-
-    # verify that the repository is in a clean state
-    fsck(repo)
-
-
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-def test_unset_message_flag(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo unset --message msg` overwrites the default commit message
-    with one specified by the user containing different special characters.
-    """
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_message_flag(repo: OnyoRepo,
+                            asset: str,
+                            key: str) -> None:
+    """Test that `onyo unset --message msg` overwrites the default commit message with one specified
+    by the user containing different special characters."""
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-    key = list(content_dict.keys())[0]
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--message', msg,
-                          '--keys', key, '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--message', msg, '--keys', key,
+                          '--path', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -375,121 +326,72 @@ def test_unset_message_flag(repo: OnyoRepo, asset: str) -> None:
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
     assert msg in ret.stdout
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
 
 
-depth_assets = ["laptop_macbook_pro.0",
-                "dir1/laptop_macbook_pro.1",
-                "dir1/dir2/laptop_macbook_pro.2",
-                "dir1/dir2/dir3/laptop_macbook_pro.3",
-                "dir1/dir2/dir3/dir4/laptop_macbook_pro.4",
-                "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5",
-                "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6"]
-depth_contents: List[List[str]] = [[x, content_str] for x in depth_assets]
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
+                                              if t[0] in ['laptop_apple_macbookpro.1',
+                                                          'one/laptop_dell_precision.2',
+                                                          'one/two/headphones_apple_pro.3',
+                                                          'one/two/three/headphones_apple_pro.4',
+                                                          'one/two/three/four/headphones_apple_pro.5']]))
+@pytest.mark.parametrize('depth,expected', [
+    ('0', 5), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('999', 5)])
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_depth(repo: OnyoRepo,
+                     depth: str,
+                     expected: int,
+                     key: str) -> None:
+    """Test that `onyo unset --depth x` retrieves the expected assets."""
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', 'num', '--depth', depth],
+                         capture_output=True, text=True)
+
+    # Check that for each expected asset there is one line mentioning the removal in the output
+    assert ret.stdout.count(f"-{key}") == expected
+    assert not ret.stderr
+    assert ret.returncode == 0
 
 
-@pytest.mark.repo_contents(*depth_contents)
-def test_unset_depth_flag(repo: OnyoRepo) -> None:
-    """
-    Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` for
-    different values for `--depth N`:
-    - correct error for values smaller then 0
-    - changing correct just assets in same dir for --depth 0
-    - changing assets until sub-dir is --depth N deep
-    - changing all assets if --depth is deeper then deepest sub-directory
-      without error (e.g. deepest folder is 6, but --depth 8 is called)
-    """
-    key = list(content_dict.keys())[0]
-    # try `onyo unset --depth` for different values. Always discards changes,
-    # and just checks if the output is the correct one.
-    ret = subprocess.run(['onyo', 'unset', '--depth', '-1', '--keys', key], capture_output=True, text=True)
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
+@pytest.mark.parametrize('key', ['num'])
+def test_unset_depth_error(repo: OnyoRepo,
+                           key: str) -> None:
+    """Test that `onyo unset --depth -1` returns the correct error."""
+    ret = subprocess.run(['onyo', 'unset', '--depth', '-1', '--keys', key],
+                         capture_output=True, text=True)
+
     # verify output for invalid --depth
     assert not ret.stdout
-    assert "depth values must be positive, but is -1" in ret.stderr
-    assert ret.returncode == 1
-    fsck(repo)
-
-    ret = subprocess.run(['onyo', 'unset', '--depth', '0', '--keys', key], input='n', capture_output=True, text=True)
-    # verify output for --depth 0
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert f"-{key}" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" in ret.stdout
-    # I think a value of zero should be allowed without error. It has no
-    # additional functionality, but is logically consistent, and might help
-    # while scripting with onyo.
-    assert "depth values must be positive" not in ret.stderr
-    assert ret.returncode == 0
-    fsck(repo)
-
-    ret = subprocess.run(['onyo', 'unset', '--depth', '1', '--keys', key], input='n', capture_output=True, text=True)
-    # verify output for --depth 1
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert ret.stdout.count(f"-{key}") == 1
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" not in ret.stdout
-    assert "depth must be greater or equal 0" not in ret.stderr
-    assert ret.returncode == 0
-    fsck(repo)
-
-    ret = subprocess.run(['onyo', 'unset', '--depth', '3', '--keys', key], input='n', capture_output=True, text=True)
-    # verify output for --depth 3
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" in ret.stdout
-    assert "dir1/dir2/dir3/laptop_macbook_pro.3" not in ret.stdout
-    assert ret.stdout.count(f"-{key}") == 3
-    assert ret.returncode == 0
-    fsck(repo)
-
-    ret = subprocess.run(['onyo', 'unset', '--depth', '6', '--keys', key], input='n', capture_output=True, text=True)
-    # verify output for --depth 6 (maximum depth) contains all files
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" in ret.stdout
-    assert "dir1/dir2/dir3/laptop_macbook_pro.3" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" not in ret.stdout
-    assert ret.stdout.count(f"-{key}") == 6
-    assert ret.returncode == 0
-    fsck(repo)
-
-    ret = subprocess.run(['onyo', 'unset', '--depth', '10', '--keys', key], input='n', capture_output=True, text=True)
-    # verify output for --depth bigger then folder depth without error
-    assert "laptop_macbook_pro.0" in ret.stdout
-    assert "dir1/laptop_macbook_pro.1" in ret.stdout
-    assert "dir1/dir2/laptop_macbook_pro.2" in ret.stdout
-    assert "dir1/dir2/dir3/laptop_macbook_pro.3" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/laptop_macbook_pro.4" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/laptop_macbook_pro.5" in ret.stdout
-    assert "dir1/dir2/dir3/dir4/dir5/dir6/laptop_macbook_pro.6" in ret.stdout
-    assert ret.stdout.count(f"-{key}") == len(repo.asset_paths)
-    assert ret.returncode == 0
-    fsck(repo)
-
-
-name_fields = [["type"],
-               ["make"],
-               ["model"],
-               ["serial"],
-               ["one", "type"]]
-
-
-@pytest.mark.repo_contents(*contents)
-@pytest.mark.parametrize('asset', assets)
-@pytest.mark.parametrize('name_field', name_fields)
-def test_error_unset_name_fields(repo: OnyoRepo, asset: str, name_field: list[str]) -> None:
-    """
-    Test that `onyo unset KEY <asset>` throws the correct error without printing
-    the usual information (e.g. diff output), when called with a KEY that is a
-    name field (type, make, model or/and serial number), not a content field.
-    """
-    ret = subprocess.run(['onyo', 'unset', '--keys', *name_field, '--path', asset], capture_output=True, text=True)
-
-    # verify output
-    assert not ret.stdout
-    assert "Can't unset keys used in asset name." in ret.stderr
+    assert "depth must be greater or equal 0" in ret.stderr
     assert ret.returncode == 1
 
     # verify state of repo is clean
-    fsck(repo)
+    assert repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(*convert_contents(
+    [t for t in asset_contents if 'laptop_apple_macbookpro.1' in t[0]]))
+@pytest.mark.parametrize('name_field', [
+    ["type"],
+    ["make"],
+    ["model"],
+    ["serial"],
+    ["num", "type"]])
+def test_unset_error_unset_name_fields(repo: OnyoRepo,
+                                       name_field: list[str]) -> None:
+    """Test that `onyo unset KEY <asset>` throws the correct error without printing the usual
+    information (e.g. diff output), when called with a KEY that is a name field (type, make, model
+    or/and serial number), not a content field.
+    """
+    asset = 'laptop_apple_macbookpro.1'
+    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', *name_field,
+                          '--path', asset],
+                         capture_output=True, text=True)
+
+    # verify output
+    assert not ret.stdout
+    assert "Can't unset" in ret.stderr
+    assert ret.returncode == 1
+
+    # verify state of repo is clean
+    assert repo.git.is_clean_worktree()
