@@ -108,7 +108,7 @@ OPERATIONS_MAPPING: dict = {'new_directories': InventoryOperator(executor=exec_n
 class Inventory(object):
     """"""
 
-    def __init__(self, repo: OnyoRepo):
+    def __init__(self, repo: OnyoRepo) -> None:
         self.repo: OnyoRepo = repo
         self.operations: list[InventoryOperation] = []
 
@@ -117,11 +117,11 @@ class Inventory(object):
         """Path to root inventory directory"""
         return self.repo.git.root
 
-    def reset(self):
+    def reset(self) -> None:
         """throw away pending operations"""
         self.operations = []
 
-    def commit(self, message: str):
+    def commit(self, message: str) -> None:
         """Execute and git-commit pending operations"""
         # get user message + generate appendix from operations
         # does order matter for execution? Prob.

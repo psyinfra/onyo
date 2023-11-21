@@ -36,7 +36,7 @@ class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
         return text
 
 
-def build_parser(parser, args: dict):
+def build_parser(parser, args: dict) -> None:
     """
     Add arguments to a parser.
     """

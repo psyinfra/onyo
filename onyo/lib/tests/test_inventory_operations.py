@@ -519,7 +519,7 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.git.is_clean_worktree()
 
 
-def test_remove_asset_dir_directory(repo: OnyoRepo):
+def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
     asset = Asset(some_key="some_value",
@@ -550,7 +550,7 @@ def test_remove_asset_dir_directory(repo: OnyoRepo):
     assert inventory.repo.git.is_clean_worktree()
 
 
-def test_remove_asset_dir_asset(repo: OnyoRepo):
+def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
     asset = Asset(some_key="some_value",
