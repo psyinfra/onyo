@@ -500,22 +500,15 @@ class OnyoRepo(object):
         """
         if depth < 0:
             raise ValueError(f"depth must be greater or equal 0, but is '{depth}'")
-
-        files = self.git.get_subtrees(subtrees)
-        if not subtrees:
-            asset_paths = [f for f in files
-                           if self.is_asset_path(f) and
-                           (len(f.parents) - len(self.git.root.parents) <= depth if depth else True)
-                           ]
-        else:
-            asset_paths = [f for f in files
-                           if self.is_asset_path(f) and
-                           any([f.is_relative_to(p) and
-                                (len(f.parents) - len(p.parents) <= depth if depth else True)
-                                for p in subtrees]
-                               )
-                           ]
-        return asset_paths
+        # Note: The if-else here doesn't change result, but utilizes `GitRepo`'s cache:
+        files = self.git.get_subtrees(subtrees) if subtrees else self.git.files
+        if depth:
+            roots = subtrees if subtrees else [self.git.root]
+            files = [f
+                     for f in files
+                     for r in roots
+                     if r in f.parents and len(f.parents) - len(r.parents) <= depth]
+        return [f for f in files if self.is_asset_path(f)]
 
     def get_asset_content(self,
                           path: Path) -> dict:
