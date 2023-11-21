@@ -42,9 +42,9 @@ class OnyoRepo(object):
 
     ONYO_DIR = Path('.onyo')
     ONYO_CONFIG = ONYO_DIR / 'config'
-    TEMPLATE_DIR = 'templates'
-    ANCHOR_FILE = '.anchor'
-    ASSET_DIR_FILE = '.onyo-asset-dir'
+    TEMPLATE_DIR = ONYO_DIR / 'templates'
+    ANCHOR_FILE_NAME = '.anchor'
+    ASSET_DIR_FILE_NAME = '.onyo-asset-dir'
 
     def __init__(self,
                  path: Path,
@@ -283,9 +283,9 @@ class OnyoRepo(object):
             True when the repository is complete and valid, otherwise False.
         """
         files = ['config',
-                 OnyoRepo.ANCHOR_FILE,
-                 Path(OnyoRepo.TEMPLATE_DIR) / OnyoRepo.ANCHOR_FILE,
-                 Path('validation') / OnyoRepo.ANCHOR_FILE]
+                 OnyoRepo.ANCHOR_FILE_NAME,
+                 Path(OnyoRepo.TEMPLATE_DIR.name) / OnyoRepo.ANCHOR_FILE_NAME,
+                 Path('validation') / OnyoRepo.ANCHOR_FILE_NAME]
 
         # has expected .onyo structure
         if not all(x.is_file() for x in [self.dot_onyo / f for f in files]):
@@ -390,7 +390,7 @@ class OnyoRepo(object):
         # TODO: We are currently ignoring .gitignore w/ underlying globbing
         # TODO: Only account for tracked files!
         return self.is_inventory_path(path) and \
-            (path.is_file() or (path / self.ASSET_DIR_FILE).is_file())
+            (path.is_file() or (path / self.ASSET_DIR_FILE_NAME).is_file())
 
     def is_inventory_path(self,
                           path: Path) -> bool:
@@ -404,7 +404,7 @@ class OnyoRepo(object):
         return path.is_relative_to(self.git.root) and \
             not self.git.is_git_path(path) and \
             not self.is_onyo_path(path) and \
-            self.ANCHOR_FILE not in path.parts
+            self.ANCHOR_FILE_NAME not in path.parts
 
     def is_asset_dir(self, path: Path) -> bool:
         return self.is_inventory_dir(path) and self.is_asset_path(path)
@@ -440,7 +440,7 @@ class OnyoRepo(object):
                 #       Empty dict can still be used as baseline for assembling the "real" dict.
 
         # Note: Protect against providing absolute path in `template_name`?
-        template_file = self.git.root / self.ONYO_DIR / self.TEMPLATE_DIR / name
+        template_file = self.git.root / self.TEMPLATE_DIR / name
         if not template_file.is_file():
             raise ValueError(f"Template {name} does not exist.")
         return yaml_to_dict(template_file)
@@ -458,10 +458,10 @@ class OnyoRepo(object):
         #       subtrees into account. So - not good to code it differently.
         anchors_exist = {x
                          for x in self.git.files
-                         if x.name == self.ANCHOR_FILE and
-                         not self.is_onyo_path(x)}
+                         if x.name == self.ANCHOR_FILE_NAME and
+                         self.is_inventory_dir(x.parent)}
 
-        anchors_expected = {x.joinpath(self.ANCHOR_FILE)
+        anchors_expected = {x.joinpath(self.ANCHOR_FILE_NAME)
                             for x in [self.git.root / f for f in self.git.root.glob('**/')]
                             if self.is_inventory_dir(x) and not x == self.git.root}
         difference = anchors_expected.difference(anchors_exist)
@@ -522,7 +522,7 @@ class OnyoRepo(object):
         if not self.is_asset_path(path):
             raise ValueError(f"{path} is not an asset path")
         if self.is_asset_dir(path):  # Performance: inventory dir should suffice here
-            a = yaml_to_dict(path / self.ASSET_DIR_FILE)
+            a = yaml_to_dict(path / self.ASSET_DIR_FILE_NAME)
             a['is_asset_directory'] = True
         else:
             a = yaml_to_dict(path)
@@ -536,8 +536,8 @@ class OnyoRepo(object):
         if not path:
             raise RuntimeError("Trying to write asset to unknown path")
         if self.is_inventory_path(path):
-            if asset.get('is_asset_directory', False) and path.name != self.ASSET_DIR_FILE:
-                path = path / self.ASSET_DIR_FILE
+            if asset.get('is_asset_directory', False) and path.name != self.ASSET_DIR_FILE_NAME:
+                path = path / self.ASSET_DIR_FILE_NAME
             write_asset_file(path, asset)
         else:
             raise ValueError(f"{path} is not a valid inventory path")
@@ -590,7 +590,7 @@ class OnyoRepo(object):
             d.mkdir(parents=True, exist_ok=True)
 
         # anchors
-        anchors = {i / OnyoRepo.ANCHOR_FILE for d in dirs
+        anchors = {i / OnyoRepo.ANCHOR_FILE_NAME for d in dirs
                    for i in [d] + list(d.parents)
                    if i.is_relative_to(self.git.root) and
                    not i.samefile(self.git.root)}

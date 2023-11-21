@@ -382,7 +382,7 @@ class Inventory(object):
                 is_asset = False
             if self.repo.is_inventory_dir(p):
                 operations.extend(self.remove_directory(p))
-            elif not is_asset and p.name not in [self.repo.ANCHOR_FILE, self.repo.ASSET_DIR_FILE]:
+            elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
                 # not an asset and not an inventory dir
                 # (hence also not an asset dir) implies
                 # we have a non-inventory file.

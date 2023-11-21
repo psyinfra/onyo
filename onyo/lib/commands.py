@@ -128,7 +128,7 @@ def onyo_cat(inventory: Inventory,
         #       `dict_to_yaml(inventory.repo.get_asset_content(path))` - no need to
         #       distinguish asset and asset dir at this level. However, need to
         #       make sure to not print pointless empty lines.
-        f = path / OnyoRepo.ASSET_DIR_FILE if inventory.repo.is_asset_dir(path) else path
+        f = path / OnyoRepo.ASSET_DIR_FILE_NAME if inventory.repo.is_asset_dir(path) else path
         ui.print(f.read_text(), end='')
     if not assets_valid:
         raise OnyoInvalidRepoError("Invalid assets")

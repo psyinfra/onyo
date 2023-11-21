@@ -85,7 +85,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     for s in specs:
         files = [p
                  for p in (inventory.root / f"{s['directory']}").iterdir()
-                 if p.name != OnyoRepo.ANCHOR_FILE
+                 if p.name != OnyoRepo.ANCHOR_FILE_NAME
                  ]
         assert len(files) == 1
         # expected filename (except serial):
