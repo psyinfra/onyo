@@ -2,12 +2,15 @@ import os
 import subprocess
 from pathlib import Path
 
-from onyo.lib import OnyoRepo
 import pytest
 
+from onyo.lib import OnyoRepo
+
 assets = [['laptop_apple_macbookpro.0', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 0"],
-          ['simple/laptop_apple_macbookpro.1', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 1"],
-          ['s p a/c e s/laptop_apple_macbookpro.2', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 2"],
+          ['simple/laptop_apple_macbookpro.1',
+           "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 1"],
+          ['s p a/c e s/laptop_apple_macbookpro.2',
+           "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 2"],
           ['very/very/very/deep/spe\"c_ial\\ch_ar\'ac.teஞrs',
            "type: spe\"c\nmake: ial\\ch\nmodel: ar\'ac\nserial: teஞrs"],
           ]
@@ -128,7 +131,8 @@ def test_edit_with_user_response(repo: OnyoRepo) -> None:
     os.environ['EDITOR'] = "printf 'key: user_response' >>"
 
     # test edit for a list of assets all at once
-    input_string = '\n'.join('y' for i in range(len(repo.asset_paths) + 1))  # confirm per asset + summary
+    input_string = '\n'.join(
+        'y' for i in range(len(repo.asset_paths) + 1))  # confirm per asset + summary
     ret = subprocess.run(['onyo', 'edit', *repo.asset_paths],
                          input=input_string, capture_output=True, text=True)
     assert ret.returncode == 0

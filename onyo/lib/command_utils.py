@@ -135,7 +135,6 @@ def unset(repo: OnyoRepo,
           paths: Iterable[Path],
           keys: list[str],
           depth: Optional[int]) -> list[Tuple[Path, Dict, Iterable]]:
-
     from .assets import get_asset_files_by_path
     from .utils import get_asset_content
     from .utils import dict_to_yaml

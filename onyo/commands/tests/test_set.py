@@ -39,7 +39,6 @@ non_existing_assets: List[List[str]] = [
     ["simple/single_non_existing.asset"],
     [asset_paths[0], "single_non_existing.asset"]]
 
-
 name_fields = [["type=desktop"],
                ["make=lenovo"],
                ["model=thinkpad"],
@@ -56,7 +55,8 @@ def test_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` updates contents of assets.
     """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -77,7 +77,8 @@ def test_set_interactive(repo: OnyoRepo, asset: str, set_values: list[str]) -> N
     """
     Test that `onyo set KEY=VALUE <asset>` updates contents of assets.
     """
-    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset], input='y', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset], input='y',
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -99,7 +100,8 @@ def test_set_multiple_assets(repo: OnyoRepo, set_values: list[str]) -> None:
     Test that `onyo set KEY=VALUE <asset>` can update the contents of multiple
     assets in a single call.
     """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', *asset_paths], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', *asset_paths],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -188,7 +190,8 @@ def test_set_recursive_directories(repo: OnyoRepo, directory: str, set_values: l
     Test that `onyo set KEY=VALUE <directory>` updates contents of assets
     correctly.
     """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', directory], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', directory],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -207,11 +210,13 @@ def test_set_recursive_directories(repo: OnyoRepo, directory: str, set_values: l
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
-def test_set_discard_changes_single_assets(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
+def test_set_discard_changes_single_assets(repo: OnyoRepo, asset: str,
+                                           set_values: list[str]) -> None:
     """
     Test that `onyo set` discards changes for assets successfully.
     """
-    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset], input='n',
+                         capture_output=True, text=True)
 
     # verify output for just dot, should be all in onyo root, but not recursive
     assert "The following assets will be changed:" in ret.stdout
@@ -257,7 +262,8 @@ def test_set_yes_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None
     """
     Test that `onyo set --yes KEY=VALUE <asset>` updates assets without prompt.
     """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -391,7 +397,8 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo, asset: str) -> None:
     different `KEY`, and adds it without overwriting existing values.
     """
     set_1 = "change=one"
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_1, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_1, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -403,7 +410,8 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo, asset: str) -> None:
 
     # call again and add a different KEY, without overwriting existing contents
     set_2 = "different=key"
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_2, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_2, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -431,7 +439,8 @@ def test_set_overwrite_key(repo: OnyoRepo, asset: str) -> None:
     different VALUE for the same KEY, and overwrites existing values correctly.
     """
     set_value = "value=original"
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_value, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_value, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -443,7 +452,8 @@ def test_set_overwrite_key(repo: OnyoRepo, asset: str) -> None:
 
     # call again with same key, but different value
     set_value_2 = "value=updated"
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_value_2, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_value_2, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -468,7 +478,8 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: st
     the correct output if called multiple times, and that the output is correct.
     """
     set_values = "change=one"
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_values, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', set_values, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -480,7 +491,8 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: st
     # call with two values, one of which is already set and should not appear
     # again in the output.
     set_values = ["change=one", "different=key"]
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -510,7 +522,8 @@ def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -
     info message without error, and the repository stays in a clean state.
     """
 
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -521,7 +534,8 @@ def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -
     assert ret.returncode == 0
 
     # call `onyo set` again with the same values
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
+                         capture_output=True, text=True)
 
     # verify second output
     assert "No assets updated." in ret.stdout
@@ -599,8 +613,9 @@ def test_duplicate_keys(repo: OnyoRepo, asset: str, set_values: list[str]) -> No
     Test that `onyo set` fails, if the same key is given multiple times.
     """
 
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, 'dup_key=1', 'dup_key=2', '--path', asset],
-                         capture_output=True, text=True)
+    ret = subprocess.run(
+        ['onyo', '--yes', 'set', '--keys', *set_values, 'dup_key=1', 'dup_key=2', '--path', asset],
+        capture_output=True, text=True)
 
     # verify output
     assert ret.returncode == 1

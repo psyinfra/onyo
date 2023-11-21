@@ -8,7 +8,6 @@ from ..commands import onyo_mv
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_into_self(inventory: Inventory) -> None:
-
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
 

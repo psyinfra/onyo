@@ -64,6 +64,7 @@ def test_filter_match_type(filt: str) -> None:
     """
     Test filtering by string type (e.g., <list> or <dict>)
     """
+
     def read_asset(name: str):
         if name == 'type_make_model.1':
             return dict(type='type',

@@ -24,7 +24,8 @@ def test_mv_interactive_missing_y(repo: OnyoRepo) -> None:
     """
     Default mode is interactive. It requires a "y" to approve.
     """
-    ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'],
+                         capture_output=True, text=True)
     assert ret.returncode == 1
     assert "Save changes? No discards all changes. (y/n) " in ret.stdout
     assert ret.stderr
@@ -84,7 +85,9 @@ def test_mv_quiet(repo: OnyoRepo) -> None:
     """
     ``--quiet`` requires ``--yes``
     """
-    ret = subprocess.run(['onyo', '--yes', '--quiet', 'mv', 'subdir/laptop_apple_macbook.abc123', './'], capture_output=True, text=True)
+    ret = subprocess.run(
+        ['onyo', '--yes', '--quiet', 'mv', 'subdir/laptop_apple_macbook.abc123', './'],
+        capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stdout
     assert not ret.stderr
@@ -99,7 +102,8 @@ def test_mv_yes(repo: OnyoRepo) -> None:
     """
     --yes removes any prompts and auto-approves the move.
     """
-    ret = subprocess.run(['onyo', '--yes', 'mv', 'subdir/laptop_apple_macbook.abc123', './'], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'mv', 'subdir/laptop_apple_macbook.abc123', './'],
+                         capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be moved:" in ret.stdout
     assert "Save changes? No discards all changes. (y/n) " not in ret.stdout
@@ -125,6 +129,7 @@ def test_mv_message_flag(repo: OnyoRepo, asset: str) -> None:
     assert not ret.stderr
 
     # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I', Path("destination") / Path(asset).name], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'history', '-I', Path("destination") / Path(asset).name],
+                         capture_output=True, text=True)
     assert msg in ret.stdout
     assert repo.git.is_clean_worktree()

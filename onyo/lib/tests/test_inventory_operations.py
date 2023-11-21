@@ -23,7 +23,6 @@ def num_operations(inventory: Inventory, name: str) -> int:
 
 
 def test_Inventory_instantiation(repo: OnyoRepo) -> None:
-
     inventory = Inventory(repo)
     # operations registry is initialized:
     assert inventory.operations == []
@@ -99,7 +98,6 @@ def test_add_asset(repo: OnyoRepo) -> None:
 
 
 def test_remove_asset(inventory: Inventory) -> None:
-
     # NOTE: First trial using inventory fixture
 
     doesnotexist = inventory.root / "root_asset"
@@ -675,7 +673,8 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
 
     # renaming as an asset by changing the naming config
     inventory.repo.git.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
-    inventory.repo.git.stage_and_commit(inventory.root / OnyoRepo.ONYO_CONFIG, "Change asset name config")
+    inventory.repo.git.stage_and_commit(inventory.root / OnyoRepo.ONYO_CONFIG,
+                                        "Change asset name config")
     new_asset_dir_path = asset_dir_path.parent / "SERIAL_1"
 
     inventory.rename_asset(asset_dir_path)

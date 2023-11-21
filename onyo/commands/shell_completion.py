@@ -50,6 +50,7 @@ class TabCompletion:
     completion_script
         Returns the completion script.
     """
+
     def __init__(
             self, parser, *, type_to_action_map={}, epilogue: str = '') -> None:
         self._cmd_tree = self._argparse_to_dict(parser)

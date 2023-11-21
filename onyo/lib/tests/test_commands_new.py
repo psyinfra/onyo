@@ -125,7 +125,6 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
-
     directory = inventory.root / "edited"
     monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
 

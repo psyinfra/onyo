@@ -98,7 +98,6 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
 
 @pytest.fixture(scope="function")
 def inventory(repo) -> Generator:
-
     # TODO: This is currently not in line with `repo`, where files and dirs are defined differently.
     #       Paths to created items should be delivered somehow.
     inventory = Inventory(repo=repo)

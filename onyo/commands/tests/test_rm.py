@@ -184,7 +184,8 @@ def test_rm_quiet_flag(repo: OnyoRepo) -> None:
     Test that `onyo rm --quiet --yes` deletes a list of assets successfully
     without printing any output or error.
     """
-    ret = subprocess.run(['onyo', '--yes', '--quiet', 'rm', *assets], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', '--quiet', 'rm', *assets], capture_output=True,
+                         text=True)
     assert ret.returncode == 0
     assert not ret.stdout
     assert not ret.stderr

@@ -268,8 +268,9 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
     key_values = "mode=keys_flag"
 
     # create asset with --keys
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys', key_values] + asset_spec,
-                         capture_output=True, text=True)
+    ret = subprocess.run(
+        ['onyo', '--yes', 'new', '--path', directory, '--keys', key_values] + asset_spec,
+        capture_output=True, text=True)
 
     # verify output
     assert "The following will be created:" in ret.stdout
