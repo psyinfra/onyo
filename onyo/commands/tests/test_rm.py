@@ -1,9 +1,10 @@
 import subprocess
 from pathlib import Path
+from typing import List
+
+import pytest
 
 from onyo.lib import OnyoRepo
-import pytest
-from typing import List
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro',

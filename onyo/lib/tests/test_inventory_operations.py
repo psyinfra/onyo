@@ -1,10 +1,11 @@
 import pytest
 
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.assets import Asset
-from onyo.lib.exceptions import InvalidInventoryOperation, NoopError, NotAnAssetError
 from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
+from onyo.lib.exceptions import InvalidInventoryOperation, NoopError, NotAnAssetError
+from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
+from onyo.lib.onyo import OnyoRepo
+
 
 # TODO: - Inventory fixture(s)
 #       - mocks

@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Callable
+
 from onyo.lib.onyo import OnyoRepo
+
 
 # Executors signature: (repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]
 #                      first returned list are the paths that need to be committed

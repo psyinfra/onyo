@@ -1,8 +1,9 @@
 import subprocess
 from pathlib import Path
 
-from onyo.lib import OnyoRepo
 import pytest
+
+from onyo.lib import OnyoRepo
 
 # These tests focus on functionality specific to the CLI for `onyo mv`.
 # Tests located in this file should not duplicate those testing `OnyoRepo.mv()`

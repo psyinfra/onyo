@@ -1,9 +1,9 @@
 import pytest
 
-from ..commands import onyo_mv
+from onyo.lib.exceptions import InvalidInventoryOperation
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.exceptions import InvalidInventoryOperation
+from ..commands import onyo_mv
 
 
 @pytest.mark.ui({'yes': True})

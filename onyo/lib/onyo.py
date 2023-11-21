@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import subprocess
-import os
 from pathlib import Path
 from typing import Iterable, List, Optional
 
-from .ui import ui
-from .git import GitRepo
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
+from .git import GitRepo
+from .ui import ui
 from .utils import yaml_to_dict, write_asset_file
 
 log: logging.Logger = logging.getLogger('onyo.onyo')

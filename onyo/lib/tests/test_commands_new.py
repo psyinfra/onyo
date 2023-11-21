@@ -1,14 +1,13 @@
 import os
-
-import pytest
 import subprocess
 from pathlib import Path
 
-from ..commands import onyo_new
-import onyo
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.inventory import Inventory
+import pytest
 
+import onyo
+from onyo.lib.inventory import Inventory
+from onyo.lib.onyo import OnyoRepo
+from ..commands import onyo_new
 
 # TODO: Derive path from installed package resources (and don't place it within a specific test location):
 prepared_tsvs = [p for p in (Path(onyo.__file__).parent / "commands" / "tests" / "tables").iterdir()]

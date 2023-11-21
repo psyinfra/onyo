@@ -3,6 +3,7 @@ from pathlib import Path
 
 from onyo.lib.onyo import OnyoRepo
 
+
 # Recorders signature: (repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]
 # Returned dict: {<title for operations record section>: [<snippet recording concrete operation>, ..]
 #

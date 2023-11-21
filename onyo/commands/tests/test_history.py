@@ -1,11 +1,11 @@
 import subprocess
 from pathlib import Path
+from typing import List
+
+import pytest
 
 from onyo.lib import OnyoRepo
 from onyo.lib.commands import fsck
-import pytest
-from typing import List
-
 
 # NOTE: the output of `onyo history` is not tested for formatting or content, as
 #       the commands called by `onyo history` are user-configurable. Instead, it

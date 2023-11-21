@@ -1,12 +1,13 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.inventory import Inventory
-from onyo.lib.filters import Filter
-from onyo.lib.commands import onyo_get
 from onyo.argparse_helpers import path
+from onyo.lib.commands import onyo_get
+from onyo.lib.filters import Filter
+from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_depth, shared_arg_match
 
 if TYPE_CHECKING:

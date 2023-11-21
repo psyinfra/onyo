@@ -1,37 +1,13 @@
 from __future__ import annotations
 
 import copy
-from pathlib import Path
-from typing import Generator, Optional
 from dataclasses import dataclass
-from typing import Callable
 from functools import partial
+from pathlib import Path
+from typing import Callable
+from typing import Generator, Optional
 
 from onyo.lib.assets import Asset
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.executors import (
-    exec_new_assets,
-    exec_new_directories,
-    exec_modify_assets,
-    exec_remove_assets,
-    exec_move_assets,
-    exec_rename_assets,
-    exec_remove_directories,
-    exec_rename_directories,
-    exec_move_directories,
-    generic_executor,
-)
-from onyo.lib.recorders import (
-    record_new_assets,
-    record_new_directories,
-    record_rename_assets,
-    record_modify_assets,
-    record_move_assets,
-    record_remove_assets,
-    record_remove_directories,
-    record_rename_directories,
-    record_move_directories
-)
 from onyo.lib.differs import (
     differ_new_assets,
     differ_new_directories,
@@ -47,6 +23,30 @@ from onyo.lib.exceptions import (
     NotAnAssetError,
     NoopError,
     InvalidInventoryOperation,
+)
+from onyo.lib.executors import (
+    exec_new_assets,
+    exec_new_directories,
+    exec_modify_assets,
+    exec_remove_assets,
+    exec_move_assets,
+    exec_rename_assets,
+    exec_remove_directories,
+    exec_rename_directories,
+    exec_move_directories,
+    generic_executor,
+)
+from onyo.lib.onyo import OnyoRepo
+from onyo.lib.recorders import (
+    record_new_assets,
+    record_new_directories,
+    record_rename_assets,
+    record_modify_assets,
+    record_move_assets,
+    record_remove_assets,
+    record_remove_directories,
+    record_rename_directories,
+    record_move_directories
 )
 from onyo.lib.utils import deduplicate
 

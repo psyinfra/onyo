@@ -7,12 +7,12 @@ import sys
 from pathlib import Path
 from typing import Dict, Generator, Iterable, Optional, Tuple
 
-
-from .ui import ui
-from .onyo import OnyoRepo
 from .consts import UNSET_VALUE
+from .onyo import OnyoRepo
+from .ui import ui
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
+
 
 # Note: Several functions only stage changes. Implies: This function somewhat
 # assumes commit to be called later, which is out of its own control.

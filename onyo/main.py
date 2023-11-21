@@ -2,11 +2,11 @@ import argparse
 import os
 import sys
 import textwrap
+from pathlib import Path
+from typing import Optional
 
 from onyo import commands
 from onyo.lib.ui import ui
-from pathlib import Path
-from typing import Optional
 
 
 # credit: https://stackoverflow.com/a/13429281

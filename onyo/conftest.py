@@ -3,12 +3,13 @@ from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
 from typing import Generator, List, Type
+
 import pytest
 from _pytest.mark.structures import MarkDecorator
 
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.inventory import Inventory
 from onyo.lib.assets import Asset
+from onyo.lib.inventory import Inventory
+from onyo.lib.onyo import OnyoRepo
 
 
 def params(d: dict) -> MarkDecorator:

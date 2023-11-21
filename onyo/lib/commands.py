@@ -1,21 +1,22 @@
 from __future__ import annotations
 
+import copy
+import logging
 import subprocess
 import sys
-import logging
-import copy
-from typing import Callable, Dict, Optional
 from pathlib import Path
+from typing import Callable, Dict, Optional
+
 from rich import box
 from rich.table import Table
 
-from onyo.lib.ui import ui
-from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.command_utils import fill_unset, natural_sort
-from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import deduplicate, write_asset_file
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
+from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
+from onyo.lib.onyo import OnyoRepo
+from onyo.lib.ui import ui
+from onyo.lib.utils import deduplicate, write_asset_file
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 

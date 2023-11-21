@@ -1,9 +1,10 @@
 import subprocess
 from pathlib import Path
+from typing import Any, Generator
+
+import pytest
 
 from onyo.lib import OnyoRepo
-import pytest
-from typing import Any, Generator
 
 
 def convert_contents(

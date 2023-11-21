@@ -2,9 +2,9 @@ import os
 import subprocess
 from pathlib import Path
 
-from onyo.lib import OnyoRepo
 import pytest
 
+from onyo.lib import OnyoRepo
 
 prepared_tsvs = Path(__file__).parent / "tables"
 directories = ['simple',

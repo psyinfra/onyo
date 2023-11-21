@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.inventory import Inventory
-from onyo.lib.filters import Filter
-from onyo.lib.commands import onyo_set
 from onyo.argparse_helpers import path, StoreKeyValuePairs
+from onyo.lib.commands import onyo_set
+from onyo.lib.filters import Filter
+from onyo.lib.inventory import Inventory
+from onyo.lib.onyo import OnyoRepo
 from onyo.shared_arguments import (
     shared_arg_depth,
     shared_arg_match,

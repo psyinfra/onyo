@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import copy
-
 from pathlib import Path
 from typing import Dict, Optional
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
-from onyo.lib.ui import ui
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.ui import ui
 
 
 def deduplicate(sequence: Optional[list]) -> Optional[list]:

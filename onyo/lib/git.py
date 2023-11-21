@@ -1,10 +1,10 @@
-from pathlib import Path
-import subprocess
 import logging
-
-from onyo.lib.ui import ui
-from onyo.lib.exceptions import OnyoInvalidRepoError
+import subprocess
+from pathlib import Path
 from typing import Iterable, Optional
+
+from onyo.lib.exceptions import OnyoInvalidRepoError
+from onyo.lib.ui import ui
 
 log: logging.Logger = logging.getLogger('onyo.git')
 
