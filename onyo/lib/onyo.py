@@ -45,6 +45,7 @@ class OnyoRepo(object):
     TEMPLATE_DIR = ONYO_DIR / 'templates'
     ANCHOR_FILE_NAME = '.anchor'
     ASSET_DIR_FILE_NAME = '.onyo-asset-dir'
+    IGNORE_FILE_NAME = '.onyoignore'
 
     def __init__(self,
                  path: Path,
@@ -453,8 +454,25 @@ class OnyoRepo(object):
 
         Such a path would be tracked by git, but not considered
         to be an inventory item by onyo.
+        Ignore files do apply to the subtree they are placed into.
+
+        Parameters
+        ----------
+        path: Path
+          Path to check for matching an exclude pattern in an ignore
+          file (`OnyoRepo.IGNORE_FILE_NAME`).
+
+        Returns
+        -------
+        bool
+          Whether `path` is ignored.
         """
-        # TODO! Until then, nothing is ignored.
+        candidates = [self.git.root / p / OnyoRepo.IGNORE_FILE_NAME
+                      for p in path.relative_to(self.git.root).parents]
+        actual = [f for f in candidates if f in self.git.files]  # committed files only
+        for ignore_file in actual:
+            if path in self.git.check_ignore(ignore_file, [path]):
+                return True
         return False
 
     def get_template(self,

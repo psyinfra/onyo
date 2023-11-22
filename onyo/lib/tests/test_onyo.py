@@ -176,3 +176,42 @@ def test_Repo_validate_anchors(onyorepo) -> None:
         onyorepo.commit(anchor, "TEST")
         # Must return False, because an .anchor is missing
         assert not onyorepo.validate_anchors()
+
+
+@pytest.mark.gitrepo_contents((Path('.gitignore'), "idea/"),
+                              (Path("subdir") / ".gitignore", "i_*"),
+                              (Path(OnyoRepo.IGNORE_FILE_NAME), "*.pdf\ndocs/"),
+                              (Path("subdir") / OnyoRepo.IGNORE_FILE_NAME, "untracked*\n"),
+                              (Path("dirty"), ""),
+                              (Path("i_dirty"), ""),
+                              (Path("idea") / "something", "blubb"),
+                              (Path("some.pdf"), "bla"),
+                              (Path("subdir") / "another.pdf", "content"),
+                              (Path("subdir") / "i_untracked", ""),
+                              (Path("subdir") / "regular", "whatever"),
+                              (Path("subdir") / "subsub" / "untracked_som.txt", ""),
+                              (Path("docs") / "regular", "whatever")
+                              )
+@pytest.mark.inventory_assets(dict(type="atype",
+                                   make="amake",
+                                   model="amodel",
+                                   serial=1,
+                                   path=Path("subdir") / "atype_amake_amodel.1"))
+def test_onyo_ignore(onyorepo) -> None:
+
+    # TODO: This test still has hardcoded stuff from the markers.
+    #       Markers and fixture annotation not fit for this yet.
+    for a in onyorepo.test_annotation['assets']:
+        assert not onyorepo.is_onyo_ignored(a['path'])
+    for d in onyorepo.test_annotation['dirs']:
+        assert not onyorepo.is_onyo_ignored(d)
+        assert not onyorepo.is_onyo_ignored(d / OnyoRepo.ANCHOR_FILE_NAME)
+    for f in onyorepo.test_annotation['git'].test_annotation['files']:
+        if f.name.endswith('pdf'):
+            assert onyorepo.is_onyo_ignored(f)
+        elif onyorepo.git.root / 'docs' in f.parents:
+            assert onyorepo.is_onyo_ignored(f)
+        elif onyorepo.git.root / 'subdir' in f.parents and f.name.startswith("untracked"):
+            assert onyorepo.is_onyo_ignored(f)
+        else:
+            assert not onyorepo.is_onyo_ignored(f)
