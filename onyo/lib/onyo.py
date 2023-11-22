@@ -125,39 +125,50 @@ class OnyoRepo(object):
 
     def get_config(self,
                    name: str) -> Optional[str]:
+        """Get effective value of config `name`.
+
+        This is considering regular git-config locations and checks
+        `OnyoRepo.ONYO_CONFIG` as fallback.
         """
-        """
-        # TODO: (lru_)cache?
         return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
 
     def get_asset_name_keys(self) -> list[str]:
         """Get a list of keys required for generating asset names
 
-        Name generation is configured by a python format string.
-        Hence, this gets the config finds all keys referenced in it.
+        This is extracting names of used keys from the
+        ``onyo.assets.filename`` config, which is supposed to be
+        a python format string.
+
+        Notes
+        -----
+        The extraction is relying on every such usage starting with a
+        '{', followed by a key name, which is then either closed
+        directly via '}' or first followed by some formatting options
+        in which case there's '[', '.', '!', etc.
+        Note, that '\\w' is used to match the key name, which includes
+        alphanumeric characters as well as underscores, therefore
+        matching python variable name restrictions. This is relevant,
+        because we want to get a dict from the YAML and making the
+        values available to name generation by passing the dict to a
+        format call on the configured string:
+        ``config_str.format(**yaml_dict)``
+        Hence, keys need to be able to be python variables.
+
+        This comes with a limitation on what formatting can be used in
+        the config. Utilizing nested dictionaries, for example, would
+        not be possible. Only the toplevel key would be recognized here.
 
         Returns
         -------
         list of str
           list containing the names of all keys found
         """
-        # Regex for finding key references in a python format string.
-        # This is relying on every such usage starting with a '{', followed by a key name, which is then either closed
-        # directly via '}' or first followed by some formatting options in which case there's '[', '.', '!', etc.
-        # Note, that `\w` should include alphanumeric characters as well as underscores, therefore matching python
-        # variable name restrictions. This is relevant, because we want to get a dict from the YAML and making the
-        # values available to name generation stored in "onyo.assets.filename" by passing the dict to
-        # `config_str.format(**yaml_dict)`.
-        # Hence, keys need to be able to be python variables.
-
-        # TODO: Make an issue about implications for usable format strings
-        #       (incl. nested dicts in the YAML - possible but not currently supported - wait for usecase)
-
-        search_regex = r"\{(\w+)"
-
         import re
+        # Regex for finding key references in a python format string
+        # (see notes above):
+        search_regex = r"\{(\w+)"
         config_str = self.get_config("onyo.assets.filename")
-        return re.findall(search_regex, config_str) if config_str else []  # TODO: raise, return None or return []?
+        return re.findall(search_regex, config_str) if config_str else []
 
     def get_editor(self) -> str:
         """Returns the editor, progressing through git, onyo, $EDITOR, and finally
@@ -258,17 +269,13 @@ class OnyoRepo(object):
 
     @property
     def asset_paths(self) -> list[Path]:
-        """Get a `set` containing the absolute `Path`s of all assets of a
+        """Get the absolute `Path`s of all assets of this
         repository.
 
-        This property is cached, and the cache is consistent with the state of
-        the repository when only `OnyoRepo`s public functions are used. Use of
-        private functions might require a manual reset of the caches, see
-        `OnyoRepo.clear_caches()`.
+        This property is cached and the cache can be reset via `self.clear_caches()`.
+        Only committed files are considered to be assets, hence an automatic cache
+        invalidation only happens upon `self.commit()`.
         """
-
-        # TODO:
-
         if self._asset_paths is None:
             self._asset_paths = self.get_asset_paths()
         return self._asset_paths
@@ -351,63 +358,104 @@ class OnyoRepo(object):
         shutil.copytree(skel_dir, self.dot_onyo)
 
         # add and commit
-        self.git.commit(self.dot_onyo,
-                        message='Initialize as an Onyo repository')
+        self.commit(self.dot_onyo,
+                    message='Initialize as an Onyo repository')
         ui.print(f'Initialized empty Onyo repository in {self.dot_onyo}/')
 
     def is_onyo_path(self,
                      path: Path) -> bool:
         """Determine whether an absolute `path` is used by onyo internally.
 
-        Currently anything underneath `.onyo/` as well as anything named
-        `.onyo*` is considered an onyo path.
+        Currently anything underneath `.onyo/`, anything named `.onyo*`,
+        and an anchor files in an inventory directory is considered an
+        onyo path.
 
         Parameters
         ----------
         path: Path
-          The path to check for if it is inside the `.onyo/` directory.
+          The path to check.
 
         Returns
         -------
         bool
-          True if `path` is inside `.onyo/`, otherwise False.
+          True if `path` is used internally by onyo.
         """
-        # TODO: Should this include anchor files?
         return path == self.dot_onyo or self.dot_onyo in path.parents or \
-            path.name.startswith('.onyo')  # see .onyoignore
+            path.name.startswith('.onyo') or path.name == self.ANCHOR_FILE_NAME
 
     def is_inventory_dir(self,
                          path: Path) -> bool:
-        # - existing inventory directory
-        # - includes repo.root as "root location"  --> is this valid?
-        # Note: This currently ignores whether there's tracked content in that
-        #       dir
-        return self.is_inventory_path(path) and path.is_dir()
+        """Whether `path` is an inventory directory.
+
+        This only considers directories w/ committed anchor file.
+        """
+        return path == self.git.root or \
+            (self.is_inventory_path(path) and path / self.ANCHOR_FILE_NAME in self.git.files)
 
     def is_asset_path(self,
                       path: Path) -> bool:
-        # TODO: check for .onyoignore
-        # TODO: We are currently ignoring .gitignore w/ underlying globbing
-        # TODO: Only account for tracked files!
-        return self.is_inventory_path(path) and \
-            (path.is_file() or (path / self.ASSET_DIR_FILE_NAME).is_file())
+        """Whether `path` is an asset in the repository.
+
+        Parameters
+        ----------
+        path: Path
+          Path to check for pointing to an asset.
+
+        Returns
+        -------
+        bool
+          Whether `path` is an asset in the repository.
+        """
+        return path in self.asset_paths
 
     def is_inventory_path(self,
                           path: Path) -> bool:
-        # Note: path underneath an inventory location with no regard for
-        #       existence of `path` itself. This is still a little ugly, since
-        #       is_inventory_dir is amost identical. Trouble comes from root
-        #       being an inventory dir. Consider lru_cache for these checks.
-        #       Dependency is_inventory_dir vs *_path seems wrong. Things change
-        #       when we know the path exists, because in case of a file there's
-        #       another restriction (ANCHOR)
+        """Whether `path` is valid for tracking an asset or an inventory directory.
+
+        This only checks whether `path` is suitable in principle.
+        It does not check whether that path already exists or if it would be valid
+        and available as an asset name.
+
+        Parameters
+        ----------
+        path: Path
+          Path to check.
+
+        Returns
+        -------
+        bool
+          Whether `path` is valid for an inventory item.
+        """
         return path.is_relative_to(self.git.root) and \
             not self.git.is_git_path(path) and \
             not self.is_onyo_path(path) and \
-            self.ANCHOR_FILE_NAME not in path.parts
+            not self.is_onyo_ignored(path)
 
     def is_asset_dir(self, path: Path) -> bool:
+        """Whether `path` is an asset directory.
+
+        An asset directory is both, an asset and an inventory directory.
+
+        Parameters
+        ----------
+        path: Path
+          Path to check.
+
+        Returns
+        -------
+        bool
+          Whether `path` is an asset directory.
+        """
         return self.is_inventory_dir(path) and self.is_asset_path(path)
+
+    def is_onyo_ignored(self, path: Path) -> bool:
+        """Whether `path` is matched by an ``.onyoignore`` file.
+
+        Such a path would be tracked by git, but not considered
+        to be an inventory item by onyo.
+        """
+        # TODO! Until then, nothing is ignored.
+        return False
 
     def get_template(self,
                      name: Optional[str] = None) -> dict:
@@ -434,12 +482,8 @@ class OnyoRepo(object):
         if not name:
             name = self.get_config('onyo.new.template')
             if name is None:
-                return dict()  # equivalent to previous empty default template
-                # TODO: is this sane or do we fail? Not raising seems advantageous,
-                #       b/c it allows for generic calls -> no template requested, no problem.
-                #       Empty dict can still be used as baseline for assembling the "real" dict.
+                return dict()
 
-        # Note: Protect against providing absolute path in `template_name`?
         template_file = self.git.root / self.TEMPLATE_DIR / name
         if not template_file.is_file():
             raise ValueError(f"Template {name} does not exist.")
@@ -459,11 +503,11 @@ class OnyoRepo(object):
         anchors_exist = {x
                          for x in self.git.files
                          if x.name == self.ANCHOR_FILE_NAME and
-                         self.is_inventory_dir(x.parent)}
+                         self.is_inventory_path(x.parent)}
 
-        anchors_expected = {x.joinpath(self.ANCHOR_FILE_NAME)
+        anchors_expected = {Path(x) / self.ANCHOR_FILE_NAME
                             for x in [self.git.root / f for f in self.git.root.glob('**/')]
-                            if self.is_inventory_dir(x) and not x == self.git.root}
+                            if x != self.git.root and self.is_inventory_path(x) and x.is_dir()}
         difference = anchors_expected.difference(anchors_exist)
 
         if difference:
@@ -508,13 +552,33 @@ class OnyoRepo(object):
                      for f in files
                      for r in roots
                      if r in f.parents and len(f.parents) - len(r.parents) <= depth]
-        return [f for f in files if self.is_asset_path(f)]
+
+        # This only checks for `is_inventory_path`, since we already
+        # know it's a committed file:
+        return [f for f in files if self.is_inventory_path(f)] + \
+               [f.parent for f in files if f.name == self.ASSET_DIR_FILE_NAME]
 
     def get_asset_content(self,
                           path: Path) -> dict:
+        """Get a dictionary representing `path`'s content.
+
+        Parameters
+        ----------
+        path: Path
+          Asset path to load. This is expected to be either a YAML file
+          or an asset directory (`OnyoRepo.ASSET_DIR_FILE_NAME`
+          automatically appended).
+
+        Returns
+        -------
+        dict
+          Dictionary representing an asset. That is: The union of the
+          content of the YAML file and teh asset's pseudo-keys.
+        """
         if not self.is_asset_path(path):
             raise ValueError(f"{path} is not an asset path")
-        if self.is_asset_dir(path):  # Performance: inventory dir should suffice here
+        if self.is_inventory_dir(path):
+            # It's an asset and an inventory dir -> asset dir
             a = yaml_to_dict(path / self.ASSET_DIR_FILE_NAME)
             a['is_asset_directory'] = True
         else:
@@ -598,3 +662,19 @@ class OnyoRepo(object):
                 a.touch(exist_ok=False)
                 added_files.append(a)
         return added_files
+
+    def commit(self, paths: Iterable[Path] | Path, message: str):
+        """Commit changes to the repository.
+
+        This is resetting the cache for `self.asset_paths` and otherwise
+        just a proxy for `GitRepo.commit`.
+
+        Parameters
+        ----------
+        paths: Path or Iterable of Path
+          List of paths to commit.
+        message: str
+          The git commit message.
+        """
+        self.git.commit(paths=paths, message=message)
+        self.clear_caches()

@@ -672,9 +672,9 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     pytest.raises(ValueError, inventory.rename_directory, asset_dir_path, "newname")
 
     # renaming as an asset by changing the naming config
-    inventory.repo.git.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
-    inventory.repo.git.commit(inventory.root / OnyoRepo.ONYO_CONFIG,
-                              "Change asset name config")
+    inventory.repo.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
+    inventory.repo.commit(inventory.root / OnyoRepo.ONYO_CONFIG,
+                          "Change asset name config")
     new_asset_dir_path = asset_dir_path.parent / "SERIAL_1"
 
     inventory.rename_asset(asset_dir_path)

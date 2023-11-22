@@ -158,8 +158,8 @@ def onyo_config(inventory: Inventory,
         # It's a write operation, and we'd want to commit
         # if there were any changes.
         try:
-            inventory.repo.git.commit(inventory.repo.ONYO_CONFIG,
-                                      'config: modify repository config')
+            inventory.repo.commit(inventory.repo.ONYO_CONFIG,
+                                  'config: modify repository config')
         except subprocess.CalledProcessError as e:
             if "no changes added to commit" in e.stdout or "nothing to commit" in e.stdout:
                 ui.print("No changes to commit.")

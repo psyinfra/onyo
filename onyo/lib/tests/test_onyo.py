@@ -54,16 +54,20 @@ def test_clear_caches(repo: OnyoRepo) -> None:
     The function `clear_caches()` must allow to empty the cache of the OnyoRepo,
     so that an invalid cache can be re-loaded by a newly call of the property.
     """
-    # make sure the asset is in the cache
+    # make sure the asset is in the cache:
     asset = Path('a/test/asset_for_test.0').resolve()
     assert asset in repo.asset_paths
 
-    # delete the asset (with a non-onyo function to invalid the cache) and then
-    # verify that the asset stays in the cache after the deletion
+    # only committed state is considered:
     Path.unlink(asset)
     assert asset in repo.asset_paths
 
-    # test clear_caches() fixes the cache
+    # committing while circumventing `OnyoRepo.commit` would
+    # make the cache out-of-sync:
+    repo.git.commit(asset, "asset deleted")
+    assert asset in repo.asset_paths
+
+    # clear_caches() fixes the cache:
     repo.clear_caches(assets=True)
     assert asset not in repo.asset_paths
 
@@ -171,7 +175,7 @@ def test_Repo_validate_anchors(repo: OnyoRepo) -> None:
 
     # Delete an .anchor, commit changes, reload object
     Path.unlink(repo.git.root / "a" / "test" / ".anchor")
-    repo.git.commit(repo.git.root / "a" / "test" / ".anchor", "TEST")
+    repo.commit(repo.git.root / "a" / "test" / ".anchor", "TEST")
     repo = OnyoRepo(repo.git.root)
 
     # Must return False, because an .anchor is missing
