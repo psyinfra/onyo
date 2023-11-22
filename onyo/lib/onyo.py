@@ -215,8 +215,8 @@ class OnyoRepo(object):
             self._asset_paths = None
             self.git.clear_cache()
 
-    def generate_commit_message(self,
-                                format_string: str,
+    @staticmethod
+    def generate_commit_message(format_string: str,
                                 max_length: int = 80,
                                 **kwargs) -> str:
         """Generate a commit message subject.
