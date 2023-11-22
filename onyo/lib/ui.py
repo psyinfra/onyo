@@ -3,7 +3,6 @@ import os
 import sys
 import traceback
 
-
 from rich.console import Console
 
 logging.basicConfig()

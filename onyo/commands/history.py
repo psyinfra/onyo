@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
@@ -6,9 +7,9 @@ from shlex import quote
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.ui import ui
-from onyo.lib.command_utils import get_history_cmd
 from onyo.argparse_helpers import path
+from onyo.lib.command_utils import get_history_cmd
+from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     import argparse

@@ -1,13 +1,12 @@
 import re
 import subprocess
-import pytest
-
 from pathlib import Path
 from typing import Any, Generator, Optional
 
-from onyo.lib.command_utils import fill_unset, natural_sort
-from onyo.lib import OnyoRepo
+import pytest
 
+from onyo.lib import OnyoRepo
+from onyo.lib.command_utils import fill_unset, natural_sort
 
 asset_contents = [
     ('laptop_apple_macbookpro.1', {'num': 8,

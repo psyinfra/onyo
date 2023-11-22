@@ -2,8 +2,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from onyo.lib import OnyoRepo
 
+from onyo.lib import OnyoRepo
 
 directories = ['simple',
                's p a c e s',
@@ -92,7 +92,8 @@ def test_mkdir_message_flag(repo: OnyoRepo) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     # test `onyo mkdir --message msg`
-    ret = subprocess.run(['onyo', '--yes', 'mkdir', '--message', msg, *directories], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'mkdir', '--message', msg, *directories],
+                         capture_output=True, text=True)
 
     assert ret.returncode == 0
     assert not ret.stderr

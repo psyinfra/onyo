@@ -3,12 +3,13 @@ from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
 from typing import Generator, List, Type
+
 import pytest
 from _pytest.mark.structures import MarkDecorator
 
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.inventory import Inventory
 from onyo.lib.assets import Asset
+from onyo.lib.inventory import Inventory
+from onyo.lib.onyo import OnyoRepo
 
 
 def params(d: dict) -> MarkDecorator:
@@ -97,7 +98,6 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
 
 @pytest.fixture(scope="function")
 def inventory(repo) -> Generator:
-
     # TODO: This is currently not in line with `repo`, where files and dirs are defined differently.
     #       Paths to created items should be delivered somehow.
     inventory = Inventory(repo=repo)
@@ -159,7 +159,7 @@ def helpers() -> Type[Helpers]:
 
 
 @pytest.fixture(scope='function', autouse=True)
-def set_ui(request):
+def set_ui(request) -> None:
     """Set up onyo.lib.ui according to a dict provided by the 'ui' marker"""
     from onyo.lib.ui import ui
     m = request.node.get_closest_marker('ui')

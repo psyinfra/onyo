@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.lib.inventory import Inventory
-from onyo.lib.commands import onyo_tree
 from onyo.argparse_helpers import directory
+from onyo.lib.commands import onyo_tree
+from onyo.lib.inventory import Inventory
 
 if TYPE_CHECKING:
     import argparse

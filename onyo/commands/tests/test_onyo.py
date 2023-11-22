@@ -1,8 +1,9 @@
 import subprocess
 from itertools import product
 
-from onyo.lib import OnyoRepo
 import pytest
+
+from onyo.lib import OnyoRepo
 
 
 @pytest.mark.repo_dirs('just-a-dir')

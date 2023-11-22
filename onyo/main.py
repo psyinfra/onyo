@@ -2,11 +2,11 @@ import argparse
 import os
 import sys
 import textwrap
+from pathlib import Path
+from typing import Optional
 
 from onyo import commands
 from onyo.lib.ui import ui
-from pathlib import Path
-from typing import Optional
 
 
 # credit: https://stackoverflow.com/a/13429281
@@ -36,7 +36,7 @@ class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
         return text
 
 
-def build_parser(parser, args: dict):
+def build_parser(parser, args: dict) -> None:
     """
     Add arguments to a parser.
     """

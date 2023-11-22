@@ -1,10 +1,10 @@
-from pathlib import Path
-import subprocess
 import logging
-
-from onyo.lib.ui import ui
-from onyo.lib.exceptions import OnyoInvalidRepoError
+import subprocess
+from pathlib import Path
 from typing import Iterable, Optional
+
+from onyo.lib.exceptions import OnyoInvalidRepoError
+from onyo.lib.ui import ui
 
 log: logging.Logger = logging.getLogger('onyo.git')
 
@@ -181,7 +181,8 @@ class GitRepo(object):
         """"""
         # TODO: - We might want to consider untracked files as well. Would need `--others` in addition.
         #       - turn into issue
-        ui.log_debug("Looking up tracked files%s", f" underneath {', '.join([str(p) for p in paths])}" if paths else "")
+        ui.log_debug("Looking up tracked files%s",
+                     f" underneath {', '.join([str(p) for p in paths])}" if paths else "")
         git_cmd = ['ls-files', '-z']
         if paths:
             git_cmd.extend([str(p) for p in paths])

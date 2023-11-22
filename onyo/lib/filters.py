@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field
 
@@ -17,7 +18,7 @@ class Filter:
     key: str = field(init=False)
     value: str = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """
         Set up a `key=value` conditional as a filter, to allow assets to be
         matched with the filter. Asset keys are then assessed on whether the

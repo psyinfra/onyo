@@ -1,6 +1,6 @@
-from onyo._version import __version__
 from pathlib import Path
 
+from onyo._version import __version__
 from onyo.argparse_helpers import directory
 
 args_onyo = {

@@ -1,6 +1,6 @@
 from __future__ import annotations
-import logging
 
+import logging
 from pathlib import Path
 from typing import Iterable, Optional, Set
 

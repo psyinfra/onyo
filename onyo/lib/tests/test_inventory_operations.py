@@ -1,10 +1,11 @@
 import pytest
 
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.assets import Asset
-from onyo.lib.exceptions import InvalidInventoryOperation, NoopError, NotAnAssetError
 from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
+from onyo.lib.exceptions import InvalidInventoryOperation, NoopError, NotAnAssetError
+from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
+from onyo.lib.onyo import OnyoRepo
+
 
 # TODO: - Inventory fixture(s)
 #       - mocks
@@ -22,7 +23,6 @@ def num_operations(inventory: Inventory, name: str) -> int:
 
 
 def test_Inventory_instantiation(repo: OnyoRepo) -> None:
-
     inventory = Inventory(repo)
     # operations registry is initialized:
     assert inventory.operations == []
@@ -98,7 +98,6 @@ def test_add_asset(repo: OnyoRepo) -> None:
 
 
 def test_remove_asset(inventory: Inventory) -> None:
-
     # NOTE: First trial using inventory fixture
 
     doesnotexist = inventory.root / "root_asset"
@@ -519,7 +518,7 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.git.is_clean_worktree()
 
 
-def test_remove_asset_dir_directory(repo: OnyoRepo):
+def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
     asset = Asset(some_key="some_value",
@@ -550,7 +549,7 @@ def test_remove_asset_dir_directory(repo: OnyoRepo):
     assert inventory.repo.git.is_clean_worktree()
 
 
-def test_remove_asset_dir_asset(repo: OnyoRepo):
+def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
     asset = Asset(some_key="some_value",
@@ -674,7 +673,8 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
 
     # renaming as an asset by changing the naming config
     inventory.repo.git.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
-    inventory.repo.git.stage_and_commit(inventory.root / OnyoRepo.ONYO_CONFIG, "Change asset name config")
+    inventory.repo.git.stage_and_commit(inventory.root / OnyoRepo.ONYO_CONFIG,
+                                        "Change asset name config")
     new_asset_dir_path = asset_dir_path.parent / "SERIAL_1"
 
     inventory.rename_asset(asset_dir_path)

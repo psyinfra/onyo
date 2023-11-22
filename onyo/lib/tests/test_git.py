@@ -1,8 +1,9 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from subprocess import CalledProcessError
 
 import pytest
+
 from onyo import OnyoInvalidRepoError
 from onyo.lib.git import GitRepo
 

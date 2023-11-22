@@ -1,6 +1,6 @@
+from difflib import unified_diff
 from functools import partial
 from pathlib import Path
-from difflib import unified_diff
 from typing import Generator
 
 from onyo.lib.onyo import OnyoRepo
