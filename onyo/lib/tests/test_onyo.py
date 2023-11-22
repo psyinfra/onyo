@@ -3,16 +3,15 @@ from pathlib import Path
 import pytest
 
 from onyo import OnyoRepo, OnyoInvalidRepoError
-from onyo.lib.commands import fsck, onyo_mkdir, onyo_mv
 
 
-def test_OnyoRepo_instantiation_existing(repo: OnyoRepo) -> None:
+def test_OnyoRepo_instantiation_existing(onyorepo) -> None:
     """
     The OnyoRepo class must instantiate correctly for paths to existing
     repositories.
     """
-    new_repo = OnyoRepo(repo.git.root, init=False)
-    assert new_repo.git.root.samefile(repo.git.root)
+    new_repo = OnyoRepo(onyorepo.git.root, init=False)
+    assert new_repo.git.root.samefile(onyorepo.git.root)
 
 
 def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
@@ -23,10 +22,11 @@ def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
     new_repo = OnyoRepo(tmp_path, init=True)
     assert new_repo.git.root.samefile(tmp_path)
     assert (new_repo.git.root / '.onyo').exists()
-    fsck(new_repo)
+    new_repo.git.is_clean_worktree()
+    new_repo.is_valid_onyo_repo()
 
 
-def test_OnyoRepo_incorrect_input_arguments_raise_error(repo: OnyoRepo,
+def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo,
                                                         tmp_path: Path) -> None:
     """
     The OnyoRepo must raise certain errors for invalid or conflicting arguments.
@@ -42,113 +42,109 @@ def test_OnyoRepo_incorrect_input_arguments_raise_error(repo: OnyoRepo,
         OnyoRepo(tmp_path / 'no-existy', init=False)
     # try OnyoRepo initialization with a path which is already a repo
     with pytest.raises(FileExistsError):
-        OnyoRepo(repo.git.root, init=True)
-    # try with conflicting argumeents `init=True` and `find_root=True`
+        OnyoRepo(onyorepo.git.root, init=True)
+    # try with conflicting arguments `init=True` and `find_root=True`
     with pytest.raises(ValueError):
-        OnyoRepo(repo.git.root, init=True, find_root=True)
+        OnyoRepo(tmp_path, init=True, find_root=True)
 
 
-@pytest.mark.repo_files('a/test/asset_for_test.0')
-def test_clear_caches(repo: OnyoRepo) -> None:
+@pytest.mark.inventory_assets(dict(type="asset",
+                                   make="for",
+                                   model="test",
+                                   serial=0,
+                                   path=Path('a') / 'test' / 'asset_for_test.0'))
+def test_clear_caches(onyorepo) -> None:
     """
     The function `clear_caches()` must allow to empty the cache of the OnyoRepo,
     so that an invalid cache can be re-loaded by a newly call of the property.
     """
-    # make sure the asset is in the cache:
-    asset = Path('a/test/asset_for_test.0').resolve()
-    assert asset in repo.asset_paths
+
+    # Use arbitrary asset here:
+    asset = onyorepo.test_annotation['assets'][0]['path']
+
+    # make sure asset is in the cache:
+    assert asset in onyorepo.asset_paths
 
     # only committed state is considered:
     Path.unlink(asset)
-    assert asset in repo.asset_paths
+    assert asset in onyorepo.asset_paths
 
     # committing while circumventing `OnyoRepo.commit` would
     # make the cache out-of-sync:
-    repo.git.commit(asset, "asset deleted")
-    assert asset in repo.asset_paths
+    onyorepo.git.commit(asset, "asset deleted")
+    assert asset in onyorepo.asset_paths
 
     # clear_caches() fixes the cache:
-    repo.clear_caches(assets=True)
-    assert asset not in repo.asset_paths
+    onyorepo.clear_caches(assets=True)
+    assert asset not in onyorepo.asset_paths
 
 
-def test_Repo_generate_commit_message(repo: OnyoRepo) -> None:
+def test_Repo_generate_commit_message(onyorepo) -> None:
     """
     A generated commit message has to have a header with less then 80 characters
     length, and a body with the paths to changed files and directories relative
     to the root of the repository.
     """
-    from onyo.lib.inventory import Inventory
-    inventory = Inventory(repo)
-    modified = [repo.git.root / 's p a c e s',
-                repo.git.root / 'a/new/folder']
-
-    # set ui.yes temporarily to `True` to suppress user-interaction
-    from onyo.lib.ui import ui
-    ui.set_yes(True)
-
-    # modify the repository with some different commands:
-    onyo_mkdir(inventory, modified, message=None)
-    onyo_mv(inventory, *modified, message=None)
-
-    # deactivate `yes` again
-    ui.set_yes(False)
+    modified = [onyorepo.git.root / 's p a c e s',
+                onyorepo.git.root / 'a/new/folder']
 
     # generate a commit message:
-    message = repo.generate_commit_message(
+    message = onyorepo.generate_commit_message(
         format_string='TST [{length}]: {modified}',
         length=len(modified),
         modified=modified)
 
     # root should not be in output
-    assert str(repo.git.root) not in message
+    assert str(onyorepo.git.root) not in message
 
     # verify all necessary information is in the message:
     assert f'TST [{len(modified)}]: ' in message
 
 
-@pytest.mark.repo_files('a/test/asset_for_test.0')
-def test_is_onyo_path(repo: OnyoRepo) -> None:
+@pytest.mark.gitrepo_contents((Path('a/test/asset_for_test.0'), ""))
+def test_is_onyo_path(onyorepo) -> None:
     """
     Verify that `OnyoRepo.is_onyo_path()` differentiates correctly between
     paths under `.onyo/` and outside of it.
     """
     # True for the directory `.onyo/` itself
-    assert repo.is_onyo_path(repo.dot_onyo)
+    assert onyorepo.is_onyo_path(onyorepo.dot_onyo)
     # True for the directory `templates` inside of `.onyo/`
-    assert repo.is_onyo_path(repo.dot_onyo / 'templates')
+    assert onyorepo.is_onyo_path(onyorepo.git.root / OnyoRepo.TEMPLATE_DIR)
     # True for a file inside `.onyo/`
-    assert repo.is_onyo_path(repo.dot_onyo / 'templates' / 'empty')
+    assert onyorepo.is_onyo_path(onyorepo.git.root / OnyoRepo.TEMPLATE_DIR / 'empty')
 
     # other files/directories beginning with .onyo should be recognized too
-    assert repo.is_onyo_path(repo.git.root / '.onyoignore')
+    assert onyorepo.is_onyo_path(onyorepo.git.root / '.onyoignore')
 
     # False for root of onyo repository
-    assert not repo.is_onyo_path(repo.git.root)
+    assert not onyorepo.is_onyo_path(onyorepo.git.root)
     # False for directory `.git/`
-    assert not repo.is_onyo_path(repo.git.root / '.git')
+    assert not onyorepo.is_onyo_path(onyorepo.git.root / '.git')
     # False for directory inside an onyo repository
-    assert not repo.is_onyo_path(repo.git.root / 'a' / 'test')
-    # False for asset inside an onyo repository
-    assert not repo.is_onyo_path(repo.git.root / 'a' / 'test' / 'asset_for_test.0')
+    assert all(not onyorepo.is_onyo_path(d)
+               for d in onyorepo.test_annotation['git'].test_annotation['directories'])
+    # False for file inside an onyo repository
+    assert all(not onyorepo.is_onyo_path(f)
+               for f in onyorepo.test_annotation['git'].test_annotation['files'])
 
 
-def test_Repo_get_template(repo: OnyoRepo) -> None:
+def test_Repo_get_template(onyorepo) -> None:
     """
     The function `OnyoRepo.get_template` returns a dictionary representing
     a template in `.onyo/templates/*`. Default can be configured via 'onyo.new.template'.
     With no config and no name given, returns an empty dict.
     """
     # Call the function without parameter to get the empty template:
-    assert repo.get_template() == dict()
+    assert onyorepo.get_template() == dict()
 
     # from the 'templates' dir, use the filename of each template to find the
     # corresponding template file as a path.
-    for path in (repo.git.root / '.onyo' / 'templates').iterdir():
-        if path.name == '.anchor':
+    for path in (onyorepo.git.root / OnyoRepo.TEMPLATE_DIR).iterdir():
+        if path.name == OnyoRepo.ANCHOR_FILE_NAME:
             continue
 
-        template = repo.get_template(path.name)
+        template = onyorepo.get_template(path.name)
         assert isinstance(template, dict)
         if path.name != 'empty':  # TODO: Make issue about removing `empty` file. That's pointless.
             assert template != dict()  # TODO: compare content
@@ -158,25 +154,25 @@ def test_Repo_get_template(repo: OnyoRepo) -> None:
     # verify the correct error response when called with a template name that
     # does not exist
     with pytest.raises(ValueError):
-        repo.get_template('I DO NOT EXIST')
+        onyorepo.get_template('I DO NOT EXIST')
 
     # TODO: test config
 
 
-@pytest.mark.repo_dirs('a/test/directory/structure/',
-                       'another/dir/')
-def test_Repo_validate_anchors(repo: OnyoRepo) -> None:
+@pytest.mark.inventory_dirs(Path('a/test/directory/structure/'),
+                            Path('another/dir/'))
+def test_Repo_validate_anchors(onyorepo) -> None:
     """
     `OnyoRepo.validate_anchors()` must return True when all existing directories
     have an `.anchor` file, and otherwise False.
     """
     # Must be true for valid repository
-    assert repo.validate_anchors()
+    assert onyorepo.validate_anchors()
 
-    # Delete an .anchor, commit changes, reload object
-    Path.unlink(repo.git.root / "a" / "test" / ".anchor")
-    repo.commit(repo.git.root / "a" / "test" / ".anchor", "TEST")
-    repo = OnyoRepo(repo.git.root)
-
-    # Must return False, because an .anchor is missing
-    assert not repo.validate_anchors()
+    for d in onyorepo.test_annotation['dirs']:
+        # Delete an .anchor, commit changes, re-validate
+        anchor = (d / OnyoRepo.ANCHOR_FILE_NAME)
+        anchor.unlink()
+        onyorepo.commit(anchor, "TEST")
+        # Must return False, because an .anchor is missing
+        assert not onyorepo.validate_anchors()

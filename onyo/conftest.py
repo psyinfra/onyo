@@ -45,6 +45,13 @@ class AnnotatedGitRepo(GitRepo):
         self.test_annotation = None
 
 
+class AnnotatedOnyoRepo(OnyoRepo):
+
+    def __init__(self, path: Path, init: bool = False, find_root: bool = False) -> None:
+        super().__init__(path, init, find_root)
+        self.test_annotation = None
+
+
 @pytest.fixture(scope='function')
 def gitrepo(tmp_path: Path, request) -> Generator[AnnotatedGitRepo, None, None]:
     subprocess.run(['git', 'init', str(tmp_path)])
@@ -67,6 +74,44 @@ def gitrepo(tmp_path: Path, request) -> Generator[AnnotatedGitRepo, None, None]:
         subprocess.run(['git', 'add'] + [str(s[0]) for s in m.args], cwd=gr.root)
         subprocess.run(['git', 'commit', '-m', 'Test repo setup'], cwd=gr.root)
     yield gr
+
+
+@pytest.fixture(scope='function')
+def onyorepo(gitrepo, request, monkeypatch) -> Generator[AnnotatedOnyoRepo, None, None]:
+    from onyo.lib.utils import deduplicate
+    onyo = AnnotatedOnyoRepo(gitrepo.root, init=True)
+    onyo.test_annotation = {'assets': [],
+                            'dirs': [],
+                            'git': gitrepo}
+
+    to_commit = []
+    m = request.node.get_closest_marker('inventory_assets')
+    if m:
+        for spec in list(m.args):
+            spec['path'] = gitrepo.root / spec['path']
+            implicit_dirs = [d for d in spec['path'].parents
+                             if d.is_relative_to(gitrepo.root)]
+            if spec.get('is_asset_dir'):
+                implicit_dirs.append(spec['path'])
+            to_commit += onyo.mk_inventory_dirs(implicit_dirs)
+            onyo.test_annotation['dirs'].extend(implicit_dirs)
+            onyo.write_asset_content(spec)
+            onyo.test_annotation['assets'].append(spec)
+            to_commit.append(spec['path'])
+
+    m = request.node.get_closest_marker('inventory_dirs')
+    if m:
+        dirs = [gitrepo.root / p for p in list(m.args)]
+        to_commit += onyo.mk_inventory_dirs(dirs)
+        onyo.test_annotation['dirs'].extend(dirs)
+    if onyo.test_annotation['dirs']:
+        onyo.test_annotation['dirs'] = deduplicate(onyo.test_annotation['dirs'])
+    if to_commit:
+        onyo.commit(deduplicate(to_commit), "onyorepo: setup")  # pyre-ignore[6] - not None if `to_commit` is not None
+
+    # cd into repo; to ease testing
+    monkeypatch.chdir(gitrepo.root)
+    yield onyo
 
 
 @pytest.fixture(scope='function')
