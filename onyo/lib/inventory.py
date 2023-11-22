@@ -434,10 +434,7 @@ class Inventory(object):
 
     def get_asset(self, path: Path):
         # read and return Asset
-        if self.repo.is_asset_path(path):
-            return self.repo.get_asset_content(path)
-        else:
-            raise ValueError(f"{path} is not an asset.")
+        return self.repo.get_asset_content(path)
 
     def get_assets(self,
                    paths: Optional[list[Path]] = None,
