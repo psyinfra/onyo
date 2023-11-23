@@ -537,13 +537,12 @@ def onyo_mv(inventory: Inventory,
         subject = "mv"
         for s in sources:
             move_asset_or_dir(inventory, s, destination)
-    else:
-        # RENAME
+    elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():
+        # RENAME directory
         subject = "ren"
-        if len(sources) != 1:
-            raise ValueError("Cannot rename multiple sources.")
-        else:
-            inventory.rename_directory(sources[0], destination)
+        inventory.rename_directory(sources[0], destination)
+    else:
+        raise ValueError("Can only move into an existing directory or rename a single directory.")
 
     if inventory.operations_pending():
         ui.print("The following will be {}:".format("moved" if subject == "mv" else "renamed"))
