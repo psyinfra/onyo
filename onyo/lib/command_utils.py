@@ -4,12 +4,10 @@ import logging
 import re
 import shutil
 import sys
-from pathlib import Path
-from typing import Dict, Generator, Iterable, Optional, Tuple
+from typing import Generator, Optional
 
 from .consts import UNSET_VALUE
 from .onyo import OnyoRepo
-from .ui import ui
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
@@ -129,41 +127,3 @@ def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
                          f"The program '{history_program}' was not found. Exiting.")
 
     return history_cmd
-
-
-def unset(repo: OnyoRepo,
-          paths: Iterable[Path],
-          keys: list[str],
-          depth: Optional[int]) -> list[Tuple[Path, Dict, Iterable]]:
-    from .assets import get_asset_files_by_path
-    from .utils import get_asset_content
-    from .utils import dict_to_yaml
-    # set and unset should select assets exactly the same way
-    assets_to_unset = get_asset_files_by_path(repo.asset_paths, paths, depth)
-
-    if any([key in repo.get_asset_name_keys() for key in keys]):
-        raise ValueError("Can't unset asset name keys.")
-
-    modifications = []
-    for asset_path in assets_to_unset:
-        contents = get_asset_content(asset_path)
-        prev_content = contents.copy()
-
-        for field in keys:
-            try:
-                del contents[field]
-            except KeyError:
-                ui.log(f"Field {field} does not exist in {asset_path}")
-
-        if prev_content != contents:
-            from difflib import unified_diff
-            diff = unified_diff(dict_to_yaml(prev_content).splitlines(keepends=True),
-                                dict_to_yaml(contents).splitlines(keepends=True),
-                                fromfile=str(asset_path),
-                                tofile="Update",
-                                lineterm="")
-        else:
-            diff = []
-        modifications.append((asset_path, contents, diff))
-
-    return modifications
