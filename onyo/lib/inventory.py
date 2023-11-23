@@ -280,6 +280,8 @@ class Inventory(object):
             raise ValueError(f"Cannot move {src}: Destination {dst} is the current location.")
         if not self.repo.is_inventory_dir(dst):
             raise ValueError(f"Cannot move {src}: Destination {dst} is not in inventory directory.")
+        if (dst / src.name).exists():
+            raise ValueError(f"Target {dst / src.name} already exists.")
 
         return [self._add_operation('move_assets', (src, dst))]
 
@@ -403,6 +405,8 @@ class Inventory(object):
             raise ValueError(f"Destination is not an inventory directory: {dst}")
         if src.parent == dst:
             raise InvalidInventoryOperation(f"Cannot move {src} -> {dst}. Consider renaming instead.")
+        if (dst / src.name).exists():
+            raise ValueError(f"Target {dst / src.name} already exists.")
         return [self._add_operation('move_directories', (src, dst))]
 
     def rename_directory(self, src: Path, dst: str | Path) -> list[InventoryOperation]:
@@ -414,8 +418,10 @@ class Inventory(object):
             dst = src.parent / dst
         if src.parent != dst.parent:
             raise InvalidInventoryOperation(f"Cannot rename {src} -> {dst}. Consider moving instead.")
-        if not self.repo.is_inventory_path(dst) or dst.exists():
-            raise ValueError(f"Not a valid destination: {dst}")
+        if not self.repo.is_inventory_path(dst):
+            raise ValueError(f"{dst} is not a valid inventory directory.")
+        if dst.exists():
+            raise ValueError(f"{dst} already exists.")
         name = dst if isinstance(dst, str) else dst.name
         if src.name == name:
             raise NoopError(f"Cannot rename directory {str(src)}: This is already its name.")

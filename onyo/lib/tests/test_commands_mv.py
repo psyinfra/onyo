@@ -62,7 +62,7 @@ def test_onyo_mv_into_self(inventory: Inventory) -> None:
     # target already exists
     inventory.add_directory(asset_path.parent / dir_path.name)
     inventory.commit("add target dir")
-    pytest.raises(OSError,  # TODO: This says "directory not empty" (anchor file) - should probably be changed
+    pytest.raises(ValueError,
                   onyo_mv,
                   inventory,
                   source=dir_path,
