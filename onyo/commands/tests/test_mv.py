@@ -36,6 +36,32 @@ def test_mv_interactive_missing_y(repo: OnyoRepo) -> None:
 
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
+def test_mv_errors_non_existing_destination(repo: OnyoRepo) -> None:
+    """Moving an existing asset or directory into a non-existing destination must error."""
+    # Verify error for asset:
+    ret = subprocess.run(
+        ['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', 'non/existing/directory'],
+        capture_output=True, text=True)
+    assert not ret.stdout
+    assert "Can only" in ret.stderr
+
+    assert Path('subdir/laptop_apple_macbook.abc123').exists()
+    assert not Path('non/existing/directory/laptop_apple_macbook.abc123').exists()
+    assert repo.git.is_clean_worktree()
+
+    # Verify error for directory:
+    ret = subprocess.run(
+        ['onyo', 'mv', 'subdir/', 'non/existing/directory'],
+        capture_output=True, text=True)
+    assert not ret.stdout
+    assert "Can only" in ret.stderr
+
+    assert Path('subdir/').exists()
+    assert not Path('non/existing/directory/subdir/').exists()
+    assert repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
 def test_mv_interactive_abort(repo: OnyoRepo) -> None:
     """
     Default mode is interactive. Provide the "n" to abort.
