@@ -95,9 +95,9 @@ def test_history_config_unset(repo: OnyoRepo) -> None:
     Test that `onyo history` errors when no tool is configured.
     """
     # unset config for history tool
-    repo.git.set_config('onyo.history.non-interactive', '')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Unset in .onyo/config: 'onyo.history.non-interactive'")
+    repo.set_config('onyo.history.non-interactive', '')
+    repo.commit(paths=repo.dot_onyo / 'config',
+                message="Unset in .onyo/config: 'onyo.history.non-interactive'")
 
     # verify unset
     assert not repo.get_config('onyo.history.non-interactive')
@@ -118,9 +118,9 @@ def test_history_config_invalid(repo: OnyoRepo) -> None:
     not exist.
     """
     # set to invalid
-    repo.git.set_config('onyo.history.non-interactive', 'does-not-exist-in-path')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Set non-existing: 'onyo.history.non-interactive'")
+    repo.set_config('onyo.history.non-interactive', 'does-not-exist-in-path')
+    repo.commit(paths=repo.dot_onyo / 'config',
+                message="Set non-existing: 'onyo.history.non-interactive'")
 
     # run history
     ret = subprocess.run(['onyo', 'history', '-I', assets[0]],
@@ -138,9 +138,9 @@ def test_history_fake_noninteractive_stdout(repo: OnyoRepo, asset: str) -> None:
     Test that the history tool can be reconfigured, so that `onyo history` can
     run commands different from the default options.
     """
-    repo.git.set_config('onyo.history.non-interactive', '/usr/bin/env printf')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Update config: 'onyo.history.non-interactive'")
+    repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf')
+    repo.commit(paths=repo.dot_onyo / 'config',
+                message="Update config: 'onyo.history.non-interactive'")
 
     # test
     ret = subprocess.run(['onyo', 'history', '-I', asset],
@@ -158,9 +158,9 @@ def test_history_fake_noninteractive_stderr(repo: OnyoRepo, asset: str) -> None:
     Test that the history tool can be so reconfigured, that it prints into
     stderr instead of stdout.
     """
-    repo.git.set_config('onyo.history.non-interactive', '/usr/bin/env printf >&2')
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Update config: 'onyo.history.non-interactive'")
+    repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf >&2')
+    repo.commit(paths=repo.dot_onyo / 'config',
+                message="Update config: 'onyo.history.non-interactive'")
 
     # test
     ret = subprocess.run(['onyo', 'history', '-I', asset],
@@ -183,9 +183,9 @@ def test_history_fake_noninteractive_bubble_exit_code(repo: OnyoRepo, variant: d
     Test that `onyo history` does bubble up the different exit codes that the
     tools configured return.
     """
-    repo.git.set_config('onyo.history.non-interactive', variant['cmd'])
-    repo.git.stage_and_commit(paths=repo.dot_onyo / 'config',
-                              message="Update config: 'onyo.history.non-interactive'")
+    repo.set_config('onyo.history.non-interactive', variant['cmd'])
+    repo.commit(paths=repo.dot_onyo / 'config',
+                message="Update config: 'onyo.history.non-interactive'")
 
     # test
     ret = subprocess.run(['onyo', 'history', '-I', assets[0]],

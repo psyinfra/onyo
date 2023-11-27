@@ -150,7 +150,7 @@ class Inventory(object):
                 sorted(line for line in deduplicate(snippets)))  # pyre-ignore[16]
 
         # TODO: Actually: staging (only new) should be done in execute. committing is then unified
-        self.repo.git.stage_and_commit(set(paths_to_commit + paths_to_stage), commit_msg)
+        self.repo.commit(set(paths_to_commit + paths_to_stage), commit_msg)
         self.reset()
 
     def diff(self) -> Generator[str, None, None]:
@@ -382,7 +382,7 @@ class Inventory(object):
                 is_asset = False
             if self.repo.is_inventory_dir(p):
                 operations.extend(self.remove_directory(p))
-            elif not is_asset and p.name not in [self.repo.ANCHOR_FILE, self.repo.ASSET_DIR_FILE]:
+            elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
                 # not an asset and not an inventory dir
                 # (hence also not an asset dir) implies
                 # we have a non-inventory file.
@@ -434,10 +434,7 @@ class Inventory(object):
 
     def get_asset(self, path: Path):
         # read and return Asset
-        if self.repo.is_asset_path(path):
-            return self.repo.get_asset_content(path)
-        else:
-            raise ValueError(f"{path} is not an asset.")
+        return self.repo.get_asset_content(path)
 
     def get_assets(self,
                    paths: Optional[list[Path]] = None,

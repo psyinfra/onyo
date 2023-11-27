@@ -1,11 +1,16 @@
+"""Tests for onyo's git module."""
 import subprocess
 from pathlib import Path
-from subprocess import CalledProcessError
 
 import pytest
 
 from onyo import OnyoInvalidRepoError
 from onyo.lib.git import GitRepo
+
+# TODO: Alternative approach to fixture:
+#       class that defines a setup via literals;
+#       parameterize fixture(!!) with these instances;
+#       or pytest_generate_tests -> p.66-69
 
 
 def test_GitRepo_instantiation(tmp_path: Path) -> None:
@@ -13,7 +18,7 @@ def test_GitRepo_instantiation(tmp_path: Path) -> None:
     The `GitRepo` class must instantiate and set the root correctly for paths
     to existing repositories.
     """
-    # initialize the temp_path as an git repository
+    # initialize the temp_path as a git repository
     subprocess.run(['git', 'init', tmp_path])
 
     # test that `GitRepo()` instantiates (and sets the root to) the object
@@ -24,13 +29,28 @@ def test_GitRepo_instantiation(tmp_path: Path) -> None:
     # create a sub-directory to test the find-root behavior
     subprocess.run(['mkdir', '-p', tmp_path / "sub-directory"])
 
-    # with `find_root=False` it excepts other existing paths e.g. sub-dirs
+    # with `find_root=False` it accepts other existing paths e.g. sub-dirs
     new_repo = GitRepo(tmp_path / "sub-directory", find_root=False)
     assert new_repo.root.samefile(tmp_path / "sub-directory")
 
     # with `find_root=True` it must find the root and set it appropriately
     new_repo = GitRepo(tmp_path / "sub-directory", find_root=True)
     assert new_repo.root.samefile(tmp_path)
+
+
+def test_GitRepo_maybe_init(tmp_path: Path) -> None:
+    root = tmp_path / 'doesnotexist'
+
+    # Can initialize a git repository in
+    # not yet existing dir:
+    gr = GitRepo(root)
+    assert not root.exists()
+    gr.maybe_init()
+    assert root.is_dir()
+    assert (root / '.git').exists()
+
+    # Re-execution doesn't raise:
+    gr.maybe_init()
 
 
 def test_GitRepo_find_root(tmp_path: Path) -> None:
@@ -67,283 +87,245 @@ def test_GitRepo_find_root(tmp_path: Path) -> None:
         GitRepo.find_root(tmp_path / 'non-existing/directory')
 
 
-def test_GitRepo_restore_staged(tmp_path: Path) -> None:
-    """
-    `GitRepo.restore_staged()` must restore all staged files in the repository.
-    If no files are staged, it should not raise an error.
-    If there are modified or untracked files, they should not be changed.
-    """
-    subprocess.run(['git', 'init', tmp_path])
-    new_git = GitRepo(tmp_path)
-    test_file = new_git.root / 'asset_for_test.0'
-    test_file.touch()
-    new_git.stage_and_commit(test_file, message="Create file for test")
-
-    # test that no error is raised, when called on a clean repository
-    new_git.restore_staged()
-    assert new_git.is_clean_worktree()
-
-    # have an untracked, a changed and a staged file
-    untracked_file = new_git.root / 'asset_for_test.1'
-    untracked_file.touch()
-
-    changed_file = new_git.root / 'asset_for_test.2'
-    changed_file.touch()
-    new_git.stage_and_commit(changed_file, message="Create file to change")
-    changed_file.open('w').write('Test: content')
-
-    test_file.open('w').write('Test: content')
-    new_git.add(test_file)
-    assert untracked_file in new_git.files_untracked
-    assert changed_file in new_git.files_changed
-    assert test_file in new_git.files_staged
-
-    # call restore_staged() and verify that the changes on test_file are not
-    # staged anymore, but that modified and untracked files are unchanged
-    new_git.restore_staged()
-    assert test_file not in new_git.files_staged
-    assert untracked_file in new_git.files_untracked
-    assert changed_file in new_git.files_changed
-
-
-def test_GitRepo_restore(tmp_path: Path) -> None:
-    """
-    `GitRepo.restore()` receives a list of paths and must restore changes for
-    them.
-
-    This does restore files which contain changes, but it does not restore
-    changes that are already staged.
-    When called on an untracked file, it must raise an error (like `git restore
-    <untracked>`).
-    """
-    subprocess.run(['git', 'init', tmp_path])
-    new_git = GitRepo(tmp_path)
-    test_file = new_git.root / 'asset_for_test.0'
-    test_file.touch()
-    new_git.stage_and_commit([test_file], message="Test File")
-
-    # Test that no error is raised, when called on a clean file
-    new_git.restore(test_file)
-    assert new_git.is_clean_worktree()
-
-    # Test that calling `GitRepo.restore()` on a file with already staged
-    # changes does not effect the file
-    test_file.open('w').write('Test: content')
-    new_git.add(test_file)
-    assert test_file in new_git.files_staged
-    new_git.restore(test_file)
-    assert test_file in new_git.files_staged
-
-    # Test that calling `GitRepo.restore()` on an untracked file must raise an
-    # error (like `git restore` does)
-    untracked_file = new_git.root / 'asset_for_test.untracked'
-    untracked_file.touch()
-    assert untracked_file in new_git.files_untracked
-    with pytest.raises(CalledProcessError):
-        new_git.restore(untracked_file)
-    assert untracked_file in new_git.files_untracked
-
-    # Test that calling `GitRepo.restore()` on a file with unstaged changes
-    # restores the file
-    changed_file = new_git.root / 'asset_for_test.changed'
-    changed_file.touch()
-    new_git.stage_and_commit([changed_file], message="Test File")
-    changed_file.open('w').write('Test: content')
-    assert changed_file in new_git.files_changed
-    new_git.restore(changed_file)
-    assert changed_file not in new_git.files_changed
-    assert changed_file not in new_git.files_untracked
-    assert changed_file not in new_git.files_staged
-
-
-def test_GitRepo_clear_caches(tmp_path: Path) -> None:
+def test_GitRepo_clear_caches(gitrepo) -> None:
     """
     The function `GitRepo.clear_caches()` must allow to empty the cache of the
     GitRepo, so that an invalid cache can be re-loaded by a new call of the
     property.
     """
-    # initialize and instantiate `GitRepo`, and create+add a file so it is
-    # cached in the new_git.files
-    subprocess.run(['git', 'init', tmp_path])
-    new_git = GitRepo(tmp_path)
-    file = new_git.root / 'asset_for_test.0'
+    # create+add a file so it is cached in the gitrepo.files
+    file = gitrepo.root / 'asset_for_test.0'
     file.touch()
-    new_git.stage_and_commit(file, message="Create file for test")
-    assert file in new_git.files
+    gitrepo.commit(file, message="Create file for test")
+    assert file in gitrepo.files
 
     # delete the file (with a non-onyo function to invalid the cache) and then
     # verify that the file stays in the cache after the deletion
     Path.unlink(file)
-    new_git.stage_and_commit(file, message="Delete file for test")
-    assert file in new_git.files
+    subprocess.run(['git', 'add', str(file)], check=True, cwd=gitrepo.root)
+    subprocess.run(['git', 'commit', '-m', "Delete file for test"], check=True, cwd=gitrepo.root)
+    assert file in gitrepo.files
     assert not file.exists()
 
     # test GitRepo.clear_caches() fixes the cache
-    new_git.clear_caches(files=True)
-    assert file not in new_git.files
+    gitrepo.clear_cache()
+    assert file not in gitrepo.files
 
 
-def test_GitRepo_is_clean_worktree(tmp_path: Path) -> None:
+def test_GitRepo_is_clean_worktree(gitrepo) -> None:
     """
     `GitRepo.is_clean_worktree()´ must return True when the worktree is clean,
     and otherwise (i.e. for changed, staged, and unstracked files) return False.
     """
-    subprocess.run(['git', 'init', tmp_path])
-    new_git = GitRepo(tmp_path)
-    test_file = new_git.root / "test_file.txt"
+    test_file = gitrepo.root / "test_file.txt"
 
     # initially clean
-    assert new_git.is_clean_worktree()
+    assert gitrepo.is_clean_worktree()
 
     # a file created but not added (i.e. untracked) must lead to return False
     test_file.touch()
-    assert test_file in new_git.files_untracked
-    assert not new_git.is_clean_worktree()
+    assert not gitrepo.is_clean_worktree()
 
     # a file added but not commit-ed (i.e. staged) must lead to return False
-    new_git.add(test_file)
-    assert test_file in new_git.files_staged
-    assert not new_git.is_clean_worktree()
+    subprocess.run(['git', 'add', str(test_file)], check=True, cwd=gitrepo.root)
+    assert not gitrepo.is_clean_worktree()
 
     # when commit-ed, the function must return True again
-    new_git.commit(test_file, 'commit-ed!')
-    assert new_git.is_clean_worktree()
+    subprocess.run(['git', 'commit', '-m', 'commit-ed!'], check=True, cwd=gitrepo.root)
+    assert gitrepo.is_clean_worktree()
 
     # a file modified but not commit-ed (i.e. changed) must lead to return False
     test_file.open('w').write('Test: content')
-    new_git.add(test_file)
-    assert test_file in new_git.files_staged
-    assert not new_git.is_clean_worktree()
+    subprocess.run(['git', 'add', str(test_file)], check=True, cwd=gitrepo.root)
+    assert not gitrepo.is_clean_worktree()
 
     # when commit-ed, the function must return True again
-    new_git.commit(test_file, 'commit-ed again!')
-    assert new_git.is_clean_worktree()
+    subprocess.run(['git', 'commit', '-m', 'commit-ed again!'], check=True, cwd=gitrepo.root)
+    assert gitrepo.is_clean_worktree()
+
+    gitignore = gitrepo.root / ".gitignore"
+    gitignore.write_text("*.some")
+    subprocess.run(['git', 'add', str(gitignore)], check=True, cwd=gitrepo.root)
+    subprocess.run(['git', 'commit', '-m', 'add gitignore'], check=True, cwd=gitrepo.root)
+
+    assert gitrepo.is_clean_worktree()
+    # Untracked, but gitignore'd file is still clean:
+    (gitrepo.root / "ignore.some").touch()
+    assert gitrepo.is_clean_worktree()
 
 
-@pytest.mark.repo_files('existing/directory/test_file.txt')
-def test_GitRepo_is_git_path(tmp_path: Path) -> None:
+def test_GitRepo_is_git_path(gitrepo) -> None:
     """
     `GitRepo.is_git_path()` needs to identify and return True for `.git/*`,
     `.gitignore`, `.gitattributes`, `.gitmodules`, etc., and otherwise return
     False.
     """
-    subprocess.run(['git', 'init', tmp_path])
-    subprocess.run(['mkdir', '-p', tmp_path / 'existing' / 'directory' /
-                    'test_file.txt'])
-    new_git = GitRepo(tmp_path)
+    directory = gitrepo.root / 'existing' / 'directory'
+    directory.mkdir(parents=True, exist_ok=True)
+    test_file = directory / "test_file.txt"
+    test_file.touch()
 
     # Test the examples listed above:
-    assert new_git.is_git_path(new_git.root / ".git")
-    assert new_git.is_git_path(new_git.root / ".git" / "HEAD")
-    assert new_git.is_git_path(new_git.root / ".git" / "doesnotexist")
-    assert new_git.is_git_path(new_git.root / ".gitignore")
-    assert new_git.is_git_path(new_git.root / ".gitdoesnotexist")
-    assert new_git.is_git_path(new_git.root / "existing" / ".gitattributes")
+    assert gitrepo.is_git_path(gitrepo.root / ".git")
+    assert gitrepo.is_git_path(gitrepo.root / ".git" / "HEAD")
+    assert gitrepo.is_git_path(gitrepo.root / ".git" / "doesnotexist")
+    assert gitrepo.is_git_path(gitrepo.root / ".gitignore")
+    assert gitrepo.is_git_path(gitrepo.root / ".gitdoesnotexist")
+    assert gitrepo.is_git_path(gitrepo.root / "existing" / ".gitattributes")
 
     # Must return False
-    assert not new_git.is_git_path(new_git.root)
-    assert not new_git.is_git_path(new_git.root / ".onyo")
-    assert not new_git.is_git_path(new_git.root / "existing")
-    assert not new_git.is_git_path(new_git.root / "existing" / "git_no_.git")
-    assert not new_git.is_git_path(new_git.root / "existing" / "directory" /
-                                   "test_file.txt")
+    assert not gitrepo.is_git_path(gitrepo.root)
+    assert not gitrepo.is_git_path(gitrepo.root / ".onyo")
+    assert not gitrepo.is_git_path(gitrepo.root / "existing")
+    assert not gitrepo.is_git_path(gitrepo.root / "existing" / "git_no_.git")
+    assert not gitrepo.is_git_path(test_file)
 
 
-def test_GitRepo_add(tmp_path: Path) -> None:
-    """
-    `GitRepo.add()` must allow to add files which are either new or contain
-    changes. If called on files without changes, it does not raise an error.
-    """
-    # setup the repo and GitRepo object
-    subprocess.run(['git', 'init', tmp_path])
-    new_git = GitRepo(tmp_path)
-
-    # create a file for the test and add it to git
-    existing_file = new_git.root / 'test_file.txt'
-    existing_file.touch()
-    new_git.stage_and_commit(existing_file, message="Create file for test")
-
-    # create a Path to a file that does not yet exist
-    new_file = new_git.root / 'new_file.txt'
-
-    # test that GitRepo.add() does not raise an error on files that exist and
-    # have no changes
-    new_git.add(existing_file)
-    assert new_git.is_clean_worktree()
-
-    # test that GitRepo.add() raises a FileNotFoundError for `new_file`, an
-    # absolute path to a file that do not yet exist
-    with pytest.raises(FileNotFoundError):
-        new_git.add(new_file)
-
-    # modify an existing file, and create a new file
-    existing_file.open('w').write('Test: content')
-    assert existing_file in new_git.files_changed
-    new_file.touch()
-    assert new_file in new_git.files_untracked
-
-    new_git.add([existing_file, new_file])
-    assert existing_file in new_git.files_staged
-    assert new_file in new_git.files_staged
-
-    # after files are `GitRepo.add()`ed they should not be cached in the
-    # properties GitRepo.files_changed and GitRepo.files_untracked
-    assert existing_file not in new_git.files_changed
-    assert new_file not in new_git.files_untracked
-
-
-def test_GitRepo_commit(tmp_path: Path) -> None:
+def test_GitRepo_commit(gitrepo) -> None:
     """
     `GitRepo.commit()` must commit all staged changes.
 
     This test follows the scheme of `test_GitRepo_add()`.
     """
-    subprocess.run(['git', 'init', tmp_path])
-    new_git = GitRepo(tmp_path)
-    test_file = new_git.root / 'test_file.txt'
+    test_file = gitrepo.root / 'test_file.txt'
     test_file.touch()
-    new_git.stage_and_commit(test_file, message="Create file for test")
-
-    # test that GitRepo.commit() raises a ValueError if no commit message is
-    # provided
-    with pytest.raises(ValueError):
-        new_git.commit()
+    assert test_file not in gitrepo.files
+    # fresh repo w/ no commit
+    assert gitrepo.get_hexsha() is None
+    gitrepo.commit(test_file, message="Create file for test")
+    hexsha = gitrepo.get_hexsha()
+    # created a commit:
+    assert hexsha is not None
+    # only one commit (HEAD~1 does not exist):
+    pytest.raises(ValueError, gitrepo.get_hexsha, 'HEAD~1')
+    assert test_file in gitrepo.files
 
     # modify an existing file, and add it
     test_file.open('w').write('Test: content')
-    new_git.add(test_file)
-    assert test_file in new_git.files_staged
-
-    # commit staged changes
-    new_git.commit("Test commit message")
-    assert test_file in new_git.files
-
-    # after files are `GitRepo.commit()`ed they should not be cached in the
-    # properties GitRepo.files_changed or GitRepo.files_staged anymore
-    assert test_file not in new_git.files_changed
-    assert test_file not in new_git.files_staged
+    gitrepo.commit(test_file, "Test commit message")
+    assert hexsha == gitrepo.get_hexsha('HEAD~1')
+    assert test_file in gitrepo.files
 
 
-def test_GitRepo_stage_and_commit(tmp_path: Path) -> None:
-    """
-    `GitRepo.stage_and_commit()` must allow to add+commit changed files.
+@pytest.mark.gitrepo_contents((Path('some.file'),
+                               "some content"),
+                              (Path('top') / 'mid' / "another.txt",
+                               "")
+                              )
+def test_GitRepo_get_subtrees(gitrepo) -> None:
+    # add an untracked files:
+    for d in gitrepo.test_annotation['directories']:
+        untracked = d / "untracked"
+        untracked.touch()
 
-    This test follows the scheme of `test_GitRepo_add()`.
-    """
-    subprocess.run(['git', 'init', tmp_path])
-    new_git = GitRepo(tmp_path)
-    test_file = new_git.root / 'test_file.txt'
+    # only returns tracked files underneath the given directory:
+    for d in gitrepo.test_annotation['directories']:
+        tree = gitrepo.get_subtrees([d])
+        assert [p for p in gitrepo.test_annotation['files'] if d in p.parents] == tree
 
-    # add a file
-    test_file.open('w').write('Test: content')
-    assert test_file in new_git.files_untracked
+    # defaults to the entire worktree:
+    assert [p for p in gitrepo.test_annotation['files']] == gitrepo.get_subtrees()
 
-    # add+commit a changed file
-    new_git.stage_and_commit(test_file, "Test commit message")
-    assert test_file in new_git.files
+    # several dirs:
+    if len(gitrepo.test_annotation['directories']) > 1:
+        dirs = gitrepo.test_annotation['directories'][:2]
+        expected = [p
+                    for p in gitrepo.test_annotation['files']
+                    if any(d in dirs for d in p.parents)]
+        tree = gitrepo.get_subtrees(dirs)
+        assert expected == tree
 
-    # after files are `GitRepo.stage_and_commit()`ed they should not be cached
-    # in the properties GitRepo.files_changed or GitRepo.files_staged
-    assert test_file not in new_git.files_untracked
-    assert test_file not in new_git.files_changed
-    assert test_file not in new_git.files_staged
+
+def test_GitRepo_get_hexsha(gitrepo) -> None:
+    # empty repo yields no hexsha:
+    assert gitrepo.get_hexsha() is None
+    # unknown commit-ish raises ValueError:
+    pytest.raises(ValueError, gitrepo.get_hexsha, "DOESNOTEXIST")
+
+    (gitrepo.root / "something").touch()
+    subprocess.run(['git', 'add', 'something'], cwd=gitrepo.root)
+    subprocess.run(['git', 'commit', '-m', 'some content'], cwd=gitrepo.root)
+
+    # There actually is a commit now:
+    sha = gitrepo.get_hexsha()
+    assert isinstance(sha, str)
+    # TODO: Add proper length assumption
+    #       -> also: short
+
+    # Default is HEAD
+    assert sha == gitrepo.get_hexsha('HEAD')
+
+    # New commit:
+    (gitrepo.root / "something").write_text("modified")
+    subprocess.run(['git', 'add', 'something'], cwd=gitrepo.root)
+    subprocess.run(['git', 'commit', '-m', 'changed content'], cwd=gitrepo.root)
+
+    assert sha != gitrepo.get_hexsha("HEAD")
+    assert sha == gitrepo.get_hexsha("HEAD~1")
+
+
+def test_GitRepo_get_commit_msg(gitrepo) -> None:
+    # Note: message formatted to make 'equal' comparison
+    # straight-forward, including to end with an empty line.
+    message = """some random stuff
+
+oncdisabbca
+a393a9rjadm----
+
+"""
+
+    # empty repo does not have a commit w/ message yet:
+    # TODO: Proper error. ValueError for 'HEAD'? Just return None?
+    pytest.raises(subprocess.CalledProcessError, gitrepo.get_commit_msg)
+
+    (gitrepo.root / "something").touch()
+    subprocess.run(['git', 'add', 'something'], cwd=gitrepo.root)
+    subprocess.run(['git', 'commit', '-m', message], cwd=gitrepo.root)
+
+    # now there is:
+    assert message == gitrepo.get_commit_msg()
+
+
+def test_GitRepo_config(gitrepo) -> None:
+
+    assert gitrepo.get_config("section.name.option") is None
+    # TODO: patch env to redirect git config locations
+    gitrepo.set_config(name="section.name.option", value="some", location='local')
+    git_config = (gitrepo.root / '.git' / 'config').read_text()
+    assert "[section \"name\"]" in git_config
+    assert "option = some" in git_config
+    assert gitrepo.get_config("section.name.option") == "some"
+
+    cfg_file = gitrepo.root / "test_config"
+    gitrepo.set_config(name="onyo.test", value="another", location=cfg_file)
+    config = cfg_file.read_text()
+    assert "[onyo]" in config
+    assert "test = another" in config
+    assert gitrepo.get_config("onyo.test") is None
+    assert gitrepo.get_config("onyo.test", file_=cfg_file) == "another"
+
+
+def test_GitRepo_check_ignore(gitrepo) -> None:
+    committed = gitrepo.root / 'book.pdf'
+    committed.touch()
+    gitrepo.commit(committed, "Add a pdf")
+
+    ignore_file = gitrepo.root / 'some'
+    ignore_file.write_text("*.pdf\nsub/\n")
+    gitignore = gitrepo.root / '.gitignore'
+    gitignore.write_text('*.txt\n')
+
+    paths_to_test = [gitrepo.root / 'some.pdf',
+                     gitrepo.root / 'some',
+                     gitrepo.root / 'text.txt',
+                     gitrepo.root / '.gitignore',
+                     gitrepo.root / 'sub' / 'something',
+                     committed]
+    excluded = gitrepo.check_ignore(ignore=ignore_file,
+                                    paths=paths_to_test)
+    assert all(p in excluded for p in paths_to_test if p.name.endswith('.pdf'))
+    assert all(p in excluded for p in paths_to_test if gitrepo.root / 'sub' in p.parents)
+    assert all(p not in excluded for p in paths_to_test if p.name.endswith('.txt'))
+
+    pytest.raises(subprocess.CalledProcessError, gitrepo.check_ignore,
+                  ignore=ignore_file, paths=[Path('/') / 'outside' / 'sub' / 'file'])

@@ -64,6 +64,8 @@ def fsck(repo: OnyoRepo,
     from .assets import has_unique_names, validate_yaml, validate_assets, contains_no_name_keys
 
     all_tests = {
+        # TODO: fsck would probably want to relay or analyze `git-status` output, rather
+        # than just get a bool for clean worktree:
         "clean-tree": repo.git.is_clean_worktree,
         "anchors": repo.validate_anchors,
         "asset-unique": partial(has_unique_names, repo.asset_paths),
@@ -126,7 +128,7 @@ def onyo_cat(inventory: Inventory,
         #       `dict_to_yaml(inventory.repo.get_asset_content(path))` - no need to
         #       distinguish asset and asset dir at this level. However, need to
         #       make sure to not print pointless empty lines.
-        f = path / OnyoRepo.ASSET_DIR_FILE if inventory.repo.is_asset_dir(path) else path
+        f = path / OnyoRepo.ASSET_DIR_FILE_NAME if inventory.repo.is_asset_dir(path) else path
         ui.print(f.read_text(), end='')
     if not assets_valid:
         raise OnyoInvalidRepoError("Invalid assets")
@@ -156,8 +158,8 @@ def onyo_config(inventory: Inventory,
         # It's a write operation, and we'd want to commit
         # if there were any changes.
         try:
-            inventory.repo.git.stage_and_commit(inventory.repo.ONYO_CONFIG,
-                                                'config: modify repository config')
+            inventory.repo.commit(inventory.repo.ONYO_CONFIG,
+                                  'config: modify repository config')
         except subprocess.CalledProcessError as e:
             if "no changes added to commit" in e.stdout or "nothing to commit" in e.stdout:
                 ui.print("No changes to commit.")

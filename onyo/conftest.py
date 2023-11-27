@@ -1,4 +1,5 @@
 import os
+import subprocess
 from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
@@ -8,6 +9,7 @@ import pytest
 from _pytest.mark.structures import MarkDecorator
 
 from onyo.lib.assets import Asset
+from onyo.lib.git import GitRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 
@@ -27,6 +29,89 @@ def params(d: dict) -> MarkDecorator:
         argvalues=[[v.get(k) for k in argnames] for v in d.values()],
         ids=d.keys(),
     )
+
+
+# TODO: - This should get content specification  (worktree vs committed??)
+#       - Have the yielded object provide info for assertions
+#       - what is/isn't an asset?
+#       - asset content specified and accessible as dict
+#       - other file content as string
+#       - we'd want that for GitRepo, OnyoRepo, Inventory. How?
+
+class AnnotatedGitRepo(GitRepo):
+
+    def __init__(self, path: Path, find_root: bool = False) -> None:
+        super().__init__(path, find_root)
+        self.test_annotation = None
+
+
+class AnnotatedOnyoRepo(OnyoRepo):
+
+    def __init__(self, path: Path, init: bool = False, find_root: bool = False) -> None:
+        super().__init__(path, init, find_root)
+        self.test_annotation = None
+
+
+@pytest.fixture(scope='function')
+def gitrepo(tmp_path: Path, request) -> Generator[AnnotatedGitRepo, None, None]:
+    subprocess.run(['git', 'init', str(tmp_path)])
+    gr = AnnotatedGitRepo(tmp_path)
+    gr.test_annotation = {'files': [],
+                          'directories': []}
+    m = request.node.get_closest_marker('gitrepo_contents')
+    if m:
+        for spec in list(m.args):
+            path = spec[0]
+            content = spec[1]
+            abs_path = (tmp_path / path)
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(content)
+            # TODO: Figure out what's needed for annotation.
+            #       Including: paths absolute/relative?
+            gr.test_annotation['files'].append(abs_path)
+            gr.test_annotation['directories'].extend(gr.root / p for p in path.parents
+                                                     if p != Path('.'))
+        subprocess.run(['git', 'add'] + [str(s[0]) for s in m.args], cwd=gr.root)
+        subprocess.run(['git', 'commit', '-m', 'Test repo setup'], cwd=gr.root)
+    yield gr
+
+
+@pytest.fixture(scope='function')
+def onyorepo(gitrepo, request, monkeypatch) -> Generator[AnnotatedOnyoRepo, None, None]:
+    from onyo.lib.utils import deduplicate
+    onyo = AnnotatedOnyoRepo(gitrepo.root, init=True)
+    onyo.test_annotation = {'assets': [],
+                            'dirs': [],
+                            'git': gitrepo}
+
+    to_commit = []
+    m = request.node.get_closest_marker('inventory_assets')
+    if m:
+        for spec in list(m.args):
+            spec['path'] = gitrepo.root / spec['path']
+            implicit_dirs = [d for d in spec['path'].parents
+                             if d.is_relative_to(gitrepo.root)]
+            if spec.get('is_asset_dir'):
+                implicit_dirs.append(spec['path'])
+            to_commit += onyo.mk_inventory_dirs(implicit_dirs)
+            onyo.test_annotation['dirs'].extend(implicit_dirs)
+            onyo.write_asset_content(spec)
+            onyo.test_annotation['assets'].append(spec)
+            to_commit.append(spec['path'])
+
+    m = request.node.get_closest_marker('inventory_dirs')
+    if m:
+        dirs = [gitrepo.root / p for p in list(m.args)]
+        to_commit += onyo.mk_inventory_dirs(dirs)
+        onyo.test_annotation['dirs'].extend(dirs)
+    if onyo.test_annotation['dirs']:
+        onyo.test_annotation['dirs'] = deduplicate(onyo.test_annotation['dirs'])
+    if to_commit:
+        onyo.commit(deduplicate(to_commit), "onyorepo: setup")  # pyre-ignore[6] - not None if `to_commit` is not None
+
+    # cd into repo; to ease testing
+    monkeypatch.chdir(gitrepo.root)
+    yield onyo
 
 
 @pytest.fixture(scope='function')
@@ -74,8 +159,8 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
     # populate the repo
     if dirs:
         anchors = repo_.mk_inventory_dirs([repo_path / d for d in dirs])
-        repo_.git.stage_and_commit(paths=anchors,
-                                   message="populate dirs for tests")
+        repo_.commit(paths=anchors,
+                     message="populate dirs for tests")
 
     for i in files:
         i.touch()
@@ -84,8 +169,8 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
         if contents:
             for file in contents:
                 (repo_path / file[0]).write_text(file[1])
-        repo_.git.stage_and_commit(paths=files,
-                                   message="populate files for tests")
+        repo_.commit(paths=files,
+                     message="populate files for tests")
 
     # TODO: Do we still need/want that? CWD should only ever be relevant for CLI tests.
     #       Hence, should probably be done there.

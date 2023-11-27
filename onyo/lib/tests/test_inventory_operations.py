@@ -297,7 +297,7 @@ def test_add_directory(repo: OnyoRepo) -> None:
     # now commit
     inventory.commit("Add new directory")
     assert repo.is_inventory_dir(new_dir)
-    assert (new_dir / repo.ANCHOR_FILE).is_file()
+    assert (new_dir / repo.ANCHOR_FILE_NAME).is_file()
 
 
 def test_remove_directory(repo: OnyoRepo) -> None:
@@ -462,7 +462,7 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.git.is_clean_worktree()
     # dir and yaml file are created:
     assert asset_dir_path.is_dir()
-    assert (asset_dir_path / OnyoRepo.ASSET_DIR_FILE).is_file()
+    assert (asset_dir_path / OnyoRepo.ASSET_DIR_FILE_NAME).is_file()
     # an asset dir is both - an inventory directory and an asset:
     assert inventory.repo.is_asset_path(asset_dir_path)
     assert inventory.repo.is_inventory_dir(asset_dir_path)
@@ -585,7 +585,7 @@ def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
     assert inventory.repo.is_inventory_dir(asset_dir_path)
     # but not an asset anymore:
     assert not inventory.repo.is_asset_path(asset_dir_path)
-    assert not (asset_dir_path / OnyoRepo.ASSET_DIR_FILE).exists()
+    assert not (asset_dir_path / OnyoRepo.ASSET_DIR_FILE_NAME).exists()
     assert inventory.repo.git.is_clean_worktree()
 
 
@@ -672,9 +672,9 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     pytest.raises(ValueError, inventory.rename_directory, asset_dir_path, "newname")
 
     # renaming as an asset by changing the naming config
-    inventory.repo.git.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
-    inventory.repo.git.stage_and_commit(inventory.root / OnyoRepo.ONYO_CONFIG,
-                                        "Change asset name config")
+    inventory.repo.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
+    inventory.repo.commit(inventory.root / OnyoRepo.ONYO_CONFIG,
+                          "Change asset name config")
     new_asset_dir_path = asset_dir_path.parent / "SERIAL_1"
 
     inventory.rename_asset(asset_dir_path)

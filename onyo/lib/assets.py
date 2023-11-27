@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Iterable, Optional, Set
+from typing import Set
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
@@ -89,33 +89,6 @@ def validate_yaml(asset_files: Set[Path]) -> bool:
         return False
 
     return True
-
-
-def get_asset_files_by_path(asset_files: list[Path],
-                            paths: Iterable[Path],
-                            depth: Optional[int]) -> list[Path]:
-    """
-    Check and normalize a list of paths. Select all assets in the
-    repository that are relative to the given `paths` descending at most
-    `depth` directories. A `depth` of 0 descends without a limit.
-    """
-    if depth and depth < 0:
-        raise ValueError(f"depth values must be positive, but is {depth}.")
-
-    paths = {Path(p) for p in paths}
-    assets = [
-        a for a in asset_files if any([
-            a.is_relative_to(p) and
-            (len(a.parents) - len(p.parents) <= depth if depth else True)
-            for p in paths])]
-
-    # Note: Why does this function need to raise instead of returning an empty list?
-    #       The query yielded no matching asset. That's a valid response. What to do with that should be up to the
-    #       caller.
-    if not assets:
-        raise ValueError('No assets selected.')
-
-    return assets
 
 
 # The idea of an Asset class is currently abandoned. If not re-introduced, can go entirely.
