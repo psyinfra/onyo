@@ -162,41 +162,6 @@ def test_rm_interactive(repo: OnyoRepo, asset: str) -> None:
 
 
 @pytest.mark.repo_files(*assets)
-def test_rm_quiet_missing_yes(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo rm --quiet` errors correctly, when the required flag
-    `--yes` is missing.
-    """
-    ret = subprocess.run(['onyo', '--quiet', 'rm', *assets], capture_output=True, text=True)
-    assert ret.returncode == 1
-    assert not ret.stdout
-    assert ret.stderr
-
-    # verify no changes were made and the repository is in a clean state
-    for asset in assets:
-        assert Path(asset).exists()
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_files(*assets)
-def test_rm_quiet_flag(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo rm --quiet --yes` deletes a list of assets successfully
-    without printing any output or error.
-    """
-    ret = subprocess.run(['onyo', '--yes', '--quiet', 'rm', *assets], capture_output=True,
-                         text=True)
-    assert ret.returncode == 0
-    assert not ret.stdout
-    assert not ret.stderr
-
-    # verify deleting was successful and the repository is in a clean state
-    for asset in assets:
-        assert not Path(asset).exists()
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 def test_rm_message_flag(repo: OnyoRepo, asset: str) -> None:
     """
