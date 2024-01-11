@@ -34,7 +34,17 @@ def mv(args: argparse.Namespace) -> None:
     rename a ``SOURCE`` directory to ``DEST``.
 
     Files cannot be renamed using ``onyo mv``, since their names are generated from their contents.
-    To rename a file, use ``onyo set``.
+    To rename a file, use ``onyo set``, or use ``onyo edit`` and change the keys used for the
+    asset's name.
+    To rename a directory, call ``onyo mv`` with a single ``SOURCE`` to rename, and a different and
+    non-existing ``DEST`` name in the same directory.
+
+    Otherwise, when called on one or multiple assets or directories, the command will move
+    ``SOURCE``\\(s) into ``DEST``.
+
+    A list of all files and directories to modify will be presented, and the user prompted for
+    confirmation.
+
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 
