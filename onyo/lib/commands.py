@@ -892,7 +892,7 @@ def onyo_set(inventory: Inventory,
 
 
 def onyo_tree(inventory: Inventory,
-              paths: list[Path]) -> None:
+              paths: list[Path] = []) -> None:
     """Print the directory tree of paths.
 
     Parameters
@@ -902,7 +902,8 @@ def onyo_tree(inventory: Inventory,
 
     paths: list of Path
         The paths to directories for which to print the directory tree.
-        If no path is specified, prints the directory tree for CWD.
+        If no path is specified, `onyo_tree(inventory)` prints the
+        directory tree for the root of the inventory.
 
     Raises
     ------
@@ -910,6 +911,7 @@ def onyo_tree(inventory: Inventory,
         If paths are invalid.
     """
     # sanitize the paths
+    paths = paths if paths else [inventory.root]
     non_inventory_dirs = [str(p) for p in paths if not inventory.repo.is_inventory_dir(p)]
     if non_inventory_dirs:
         raise ValueError("The following paths are not inventory directories: %s" %
