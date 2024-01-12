@@ -21,8 +21,12 @@ args_tree = {
 
 
 def tree(args: argparse.Namespace) -> None:
-    """
-    List the assets and directories in ``DIRECTORY`` in the ``tree`` format.
+    """List the assets and directories in ``DIRECTORY`` in the ``tree`` format.
+
+    All given paths must be existing directories inside the onyo repository.
+    They are tested for their validity in the beginning and only displayed if all paths are valid.
+
+    If no path is specified, `onyo tree` prints the directory tree for CWD.
     """
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
