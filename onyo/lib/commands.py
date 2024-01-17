@@ -98,18 +98,22 @@ def onyo_cat(inventory: Inventory,
              paths: list[Path]) -> None:
     """Print the contents of assets.
 
+    At least one valid asset path is required.
+    The same paths can be given multiple times.
+    If any path specified is invalid, no contents are printed and an error is raised.
+
     Parameters
     ----------
     inventory: Inventory
         The inventory containing the assets to print.
-
-    paths: Path or list of Path
+    paths: list of Path
         Path(s) to assets for which to print the contents.
 
     Raises
     ------
     ValueError
-        If paths point to a location which is not an asset.
+        If paths point to a location which is not an asset, or `paths`
+        is empty.
 
     OnyoInvalidRepoError
         If paths are not valid assets, e.g. because their content is not valid
