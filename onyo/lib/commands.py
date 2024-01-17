@@ -116,6 +116,8 @@ def onyo_cat(inventory: Inventory,
         YAML format.
     """
     from .assets import validate_yaml
+    if not paths:
+        raise ValueError("At least one asset path must be specified.")
     non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
     if non_asset_paths:
         raise ValueError("The following paths are not asset files:\n%s" %
