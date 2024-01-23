@@ -448,16 +448,33 @@ def onyo_mkdir(inventory: Inventory,
                message: Optional[str]) -> None:
     """Create new directories in the inventory.
 
+    Intermediate directories will be created as needed (i.e. parent and
+    child directories can be created in one call).
+
+    An empty `.anchor` file is added to each directory, to ensure that git
+    tracks them even when empty.
+    If `dirs` contains duplicates, onyo will create just one new directory and
+    ignore the duplicates.
+
+    All paths in `dirs` must be new and valid directory paths inside the
+    inventory.
+    At least one valid path is required.
+    If any path specified is invalid no new directories are created, and an
+    error is raised.
+
     Parameters
     ----------
     inventory: Inventory
         The inventory in which to create new directories.
-
     dirs: list of Path
         Paths to directories which to create.
-
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
+
+    Raises
+    ------
+    ValueError
+        If `dirs` is empty.
     """
     if not dirs:
         raise ValueError("At least one directory path must be specified.")
