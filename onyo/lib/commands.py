@@ -455,6 +455,8 @@ def onyo_mkdir(inventory: Inventory,
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
     """
+    if not dirs:
+        raise ValueError("At least one directory path must be specified.")
     for d in deduplicate(dirs):  # pyre-ignore[16]  deduplicate would return None only of `dirs` was None.
         # explicit duplicates would make auto-generating message subject more complicated ATM
         inventory.add_directory(d)
