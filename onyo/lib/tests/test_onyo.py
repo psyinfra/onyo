@@ -5,31 +5,42 @@ import pytest
 from onyo import OnyoRepo, OnyoInvalidRepoError
 
 
-def test_OnyoRepo_instantiation_existing(onyorepo) -> None:
-    """
-    The OnyoRepo class must instantiate correctly for paths to existing
-    repositories.
+def test_OnyoRepo_instantiation_existing(onyorepo: OnyoRepo) -> None:
+    """The OnyoRepo class must instantiate correctly for paths to
+    existing repositories.
     """
     new_repo = OnyoRepo(onyorepo.git.root, init=False)
     assert new_repo.git.root.samefile(onyorepo.git.root)
 
 
 def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
-    """
-    The OnyoRepo class must instantiate correctly for paths to non-existing
-    repositories.
+    """The OnyoRepo class must instantiate correctly for paths to
+    non-existing repositories.
     """
     new_repo = OnyoRepo(tmp_path, init=True)
     assert new_repo.git.root.samefile(tmp_path)
-    assert (new_repo.git.root / '.onyo').exists()
+    assert (new_repo.git.root / '.onyo').is_dir()
+    assert (new_repo.git.root / '.git').is_dir()
+    # assert dirs/files in .onyo/ exist and are cached correctly
+    assert all(x in new_repo.git.files for x in [new_repo.dot_onyo / f for f in [
+        new_repo.dot_onyo / OnyoRepo.ANCHOR_FILE_NAME,
+        new_repo.dot_onyo / OnyoRepo.ONYO_CONFIG.name,
+        new_repo.dot_onyo / new_repo.TEMPLATE_DIR.name / OnyoRepo.ANCHOR_FILE_NAME,
+        new_repo.dot_onyo / 'validation' / OnyoRepo.ANCHOR_FILE_NAME,
+    ]])
     new_repo.git.is_clean_worktree()
     new_repo.is_valid_onyo_repo()
+    # a newly initialized repository has just one commit; requesting older ones is not possible
+    assert new_repo.git.get_hexsha()
+    pytest.raises(ValueError,
+                  new_repo.git.get_hexsha,
+                  'HEAD~1')
 
 
-def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo,
+def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo: OnyoRepo,
                                                         tmp_path: Path) -> None:
-    """
-    The OnyoRepo must raise certain errors for invalid or conflicting arguments.
+    """The OnyoRepo must raise certain errors for invalid or conflicting arguments.
+
     - raise a OnyoInvalidRepoError when called on a path that is
       not yet a valid onyo repository.
     - raise a `ValueError` when called with conflicting arguments
@@ -54,9 +65,9 @@ def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo,
                                    serial=0,
                                    path=Path('a') / 'test' / 'asset_for_test.0'))
 def test_clear_caches(onyorepo) -> None:
-    """
-    The function `clear_caches()` must allow to empty the cache of the OnyoRepo,
-    so that an invalid cache can be re-loaded by a newly call of the property.
+    """The function `OnyoRepo.clear_caches()` must allow to empty the cache of
+    the OnyoRepo, so that an invalid cache can be re-loaded by a newly call of
+    the property.
     """
 
     # Use arbitrary asset here:
@@ -79,11 +90,10 @@ def test_clear_caches(onyorepo) -> None:
     assert asset not in onyorepo.asset_paths
 
 
-def test_Repo_generate_commit_message(onyorepo) -> None:
-    """
-    A generated commit message has to have a header with less then 80 characters
-    length, and a body with the paths to changed files and directories relative
-    to the root of the repository.
+def test_Repo_generate_commit_message(onyorepo: OnyoRepo) -> None:
+    """A generated commit message has to have a header with less then
+    80 characters length, and a body with the paths to changed files
+    and directories relative to the root of the repository.
     """
     modified = [onyorepo.git.root / 's p a c e s',
                 onyorepo.git.root / 'a/new/folder']
@@ -103,8 +113,7 @@ def test_Repo_generate_commit_message(onyorepo) -> None:
 
 @pytest.mark.gitrepo_contents((Path('a/test/asset_for_test.0'), ""))
 def test_is_onyo_path(onyorepo) -> None:
-    """
-    Verify that `OnyoRepo.is_onyo_path()` differentiates correctly between
+    """Verify that `OnyoRepo.is_onyo_path()` differentiates correctly between
     paths under `.onyo/` and outside of it.
     """
     # True for the directory `.onyo/` itself
@@ -129,7 +138,7 @@ def test_is_onyo_path(onyorepo) -> None:
                for f in onyorepo.test_annotation['git'].test_annotation['files'])
 
 
-def test_Repo_get_template(onyorepo) -> None:
+def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
     """
     The function `OnyoRepo.get_template` returns a dictionary representing
     a template in `.onyo/templates/*`. Default can be configured via 'onyo.new.template'.
