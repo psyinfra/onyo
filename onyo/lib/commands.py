@@ -838,7 +838,7 @@ def onyo_set(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to set key/values for assets.
-    paths: Path or list of Path, optional
+    paths: list of Path, optional
         Paths to assets or directories for which to set key-value pairs.
         If paths are directories, the values will be set recursively in assets
         under the specified path.
@@ -864,7 +864,7 @@ def onyo_set(inventory: Inventory,
     ------
     ValueError
         If a given path is invalid or changes are made that would result in
-        renaming an asset, while `rename` is not true.
+        renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
     paths = paths or []
     if not keys:
