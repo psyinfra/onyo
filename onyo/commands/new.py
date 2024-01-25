@@ -36,7 +36,10 @@ args_new = {
         nargs='+',
         help=(
             'Key-value pairs to set in the new asset(s). Multiple pairs can be '
-            'specified (e.g. key=value key2=value2)')),
+            'specified (e.g. key=value key2=value2). All fields that are part of '
+            'asset filenames (defined in .onyo/config under `onyo.assets.filename`) '
+            'are required. If the value `faux` is assigned to the key `serial`, '
+            'a random, repository-unique string will be filled in instead.')),
 
     'path': dict(
         args=('-p', '--path'),
