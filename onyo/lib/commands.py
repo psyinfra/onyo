@@ -846,6 +846,8 @@ def onyo_set(inventory: Inventory,
         renaming an asset, while `rename` is not true.
     """
     paths = paths or []
+    if not keys:
+        raise ValueError("At least one key-value pair must be specified.")
 
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
