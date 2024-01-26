@@ -98,24 +98,30 @@ def onyo_cat(inventory: Inventory,
              paths: list[Path]) -> None:
     """Print the contents of assets.
 
+    At least one valid asset path is required.
+    The same paths can be given multiple times.
+    If any path specified is invalid, no contents are printed and an error is raised.
+
     Parameters
     ----------
     inventory: Inventory
         The inventory containing the assets to print.
-
-    paths: Path or list of Path
+    paths: list of Path
         Path(s) to assets for which to print the contents.
 
     Raises
     ------
     ValueError
-        If paths point to a location which is not an asset.
+        If paths point to a location which is not an asset, or `paths`
+        is empty.
 
     OnyoInvalidRepoError
         If paths are not valid assets, e.g. because their content is not valid
         YAML format.
     """
     from .assets import validate_yaml
+    if not paths:
+        raise ValueError("At least one asset path must be specified.")
     non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
     if non_asset_paths:
         raise ValueError("The following paths are not asset files:\n%s" %
@@ -442,17 +448,36 @@ def onyo_mkdir(inventory: Inventory,
                message: Optional[str]) -> None:
     """Create new directories in the inventory.
 
+    Intermediate directories will be created as needed (i.e. parent and
+    child directories can be created in one call).
+
+    An empty `.anchor` file is added to each directory, to ensure that git
+    tracks them even when empty.
+    If `dirs` contains duplicates, onyo will create just one new directory and
+    ignore the duplicates.
+
+    All paths in `dirs` must be new and valid directory paths inside the
+    inventory.
+    At least one valid path is required.
+    If any path specified is invalid no new directories are created, and an
+    error is raised.
+
     Parameters
     ----------
     inventory: Inventory
         The inventory in which to create new directories.
-
     dirs: list of Path
         Paths to directories which to create.
-
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
+
+    Raises
+    ------
+    ValueError
+        If `dirs` is empty.
     """
+    if not dirs:
+        raise ValueError("At least one directory path must be specified.")
     for d in deduplicate(dirs):  # pyre-ignore[16]  deduplicate would return None only of `dirs` was None.
         # explicit duplicates would make auto-generating message subject more complicated ATM
         inventory.add_directory(d)
@@ -813,7 +838,7 @@ def onyo_set(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to set key/values for assets.
-    paths: Path or list of Path, optional
+    paths: list of Path, optional
         Paths to assets or directories for which to set key-value pairs.
         If paths are directories, the values will be set recursively in assets
         under the specified path.
@@ -839,9 +864,11 @@ def onyo_set(inventory: Inventory,
     ------
     ValueError
         If a given path is invalid or changes are made that would result in
-        renaming an asset, while `rename` is not true.
+        renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
     paths = paths or []
+    if not keys:
+        raise ValueError("At least one key-value pair must be specified.")
 
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
@@ -892,7 +919,7 @@ def onyo_set(inventory: Inventory,
 
 
 def onyo_tree(inventory: Inventory,
-              paths: list[Path]) -> None:
+              paths: list[Path] = []) -> None:
     """Print the directory tree of paths.
 
     Parameters
@@ -902,7 +929,8 @@ def onyo_tree(inventory: Inventory,
 
     paths: list of Path
         The paths to directories for which to print the directory tree.
-        If no path is specified, prints the directory tree for CWD.
+        If no path is specified, `onyo_tree(inventory)` prints the
+        directory tree for the root of the inventory.
 
     Raises
     ------
@@ -910,6 +938,7 @@ def onyo_tree(inventory: Inventory,
         If paths are invalid.
     """
     # sanitize the paths
+    paths = paths if paths else [inventory.root]
     non_inventory_dirs = [str(p) for p in paths if not inventory.repo.is_inventory_dir(p)]
     if non_inventory_dirs:
         raise ValueError("The following paths are not inventory directories: %s" %

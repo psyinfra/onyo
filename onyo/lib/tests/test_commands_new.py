@@ -43,6 +43,11 @@ def test_onyo_new_tsv(inventory: Inventory, tsv: Path) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_keys(inventory: Inventory) -> None:
+    """`onyo_new()` must create new assets with the contents set correctly
+    when called with `keys`.
+
+    Each successful call of `onyo_new()` must add one commit.
+    """
     specs = [{'type': 'a type',
               'make': 'I made it',
               'model': 'a model',
@@ -51,9 +56,13 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
               'make': 'I made it',
               'model': 'a model',
               'serial': '003'}]
+    old_hexsha = inventory.repo.git.get_hexsha()
     onyo_new(inventory,
              path=inventory.root / "empty",
              keys=specs)
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+
     for s in specs:
         p = inventory.root / "empty" / f"{s['type']}_{s['make']}_{s['model']}.{s['serial']}"
         assert inventory.repo.is_asset_path(p)
@@ -81,6 +90,8 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
                   keys=specs)
     # w/o `path` everything is fine:
     onyo_new(inventory, keys=specs)
+    # another commit added
+    assert inventory.repo.git.get_hexsha('HEAD~2') == old_hexsha
 
     for s in specs:
         files = [p
@@ -114,13 +125,54 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
               'template': 'laptop.example',
               'serial': '1234'}]
     onyo_new(inventory, keys=specs)
+    # another commit added
+    assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
     expected_path = inventory.root / f"{specs[0]['type']}_{specs[0]['make']}_{specs[0]['model']}.{specs[0]['serial']}"
     assert inventory.repo.is_asset_path(expected_path)
+    assert expected_path in inventory.repo.git.files
     asset_content = inventory.repo.get_asset_content(expected_path)
     # check for template keys:
     # (Note: key must be there - no `KeyError`; but content is `None`)
     for k in ['RAM', 'Size', 'USB']:
         assert asset_content[k] is None
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_new_creates_directories(inventory: Inventory) -> None:
+    """`onyo_new()` must create new directories and subdirectories when called
+    on a `path` that does not yet exist, and add assets correctly to it.
+    """
+    specs = [{'type': 'a type',
+              'make': 'I made it',
+              'model': 'a model',
+              'serial': '002'},
+             {'type': 'a type',
+              'make': 'I made it',
+              'model': 'a model',
+              'serial': '003'}]
+    new_directory = inventory.root / "does" / "not" / "yet" / "exist"
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    onyo_new(inventory,
+             path=new_directory,
+             keys=specs)
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+
+    # the new directories exist
+    assert new_directory.is_dir()
+    assert (new_directory / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (inventory.root / "does" / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+
+    # new assets are added
+    for s in specs:
+        p = new_directory / f"{s['type']}_{s['make']}_{s['model']}.{s['serial']}"
+        assert inventory.repo.is_asset_path(p)
+        assert p in inventory.repo.git.files
+        new_asset = inventory.get_asset(p)
+        assert new_asset.get("path") == p
+        assert all(new_asset[k] == s[k] for k in s.keys())
 
 
 @pytest.mark.ui({'yes': True})
