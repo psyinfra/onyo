@@ -1006,7 +1006,7 @@ def onyo_tree(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: list[str],
-               match: Optional[list[Callable[[dict], bool]]],
+               match: Optional[list[Callable[[dict], bool]]] = None,
                paths: Optional[list[Path]] = None,
                depth: int = 0,
                message: Optional[str] = None) -> None:
