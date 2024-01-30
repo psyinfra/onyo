@@ -1023,16 +1023,17 @@ def onyo_unset(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to unset key/values for assets.
-    keys: list
+    keys: list of str
         The keys that will be unset in assets.
         If keys do not exist in an asset, a debug message is logged.
         If keys are specified which appear in asset names an error is raised.
+        If `keys` is empty an error is raised.
     match: list of Callable, optional
       Callables suited for use with builtin `filter`. They are
       passed an asset dictionary and expected to return a `bool`,
       where `True` indicates a match. `keys` will be removed from
       all assets that are matched by all callables in this list.
-    paths: Path or list of Path, optional
+    paths: list of Path, optional
         Paths to assets or directories for which to unset key-value pairs.
         If paths are directories, the values will be unset recursively in assets
         under the specified path.
@@ -1042,6 +1043,12 @@ def onyo_unset(inventory: Inventory,
         0 means no limit and is the default.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
+
+    Raises
+    ------
+    ValueError
+        If paths are invalid, or `keys` are empty or invalid.
+
     """
     paths = paths or []
     if not keys:
