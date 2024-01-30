@@ -1048,8 +1048,8 @@ def onyo_unset(inventory: Inventory,
 
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
         raise ValueError("Can't unset asset name keys.")
-    if any(k in RESERVED_KEYS for k in keys):
-        raise ValueError(f"Can't unset reserved keys ({', '.join(RESERVED_KEYS)}).")
+    if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
+        raise ValueError(f"Can't unset reserved keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
     asset_paths_to_unset = inventory.get_assets_by_query(paths=paths,
                                                          depth=depth,
