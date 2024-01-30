@@ -923,8 +923,8 @@ def onyo_set(inventory: Inventory,
 
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
-    if any(k in RESERVED_KEYS for k in keys.keys()):
-        raise ValueError(f"Can't set reserved keys ({', '.join(RESERVED_KEYS)}).")
+    if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys.keys()):
+        raise ValueError(f"Can't set reserved keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
     non_inventory_paths = [str(p)
                            for p in paths

@@ -82,8 +82,7 @@ def test_onyo_set_on_empty_directory(inventory: Inventory) -> None:
 def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
     """`onyo_set` must raise an error when requested to set an
     illegal/reserverd field without `rename=True`."""
-    # TODO: add PSEUDO_KEYS after fixing BUG #527:
-    from onyo.lib.consts import RESERVED_KEYS  # PSEUDO_KEYS
+    from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -92,9 +91,7 @@ def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
         {"make": "new_value"},
         {"model": "new_value"},
         {"serial": "new_value"}]
-    # TODO: add PSEUDO_KEYS after fixing BUG #527:
-    # illegal_fields.extend([{k : "new_value"} for k in PSEUDO_KEYS])
-    illegal_fields.extend([{k: "new_value"} for k in RESERVED_KEYS])
+    illegal_fields.extend([{k: "new_value"} for k in PSEUDO_KEYS + RESERVED_KEYS])
 
     # set on illegal fields
     for illegal in illegal_fields:
