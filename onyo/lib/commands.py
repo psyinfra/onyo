@@ -1037,6 +1037,8 @@ def onyo_unset(inventory: Inventory,
         An optional string to overwrite Onyo's default commit message.
     """
     paths = paths or []
+    if not keys:
+        raise ValueError("At least one key must be specified.")
 
     non_inventory_paths = [str(p) for p in paths
                            if not inventory.repo.is_asset_path(p) and
