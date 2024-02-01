@@ -900,7 +900,7 @@ def onyo_set(inventory: Inventory,
         Paths to assets or directories for which to set key-value pairs.
         If paths are directories, the values will be set recursively in assets
         under the specified path.
-        If no paths are specified, CWD is used as default.
+        If no paths are specified, the inventory root is used as default.
     keys: dict
         Key-value pairs that will be set in assets. If keys already exist in an
         asset their value will be overwritten, if they do not exist the values
@@ -924,7 +924,7 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
-    paths = paths or []
+    paths = paths or [inventory.root]
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
 
@@ -934,7 +934,7 @@ def onyo_set(inventory: Inventory,
         raise ValueError(f"Can't set reserved keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
     non_inventory_paths = [str(p)
-                           for p in paths
+                           for p in paths  # pyre-ignore[16]  `paths` not Optional anymore here
                            if not inventory.repo.is_asset_path(p) and
                            not inventory.repo.is_inventory_dir(p)]
     if non_inventory_paths:
@@ -1037,7 +1037,7 @@ def onyo_unset(inventory: Inventory,
         Paths to assets or directories for which to unset key-value pairs.
         If paths are directories, the values will be unset recursively in assets
         under the specified path.
-        If no paths are specified, CWD is used as default.
+        If no paths are specified, the inventory root is used as default.
     depth: int
         Depth limit of recursion if a `path` is a directory.
         0 means no limit and is the default.
@@ -1050,16 +1050,10 @@ def onyo_unset(inventory: Inventory,
         If paths are invalid, or `keys` are empty or invalid.
 
     """
-    paths = paths or []
+    paths = paths or [inventory.root]
     if not keys:
         raise ValueError("At least one key must be specified.")
-<<<<<<< Updated upstream
-
-    non_inventory_paths = [str(p) for p in paths
-=======
-    
     non_inventory_paths = [str(p) for p in paths  # pyre-ignore[16]  `paths` not Optional anymore
->>>>>>> Stashed changes
                            if not inventory.repo.is_asset_path(p) and
                            not inventory.repo.is_inventory_dir(p)]
 

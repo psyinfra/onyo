@@ -191,6 +191,31 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
     # assert inventory.repo.git.is_clean_worktree()
 
 
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_default_inventory_root(inventory: Inventory) -> None:
+    """Calling `onyo_set()` without path uses inventory.root as default
+    and selects all assets of the inventory."""
+    key = {"new_key": "new_me"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # set a value without giving a path
+    onyo_set(inventory,
+             keys=key,  # pyre-ignore[6]
+             message="some subject\n\nAnd a body")
+
+    # check key was set in all assets
+    for asset in inventory.repo.get_asset_paths():
+        assert "new_key" in inventory.repo.get_asset_content(asset).keys()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
     """Calling `onyo_set()` with a list containing the same asset multiple

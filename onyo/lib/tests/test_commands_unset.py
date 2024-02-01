@@ -264,6 +264,34 @@ def test_onyo_unset_multiple(inventory: Inventory) -> None:
     # assert inventory.repo.git.is_clean_worktree()
 
 
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_unset_default_inventory_root(inventory: Inventory) -> None:
+    """Calling `onyo_unset()` without path uses inventory.root as default."""
+    key = "some_key"
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check key exists
+    for asset in inventory.repo.get_asset_paths():
+        assert key in inventory.repo.get_asset_content(asset).keys()
+
+    # unset a value
+    onyo_unset(inventory,
+               keys=[key],
+               message="some subject\n\nAnd a body")
+
+    # check key was unset in all assets
+    for asset in inventory.repo.get_asset_paths():
+        assert key not in inventory.repo.get_asset_content(asset).keys()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
     """Calling `onyo_unset()` with a list containing the same asset
