@@ -35,6 +35,15 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
                   keys=[],
                   message="some subject\n\nAnd a body")
 
+    # unset with negative depth value
+    pytest.raises(ValueError,
+                  onyo_unset,
+                  inventory,
+                  paths=[asset_path],
+                  keys=[key],
+                  depth=-1,
+                  message="some subject\n\nAnd a body")
+
     # unset on ".anchor"
     pytest.raises(ValueError,
                   onyo_unset,
@@ -176,6 +185,69 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
 
     # check key was removed
     assert key not in inventory.repo.get_asset_content(asset_path).keys()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_unset_depth(inventory: Inventory) -> None:
+    """`onyo_unset()` with depth selects the correct assets."""
+    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    asset_path2 = inventory.root / "one_that_exists.test"
+    key = "some_key"
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check key exists in both
+    assert key in inventory.repo.get_asset_content(asset_path1).keys()
+    assert key in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # unset a value using depth
+    onyo_unset(inventory,
+               paths=[inventory.root],
+               keys=[key],
+               depth=1,
+               message="some subject\n\nAnd a body")
+
+    # check key was removed only in one asset:
+    assert key in inventory.repo.get_asset_content(asset_path1).keys()
+    assert key not in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_unset_depth_zero(inventory: Inventory) -> None:
+    """Calling `onyo_unset(depth=0)` is legal and selects
+    all assets from all subpaths."""
+    key = "some_key"
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check key exists
+    for asset in inventory.repo.get_asset_paths():
+        assert key in inventory.repo.get_asset_content(asset).keys()
+
+    # unset a value
+    onyo_unset(inventory,
+               keys=[key],
+               paths=[inventory.root],
+               depth=0,
+               message="some subject\n\nAnd a body")
+
+    # check key was unset in all assets
+    for asset in inventory.repo.get_asset_paths():
+        assert key not in inventory.repo.get_asset_content(asset).keys()
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha

@@ -35,6 +35,15 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
                   keys=[],
                   message="some subject\n\nAnd a body")
 
+    # set with negative depth value
+    pytest.raises(ValueError,
+                  onyo_set,
+                  inventory,
+                  paths=[asset_path],
+                  keys=key_value,
+                  depth=-1,
+                  message="some subject\n\nAnd a body")
+
     # set on ".anchor"
     pytest.raises(ValueError,
                   onyo_set,
@@ -183,6 +192,69 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
     assert "that_value" in inventory.repo.get_asset_content(asset_path1).values()
     assert "this_key" in inventory.repo.get_asset_content(asset_path2).keys()
     assert "that_value" in inventory.repo.get_asset_content(asset_path2).values()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_depth(inventory: Inventory) -> None:
+    """`onyo_set()` with depth selects the correct assets."""
+    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    asset_path2 = inventory.root / "one_that_exists.test"
+    key_value = {"this_key": "that_value"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check key does not exist in either asset
+    assert "this_key" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "this_key" not in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # set a value using depth
+    onyo_set(inventory,
+             paths=[inventory.root],
+             keys=key_value,  # pyre-ignore[6]
+             depth=1,
+             message="some subject\n\nAnd a body")
+
+    # check key was set only in one asset:
+    assert "this_key" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "this_key" in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_depth_zero(inventory: Inventory) -> None:
+    """Calling `onyo_set(depth=0)` is legal and selects
+    all assets from all subpaths."""
+    key_value = {"this_key": "that_value"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check key does not exist
+    for asset in inventory.repo.get_asset_paths():
+        assert "this_key" not in inventory.repo.get_asset_content(asset).keys()
+
+    # set a value
+    onyo_set(inventory,
+             keys=key_value,  # pyre-ignore[6]
+             paths=[inventory.root],
+             depth=0,
+             message="some subject\n\nAnd a body")
+
+    # check key was set in all assets
+    for asset in inventory.repo.get_asset_paths():
+        assert "this_key" in inventory.repo.get_asset_content(asset).keys()
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
