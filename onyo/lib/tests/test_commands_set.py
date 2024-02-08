@@ -7,7 +7,7 @@ from ..commands import onyo_set
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_errors(inventory: Inventory) -> None:
-    """`onyo_set` must raise the correct error in different illegal or impossible calls."""
+    """`onyo_set()` must raise the correct error in different illegal or impossible calls."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
 
@@ -62,7 +62,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_on_empty_directory(inventory: Inventory) -> None:
-    """`onyo_set` does not error when called on a valid but empty directory,
+    """`onyo_set()` does not error when called on a valid but empty directory,
     but no commits are added."""
     dir_path = inventory.root / 'empty'
     key_value = {"this_key": "that_value"}
@@ -80,7 +80,7 @@ def test_onyo_set_on_empty_directory(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
-    """`onyo_set` must raise an error when requested to set an
+    """`onyo_set()` must raise an error when requested to set an
     illegal/reserverd field without `rename=True`."""
     from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -110,7 +110,7 @@ def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_errors_before_set(inventory: Inventory) -> None:
-    """`onyo_set` must raise the correct error and is not allowed to
+    """`onyo_set()` must raise the correct error and is not allowed to
     modify/commit anything, if one of the specified paths is not valid.
     """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -139,12 +139,12 @@ def test_onyo_set_errors_before_set(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_simple(inventory: Inventory) -> None:
-    """Set a value in an asset."""
+    """`onyo_set()` sets a value in an asset."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    # create a new directory
+    # set a value in an asset
     onyo_set(inventory,
              paths=[asset_path],
              keys=key_value,  # pyre-ignore[6]
@@ -171,7 +171,7 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
     key_value = {"this_key": "that_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    # create a new directory
+    # set a value in multiple assets at once
     onyo_set(inventory,
              paths=[asset_path1,
                     asset_path2],
@@ -199,7 +199,7 @@ def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
     key_value = {"this_key": "that_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    # call `onyo_set()` with `dirs` containing duplicates
+    # call `onyo_set()` with `paths` containing duplicates
     onyo_set(inventory,
              paths=[asset_path, asset_path, asset_path],
              keys=key_value,  # pyre-ignore[6]

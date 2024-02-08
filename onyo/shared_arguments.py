@@ -15,7 +15,7 @@ shared_arg_match = dict(
     type=str,
     default=None,
     help=(
-        "Matching criteria for assets in teh form 'KEY=VALUE',"
+        "Matching criteria for assets in the form 'KEY=VALUE',"
         "where VALUE is a python regular expression. Special values"
         "supported are '<unset>', '<list>', and '<dict>'."
         "Pseudo-keys like 'path' can be used."))
