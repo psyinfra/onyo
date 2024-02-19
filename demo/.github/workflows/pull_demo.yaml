@@ -1,0 +1,27 @@
+name: Pull Onyo Demo
+  # get a new demo repository everyday at 4:30 UTC a.k.a 3:30 in Juelich
+on:
+  schedule:
+    # every day at 4:30 UTC (i.e. an hour earlier than in juelich)
+    # format 'minutes hours * * *'
+    - cron: '30 4 * * *'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          printf '\nsetup git\n'
+          git config --global user.email "yoko@onyo.org"
+          git config --global user.name "Yoko Onyo"
+          git config pull.rebase true
+
+          printf '\nget demo repository\n'
+          git remote add demo https://github.com/psyinfra/onyo
+          git fetch demo demo
+          git checkout demo/demo
+
+          printf '\npush to onyo-demo\n'
+          git push --force origin HEAD:demo
