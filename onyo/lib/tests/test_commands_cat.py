@@ -39,7 +39,7 @@ def test_onyo_cat_errors(inventory: Inventory) -> None:
                   inventory,
                   paths=[inventory.root / "untracked" / "file"])
 
-    # outside of onyo repository
+    # cat on path outside onyo repository
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,

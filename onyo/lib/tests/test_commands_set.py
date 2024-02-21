@@ -1,5 +1,8 @@
+from pathlib import Path
+
 import pytest
 
+from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_set
@@ -67,6 +70,70 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
                   paths=[inventory.root / ".onyo"],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
+    """Verify the correct behavior for empty keys or values in `onyo_set()`."""
+    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # test different empty values error
+    for empty in [{"": "value"},
+                  {" ": "value"},
+                  {"\t": "value"},
+                  {"\n": "value"},
+                  {"": ""},
+                  {None: "value"},
+                  ]:
+        pytest.raises(ValueError,
+                      onyo_set,
+                      inventory,
+                      paths=[asset_path],
+                      keys=empty,
+                      message="some subject\n\nAnd a body")
+
+    # the above szenarios did not add any commit
+    assert inventory.repo.git.get_hexsha() == old_hexsha
+
+    # set a key with an empty value works
+    onyo_set(inventory,
+             paths=[asset_path],
+             keys={"key": ""},
+             message="some subject\n\nAnd a body")
+
+    # check content
+    assert "key: ''" in asset_path.read_text()
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_directory(inventory: Inventory) -> None:
+    """`onyo_set()` sets a value in an asset when called on a directory."""
+    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    dir_path = inventory.root / "somewhere"
+    key_value = {"this_key": "that_value"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # set a value for a directory
+    onyo_set(inventory,
+             paths=[dir_path],
+             keys=key_value,  # pyre-ignore[6]
+             message="some subject\n\nAnd a body")
+
+    # check content
+    assert "this_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "that_value" in inventory.repo.get_asset_content(asset_path).values()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -165,6 +232,173 @@ def test_onyo_set_simple(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_already_set(inventory: Inventory) -> None:
+    """`onyo_set()` does not error if called with values
+    that are already set."""
+    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    key_value = {"some_key": "some_value"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check content is already set
+    assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "some_value" in inventory.repo.get_asset_content(asset_path).values()
+
+    # set a value in an asset
+    onyo_set(inventory,
+             paths=[asset_path],
+             keys=key_value,  # pyre-ignore[6]
+             message="some subject\n\nAnd a body")
+
+    # check content is unchanged
+    assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "some_value" in inventory.repo.get_asset_content(asset_path).values()
+
+    # no commit added
+    assert inventory.repo.git.get_hexsha() == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_overwrite_existing_value(inventory: Inventory) -> None:
+    """`onyo_set()` overwrites an existing value with a new one in an asset."""
+    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    new_key_value = {"some_key": "that_new_value"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check content
+    assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "some_value" in inventory.repo.get_asset_content(asset_path).values()
+    assert "that_new_value" not in inventory.repo.get_asset_content(asset_path).values()
+
+    # set a value in an asset
+    onyo_set(inventory,
+             paths=[asset_path],
+             keys=new_key_value,  # pyre-ignore[6]
+             message="some subject\n\nAnd a body")
+
+    # check content
+    assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "some_value" not in inventory.repo.get_asset_content(asset_path).values()
+    assert "that_new_value" in inventory.repo.get_asset_content(asset_path).values()
+    assert Path.read_text(asset_path).count("some_key") == 1
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
+    """When `onyo_set()` is called with two key value pairs, and one
+    is already set and the other not, onyo changes the second one
+    without error.
+    """
+    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    new_key_values = {"some_key": "some_value",  # exists in asset
+                      "new_key": "new_value"}  # exists not in asset
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # check content
+    assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path).keys()
+    assert "some_value" in inventory.repo.get_asset_content(asset_path).values()
+    assert "new_value" not in inventory.repo.get_asset_content(asset_path).values()
+
+    # set a value in an asset
+    onyo_set(inventory,
+             paths=[asset_path],
+             keys=new_key_values,  # pyre-ignore[6]
+             message="some subject\n\nAnd a body")
+
+    # check content
+    assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "new_key" in inventory.repo.get_asset_content(asset_path).keys()
+    assert "some_value" in inventory.repo.get_asset_content(asset_path).values()
+    assert "new_value" in inventory.repo.get_asset_content(asset_path).values()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nold_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_match(inventory: Inventory) -> None:
+    """`onyo_set()` updates the correct assets when `match` is used."""
+    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    asset_path2 = inventory.root / "one_that_exists.test"
+    matches = [Filter("old_key=value").match]
+    key_value = {"new_key": "new_value"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # verify that one asset contains the "old_key" to match and the other not
+    assert "old_key" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "old_key" in inventory.repo.get_asset_content(asset_path2).keys()
+    # the new key is not yet in either asset
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # set a value just in the matching asset, but specify both paths
+    onyo_set(inventory,
+             paths=[asset_path1, asset_path2],
+             match=matches,  # pyre-ignore[6]
+             keys=key_value,  # pyre-ignore[6]
+             message="some subject\n\nAnd a body")
+
+    # check content is just set in the matching asset, the other is unchanged
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "new_key" in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_no_matches(inventory: Inventory) -> None:
+    """`onyo_set()` behaves correctly when `match` matches no assets."""
+    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    asset_path2 = inventory.root / "one_that_exists.test"
+    matches = [Filter("unfound=values").match]
+    key_value = {"new_key": "new_value"}
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # verify that both assets don't contain neither "new_key" nor "unfound"
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path2).keys()
+    assert "unfound" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "unfound" not in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # `onyo_set()` is called, but neither asset match so nothing will be set
+    onyo_set(inventory,
+             paths=[asset_path1, asset_path2],
+             match=matches,  # pyre-ignore[6]
+             keys=key_value,  # pyre-ignore[6]
+             message="some subject\n\nAnd a body")
+
+    # check content is not set in either asset because neither matched
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "new_key" not in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # no commit was added because nothing matched
+    assert inventory.repo.git.get_hexsha() == old_hexsha
     # TODO: verifying cleanness of worktree does not work,
     #       because fixture returns inventory with untracked stuff
     # assert inventory.repo.git.is_clean_worktree()

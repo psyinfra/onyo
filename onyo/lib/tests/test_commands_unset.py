@@ -1,5 +1,6 @@
 import pytest
 
+from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_unset
@@ -188,6 +189,77 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_unset_match(inventory: Inventory) -> None:
+    """`onyo_unset()` updates the correct assets when `match` is used."""
+    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    asset_path2 = inventory.root / "one_that_exists.test"
+    some_key = "some_key"
+    other_key = "other"
+    matches = [Filter("other=1").match]
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # verify that both assets contain the old "some_key", but just one has "other" to match
+    assert some_key in inventory.repo.get_asset_content(asset_path1).keys()
+    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
+    assert other_key in inventory.repo.get_asset_content(asset_path1).keys()
+    assert other_key not in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # unset the value just in the matching asset, but specify both asset paths
+    onyo_unset(inventory,
+               paths=[asset_path1, asset_path2],
+               match=matches,  # pyre-ignore[6]
+               keys=[some_key],
+               message="some subject\n\nAnd a body")
+
+    # check content is just unset in the matching asset, the other is unchanged -> it did not match
+    assert some_key not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(
+    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+@pytest.mark.ui({'yes': True})
+def test_onyo_unset_no_matches(inventory: Inventory) -> None:
+    """`onyo_unset()` does behave correct if `match` finds no assets."""
+    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    asset_path2 = inventory.root / "one_that_exists.test"
+    some_key = "some_key"
+    matches = [Filter("unfound=values").match]
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # verify that both assets contain the old "some_key", but none has the other to match
+    assert some_key in inventory.repo.get_asset_content(asset_path1).keys()
+    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
+    assert "unfound" not in inventory.repo.get_asset_content(asset_path1).keys()
+    assert "unfound" not in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # call unset on two assets that will not match, so that nothing is changed
+    onyo_unset(inventory,
+               paths=[asset_path1, asset_path2],
+               match=matches,  # pyre-ignore[6]
+               keys=[some_key],
+               message="some subject\n\nAnd a body")
+
+    # check content still contains "some_key" because neither asset did match
+    assert some_key in inventory.repo.get_asset_content(asset_path1).keys()
+    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
+
+    # no commits added because nothing changed
+    assert inventory.repo.git.get_hexsha() == old_hexsha
     # TODO: verifying cleanness of worktree does not work,
     #       because fixture returns inventory with untracked stuff
     # assert inventory.repo.git.is_clean_worktree()

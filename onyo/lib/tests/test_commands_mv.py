@@ -11,6 +11,7 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
     """`onyo_mv` must raise the correct error in different illegal or impossible calls."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
+    dir_path2 = inventory.root / 'different' / 'place'
 
     # move directory into itself
     pytest.raises(InvalidInventoryOperationError,
@@ -76,6 +77,14 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   inventory,
                   source=inventory.root / "not-existent",
                   destination=dir_path,
+                  message="some subject\n\nAnd a body")
+
+    # renaming multiple sources at once is not allowed
+    pytest.raises(ValueError,
+                  onyo_mv,
+                  inventory,
+                  source=[dir_path, dir_path2],
+                  destination=inventory.root / "new_name",
                   message="some subject\n\nAnd a body")
 
 
@@ -169,13 +178,9 @@ def test_onyo_mv_move_simple(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
-    """Allow moving a source to destination.
-
-    `destination_path` does not yet exist, which would indicate a
-    renaming if it wasn't the same name as the source. If recognized
-    as a renaming, however, it should fail because not only the name
-    but also the parent changed, which implies two operations: A move
-    and a renaming (with no order given).
+    """Allow moving a source to a destination stating the
+    destination name explicitely, e.g.:
+    inventory.root/dir1/asset -> inventory.root/dir2/asset.
     """
     dir_path = inventory.root / 'somewhere' / 'nested'
     # move by explicitly restating the source's name:
@@ -203,7 +208,7 @@ def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_mv_rename(inventory: Inventory) -> None:
+def test_onyo_mv_rename_directory(inventory: Inventory) -> None:
     """`onyo_mv` must allow renaming of a directory."""
     dir_path = inventory.root / 'somewhere' / 'nested'
     destination_path = dir_path.parent / 'newname'
