@@ -135,10 +135,19 @@ class GitRepo(object):
         """
         ui.log_debug("Looking up tracked files%s",
                      f" underneath {', '.join([str(p) for p in paths])}" if paths else "")
-        git_cmd = ['ls-files', '-z']
+        git_cmd = ['ls-tree', '-r', '--full-tree', '--name-only', '-z', 'HEAD']
         if paths:
             git_cmd.extend([str(p) for p in paths])
-        files = [self.root / x for x in self._git(git_cmd).split('\0') if x]
+        try:
+            tree = self._git(git_cmd)
+        except subprocess.CalledProcessError as e_ls_tree:
+            try:
+                self._git(['rev-parse', 'HEAD', '--'])
+                raise e_ls_tree
+            except subprocess.CalledProcessError:
+                # no HEAD -> empty repository
+                tree = ""
+        files = [self.root / x for x in tree.split('\0') if x]
         return files
 
     def is_clean_worktree(self) -> bool:
