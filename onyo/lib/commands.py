@@ -5,7 +5,8 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, TypeVar, ParamSpec
+from functools import wraps
 
 from rich import box
 from rich.table import Table
@@ -26,9 +27,44 @@ from onyo.lib.utils import deduplicate, write_asset_file
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
+T = TypeVar('T')
+P = ParamSpec('P')
 
-# TODO: For python interface usage, *commands* should probably refuse to do
-#       anything if there are pending operations in the inventory.
+
+def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
+    """Raises if it's not OK to run an onyo command on `inventory`.
+
+    Decorator for onyo commands. Expects an `Inventory` to be part of
+    the arguments to the decorated function.
+
+    Notes
+    -----
+    Currently simply assesses whether the worktree is clean and there
+    are no pending operations in `inventory`.
+    This may change to a more finegrained assessment of what kinds
+    of commands can safely run on the current state of `inventory`.
+    For example: `onyo_cat` could be allowed to run on a dirty worktree,
+    or at least if there are no modifications to the asset file(s) it's
+    supposed to print while not caring for modifications to other files.
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        inventory = None
+        for o in list(args) + list(kwargs.values()):  # pyre-ignore[16]
+            if isinstance(o, Inventory):
+                inventory = o
+                break
+        if inventory is None:
+            raise RuntimeError("Failed to find `Inventory` argument.")
+
+        if not inventory.repo.git.is_clean_worktree():
+            raise OnyoRepoError("Git worktree is not clean.")
+        if inventory.operations_pending():
+            raise PendingInventoryOperationError(
+                f"Inventory at {inventory.root} has pending operations.")
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def fsck(repo: OnyoRepo,
@@ -100,6 +136,7 @@ def fsck(repo: OnyoRepo,
         ui.log(f"'{key}' succeeded")
 
 
+@raise_on_inventory_state
 def onyo_cat(inventory: Inventory,
              paths: list[Path]) -> None:
     """Print the contents of assets.
@@ -146,6 +183,7 @@ def onyo_cat(inventory: Inventory,
         raise OnyoInvalidRepoError("Invalid assets")
 
 
+@raise_on_inventory_state
 def onyo_config(inventory: Inventory,
                 config_args: list[str]) -> None:
     """Interface the configuration of an onyo repository.
@@ -285,6 +323,7 @@ def _edit_asset(inventory: Inventory,
     return asset
 
 
+@raise_on_inventory_state
 def onyo_edit(inventory: Inventory,
               paths: list[Path],
               message: Optional[str]) -> None:
@@ -345,6 +384,7 @@ def onyo_edit(inventory: Inventory,
     ui.print('No assets updated.')
 
 
+@raise_on_inventory_state
 def onyo_get(inventory: Inventory,
              paths: Optional[list[Path]],
              depth: int,
@@ -449,6 +489,7 @@ def onyo_get(inventory: Inventory,
     return results
 
 
+@raise_on_inventory_state
 def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
                message: Optional[str]) -> None:
@@ -526,6 +567,7 @@ def move_asset_or_dir(inventory: Inventory,
         inventory.move_directory(source, destination)
 
 
+@raise_on_inventory_state
 def onyo_mv(inventory: Inventory,
             source: list[Path] | Path,
             destination: Path,
@@ -601,6 +643,7 @@ def onyo_mv(inventory: Inventory,
     ui.print('Nothing was moved.')
 
 
+@raise_on_inventory_state
 def onyo_new(inventory: Inventory,
              path: Optional[Path] = None,
              template: Optional[str] = None,
@@ -783,6 +826,7 @@ def onyo_new(inventory: Inventory,
     ui.print('No new assets created.')
 
 
+@raise_on_inventory_state
 def onyo_rm(inventory: Inventory,
             paths: list[Path] | Path,
             message: Optional[str]) -> None:
@@ -831,6 +875,7 @@ def onyo_rm(inventory: Inventory,
     ui.print('Nothing was deleted.')
 
 
+@raise_on_inventory_state
 def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
              paths: Optional[list[Path]] = None,
@@ -924,6 +969,7 @@ def onyo_set(inventory: Inventory,
     ui.print("No assets updated.")
 
 
+@raise_on_inventory_state
 def onyo_tree(inventory: Inventory,
               paths: list[Path] = []) -> None:
     """Print the directory tree of paths.
@@ -957,6 +1003,7 @@ def onyo_tree(inventory: Inventory,
     ui.print(ret.stdout)
 
 
+@raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: list[str],
                match: Optional[list[Callable[[dict], bool]]],
