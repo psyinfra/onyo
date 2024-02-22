@@ -61,7 +61,8 @@ def test_get_editor_precedence(repo: OnyoRepo) -> None:
     """
     # set locations
     repo.set_config('onyo.core.editor', 'local', location='local')
-    repo.set_config('onyo.core.editor', 'onyo', location='onyo')
+    # Use onyo-config to also commit and not end up with a modified worktree here:
+    subprocess.run(["onyo", "config", '--add', "onyo.core.editor", "onyo"])
     os.environ['EDITOR'] = 'editor'
 
     # git should win
