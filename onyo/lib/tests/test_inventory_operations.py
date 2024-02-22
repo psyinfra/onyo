@@ -2,7 +2,7 @@ import pytest
 
 from onyo.lib.assets import Asset
 from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
-from onyo.lib.exceptions import InvalidInventoryOperation, NoopError, NotAnAssetError
+from onyo.lib.exceptions import InvalidInventoryOperationError, NoopError, NotAnAssetError
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
 
@@ -319,7 +319,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     inventory.commit("First asset added")
 
     # raise on non-dir
-    pytest.raises(InvalidInventoryOperation, inventory.remove_directory, asset_file)
+    pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, asset_file)
 
     inventory.remove_directory(emptydir)
     assert num_operations(inventory, 'remove_directories') == 1
@@ -368,7 +368,7 @@ def test_move_directory(repo: OnyoRepo) -> None:
     pytest.raises(ValueError, inventory.move_directory, asset_file, repo.git.root / "doesnotexist")
     pytest.raises(ValueError, inventory.move_directory, asset_file, (repo.git.root / "isafile").touch())
     # raise on rename:
-    pytest.raises(InvalidInventoryOperation, inventory.move_directory, newdir2, newdir1)
+    pytest.raises(InvalidInventoryOperationError, inventory.move_directory, newdir2, newdir1)
 
     inventory.move_directory(newdir2, emptydir)
     assert num_operations(inventory, 'move_directories') == 1
@@ -408,9 +408,9 @@ def test_rename_directory(repo: OnyoRepo) -> None:
     # raise on non-dir:
     pytest.raises(ValueError, inventory.rename_directory, asset_file, new_place)
     # raise on existing destination:
-    pytest.raises(InvalidInventoryOperation, inventory.rename_directory, newdir1, emptydir)
+    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, newdir1, emptydir)
     # raise on move:
-    pytest.raises(InvalidInventoryOperation, inventory.rename_directory, newdir2, new_place)
+    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, newdir2, new_place)
 
     new_name = newdir1 / "new_name"
     inventory.rename_directory(newdir2, new_name)

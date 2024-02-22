@@ -22,7 +22,7 @@ from onyo.lib.differs import (
 from onyo.lib.exceptions import (
     NotAnAssetError,
     NoopError,
-    InvalidInventoryOperation,
+    InvalidInventoryOperationError,
 )
 from onyo.lib.executors import (
     exec_new_assets,
@@ -202,7 +202,7 @@ class Inventory(object):
 
     def add_asset(self, asset: Asset) -> list[InventoryOperation]:
         # TODO: what if I call this with a modified (possibly moved) asset?
-        # -> check for conflicts and raise InvalidInventoryOperation("something about either commit first or rest")
+        # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or rest")
         operations = []
         path = None
 
@@ -373,7 +373,7 @@ class Inventory(object):
     def remove_directory(self, directory: Path) -> list[InventoryOperation]:
         operations = []
         if not self.repo.is_inventory_dir(directory):
-            raise InvalidInventoryOperation(f"Not an inventory directory: {directory}")
+            raise InvalidInventoryOperationError(f"Not an inventory directory: {directory}")
         for p in directory.iterdir():
             try:
                 operations.extend(self.remove_asset(p))
@@ -404,7 +404,7 @@ class Inventory(object):
         if not self.repo.is_inventory_dir(dst):
             raise ValueError(f"Destination is not an inventory directory: {dst}")
         if src.parent == dst:
-            raise InvalidInventoryOperation(f"Cannot move {src} -> {dst}. Consider renaming instead.")
+            raise InvalidInventoryOperationError(f"Cannot move {src} -> {dst}. Consider renaming instead.")
         if (dst / src.name).exists():
             raise ValueError(f"Target {dst / src.name} already exists.")
         return [self._add_operation('move_directories', (src, dst))]
@@ -417,7 +417,7 @@ class Inventory(object):
         if isinstance(dst, str):
             dst = src.parent / dst
         if src.parent != dst.parent:
-            raise InvalidInventoryOperation(f"Cannot rename {src} -> {dst}. Consider moving instead.")
+            raise InvalidInventoryOperationError(f"Cannot rename {src} -> {dst}. Consider moving instead.")
         if not self.repo.is_inventory_path(dst):
             raise ValueError(f"{dst} is not a valid inventory directory.")
         if dst.exists():

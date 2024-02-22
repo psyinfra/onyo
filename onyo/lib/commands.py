@@ -12,7 +12,13 @@ from rich.table import Table
 
 from onyo.lib.command_utils import fill_unset, natural_sort
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
-from onyo.lib.exceptions import OnyoInvalidRepoError, NotAnAssetError, NoopError
+from onyo.lib.exceptions import (
+    OnyoRepoError,
+    OnyoInvalidRepoError,
+    PendingInventoryOperationError,
+    NotAnAssetError,
+    NoopError,
+)
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.ui import ui
