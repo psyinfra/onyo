@@ -927,11 +927,12 @@ def onyo_set(inventory: Inventory,
     paths = paths or [inventory.root]
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
-
+    if any(not k or not k.strip() for k in keys.keys()):
+        raise ValueError("Keys are not allowed to be empty or None-values.")
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
     if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys.keys()):
-        raise ValueError(f"Can't set reserved keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
+        raise ValueError(f"Can't set reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
     non_inventory_paths = [str(p)
                            for p in paths  # pyre-ignore[16]  `paths` not Optional anymore here
@@ -1064,7 +1065,7 @@ def onyo_unset(inventory: Inventory,
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
         raise ValueError("Can't unset asset name keys.")
     if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
-        raise ValueError(f"Can't unset reserved keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
+        raise ValueError(f"Can't unset reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
     asset_paths_to_unset = inventory.get_assets_by_query(paths=paths,
                                                          depth=depth,
