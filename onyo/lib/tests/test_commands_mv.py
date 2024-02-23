@@ -1,6 +1,6 @@
 import pytest
 
-from onyo.lib.exceptions import InvalidInventoryOperation
+from onyo.lib.exceptions import InvalidInventoryOperationError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_mv
@@ -13,7 +13,7 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
     dir_path = inventory.root / 'empty'
 
     # move directory into itself
-    pytest.raises(InvalidInventoryOperation,
+    pytest.raises(InvalidInventoryOperationError,
                   onyo_mv,
                   inventory,
                   source=dir_path,
@@ -37,7 +37,7 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   message="some subject\n\nAnd a body")
 
     # rename and move of a directory in one call
-    pytest.raises(InvalidInventoryOperation,
+    pytest.raises(InvalidInventoryOperationError,
                   onyo_mv,
                   inventory,
                   source=inventory.root / "somewhere",

@@ -197,11 +197,6 @@ def inventory(repo) -> Generator:
     inventory.add_directory(repo.git.root / 'empty')
     inventory.add_directory(repo.git.root / 'different' / 'place')
     inventory.commit("First asset added")
-
-    # Add some untracked stuff
-    (repo.git.root / "untracked" / "dir").mkdir(parents=True, exist_ok=True)
-    (repo.git.root / "untracked" / "file").touch(exist_ok=True)
-
     yield inventory
 
 
