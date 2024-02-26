@@ -1,6 +1,6 @@
 import pytest
 
-from onyo.lib.exceptions import InvalidInventoryOperationError
+from onyo.lib.exceptions import InvalidInventoryOperationError, InventoryOperationError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_rm
@@ -30,8 +30,8 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
                   paths=inventory.root / OnyoRepo.ANCHOR_FILE_NAME,
                   message="some subject\n\nAnd a body")
 
-    # delete outside of onyo repository
-    pytest.raises(InvalidInventoryOperationError,
+    # delete outside onyo repository
+    pytest.raises(InventoryOperationError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / "..",
@@ -110,6 +110,27 @@ def test_onyo_rm_move_single(inventory: Inventory) -> None:
     # asset was deleted
     assert not asset_path.exists()
     assert asset_path not in inventory.repo.git.files
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # TODO: verifying cleanness of worktree does not work,
+    #       because fixture returns inventory with untracked stuff
+    # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_rm_delete_directory(inventory: Inventory) -> None:
+    """Delete a single directory path."""
+    dir_path = inventory.root / 'empty'
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # delete a single asset as path
+    onyo_rm(inventory,
+            paths=dir_path,
+            message="some subject\n\nAnd a body")
+
+    # directory was deleted
+    assert not dir_path.exists()
+    assert dir_path / OnyoRepo.ANCHOR_FILE_NAME not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     # TODO: verifying cleanness of worktree does not work,

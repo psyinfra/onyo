@@ -15,6 +15,19 @@ def test_config_set(repo: OnyoRepo) -> None:
     assert repo.git.is_clean_worktree()
 
 
+def test_config_already_set(repo: OnyoRepo) -> None:
+    """`onyo config` does not error if a legal value is
+    already set and no changes are made."""
+    assert 'onyo "history"' in Path('.onyo/config').read_text()
+    assert 'interactive = tig --follow' in Path('.onyo/config').read_text()
+    ret = subprocess.run(["onyo", "config", "onyo.history.interactive", "tig --follow"],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert "No changes to commit." in ret.stdout
+    assert not ret.stderr
+    assert repo.git.is_clean_worktree()
+
+
 def test_config_get_onyo(repo: OnyoRepo) -> None:
     # set
     ret = subprocess.run(["onyo", "config", "onyo.test.get-onyo",

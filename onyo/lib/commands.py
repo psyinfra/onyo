@@ -5,7 +5,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Optional, TypeVar, ParamSpec
+from typing import Callable, Dict, Literal, Optional, ParamSpec, TypeVar
 from functools import wraps
 
 from rich import box
@@ -386,13 +386,13 @@ def onyo_edit(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_get(inventory: Inventory,
-             paths: Optional[list[Path]],
-             depth: int,
-             machine_readable: bool,
-             match: Optional[list[Callable[[dict], bool]]],
-             keys: Optional[list[str]],
-             sort: str = 'ascending') -> list[dict]:
-    """Query the repository for assets.
+             paths: Optional[list[Path]] = None,
+             depth: int = 0,
+             machine_readable: bool = False,
+             match: Optional[list[Callable[[dict], bool]]] = None,
+             keys: Optional[list[str]] = None,
+             sort: Literal['ascending', 'descending'] = 'ascending') -> list[dict]:
+    """Query the repository for information about assets.
 
     Parameters
     ----------
@@ -400,20 +400,22 @@ def onyo_get(inventory: Inventory,
       The inventory to query.
     paths: list of Path, optional
       Limits the query to assets underneath these paths.
+      Paths can be assets and directories.
+      If no paths are specified, the inventory root is used as default.
     depth: int
       Number of levels to descent into. Must be greater or equal 0.
       If 0, descend recursively without limit.
-    machine_readable: bool
+    machine_readable: bool, optional
       Whether to print the matching assets as TAB-separated lines,
       where the columns correspond to the `keys`. If `False`,
       print a table meant for human consumption.
-    match: list of Callable
+    match: list of Callable, optional
       Callables suited for use with builtin `filter`. They are
       passed an asset dictionary and expected to return a `bool`,
       where `True` indicates a match. The result of the query
       consists of all assets that are matched by all callables in
       this list.
-    keys: list of str
+    keys: list of str, optional
       Defines what key-value pairs of an asset a result is composed of.
       If no `keys` are given the keys then the asset name keys are
       used. The 'path' pseudo-key is always appended.
@@ -421,6 +423,7 @@ def onyo_get(inventory: Inventory,
     sort: str
       How to sort the results by `keys`. Possible values are
       'ascending' and 'descending'. Default: 'ascending'.
+      If other values are specified an error is raised.
 
     Raises
     ------
@@ -445,6 +448,10 @@ def onyo_get(inventory: Inventory,
     if invalid_paths:
         err_str = '\n'.join([str(x) for x in invalid_paths])
         raise ValueError(f"The following paths are not part of the inventory:\n{err_str}")
+
+    allowed_sorting = ['ascending', 'descending']
+    if sort not in allowed_sorting:
+        raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
     selected_keys = selected_keys or inventory.repo.get_asset_name_keys()
     results = inventory.get_assets_by_query(paths=paths,
@@ -893,7 +900,7 @@ def onyo_set(inventory: Inventory,
         Paths to assets or directories for which to set key-value pairs.
         If paths are directories, the values will be set recursively in assets
         under the specified path.
-        If no paths are specified, CWD is used as default.
+        If no paths are specified, the inventory root is used as default.
     keys: dict
         Key-value pairs that will be set in assets. If keys already exist in an
         asset their value will be overwritten, if they do not exist the values
@@ -917,17 +924,18 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
-    paths = paths or []
+    paths = paths or [inventory.root]
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
-
+    if any(not k or not k.strip() for k in keys.keys()):
+        raise ValueError("Keys are not allowed to be empty or None-values.")
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
-    if any(k in RESERVED_KEYS for k in keys.keys()):
-        raise ValueError(f"Can't set reserved keys ({', '.join(RESERVED_KEYS)}).")
+    if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys.keys()):
+        raise ValueError(f"Can't set reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
     non_inventory_paths = [str(p)
-                           for p in paths
+                           for p in paths  # pyre-ignore[16]  `paths` not Optional anymore here
                            if not inventory.repo.is_asset_path(p) and
                            not inventory.repo.is_inventory_dir(p)]
     if non_inventory_paths:
@@ -1006,7 +1014,7 @@ def onyo_tree(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: list[str],
-               match: Optional[list[Callable[[dict], bool]]],
+               match: Optional[list[Callable[[dict], bool]]] = None,
                paths: Optional[list[Path]] = None,
                depth: int = 0,
                message: Optional[str] = None) -> None:
@@ -1016,29 +1024,37 @@ def onyo_unset(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to unset key/values for assets.
-    keys: list
+    keys: list of str
         The keys that will be unset in assets.
         If keys do not exist in an asset, a debug message is logged.
         If keys are specified which appear in asset names an error is raised.
+        If `keys` is empty an error is raised.
     match: list of Callable, optional
       Callables suited for use with builtin `filter`. They are
       passed an asset dictionary and expected to return a `bool`,
       where `True` indicates a match. `keys` will be removed from
       all assets that are matched by all callables in this list.
-    paths: Path or list of Path, optional
+    paths: list of Path, optional
         Paths to assets or directories for which to unset key-value pairs.
         If paths are directories, the values will be unset recursively in assets
         under the specified path.
-        If no paths are specified, CWD is used as default.
+        If no paths are specified, the inventory root is used as default.
     depth: int
         Depth limit of recursion if a `path` is a directory.
         0 means no limit and is the default.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
-    """
-    paths = paths or []
 
-    non_inventory_paths = [str(p) for p in paths
+    Raises
+    ------
+    ValueError
+        If paths are invalid, or `keys` are empty or invalid.
+
+    """
+    paths = paths or [inventory.root]
+    if not keys:
+        raise ValueError("At least one key must be specified.")
+    non_inventory_paths = [str(p) for p in paths  # pyre-ignore[16]  `paths` not Optional anymore
                            if not inventory.repo.is_asset_path(p) and
                            not inventory.repo.is_inventory_dir(p)]
 
@@ -1048,8 +1064,8 @@ def onyo_unset(inventory: Inventory,
 
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
         raise ValueError("Can't unset asset name keys.")
-    if any(k in RESERVED_KEYS for k in keys):
-        raise ValueError(f"Can't unset reserved keys ({', '.join(RESERVED_KEYS)}).")
+    if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
+        raise ValueError(f"Can't unset reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
     asset_paths_to_unset = inventory.get_assets_by_query(paths=paths,
                                                          depth=depth,

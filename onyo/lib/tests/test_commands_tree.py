@@ -41,7 +41,8 @@ def test_onyo_tree_errors(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_tree_single(inventory: Inventory) -> None:
+def test_onyo_tree_single(inventory: Inventory,
+                          capsys) -> None:
     """Display a tree for a directory."""
     directory_path = inventory.root / "somewhere" / "nested"
 
@@ -49,13 +50,19 @@ def test_onyo_tree_single(inventory: Inventory) -> None:
     onyo_tree(inventory,
               paths=[directory_path])
 
+    # verify assets and paths are in output
+    tree_output = capsys.readouterr().out
+    for path in inventory.repo.get_asset_paths(subtrees=[directory_path]):
+        assert all([part in tree_output for part in path.parts])
+
     # TODO: verifying cleanness of worktree does not work,
     #       because fixture returns inventory with untracked stuff
     # assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_tree_multiple_paths(inventory: Inventory) -> None:
+def test_onyo_tree_multiple_paths(inventory: Inventory,
+                                  capsys) -> None:
     """Display multiple trees with one call."""
     dir_path = inventory.root / 'somewhere' / 'nested'
 
@@ -63,16 +70,26 @@ def test_onyo_tree_multiple_paths(inventory: Inventory) -> None:
               paths=[dir_path,
                      inventory.root])
 
+    # verify assets and paths are in output
+    tree_output = capsys.readouterr().out
+    for path in inventory.repo.get_asset_paths(subtrees=[dir_path, inventory.root]):
+        assert all([part in tree_output for part in path.parts])
+
     # TODO: verifying cleanness of worktree does not work,
     #       because fixture returns inventory with untracked stuff
     # assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_tree_without_explicit_paths(inventory: Inventory) -> None:
+def test_onyo_tree_without_explicit_paths(inventory: Inventory,
+                                          capsys) -> None:
     """Display the root of the inventory, if onyo_tree() is called without paths."""
     onyo_tree(inventory)
 
+    # verify assets and paths are in output
+    tree_output = capsys.readouterr().out
+    for path in inventory.repo.get_asset_paths(subtrees=[inventory.root]):
+        assert all([part in tree_output for part in path.parts])
     # TODO: verifying cleanness of worktree does not work,
     #       because fixture returns inventory with untracked stuff
     # assert inventory.repo.git.is_clean_worktree()
@@ -99,9 +116,10 @@ def test_onyo_tree_errors_before_showing_trees(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 @pytest.mark.repo_dirs("a/b/c", "a/d/c")
-def test_onyo_tree_with_same_dir_twice(inventory: Inventory) -> None:
-    """Allow to display the tree to a directory twice when `onyo_tree()` is called with the same
-    path twice at once."""
+def test_onyo_tree_with_same_dir_twice(inventory: Inventory,
+                                       capsys) -> None:
+    """Allow to display the tree to a directory twice when
+    `onyo_tree()` is called with the same path twice at once."""
     directory_path = inventory.root / "somewhere" / "nested"
 
     # call onyo_tree() with `directory_path` twice in `paths`.
@@ -109,6 +127,12 @@ def test_onyo_tree_with_same_dir_twice(inventory: Inventory) -> None:
               paths=[directory_path,
                      inventory.root,
                      directory_path])
+
+    # verify assets and paths are in output
+    tree_output = capsys.readouterr().out
+    for path in inventory.repo.get_asset_paths(subtrees=[directory_path]):
+        assert all([part in tree_output for part in path.parts])
+    assert tree_output.count(str(directory_path)) == 2
 
     # TODO: verifying cleanness of worktree does not work,
     #       because fixture returns inventory with untracked stuff

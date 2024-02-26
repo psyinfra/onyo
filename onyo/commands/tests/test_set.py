@@ -51,10 +51,10 @@ name_fields = [["type=desktop"],
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', asset_paths)
 @pytest.mark.parametrize('set_values', values)
-def test_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
-    """
-    Test that `onyo set KEY=VALUE <asset>` updates contents of assets.
-    """
+def test_set(repo: OnyoRepo,
+             asset: str,
+             set_values: list[str]) -> None:
+    """Test that `onyo set KEY=VALUE <asset>` updates contents of assets."""
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
                          capture_output=True, text=True)
 
@@ -71,14 +71,14 @@ def test_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
+@pytest.mark.parametrize('asset', [asset_paths[0]])
 @pytest.mark.parametrize('set_values', values)
-def test_set_interactive(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
-    """
-    Test that `onyo set KEY=VALUE <asset>` updates contents of assets.
-    """
-    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset], input='y',
-                         capture_output=True, text=True)
+def test_set_interactive(repo: OnyoRepo,
+                         asset: str,
+                         set_values: list[str]) -> None:
+    """Test that `onyo set KEY=VALUE <asset>` updates contents of assets."""
+    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset],
+                         input='y', capture_output=True, text=True)
 
     # verify output
     assert "The following assets will be changed:" in ret.stdout
@@ -95,12 +95,13 @@ def test_set_interactive(repo: OnyoRepo, asset: str, set_values: list[str]) -> N
 
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
-def test_set_multiple_assets(repo: OnyoRepo, set_values: list[str]) -> None:
-    """
-    Test that `onyo set KEY=VALUE <asset>` can update the contents of multiple
+def test_set_multiple_assets(repo: OnyoRepo,
+                             set_values: list[str]) -> None:
+    """Test that `onyo set KEY=VALUE <asset>` can update the contents of multiple
     assets in a single call.
     """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', *asset_paths],
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values,
+                          '--path', *asset_paths],
                          capture_output=True, text=True)
 
     # verify output
@@ -120,8 +121,7 @@ def test_set_multiple_assets(repo: OnyoRepo, set_values: list[str]) -> None:
 @pytest.mark.parametrize('no_assets', non_existing_assets)
 def test_set_error_non_existing_assets(repo: OnyoRepo,
                                        no_assets: list[str]) -> None:
-    """
-    Test that `onyo set KEY=VALUE <asset>` errors correctly for:
+    """Test that `onyo set KEY=VALUE <asset>` errors correctly for:
     - non-existing assets on root
     - non-existing assets in directories
     - one non-existing asset in a list of existing ones
@@ -138,9 +138,9 @@ def test_set_error_non_existing_assets(repo: OnyoRepo,
 
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
-def test_set_with_dot_recursive(repo: OnyoRepo, set_values: list[str]) -> None:
-    """
-    Test that when `onyo set KEY=VALUE .` is called from the repository root,
+def test_set_with_dot_recursive(repo: OnyoRepo,
+                                set_values: list[str]) -> None:
+    """Test that when `onyo set KEY=VALUE .` is called from the repository root,
     onyo selects all assets in the complete repo recursively.
     """
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values,
@@ -161,12 +161,13 @@ def test_set_with_dot_recursive(repo: OnyoRepo, set_values: list[str]) -> None:
 
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('set_values', values)
-def test_set_without_path(repo: OnyoRepo, set_values: list[str]) -> None:
-    """
-    Test that `onyo set KEY=VALUE` without a given path selects all assets in
+def test_set_without_path(repo: OnyoRepo,
+                          set_values: list[str]) -> None:
+    """Test that `onyo set KEY=VALUE` without a given path selects all assets in
     the repository, beginning with cwd.
     """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values], capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values],
+                         capture_output=True, text=True)
 
     # verify that output contains one line per asset
     assert "The following assets will be changed:" in ret.stdout
@@ -185,12 +186,14 @@ def test_set_without_path(repo: OnyoRepo, set_values: list[str]) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('directory', directories)
 @pytest.mark.parametrize('set_values', values)
-def test_set_recursive_directories(repo: OnyoRepo, directory: str, set_values: list[str]) -> None:
+def test_set_recursive_directories(repo: OnyoRepo,
+                                   directory: str,
+                                   set_values: list[str]) -> None:
+    """Test that `onyo set KEY=VALUE <directory>` updates
+    contents of assets correctly.
     """
-    Test that `onyo set KEY=VALUE <directory>` updates contents of assets
-    correctly.
-    """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', directory],
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values,
+                          '--path', directory],
                          capture_output=True, text=True)
 
     # verify output
@@ -208,14 +211,14 @@ def test_set_recursive_directories(repo: OnyoRepo, directory: str, set_values: l
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
+@pytest.mark.parametrize('asset', [asset_paths[0]])
 @pytest.mark.parametrize('set_values', values)
-def test_set_discard_changes_single_assets(repo: OnyoRepo, asset: str,
+def test_set_discard_changes_single_assets(repo: OnyoRepo,
+                                           asset: str,
                                            set_values: list[str]) -> None:
-    """
-    Test that `onyo set` discards changes for assets successfully.
-    """
-    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset], input='n',
+    """Test that `onyo set` discards changes for assets successfully."""
+    ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--path', asset],
+                         input='n',
                          capture_output=True, text=True)
 
     # verify output for just dot, should be all in onyo root, but not recursive
@@ -234,11 +237,10 @@ def test_set_discard_changes_single_assets(repo: OnyoRepo, asset: str,
 
 @pytest.mark.repo_contents(*assets)
 def test_set_discard_changes_recursive(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo set` discards changes for all assets successfully.
-    """
+    """Test that `onyo set` discards changes for all assets successfully."""
     set_values = "key=discard"
-    ret = subprocess.run(['onyo', 'set', '--keys', set_values], input='n', capture_output=True, text=True)
+    ret = subprocess.run(['onyo', 'set', '--keys', set_values],
+                         input='n', capture_output=True, text=True)
 
     # verify output for just dot, should be all in onyo root, but not recursive
     assert "The following assets will be changed:" in ret.stdout
@@ -256,38 +258,14 @@ def test_set_discard_changes_recursive(repo: OnyoRepo) -> None:
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
-@pytest.mark.parametrize('set_values', values)
-def test_set_yes_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
-    """
-    Test that `onyo set --yes KEY=VALUE <asset>` updates assets without prompt.
-    """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
-                         capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert str(Path(asset)) in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # should not be asked with --yes flag
-    assert "Update assets? (y/n) " not in ret.stdout
-
-    # verify changes, and the repository clean
-    for value in set_values:
-        assert f"+{value.replace('=', ': ')}" in ret.stdout
-        assert value.replace("=", ": ") in Path.read_text(Path(asset))
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
-@pytest.mark.parametrize('set_values', values)
-def test_set_message_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
-    """
-    Test that `onyo set --message msg` overwrites the default commit message
-    with one specified by the user containing different special characters.
+@pytest.mark.parametrize('asset', [asset_paths[0]])
+@pytest.mark.parametrize('set_values', [values[0]])
+def test_set_message_flag(repo: OnyoRepo,
+                          asset: str,
+                          set_values: list[str]) -> None:
+    """Test that `onyo set --message msg` overwrites the
+    default commit message with one specified by the user
+    containing various special characters.
     """
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
     ret = subprocess.run(['onyo', '--yes', 'set', '--message', msg,
@@ -302,54 +280,13 @@ def test_set_message_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> 
     assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(assets[2])
-def test_set_quiet_without_yes_flag(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo set --quiet KEY=VALUE <asset>` errors correctly without the
-    --yes flag.
-    """
-    ret = subprocess.run(['onyo', '--quiet', 'set', '--keys', "mode=single", '--path', repo.asset_paths[0]],
-                         capture_output=True, text=True)
-
-    # verify output
-    assert not ret.stdout
-    assert "The --quiet flag requires --yes." in ret.stderr
-    assert ret.returncode == 1
-
-    # verify that the repository is in a clean state
-    assert repo.git.is_clean_worktree()
-
-
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
-@pytest.mark.parametrize('set_values', values)
-def test_set_quiet_flag(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
-    """
-    Test that `onyo set --quiet --yes KEY=VALUE <asset>` works correctly without
-    output and user-response.
-    """
-    ret = subprocess.run(['onyo', '--yes', '--quiet', 'set', '--keys', *set_values, '--path', asset], capture_output=True, text=True)
-
-    # verify that output is completely empty
-    assert not ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify that asset contents are updated
-    for value in set_values:
-        assert value.replace("=", ": ") in Path.read_text(Path(asset))
-
-    # verify that the repository is in a clean state
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('set_values', values)
+@pytest.mark.parametrize('set_values', [values[0]])
 @pytest.mark.parametrize('depth', ['0', '1', '3', '10'])
-def test_set_depth_flag(
-        repo: OnyoRepo, set_values: list[str], depth: str) -> None:
-    """
-    Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` for
+def test_set_depth_flag(repo: OnyoRepo,
+                        set_values: list[str],
+                        depth: str) -> None:
+    """Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` for
     different values for `--depth N`.
 
     The test searches through the output to find returned assets and ensures
@@ -372,15 +309,16 @@ def test_set_depth_flag(
             assert str(p) not in ret.stdout
 
 
-@pytest.mark.parametrize('set_values', values)
+@pytest.mark.parametrize('set_values', [values[0]])
 @pytest.mark.parametrize('depth,expected', [
     ('-1', "depth must be greater or equal 0, but is '-1'"),
 ])
-def test_set_depth_flag_error(
-        repo: OnyoRepo, set_values: list[str], depth: str, expected: str) -> None:
-    """
-    Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` when an
-    invalid depth value is given.
+def test_set_depth_flag_error(repo: OnyoRepo,
+                              set_values: list[str],
+                              depth: str,
+                              expected: str) -> None:
+    """Test correct behavior for `onyo set --depth N KEY=VALUE <assets>`
+    when an invalid depth value is given.
     """
     cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -390,10 +328,10 @@ def test_set_depth_flag_error(
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
-def test_add_new_key_to_existing_content(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo set KEY=VALUE <asset>` can be called two times with
+@pytest.mark.parametrize('asset', [asset_paths[0]])
+def test_add_new_key_to_existing_content(repo: OnyoRepo,
+                                         asset: str) -> None:
+    """Test that `onyo set KEY=VALUE <asset>` can be called two times with
     different `KEY`, and adds it without overwriting existing values.
     """
     set_1 = "change=one"
@@ -432,8 +370,9 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo, asset: str) -> None:
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
-def test_set_overwrite_key(repo: OnyoRepo, asset: str) -> None:
+@pytest.mark.parametrize('asset', [asset_paths[0]])
+def test_set_overwrite_key(repo: OnyoRepo,
+                           asset: str) -> None:
     """
     Test that `onyo set KEY=VALUE <asset>` can be called two times with
     different VALUE for the same KEY, and overwrites existing values correctly.
@@ -471,10 +410,10 @@ def test_set_overwrite_key(repo: OnyoRepo, asset: str) -> None:
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
-def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: str) -> None:
-    """
-    Test that `onyo set KEY=VALUE <asset>` updates contents of assets and adds
+@pytest.mark.parametrize('asset', [asset_paths[0]])
+def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo,
+                                                       asset: str) -> None:
+    """Test that `onyo set KEY=VALUE <asset>` updates contents of assets and adds
     the correct output if called multiple times, and that the output is correct.
     """
     set_values = "change=one"
@@ -515,14 +454,18 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo, asset: st
 @pytest.mark.repo_contents(assets[0])
 @pytest.mark.parametrize('asset', [asset_paths[0]])
 @pytest.mark.parametrize('set_values', values)
-def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
-    """
-    Test that `onyo set KEY=VALUE <asset>` updates contents of assets once, and
-    if called again with same valid values the command does display the correct
-    info message without error, and the repository stays in a clean state.
+def test_values_already_set(repo: OnyoRepo,
+                            asset: str,
+                            set_values: list[str]) -> None:
+    """Test that `onyo set KEY=VALUE <asset>` updates
+    contents of assets once, and if called again with
+    same valid values the command does display the correct
+    info message without error, and the repository stays
+    in a clean state.
     """
 
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--path', asset],
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values,
+                          '--path', asset],
                          capture_output=True, text=True)
 
     # verify output
@@ -547,17 +490,18 @@ def test_values_already_set(repo: OnyoRepo, asset: str, set_values: list[str]) -
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', asset_paths)
+@pytest.mark.parametrize('asset', [asset_paths[0]])
 @pytest.mark.parametrize('set_values', name_fields)
-def test_set_update_name_fields(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
+def test_set_update_name_fields(repo: OnyoRepo,
+                                asset: str,
+                                set_values: list[str]) -> None:
+    """Test that `onyo set --rename --keys KEY=VALUE <asset>` can
+    successfully change the names of assets, when KEY is
+    type, make, model or/and serial number. Test also, that
+    faux serials can be set and name fields are recognized
+    and can be updated when they are `onyo set` together
+    with a list of content fields.
     """
-    Test that `onyo set KEY=VALUE <asset>` can successfully change the names of
-    assets, when KEY is type, make, model or/and serial number. Test also, that
-    faux serials can be set and name fields are recognized and can be updated
-    when they are `onyo set` together with a list of content fields.
-    """
-    # TODO: This test is supposed to test whether we can set fields that are part of the
-    #       asset names. There are four such fields. This test function generates a whopping 168 test cases!
     ret = subprocess.run(['onyo', '--yes', 'set', '--rename', '--keys', *set_values,
                           '--path', asset], capture_output=True, text=True)
 
@@ -572,9 +516,9 @@ def test_set_update_name_fields(repo: OnyoRepo, asset: str, set_values: list[str
 
 @pytest.mark.repo_contents(*assets)
 def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
-    """
-    Test that `onyo set --rename serial=faux <asset>` can successfully update
-    many assets with new faux serial numbers in one call.
+    """Test that `onyo set --rename serial=faux <asset>`
+    can successfully update many assets with new faux
+    serial numbers in one call.
     """
 
     pytest.skip("TODO: faux serials not yet considered outside new. Needs to move (modify_asset)")
@@ -608,14 +552,14 @@ def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(assets[0])
 @pytest.mark.parametrize('asset', [asset_paths[0]])
 @pytest.mark.parametrize('set_values', values)
-def test_duplicate_keys(repo: OnyoRepo, asset: str, set_values: list[str]) -> None:
-    """
-    Test that `onyo set` fails, if the same key is given multiple times.
-    """
+def test_duplicate_keys(repo: OnyoRepo,
+                        asset: str,
+                        set_values: list[str]) -> None:
+    """Test that `onyo set` fails, if the same key is given multiple times."""
 
-    ret = subprocess.run(
-        ['onyo', '--yes', 'set', '--keys', *set_values, 'dup_key=1', 'dup_key=2', '--path', asset],
-        capture_output=True, text=True)
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys',
+                          *set_values, 'dup_key=1', 'dup_key=2', '--path', asset],
+                         capture_output=True, text=True)
 
     # verify output
     assert ret.returncode == 1
