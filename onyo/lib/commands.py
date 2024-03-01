@@ -492,7 +492,7 @@ def onyo_get(inventory: Inventory,
 
         ui.rich_print(table)
     else:
-        ui.rich_print('No assets matching the filter(s) were found')
+        ui.print('No assets matching the filter(s) were found')
     return results
 
 
