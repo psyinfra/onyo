@@ -3,28 +3,29 @@
 #
 # ZSH completion script for Onyo
 #
-
 _onyo() {
-  local curcontext="$curcontext" ret=1
-  local -a state state_descr line
-  local -A opt_args
+    local curcontext="$curcontext" ret=1
+    local -a state state_descr line
+    local -A opt_args
 
-  # $words is modified as it is passed down through the script. This keeps an
-  # unmodified copy of the expanded command.
-  local -a fullwords
-  fullwords=("${words[@]}")
+    # $words is modified as it is passed down through the script. This keeps an
+    # unmodified copy of the expanded command.
+    local -a fullwords
+    fullwords=("${words[@]}")
 
-  local -a args subcommands
-  args=( )
-  toplevel_flags=( '(- : *)'{-h,--help}'[show this help message and exit]'
-'(-C --onyopath)'{-C,--onyopath}'[Run Onyo commands from inside of DIR]:DIR:_path_files -W $(_onyo_dir) -/'
-'(-d --debug)'{-d,--debug}'[Enable debug logging]'
-'(-v --version)'{-v,--version}'[Print onyo'\''s version and exit]'
-'(-q --quiet)'{-q,--quiet}'[Silence messages printed to stdout. Does not suppress interactive editors. Requires the --yes flag]'
-'(-y --yes)'{-y,--yes}'[Respond "yes" to any prompts. The --yes flag is required to use --quiet]'
- )
+    local -a args subcommands
+    args=( )
+    toplevel_flags=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-C --onyopath)'{-C,--onyopath}'[Run Onyo commands from inside of DIR]:DIR:_path_files -W $(_onyo_dir) -/'
+        '(-d --debug)'{-d,--debug}'[Enable debug logging]'
+        '(-v --version)'{-v,--version}'[Print onyo'\''s version and exit]'
+        '(-q --quiet)'{-q,--quiet}'[Silence messages printed to stdout. Does not suppress interactive editors. Requires the --yes flag]'
+        '(-y --yes)'{-y,--yes}'[Respond "yes" to any prompts. The --yes flag is required to use --quiet]'
+    )
 
-  subcommands=( 'cat:Print the contents of ``ASSET`` file(s) to the terminal.
+    subcommands=(
+        'cat:Print the contents of ``ASSET`` file(s) to the terminal.
 
     At least one valid asset path is required. Assets can be given multiple times.
     If any path specified is invalid, no contents are printed and an error is raised.
@@ -226,177 +227,179 @@ Changes are printed to the terminal in the style of ``diff``.
 Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
 error encountered while writing a file will cause Onyo to error and exit
 immediately.
-' )
+'
+    )
 
-  _arguments -C $args                 $toplevel_flags                 ':subcommand:->subcommand'                 '*::options:->options' && ret=0
+    _arguments -C $args                 $toplevel_flags                 ':subcommand:->subcommand'                 '*::options:->options' && ret=0
 
-  case $state in
-      subcommand)
-          _describe -t subcommands 'onyo subcommand' subcommands && ret=0
-      ;;
+    case $state in
+        subcommand)
+            _describe -t subcommands 'onyo subcommand' subcommands && ret=0
+        ;;
 
-      options)
-          curcontext="${curcontext%:*}-$words[2]:"
+        options)
+            curcontext="${curcontext%:*}-$words[2]:"
 
-          case $words[1] in
-              cat)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '*:ASSET:_files -W $(_onyo_dir)'
-    )
-    ;;
-config)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '*:ARGS:_git-config'
-    )
-    ;;
-edit)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
-        '*:ASSET:_files -W $(_onyo_dir)'
-    )
-    ;;
-fsck)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-    )
-    ;;
-get)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-H --machine-readable)'{-H,--machine-readable}'[Display asset(s) separated by new lines, and keys by tabs instead of printing a formatted table]'
-        '(-k --keys)'{-k,--keys}'[Key value(s) to return. Pseudo-keys (information not stored in the asset file) are also available for queries]:*-*:KEYS: '
-        '(-p --path)'{-p,--path}'[Asset(s) or directory(s) to search through]:*-*:PATH:_files -W $(_onyo_dir)'
-        '(-s --sort-ascending)'{-s,--sort-ascending}'[Sort output in ascending order (excludes --sort-descending)]'
-        '(-S -sort-descending)'{-S,-sort-descending}'[Sort output in descending order (excludes --sort-ascending)]'
-        '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
-        '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
-    )
-    ;;
-history)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-I --non-interactive)'{-I,--non-interactive}'[Use the interactive history tool (specified in '\''.onyo/config'\'' under '\''onyo.history.interactive'\'') to display the history of the repository, an asset or a directory]'
-        '::PATH:_files -W $(_onyo_dir)'
-    )
-    ;;
-init)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '::DIR:_path_files -W $(_onyo_dir) -/'
-    )
-    ;;
-mkdir)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
-        '*:DIR:_path_files -W $(_onyo_dir) -/'
-    )
-    ;;
-mv)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
-        '*:SOURCE:_files -W $(_onyo_dir)'
-        ':DEST:_files -W $(_onyo_dir)'
-    )
-    ;;
-new)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-t --template)'{-t,--template}'[Name of the template to seed the new asset(s)]:TEMPLATE:_path_files -W $(_template_dir) -g "*(.)"'
-        '(-e --edit)'{-e,--edit}'[Open new assets in editor before creation]'
-        '(-k --keys)'{-k,--keys}'[Key-value pairs to set in the new asset(s). Multiple pairs can be specified (e.g. key=value key2=value2). All fields that are part of asset filenames (defined in .onyo/config under `onyo.assets.filename`) are required. If the value `faux` is assigned to the key `serial`, a random, repository-unique string will be filled in instead.]:*-*:KEYS: '
-        '(-p --path)'{-p,--path}'[directory to create asset(s) in]:PATH:_files -W $(_onyo_dir)'
-        '(-tsv --tsv)'{-tsv,--tsv}'[Path to a tsv file describing the new asset.]:TSV:_files -W $(_onyo_dir)'
-        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
-    )
-    ;;
-rm)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
-        '*:PATH:_files -W $(_onyo_dir)'
-    )
-    ;;
-set)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-r --rename)'{-r,--rename}'[Permit assigning values to keys that would result in the asset(s) being renamed.]'
-        '(-k --keys)'{-k,--keys}'[Specify key-value pairs to set in asset(s). Multiple pairs can be specified (e.g. key=value key2=value2)]:*-*:KEYS: '
-        '(-p --path)'{-p,--path}'[Asset(s) and/or directorie(s) to set KEY=VALUE in]:*-*::PATH:_files -W $(_onyo_dir)'
-        '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
-        '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
-        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
-    )
-    ;;
-shell-completion)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-s --shell)'{-s,--shell}'[Specify the shell for which to generate tab completion for]:SHELL:(zsh)'
-    )
-    ;;
-tree)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '*::DIR:_path_files -W $(_onyo_dir) -/'
-    )
-    ;;
-unset)
-    args+=(
-        '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-k --keys)'{-k,--keys}'[Specify keys to unset in assets. Multiple keys can be given (e.g. key key2 key3)]:*-*:KEYS: '
-        '(-p --path)'{-p,--path}'[Asset(s) and/or directory(s) for which to unset values in]:*-*::PATH:_files -W $(_onyo_dir)'
-        '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
-        '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
-        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
-    )
-    ;;
+        case $words[1] in
+            cat)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*:ASSET:_files -W $(_onyo_dir)'
+                )
+                ;;
+            config)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*:ARGS:_git-config'
+                )
+                ;;
+            edit)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+                    '*:ASSET:_files -W $(_onyo_dir)'
+                )
+                ;;
+            fsck)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                )
+                ;;
+            get)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-H --machine-readable)'{-H,--machine-readable}'[Display asset(s) separated by new lines, and keys by tabs instead of printing a formatted table]'
+                    '(-k --keys)'{-k,--keys}'[Key value(s) to return. Pseudo-keys (information not stored in the asset file) are also available for queries]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[Asset(s) or directory(s) to search through]:*-*:PATH:_files -W $(_onyo_dir)'
+                    '(-s --sort-ascending)'{-s,--sort-ascending}'[Sort output in ascending order (excludes --sort-descending)]'
+                    '(-S -sort-descending)'{-S,-sort-descending}'[Sort output in descending order (excludes --sort-ascending)]'
+                    '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+                    '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
+                )
+                ;;
+            history)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-I --non-interactive)'{-I,--non-interactive}'[Use the interactive history tool (specified in '\''.onyo/config'\'' under '\''onyo.history.interactive'\'') to display the history of the repository, an asset or a directory]'
+                    '::PATH:_files -W $(_onyo_dir)'
+                )
+                ;;
+            init)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '::DIR:_path_files -W $(_onyo_dir) -/'
+                )
+                ;;
+            mkdir)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+                    '*:DIR:_path_files -W $(_onyo_dir) -/'
+                )
+                ;;
+            mv)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+                    '*:SOURCE:_files -W $(_onyo_dir)'
+                    ':DEST:_files -W $(_onyo_dir)'
+                )
+                ;;
+            new)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-t --template)'{-t,--template}'[Name of the template to seed the new asset(s)]:TEMPLATE:_path_files -W $(_template_dir) -g "*(.)"'
+                    '(-e --edit)'{-e,--edit}'[Open new assets in editor before creation]'
+                    '(-k --keys)'{-k,--keys}'[Key-value pairs to set in the new asset(s). Multiple pairs can be specified (e.g. key=value key2=value2). All fields that are part of asset filenames (defined in .onyo/config under `onyo.assets.filename`) are required. If the value `faux` is assigned to the key `serial`, a random, repository-unique string will be filled in instead.]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[directory to create asset(s) in]:PATH:_files -W $(_onyo_dir)'
+                    '(-tsv --tsv)'{-tsv,--tsv}'[Path to a tsv file describing the new asset.]:TSV:_files -W $(_onyo_dir)'
+                    '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+                )
+                ;;
+            rm)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+                    '*:PATH:_files -W $(_onyo_dir)'
+                )
+                ;;
+            set)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-r --rename)'{-r,--rename}'[Permit assigning values to keys that would result in the asset(s) being renamed.]'
+                    '(-k --keys)'{-k,--keys}'[Specify key-value pairs to set in asset(s). Multiple pairs can be specified (e.g. key=value key2=value2)]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[Asset(s) and/or directorie(s) to set KEY=VALUE in]:*-*::PATH:_files -W $(_onyo_dir)'
+                    '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+                    '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
+                    '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+                )
+                ;;
+            shell-completion)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-s --shell)'{-s,--shell}'[Specify the shell for which to generate tab completion for]:SHELL:(zsh)'
+                )
+                ;;
+            tree)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*::DIR:_path_files -W $(_onyo_dir) -/'
+                )
+                ;;
+            unset)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-k --keys)'{-k,--keys}'[Specify keys to unset in assets. Multiple keys can be given (e.g. key key2 key3)]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[Asset(s) and/or directory(s) for which to unset values in]:*-*::PATH:_files -W $(_onyo_dir)'
+                    '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+                    '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
+                    '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+                )
+                ;;
 
+            *)
+                args+=(
+                    '*: :_default'
+                )
+                ;;
+        esac
 
-              *) args+=( '*: :_default' ) ;;
-          esac
+        _arguments -s -S $args && ret=0
+        ;;
+    esac
 
-          _arguments -s -S $args && ret=0
-    ;;
-  esac
+    # load _git, so that _git-config is available for onyo config completion
+    whence -v _git-config > /dev/null || _git
 
-  
-        # load _git, so that _git-config is available for onyo config completion
-        whence -v _git-config > /dev/null || _git
+    _onyo_dir() {
+        local REPO=$PWD
 
-        _onyo_dir() {
-          local REPO=$PWD
-
-          # check if -C or --onyopath is used
-          for i in {1..$#fullwords}; do
+        # check if -C or --onyopath is used
+        for i in {1..$#fullwords}; do
             if [ "$fullwords[$i]" = "-C" ] || [ "$fullwords[$i]" = "--onyopath" ] ; then
-              REPO=$fullwords[$i+1]
-              break
+                REPO=$fullwords[$i+1]
+                break
             fi
-          done
+        done
 
-          printf "$REPO"
-        }
+        printf "$REPO"
+    }
 
-        _template_dir() {
-          DIR=$(_onyo_dir)
+    _template_dir() {
+        DIR=$(_onyo_dir)
 
-          while [ "$DIR" != '/' ]; do
+        while [ "$DIR" != '/' ]; do
             TEMPLATE_DIR="${DIR}/.onyo/templates"
             if [ -d "$TEMPLATE_DIR" ] ; then
-              printf "$TEMPLATE_DIR"
-              return
+                printf "$TEMPLATE_DIR"
+                return
             else
-              DIR=$(dirname "$DIR")
+                DIR=$(dirname "$DIR")
             fi
-          done
-        }
-        
+        done
+    }
 
-  return ret
+    return ret
 }
 
 # NOTE: If installing the output of this script in your fpath,
@@ -412,4 +415,3 @@ compdef _onyo onyo
 #
 #    source <(onyo shell-completion)
 #
-
