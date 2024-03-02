@@ -1,0 +1,415 @@
+#compdef onyo
+
+#
+# ZSH completion script for Onyo
+#
+
+_onyo() {
+  local curcontext="$curcontext" ret=1
+  local -a state state_descr line
+  local -A opt_args
+
+  # $words is modified as it is passed down through the script. This keeps an
+  # unmodified copy of the expanded command.
+  local -a fullwords
+  fullwords=("${words[@]}")
+
+  local -a args subcommands
+  args=( )
+  toplevel_flags=( '(- : *)'{-h,--help}'[show this help message and exit]'
+'(-C --onyopath)'{-C,--onyopath}'[Run Onyo commands from inside of DIR]:DIR:_path_files -W $(_onyo_dir) -/'
+'(-d --debug)'{-d,--debug}'[Enable debug logging]'
+'(-v --version)'{-v,--version}'[Print onyo'\''s version and exit]'
+'(-q --quiet)'{-q,--quiet}'[Silence messages printed to stdout. Does not suppress interactive editors. Requires the --yes flag]'
+'(-y --yes)'{-y,--yes}'[Respond "yes" to any prompts. The --yes flag is required to use --quiet]'
+ )
+
+  subcommands=( 'cat:Print the contents of ``ASSET`` file(s) to the terminal.
+
+    At least one valid asset path is required. Assets can be given multiple times.
+    If any path specified is invalid, no contents are printed and an error is raised.
+'
+'config:
+Set, query, and unset Onyo repository configuration options. These options
+are stored in ``.onyo/config``. This file is tracked by git and are shared
+with all other consumers of an Onyo repository.
+
+To set configuration options locally (and not commit them to the Onyo
+repository), use ``git config`` instead.
+
+``onyo config`` is a wrapper around ``git config``. All of its options and
+capabilities are available with the exception of ``--system``, ``--global``,
+``--local``, ``--worktree``, and ``--file``. Please see the git-config
+manpage for more information about usage.
+
+Onyo configuration options:
+
+- ``onyo.core.editor``: The editor to use for commands such as ``edit`` and
+  ``new``. If unset, it will fallback to the environmental variable
+  ``EDITOR`` and lastly ``nano``. (default: unset)
+- ``onyo.history.interactive``: The command used to display history when
+  running ``onyo history``. (default: "tig --follow")
+- ``onyo.history.non-interactive``: The command used to print history when
+  running ``onyo history`` with ``--non-interactive``.
+  (default: "git --no-pager log --follow")
+- ``onyo.new.template``: The default template to use with ``onyo new``.
+  (default: "empty")
+'
+'edit:
+Open the ``ASSET``\(s) using the editor specified by "onyo.core.editor",
+the environment variable ``EDITOR``, or ``nano`` (as a final fallback).
+
+When multiple ``ASSET``\(s) are given, Onyo will open them in sequence.
+
+After editing an ``ASSET``, the contents will be checked for valid YAML.
+If problems are found, the choice will be offered to reopen the editor to
+fix them, or discard the invalid changes made.
+'
+'fsck:
+Run a suite of checks to verify the integrity and validity of an Onyo
+repository and its contents.
+
+By default, the following tests will be performed:
+
+- "clean-tree": verifies that the git tree is clean ---that there are
+  no changed (staged or unstaged) nor untracked files.
+- "anchors": verifies that all directories (outside of .onyo) have an
+  .anchor file
+- "asset-unique": verifies that all asset names are unique
+- "asset-yaml": loads each assets and checks if it'\''s valid YAML
+- "asset-validity": loads each asset and validates the contents against
+  the validation rulesets defined in ``.onyo/validation/``.
+'
+'get:
+Return matching ``ASSET``\(s) and values corresponding to the requested
+``KEY``\(s).
+
+If no key(s) are given, the keys used in asset names are returned.
+If no ``asset`` or ``directory`` is specified, the current working
+directory is used.
+
+Filters can make use of pseudo-keys (i.e., properties of assets, that are
+provided by onyo rather than the asset file, like '\''path'\''). Values of the
+dictionary or list type, as well as assets missing a value can be referenced
+as '\''<dict>'\'', '\''<list>'\'', or '\''<unset>'\'' instead of their contents, respectively.
+If a requested key does not exist, its output is displayed as '\''<unset>'\''.
+
+The ``value`` of filters can be a string or a Python regular expression.
+
+By default, the returned assets are sorted by their paths.
+'
+'history:
+Display the history of an ``ASSET`` or ``DIRECTORY``.
+
+Onyo detects whether an interactive TTY is in use, and will either use
+the interactive display tool (specified in ``.onyo/config`` under
+``onyo.history.interactive``; default ``tig –-follow``) or the
+non-interactive one (``onyo.history.non-interactive``; default ``git log``)
+accordingly.
+
+The commands to display history are configurable using ``onyo config``.
+'
+'init:
+Initialize an Onyo repository. The directory will be initialized as a git
+repository (if it is not one already), the ``.onyo/`` directory created and
+populated with config files, templates, etc. If the directory specified does
+not exist, it will be created. Everything will be committed.
+
+The current working directory will be initialized if neither ``directory``
+nor the ``onyo -C DIR`` option are specified.
+
+Running ``onyo init`` on an existing repository is safe. It will not
+overwrite anything.
+'
+'mkdir:
+Create ``directory``\(s). Intermediate directories will be created as
+needed (i.e. parent and child directories can be created in one call).
+
+An empty ``.anchor`` file is added to each directory, to ensure that git
+tracks them even when empty.
+
+If the directory already exists, or the path is protected, Onyo will throw
+an error. All checks are performed before creating directories.
+'
+'mv:
+Move ``SOURCE``\(s) (assets or directories) to the ``DEST`` directory, or
+rename a ``SOURCE`` directory to ``DEST``.
+
+Files cannot be renamed using ``onyo mv``, since their names are generated from their contents.
+To rename a file, use ``onyo set``, or use ``onyo edit`` and change the keys used for the
+asset'\''s name.
+To rename a directory, call ``onyo mv`` with a single ``SOURCE`` to rename, and a different and
+non-existing ``DEST`` name in the same directory.
+
+Otherwise, when called on one or multiple assets or directories, the command will move
+``SOURCE``\(s) into ``DEST``.
+
+A list of all files and directories to modify will be presented, and the user prompted for
+confirmation.
+
+'
+'new:
+Create new ``DIRECTORY/ASSET``\(s), and add contents with ``--template``,
+``--keys`` and ``--edit``. If the directories do not exist, they will be
+created.
+
+After the contents are added, the new ``assets``\(s) will be checked for
+the validity of its YAML syntax.
+'
+'rm:
+Delete ``ASSET``\(s) and ``DIRECTORY``\(s).
+
+Directories and asset directories are deleted together with their contents.
+If any of the specified paths is invalid, Onyo will error and delete none of them.
+
+A list of all files and directories to delete will be presented, and the
+user prompted for confirmation.
+'
+'set:
+Set the ``value`` of ``key`` for matching assets. If a key does not exist,
+it is added and set appropriately.
+
+Key names can be any valid YAML key name.
+
+Multiple ``key=value`` pairs can be declared and divided by spaces. Quotes
+can be used around ``value``, which is necessary when it contains a comma,
+whitespace, etc.
+
+Required keys as defined by the '\''onyo.assets.filename'\'' config (by default
+``type``, ``make``, ``model``, and ``serial``) can be set when the
+`--rename` flag is used. It will result in the file(s) being
+renamed.
+
+If no ``asset`` or ``directory`` is specified, the current working directory
+is used. If Onyo is invoked from outside of the Onyo repository, the root of
+the repository is used.
+
+Changes are printed to the terminal in the style of ``diff``.
+
+Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
+error encountered while writing a file will cause Onyo to error and exit
+immediately.
+'
+'shell-completion:
+Display a shell script for tab completion for Onyo.
+
+The output of this command should be "sourced" to enable tab completion.
+
+example:
+
+    $ source <(onyo shell-completion)
+    $ onyo --<PRESS TAB to display available options>
+'
+'tree:List the assets and directories in ``DIRECTORY`` in the ``tree`` format.
+
+    All given paths must be existing directories inside the onyo repository.
+    They are tested for their validity in the beginning and only displayed if all paths are valid.
+
+    If no path is specified, `onyo tree` prints the directory tree for CWD.
+'
+'unset:
+Remove the ``value`` of ``key`` for matching ``ASSET``\s.
+
+Multiple ``key=value`` pairs can be declared and divided by spaces. Quotes
+can be used around ``value``, which is necessary when it contains a comma,
+whitespace, etc.
+
+Keys that are used in asset names as specified in the
+``onyo.assets.filename`` configuration cannot be unset.
+To rename a file(s) use ``onyo set --rename``.
+
+If no ``asset`` or ``directory`` is specified, the current working directory
+is used.
+
+Changes are printed to the terminal in the style of ``diff``.
+
+Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
+error encountered while writing a file will cause Onyo to error and exit
+immediately.
+' )
+
+  _arguments -C $args                 $toplevel_flags                 ':subcommand:->subcommand'                 '*::options:->options' && ret=0
+
+  case $state in
+      subcommand)
+          _describe -t subcommands 'onyo subcommand' subcommands && ret=0
+      ;;
+
+      options)
+          curcontext="${curcontext%:*}-$words[2]:"
+
+          case $words[1] in
+              cat)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '*:ASSET:_files -W $(_onyo_dir)'
+    )
+    ;;
+config)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '*:ARGS:_git-config'
+    )
+    ;;
+edit)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+        '*:ASSET:_files -W $(_onyo_dir)'
+    )
+    ;;
+fsck)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+    )
+    ;;
+get)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-H --machine-readable)'{-H,--machine-readable}'[Display asset(s) separated by new lines, and keys by tabs instead of printing a formatted table]'
+        '(-k --keys)'{-k,--keys}'[Key value(s) to return. Pseudo-keys (information not stored in the asset file) are also available for queries]:*-*:KEYS: '
+        '(-p --path)'{-p,--path}'[Asset(s) or directory(s) to search through]:*-*:PATH:_files -W $(_onyo_dir)'
+        '(-s --sort-ascending)'{-s,--sort-ascending}'[Sort output in ascending order (excludes --sort-descending)]'
+        '(-S -sort-descending)'{-S,-sort-descending}'[Sort output in descending order (excludes --sort-ascending)]'
+        '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+        '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
+    )
+    ;;
+history)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-I --non-interactive)'{-I,--non-interactive}'[Use the interactive history tool (specified in '\''.onyo/config'\'' under '\''onyo.history.interactive'\'') to display the history of the repository, an asset or a directory]'
+        '::PATH:_files -W $(_onyo_dir)'
+    )
+    ;;
+init)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '::DIR:_path_files -W $(_onyo_dir) -/'
+    )
+    ;;
+mkdir)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+        '*:DIR:_path_files -W $(_onyo_dir) -/'
+    )
+    ;;
+mv)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+        '*:SOURCE:_files -W $(_onyo_dir)'
+        ':DEST:_files -W $(_onyo_dir)'
+    )
+    ;;
+new)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-t --template)'{-t,--template}'[Name of the template to seed the new asset(s)]:TEMPLATE:_path_files -W $(_template_dir) -g "*(.)"'
+        '(-e --edit)'{-e,--edit}'[Open new assets in editor before creation]'
+        '(-k --keys)'{-k,--keys}'[Key-value pairs to set in the new asset(s). Multiple pairs can be specified (e.g. key=value key2=value2). All fields that are part of asset filenames (defined in .onyo/config under `onyo.assets.filename`) are required. If the value `faux` is assigned to the key `serial`, a random, repository-unique string will be filled in instead.]:*-*:KEYS: '
+        '(-p --path)'{-p,--path}'[directory to create asset(s) in]:PATH:_files -W $(_onyo_dir)'
+        '(-tsv --tsv)'{-tsv,--tsv}'[Path to a tsv file describing the new asset.]:TSV:_files -W $(_onyo_dir)'
+        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+    )
+    ;;
+rm)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+        '*:PATH:_files -W $(_onyo_dir)'
+    )
+    ;;
+set)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-r --rename)'{-r,--rename}'[Permit assigning values to keys that would result in the asset(s) being renamed.]'
+        '(-k --keys)'{-k,--keys}'[Specify key-value pairs to set in asset(s). Multiple pairs can be specified (e.g. key=value key2=value2)]:*-*:KEYS: '
+        '(-p --path)'{-p,--path}'[Asset(s) and/or directorie(s) to set KEY=VALUE in]:*-*::PATH:_files -W $(_onyo_dir)'
+        '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+        '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
+        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+    )
+    ;;
+shell-completion)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-s --shell)'{-s,--shell}'[Specify the shell for which to generate tab completion for]:SHELL:(zsh)'
+    )
+    ;;
+tree)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '*::DIR:_path_files -W $(_onyo_dir) -/'
+    )
+    ;;
+unset)
+    args+=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-k --keys)'{-k,--keys}'[Specify keys to unset in assets. Multiple keys can be given (e.g. key key2 key3)]:*-*:KEYS: '
+        '(-p --path)'{-p,--path}'[Asset(s) and/or directory(s) for which to unset values in]:*-*::PATH:_files -W $(_onyo_dir)'
+        '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+        '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
+        '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
+    )
+    ;;
+
+
+              *) args+=( '*: :_default' ) ;;
+          esac
+
+          _arguments -s -S $args && ret=0
+    ;;
+  esac
+
+  
+        # load _git, so that _git-config is available for onyo config completion
+        whence -v _git-config > /dev/null || _git
+
+        _onyo_dir() {
+          local REPO=$PWD
+
+          # check if -C or --onyopath is used
+          for i in {1..$#fullwords}; do
+            if [ "$fullwords[$i]" = "-C" ] || [ "$fullwords[$i]" = "--onyopath" ] ; then
+              REPO=$fullwords[$i+1]
+              break
+            fi
+          done
+
+          printf "$REPO"
+        }
+
+        _template_dir() {
+          DIR=$(_onyo_dir)
+
+          while [ "$DIR" != '/' ]; do
+            TEMPLATE_DIR="${DIR}/.onyo/templates"
+            if [ -d "$TEMPLATE_DIR" ] ; then
+              printf "$TEMPLATE_DIR"
+              return
+            else
+              DIR=$(dirname "$DIR")
+            fi
+          done
+        }
+        
+
+  return ret
+}
+
+# NOTE: If installing the output of this script in your fpath,
+#       uncomment '_onyo "$@"' and comment-out "compdef _onyo onyo".
+#_onyo "$@"
+compdef _onyo onyo
+
+#
+# ZSH completion script for Onyo
+#
+# To use this script and enable tab completion for Onyo rather than just seeing
+# this output, run
+#
+#    source <(onyo shell-completion)
+#
+

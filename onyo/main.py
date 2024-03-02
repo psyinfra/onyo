@@ -218,8 +218,7 @@ def setup_parser() -> argparse.ArgumentParser:
         formatter_class=SubcommandHelpFormatter,
         help=textwrap.dedent(commands.shell_completion.__doc__)
     )
-    cmd_shell_completion.set_defaults(run=commands.shell_completion,
-                                      parser=parser)
+    cmd_shell_completion.set_defaults(run=commands.shell_completion)
     build_parser(cmd_shell_completion, args_shell_completion)
     #
     # subcommand "tree"
