@@ -72,8 +72,8 @@ class UI(object):
         else:
             self.logger.setLevel(logging.INFO)
 
-        self.stderr_console = Console(stderr=True)
-        self.stdout_console = Console(stderr=False)
+        self.stderr_console = Console(stderr=True, highlight=False)
+        self.stdout_console = Console(stderr=False, highlight=False)
 
     def set_debug(self,
                   debug: bool = False) -> None:
