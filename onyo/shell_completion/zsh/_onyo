@@ -273,7 +273,7 @@ immediately.
                     '(-p --path)'{-p,--path}'[Asset(s) or directory(s) to search through]:*-*:PATH:_files -W $(_onyo_dir)'
                     '(-s --sort-ascending)'{-s,--sort-ascending}'[Sort output in ascending order (excludes --sort-descending)]'
                     '(-S -sort-descending)'{-S,-sort-descending}'[Sort output in descending order (excludes --sort-ascending)]'
-                    '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+                    '(-d --depth)'{-d,--depth}'[Descend up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
                     '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
                 )
                 ;;
@@ -330,6 +330,7 @@ immediately.
                     '(-k --keys)'{-k,--keys}'[Specify key-value pairs to set in asset(s). Multiple pairs can be specified (e.g. key=value key2=value2)]:*-*:KEYS: '
                     '(-p --path)'{-p,--path}'[Asset(s) and/or directorie(s) to set KEY=VALUE in]:*-*::PATH:_files -W $(_onyo_dir)'
                     '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+                    '(-d --depth)'{-d,--depth}'[Descend up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
                     '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
                     '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
                 )
@@ -352,6 +353,7 @@ immediately.
                     '(-k --keys)'{-k,--keys}'[Specify keys to unset in assets. Multiple keys can be given (e.g. key key2 key3)]:*-*:KEYS: '
                     '(-p --path)'{-p,--path}'[Asset(s) and/or directory(s) for which to unset values in]:*-*::PATH:_files -W $(_onyo_dir)'
                     '(-d --depth)'{-d,--depth}'[Descent up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
+                    '(-d --depth)'{-d,--depth}'[Descend up to DEPTH levels into directories specified. DEPTH=0 descends recursively without limit]:DEPTH: '
                     '(-M --match)'{-M,--match}'[Matching criteria for assets in the form '\''KEY=VALUE'\'',where VALUE is a python regular expression. Special valuessupported are '\''<unset>'\'', '\''<list>'\'', and '\''<dict>'\''.Pseudo-keys like '\''path'\'' can be used.]:*-*:MATCH: '
                     '(-m --message)'{-m,--message}'[Use the given MESSAGE as the commit message (rather than the default). If multiple -m options are given, their values are concatenated as separate paragraphs]:MESSAGE: '
                 )

@@ -552,7 +552,7 @@ class OnyoRepo(object):
         subtrees: Iterable of Path, optional
           Paths to look for assets under. Defaults to the root of the inventory.
         depth: int, optional
-          Number of levels to descent into. Must be greater equal 0.
+          Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
 
         Returns

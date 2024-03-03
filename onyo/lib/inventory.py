@@ -449,7 +449,7 @@ class Inventory(object):
         paths: list of Path, optional
           Paths to look for assets under. Defaults to the root of the inventory.
         depth: int, optional
-          Number of levels to descent into. Must be greater equal 0.
+          Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
 
         Returns
@@ -479,7 +479,7 @@ class Inventory(object):
           Paths to look for assets under. Defaults to the root of
           the inventory. Passed to `self.get_assets`.
         depth: int, optional
-          Number of levels to descent into. Must be greater or equal 0.
+          Number of levels to descend into. Must be greater or equal 0.
           If 0, descend recursively without limit. Defaults to 0.
           Passed to `self.get_assets`.
         match: list of Callable, optional

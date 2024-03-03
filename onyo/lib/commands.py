@@ -403,7 +403,7 @@ def onyo_get(inventory: Inventory,
       Paths can be assets and directories.
       If no paths are specified, the inventory root is used as default.
     depth: int
-      Number of levels to descent into. Must be greater or equal 0.
+      Number of levels to descend into. Must be greater or equal 0.
       If 0, descend recursively without limit.
     machine_readable: bool, optional
       Whether to print the matching assets as TAB-separated lines,
