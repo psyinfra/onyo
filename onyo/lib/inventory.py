@@ -191,6 +191,29 @@ class Inventory(object):
                 names.append(op.operands[1].name)
         return names
 
+    def _get_pending_dirs(self) -> list[Path]:
+        """Gets inventory dirs that would come into existence due to pending operations.
+
+        Extracts paths to inventory dirs, that are the anticipated results of pending
+        moves and creations.
+
+        Notes
+        -----
+        Currently used within `rename_directory` to allow for move+rename.
+        This needs enhancement/generalization (check for removed ones as well, etc.)
+
+        Returns
+        -------
+        list of Path
+            Inventory dirs about to be created.
+        """
+        dirs = []
+        for op in self.operations:
+            if op.operator == OPERATIONS_MAPPING['new_directories']:
+                dirs.append(op.operands[1])
+            elif op.operator == OPERATIONS_MAPPING['move_directories']:
+                dirs.append(op.operands[1] / op.operands[0].name)
+        return dirs
     #
     # Operations
     #
@@ -413,7 +436,7 @@ class Inventory(object):
         return [self._add_operation('move_directories', (src, dst))]
 
     def rename_directory(self, src: Path, dst: str | Path) -> list[InventoryOperation]:
-        if not self.repo.is_inventory_dir(src):
+        if not self.repo.is_inventory_dir(src) and src not in self._get_pending_dirs():
             raise ValueError(f"Not an inventory directory: {src}")
         if self.repo.is_asset_dir(src):
             raise ValueError("Renaming an asset directory must be done via `rename_asset`.")
