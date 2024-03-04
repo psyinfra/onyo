@@ -43,7 +43,7 @@ args_get = {
         help='Sort output in ascending order (excludes --sort-descending)'),
 
     'sort_descending': dict(
-        args=('-S', '-sort-descending'),
+        args=('-S', '--sort-descending'),
         action='store_true',
         default=False,
         help='Sort output in descending order (excludes --sort-ascending)'),
