@@ -19,7 +19,7 @@ _onyo() {
         '(- : *)'{-h,--help}'[show this help message and exit]'
         '(-C --onyopath)'{-C,--onyopath}'[run as if Onyo were started in DIR]:DIR:_path_files -W $(_onyo_dir) -/'
         '(-d --debug)'{-d,--debug}'[enable debug logging]'
-        '(-v --version)'{-v,--version}'[print onyo'\''s version and exit]'
+        '(- : *)'{-v,--version}'[print onyo'\''s version and exit]'
         '(-q --quiet)'{-q,--quiet}'[silence messages printed to stdout; does not suppress interactive editors]'
         '(-y --yes)'{-y,--yes}'[respond "yes" to any prompts]'
     )
@@ -83,8 +83,8 @@ _onyo() {
                     '(-H --machine-readable)'{-H,--machine-readable}'[display assets separated by new lines and keys by tabs]'
                     '(-k --keys)'{-k,--keys}'[key values to return]:*-*:KEYS: '
                     '(-p --path)'{-p,--path}'[assets or directories to search through]:*-*:PATH:_files -W $(_onyo_dir)'
-                    '(-s --sort-ascending)'{-s,--sort-ascending}'[sort output in ascending order]'
-                    '(-S --sort-descending)'{-S,--sort-descending}'[sort output in descending order]'
+                    '(-s --sort-ascending -S --sort-descending)'{-s,--sort-ascending}'[sort output in ascending order]'
+                    '(-S --sort-descending -s --sort-ascending)'{-S,--sort-descending}'[sort output in descending order]'
                     '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
                     '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
                 )
