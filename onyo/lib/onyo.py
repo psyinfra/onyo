@@ -353,7 +353,7 @@ class OnyoRepo(object):
         # Note: pheewww - No. Installed resource needs to be found differently.
         #       Who the hell is supposed to maintain that? One cannot simply
         #       move this function without changing its implementation.
-        skel_dir = Path(Path(__file__).resolve().parent.parent, 'skel')
+        skel_dir = Path(__file__).resolve().parent.parent / 'skel'
 
         # populate .onyo dir
         shutil.copytree(skel_dir, self.dot_onyo)
