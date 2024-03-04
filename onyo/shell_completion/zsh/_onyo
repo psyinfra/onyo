@@ -187,8 +187,8 @@ _onyo() {
         local REPO=$PWD
 
         # check if -C or --onyopath is used
-        for i in {1..$#fullwords}; do
-            if [ "$fullwords[$i]" = "-C" ] || [ "$fullwords[$i]" = "--onyopath" ] ; then
+        for i in {1..$#fullwords} ; do
+            if [[ "$fullwords[$i]" == "-C" ]] || [[ "$fullwords[$i]" == "--onyopath" ]] ; then
                 REPO=$fullwords[$i+1]
                 break
             fi
@@ -200,9 +200,9 @@ _onyo() {
     _template_dir() {
         DIR=$(_onyo_dir)
 
-        while [ "$DIR" != '/' ]; do
+        while [[ "$DIR" != '/' ]] ; do
             TEMPLATE_DIR="${DIR}/.onyo/templates"
-            if [ -d "$TEMPLATE_DIR" ] ; then
+            if [[ -d "$TEMPLATE_DIR" ]] ; then
                 printf "$TEMPLATE_DIR"
                 return
             else
