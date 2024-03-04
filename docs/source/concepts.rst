@@ -8,8 +8,7 @@ Everything is based on text files and folders. This simplicity makes Onyo
 adaptable to alternate layouts and workflows beyond what was imagined when
 designing it.
 
-Every asset is a file, and there is only one asset per file. Folders denote
-assignment: *where* something is or *who* has it.
+Folders denote assignment: *where* something is or *who* has it.
 
 Inventory Concepts
 ******************
@@ -26,15 +25,10 @@ MacBook Pro with the inventory number ``ABC123``).
 
 The identify of assets is tracked via its **serial** (see "Asset Name Scheme").
 
-**Counting** is for assets that are neither tracked nor identified. A typical
-example is counting the number of USB cables or mice available in inventory, but
-who receives these items is *not tracked*. Onyo does *not* address this use
-case, and has no mechanism to count or tally without tracking.
-
 Asset Name Scheme
 *****************
 
-Onyo asset names use the following pattern:
+Onyo asset names use by default the following pattern:
 
 .. code::
 
@@ -63,15 +57,6 @@ Each filename is unique within the repository. The **serial** alone *should* be
 unique, but cross-manufacturer conflicts is theoretically possible. In practice,
 the combination of type, make, model, and serial is sufficient to avoid all
 (reasonable) chance of conflicts.
-
-Reserved Characters
-*******************
-
-The ``type``, ``make``, or ``model`` fields reserve the ``_`` and ``.``
-characters. The ``serial`` field has no restrictions.
-
-Values for the ``type``, ``make``, and ``model`` name fields are checked against
-a list of reserved characters.
 
 File Contents
 *************
@@ -104,8 +89,6 @@ repository.
 
   - the templates for the ``onyo new --template <template>`` command (see
     "Template Files")
-
- .. _templates:
 
 Template Files
 **************

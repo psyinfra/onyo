@@ -39,6 +39,14 @@ Options
 ``onyo.new.template``
     The default template to use with ``onyo new``. (default: "empty")
 
+``onyo.assets.filename``
+    The name scheme for asset files and asset directories in the repository.
+    (default: "{type}_{make}_{model}.{serial}")
+
+``onyo.repo.version``
+	The version of the onyo repository.
+
+.. _templates:
 
 Templates
 *********
@@ -46,14 +54,12 @@ Templates
 This section describes some of the templates provided with ``onyo init`` in the
 directory ``.onyo/templates/``.
 
-``onyo new --path <asset>`` (equivalent to
-``onyo new --template empty --path <asset>``) as defined
-by ``.onyo/templates/empty`` is an empty YAML file.
+``onyo new --keys <keys> --path <directory>`` (equivalent to
+``onyo new --keys <keys> --template empty --path <directory>``) as defined
+by ``.onyo/templates/empty`` is an empty YAML file, and ``keys`` must
+additionally specify the keys used for asset names.
 
-This template passes the YAML syntax check when onyo is called while the editor
-is suppressed with ``onyo new --non-interactive --path <asset>``.
-
-``onyo new --template laptop.example --path <asset>`` as defined by
+``onyo new --edit --template laptop.example --path <directory>`` as defined by
 ``.onyo/templates/laptop.example`` contains a simple example for a laptop asset
 which already contains some fields, which are relevant for all assets of that
 device type.
@@ -61,6 +67,10 @@ device type.
 .. code:: yaml
 
    ---
+   type:
+   make:
+   model:
+   serial:
    RAM:
    Size:
    USB:

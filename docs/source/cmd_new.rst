@@ -17,7 +17,7 @@ Use ``onyo new`` to add a new asset and add some content to it:
 
 .. code:: shell
 
-   onyo new --keys RAM=8GB display=14.6 --path shelf/laptop_lenovo_T490s.abc123
+   onyo new --keys RAM=8GB display=14.6 type=laptop make=lenovo model=T490s serial=abc123 --path shelf/
 
 This command writes a YAML file to ``shelf/laptop_lenovo_T490s.abc123``:
 
@@ -25,6 +25,10 @@ This command writes a YAML file to ``shelf/laptop_lenovo_T490s.abc123``:
 
    RAM: 8GB
    display: 14.6
+   type: laptop
+   make: lenovo
+   model: T490s
+   serial: abc123
 
 Create multiple new assets with content, and overwrite the default message
 with a more helpful one describing the action:
@@ -32,9 +36,11 @@ with a more helpful one describing the action:
 .. code:: shell
 
    onyo new --keys RAM=16GB display_size=14.6 touch=yes
+   type=laptop make=lenovo model=T490s serial=abc123
+   type=laptop make=apple model=macbookpro serial=abc456
+   type=laptop make=apple model=macbookpro serial=17
    --message "devices for the new group are delivered"
-   --path shelf/laptop_lenovo_T490s.abc123 shelf/laptop_lenovo_T490s.abc456
-   admin/Karl/laptop_apple_macbookpro.222 admin/Theo/laptop_apple_macbookpro.17
+   --path shelf/
 
 
 **Add inventory with a table**
@@ -72,6 +78,10 @@ will be written into the asset file
 
 .. code:: shell
 
+    type: laptop
+    make: apple
+    model: macbookpro
+    serial: 0io4ff
     display: 13.3
     usb_ports: 2
 
@@ -81,17 +91,19 @@ will be written into the asset file
 To facilitate the creation of many similar devices, add templates under
 ``.onyo/templates/`` and use them with ``onyo new --template <template>``.
 
-``onyo new --edit --template laptop_lenovo
---path shelf/laptop_apple_macbookpro.0io4ff`` adds a new macbook to the
-inventory with the template ``.onyo/templates/laptop_lenovo``:
+``onyo new --edit --template laptop_lenovo --path shelf/`` adds a new laptop to
+the inventory, using ``.onyo/templates/laptop_lenovo`` as a pre-filled template:
 
 .. code:: yaml
 
    ---
+   type: laptop
+   make: lenovo
+   model:
+   serial:
    RAM: 16GB
    Size: 14.6
    USB: 3
 
-The command copies the contents of the template file into the asset
-``shelf/laptop_apple_macbookpro.0io4ff``, and then the ``--edit`` flag opens the
-editor to add or adjust missing information.
+The command copies the contents of the template file into the new asset, and
+then the ``--edit`` flag opens the editor to add or adjust missing information.

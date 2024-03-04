@@ -16,7 +16,9 @@ Example Usage
 
     onyo mkdir accounting/Bingo\ Bob/
 
+
 **Create a new group with some users**
+
 .. code:: shell
 
-    onyo mkdir --message "the marketing group joined!" marketing/Alice\ Wonder/ marketing/Karl\ Krebs
+    onyo mkdir --message "the marketing group joined\!" marketing/Alice\ Wonder/ marketing/Karl\ Krebs

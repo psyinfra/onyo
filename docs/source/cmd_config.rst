@@ -29,3 +29,9 @@ Example Usage
 .. code:: shell
 
     onyo config onyo.core.editor vim
+
+**Change scheme for filenames of assets**
+
+.. code:: shell
+
+    onyo config onyo.assets.filename "{type}_{make}_{model}.{serial}"
