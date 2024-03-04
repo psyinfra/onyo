@@ -14,7 +14,7 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
     dir_path2 = inventory.root / 'different' / 'place'
 
     # move directory into itself
-    pytest.raises(InvalidInventoryOperationError,
+    pytest.raises(OSError,
                   onyo_mv,
                   inventory,
                   source=dir_path,
@@ -115,7 +115,6 @@ def test_onyo_mv_errors_before_mv(inventory: Inventory) -> None:
     # assert inventory.repo.git.is_clean_worktree()
 
 
-@pytest.mark.skip(reason="still a BUG: #516")
 @pytest.mark.ui({'yes': True})
 @pytest.mark.repo_dirs("a/b/c", "a/d/c")
 def test_onyo_mv_src_to_dest_with_same_name(inventory: Inventory) -> None:
