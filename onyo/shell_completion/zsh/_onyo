@@ -17,7 +17,7 @@ _onyo() {
     args=( )
     toplevel_flags=(
         '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-C --onyopath)'{-C,--onyopath}'[run as if Onyo were started in DIR]:DIR:_path_files -W $(_onyo_dir) -/'
+        '(-C --onyopath)'{-C,--onyopath}'[run as if Onyo were started in DIR]:DIR:_path_files -W "$(_onyo_dir)" -/'
         '(-d --debug)'{-d,--debug}'[enable debug logging]'
         '(- : *)'{-v,--version}'[print onyo'\''s version and exit]'
         '(-q --quiet)'{-q,--quiet}'[silence messages printed to stdout; does not suppress interactive editors]'
@@ -56,7 +56,7 @@ _onyo() {
             cat)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '*:ASSET:_files -W $(_onyo_dir)'
+                    '*:ASSET:_files -W "$(_onyo_dir)"'
                 )
                 ;;
             config)
@@ -69,7 +69,7 @@ _onyo() {
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
-                    '*:ASSET:_files -W $(_onyo_dir)'
+                    '*:ASSET:_files -W "$(_onyo_dir)"'
                 )
                 ;;
             fsck)
@@ -82,7 +82,7 @@ _onyo() {
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-H --machine-readable)'{-H,--machine-readable}'[display assets separated by new lines and keys by tabs]'
                     '(-k --keys)'{-k,--keys}'[key values to return]:*-*:KEYS: '
-                    '(-p --path)'{-p,--path}'[assets or directories to search through]:*-*:PATH:_files -W $(_onyo_dir)'
+                    '(-p --path)'{-p,--path}'[assets or directories to search through]:*-*:PATH:_files -W "$(_onyo_dir)"'
                     '(-s --sort-ascending -S --sort-descending)'{-s,--sort-ascending}'[sort output in ascending order]'
                     '(-S --sort-descending -s --sort-ascending)'{-S,--sort-descending}'[sort output in descending order]'
                     '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
@@ -93,38 +93,38 @@ _onyo() {
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-I --non-interactive)'{-I,--non-interactive}'[use the interactive history tool]'
-                    '::PATH:_files -W $(_onyo_dir)'
+                    '::PATH:_files -W "$(_onyo_dir)"'
                 )
                 ;;
             init)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '::DIR:_path_files -W $(_onyo_dir) -/'
+                    '::DIR:_path_files -W "$(_onyo_dir)" -/'
                 )
                 ;;
             mkdir)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
-                    '*:DIR:_path_files -W $(_onyo_dir) -/'
+                    '*:DIR:_path_files -W "$(_onyo_dir)" -/'
                 )
                 ;;
             mv)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
-                    '*:SOURCE:_files -W $(_onyo_dir)'
-                    ':DEST:_files -W $(_onyo_dir)'
+                    '*:SOURCE:_files -W "$(_onyo_dir)"'
+                    ':DEST:_files -W "$(_onyo_dir)"'
                 )
                 ;;
             new)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-t --template)'{-t,--template}'[template to seed the new assets]:TEMPLATE:_path_files -W $(_template_dir) -g "*(.)"'
+                    '(-t --template)'{-t,--template}'[template to seed the new assets]:TEMPLATE:_path_files -W "$(_template_dir)" -g "*(.)"'
                     '(-e --edit)'{-e,--edit}'[open new assets in an editor before creation]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in the new assets]:*-*:KEYS: '
-                    '(-p --path)'{-p,--path}'[directory to create new assets in]:PATH:_files -W $(_onyo_dir)'
-                    '(-tsv --tsv)'{-tsv,--tsv}'[path to a TSV file describing the new assets]:TSV:_files -W $(_onyo_dir)'
+                    '(-p --path)'{-p,--path}'[directory to create new assets in]:PATH:_files -W "$(_onyo_dir)"'
+                    '(-tsv --tsv)'{-tsv,--tsv}'[path to a TSV file describing the new assets]:TSV:_files -W "$(_onyo_dir)"'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
                 )
                 ;;
@@ -132,7 +132,7 @@ _onyo() {
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
-                    '*:PATH:_files -W $(_onyo_dir)'
+                    '*:PATH:_files -W "$(_onyo_dir)"'
                 )
                 ;;
             set)
@@ -140,7 +140,7 @@ _onyo() {
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-r --rename)'{-r,--rename}'[allow assigning values to keys that would result in renaming asset filenames]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in assets; multiple pairs can be given (key=value key2=value2)]:*-*:KEYS: '
-                    '(-p --path)'{-p,--path}'[assets and/or directories to set KEY=VALUE in]:*-*::PATH:_files -W $(_onyo_dir)'
+                    '(-p --path)'{-p,--path}'[assets and/or directories to set KEY=VALUE in]:*-*::PATH:_files -W "$(_onyo_dir)"'
                     '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
                     '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
@@ -155,14 +155,14 @@ _onyo() {
             tree)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '*::DIR:_path_files -W $(_onyo_dir) -/'
+                    '*::DIR:_path_files -W "$(_onyo_dir)" -/'
                 )
                 ;;
             unset)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-k --keys)'{-k,--keys}'[keys to unset in assets; multiple keys can be given (key key2 key3)]:*-*:KEYS: '
-                    '(-p --path)'{-p,--path}'[assets and/or directories to unset values in]:*-*::PATH:_files -W $(_onyo_dir)'
+                    '(-p --path)'{-p,--path}'[assets and/or directories to unset values in]:*-*::PATH:_files -W "$(_onyo_dir)"'
                     '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
                     '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
