@@ -17,7 +17,7 @@ _onyo() {
     args=( )
     toplevel_flags=(
         '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-C --onyopath)'{-C,--onyopath}'[run as if Onyo were started in DIR]:DIR:_path_files -W "$(_onyo_dir)" -/'
+        '(-C --onyopath)'{-C,--onyopath}'[run as if Onyo were started in DIR]:DIR:_files -/'
         '(-d --debug)'{-d,--debug}'[enable debug logging]'
         '(- : *)'{-v,--version}'[print onyo'\''s version and exit]'
         '(-q --quiet)'{-q,--quiet}'[silence messages printed to stdout; does not suppress interactive editors]'
@@ -184,12 +184,17 @@ _onyo() {
     whence -v _git-config > /dev/null || _git
 
     _onyo_dir() {
+        #setopt local_options xtrace
         local REPO=$PWD
 
         # check if -C or --onyopath is used
         for i in {1..$#fullwords} ; do
             if [[ "$fullwords[$i]" == "-C" ]] || [[ "$fullwords[$i]" == "--onyopath" ]] ; then
-                REPO=$fullwords[$i+1]
+                # Hack to unescape any '\ ' from path.
+                # Sadly, printf %b does not work here, since it only interprets
+                # format controls, not escaping.
+                ONYOPATH=$(printf '%b' "$fullwords[$i+1]" | sed 's/\\ / /g')
+                REPO=$(realpath -e "$ONYOPATH")
                 break
             fi
         done
