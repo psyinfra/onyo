@@ -620,12 +620,21 @@ def onyo_mv(inventory: Inventory,
         # MOVE special case
         subject = "mv"
         move_asset_or_dir(inventory, sources[0], destination.parent)
-    elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():
+    elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():  # TODO: last condition necessary?
         # RENAME directory
         subject = "ren"
-        inventory.rename_directory(sources[0], destination)
+        if sources[0].parent != destination.parent:
+            # This is a `mv` into non-existent dir not under same parent.
+            # Hence, first move and only then rename.
+            subject = "mv + " + subject
+            inventory.move_directory(sources[0], destination.parent)
+            inventory.rename_directory(destination.parent / sources[0].name, destination)
+            # TODO: Replace - see issue #546:
+            inventory._ignore_for_commit.append(destination.parent / sources[0].name)
+        else:
+            inventory.rename_directory(sources[0], destination)
     else:
-        raise ValueError("Can only move into an existing directory or rename a single directory.")
+        raise ValueError("Can only move into an existing directory, or rename a single directory.")
 
     if inventory.operations_pending():
         ui.print("The following will be {}:".format("moved" if subject == "mv" else "renamed"))

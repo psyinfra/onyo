@@ -1,6 +1,5 @@
 import pytest
 
-from onyo.lib.exceptions import InvalidInventoryOperationError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_mv
@@ -35,14 +34,6 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   inventory,
                   source=inventory.root / "somewhere",
                   destination=dir_path / "doesnotexist" / "somewhere",
-                  message="some subject\n\nAnd a body")
-
-    # rename and move of a directory in one call
-    pytest.raises(InvalidInventoryOperationError,
-                  onyo_mv,
-                  inventory,
-                  source=inventory.root / "somewhere",
-                  destination=dir_path / "newname",
                   message="some subject\n\nAnd a body")
 
     # move directory to existing file
@@ -231,3 +222,20 @@ def test_onyo_mv_rename_directory(inventory: Inventory) -> None:
     # TODO: verifying cleanness of worktree does not work,
     #       because fixture returns inventory with untracked stuff
     # assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_mv_and_rename(inventory: Inventory) -> None:
+    old_hexsha = inventory.repo.git.get_hexsha()
+    source = inventory.root / "somewhere"
+    destination = inventory.root / 'empty' / "newname"
+    # rename and move of a directory in one call
+    onyo_mv(inventory,
+            source=source,
+            destination=destination,
+            message="some subject\n\nAnd a body")
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
+    assert not inventory.repo.is_inventory_dir(source)
+    assert inventory.repo.is_inventory_dir(destination)
