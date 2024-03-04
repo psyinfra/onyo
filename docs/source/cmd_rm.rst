@@ -21,4 +21,4 @@ Example Usage
 
 .. code:: shell
 
-    onyo rm --message "Bob retired!" admin/Bingo\ Bob/
+    onyo rm --message "Bob retired" admin/Bingo\ Bob/

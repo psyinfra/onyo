@@ -26,7 +26,7 @@ Example Usage
 
 .. code:: shell
 
-   onyo mv --message "Bob is now an admin!" accounting/Bingo\ Bob/ admin/
+   onyo mv --message "Bob works now as an admin" accounting/Bingo\ Bob/ admin/
 
 **Rename a group**
 
