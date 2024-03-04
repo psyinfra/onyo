@@ -111,6 +111,7 @@ class Inventory(object):
     def __init__(self, repo: OnyoRepo) -> None:
         self.repo: OnyoRepo = repo
         self.operations: list[InventoryOperation] = []
+        self._ignore_for_commit: list[Path] = []
 
     @property
     def root(self):
@@ -151,7 +152,7 @@ class Inventory(object):
                     sorted(line for line in deduplicate(snippets)))  # pyre-ignore[16]
 
             # TODO: Actually: staging (only new) should be done in execute. committing is then unified
-            self.repo.commit(set(paths_to_commit + paths_to_stage), commit_msg)
+            self.repo.commit(set(paths_to_commit + paths_to_stage).difference(self._ignore_for_commit), commit_msg)
         finally:
             self.reset()
 
