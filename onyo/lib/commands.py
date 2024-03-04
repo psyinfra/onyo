@@ -561,9 +561,10 @@ def move_asset_or_dir(inventory: Inventory,
 
     Parameters
     ----------
+    inventory: Inventory
+        Inventory to operate on.
     source: Path
         Path object to an asset or directory which to move to the destination.
-
     destination: Path
         Path object to an asset or directory to which to move source.
     """
@@ -610,15 +611,15 @@ def onyo_mv(inventory: Inventory,
     # Special case: One source and its name is explicitly restated as the destination. This is a move, too.
     # TODO: Error reporting. Right now we just let the first exception from inventory operations bubble up.
     #       We could catch them and collect all errors (use ExceptionGroup?)
-    if len(sources) == 1 and destination.name == sources[0].name:
-        # MOVE special case
-        subject = "mv"
-        move_asset_or_dir(inventory, sources[0], destination.parent)
-    elif destination.exists():
+    if destination.exists():
         # MOVE
         subject = "mv"
         for s in sources:
             move_asset_or_dir(inventory, s, destination)
+    elif len(sources) == 1 and destination.name == sources[0].name:
+        # MOVE special case
+        subject = "mv"
+        move_asset_or_dir(inventory, sources[0], destination.parent)
     elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():
         # RENAME directory
         subject = "ren"
