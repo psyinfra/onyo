@@ -49,6 +49,7 @@ from onyo.lib.recorders import (
     record_move_directories
 )
 from onyo.lib.utils import deduplicate
+from onyo.lib.ui import ui
 
 
 @dataclass
@@ -98,6 +99,10 @@ OPERATIONS_MAPPING: dict = {'new_directories': InventoryOperator(executor=exec_n
                             'move_assets': InventoryOperator(executor=exec_move_assets,
                                                              differ=differ_move_assets,
                                                              recorder=record_move_assets),
+                            'remove_generic_file': InventoryOperator(
+                                executor=partial(generic_executor, lambda x: x[0].unlink()),
+                                differ=differ_remove_assets,
+                                recorder=lambda x: dict()),  # no operations record for this, not an inventory item.
                             }
 
 
@@ -214,6 +219,29 @@ class Inventory(object):
             elif op.operator == OPERATIONS_MAPPING['move_directories']:
                 dirs.append(op.operands[1] / op.operands[0].name)
         return dirs
+
+    def _get_pending_removals(self) -> list[Path]:
+        """Get paths that are removed by pending operations.
+
+        Notes
+        -----
+        Just like `_get_pending_asset_names` and `_get_pending_dirs`,
+        this needs to be replaced by a more structured way of assessing
+        what's in the queue. See issue #546.
+
+        Returns
+        -------
+        list of Path
+            To be removed paths.
+        """
+        paths = []
+        for op in self.operations:
+            if op.operator in [OPERATIONS_MAPPING['remove_directories'],
+                               OPERATIONS_MAPPING['remove_assets'],
+                               OPERATIONS_MAPPING['remove_generic_file']]:
+                paths.append(op.operands[0])
+        return paths
+
     #
     # Operations
     #
@@ -292,6 +320,10 @@ class Inventory(object):
 
     def remove_asset(self, asset: Asset | Path) -> list[InventoryOperation]:
         path = asset if isinstance(asset, Path) else asset.get('path')
+        if path in self._get_pending_removals():
+            ui.log_debug(f"{path} already queued for removal.")
+            # TODO: Consider NoopError when addressing #546.
+            return []
         if not self.repo.is_asset_path(path):
             raise NotAnAssetError(f"No such asset: {path}")
         return [self._add_operation('remove_assets', (asset,))]
@@ -397,6 +429,14 @@ class Inventory(object):
         return operations
 
     def remove_directory(self, directory: Path) -> list[InventoryOperation]:
+        pending_removals = self._get_pending_removals()
+        if directory in pending_removals:
+            ui.log_debug(f"{directory} already queued for removal")
+            # TODO: Consider NoopError when addressing #546.
+            return []
+        if directory == self.root:
+            # We can't remove root!
+            raise InvalidInventoryOperationError("Can't remove inventory root.")
         operations = []
         if not self.repo.is_inventory_dir(directory):
             raise InvalidInventoryOperationError(f"Not an inventory directory: {directory}")
@@ -406,21 +446,15 @@ class Inventory(object):
                 is_asset = True
             except NotAnAssetError:
                 is_asset = False
-            if self.repo.is_inventory_dir(p):
+            if p.is_dir():
                 operations.extend(self.remove_directory(p))
             elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
-                # not an asset and not an inventory dir
-                # (hence also not an asset dir) implies
-                # we have a non-inventory file.
-                op = InventoryOperation(
-                    operator=InventoryOperator(
-                        executor=partial(generic_executor, lambda x: x[0].unlink()),
-                        recorder=lambda x: dict(),  # no operations record for this
-                        differ=differ_remove_assets),
-                    operands=(p,),
-                    repo=self.repo)
-                self.operations.append(op)  # execution queue
-                operations.append(op)  # return value
+                # Not an asset and not an inventory dir (hence also not an asset dir)
+                # implies we have a non-inventory file.
+                if p in pending_removals:
+                    ui.log_debug(f"{p} already queued for removal")
+                    continue
+                operations.append(self._add_operation('remove_generic_file', (p,)))
         operations.append(self._add_operation('remove_directories', (directory,)))
         return operations
 
