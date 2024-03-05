@@ -1,0 +1,234 @@
+#compdef onyo
+
+#
+# ZSH completion script for Onyo
+#
+_onyo() {
+    local curcontext="$curcontext" ret=1
+    local -a state state_descr line
+    local -A opt_args
+
+    # $words is modified as it is passed down through the script. This keeps an
+    # unmodified copy of the expanded command.
+    local -a fullwords
+    fullwords=("${words[@]}")
+
+    local -a args subcommands
+    args=( )
+    toplevel_flags=(
+        '(- : *)'{-h,--help}'[show this help message and exit]'
+        '(-C --onyopath)'{-C,--onyopath}'[run as if Onyo were started in DIR]:DIR:_files -/'
+        '(-d --debug)'{-d,--debug}'[enable debug logging]'
+        '(- : *)'{-v,--version}'[print onyo'\''s version and exit]'
+        '(-q --quiet)'{-q,--quiet}'[silence messages printed to stdout; does not suppress interactive editors]'
+        '(-y --yes)'{-y,--yes}'[respond "yes" to any prompts]'
+    )
+
+    subcommands=(
+        'cat:print the contents of ASSETs to the terminal'
+        'config:set, query, and unset Onyo repository configuration options'
+        'edit:open ASSETs using an editor'
+        'fsck:run a suite of integrity checks on the Onyo repository and its contents'
+        'get:return matching ASSET values corresponding to the requested KEYs'
+        'history:display the history of an ASSET or DIRECTORY'
+        'init:initialize a new Onyo repository'
+        'mkdir:create DIRECTORYs'
+        'mv:move SOURCEs (assets or directories) to the DEST directory, or rename a SOURCE directory to DEST'
+        'new:create new ASSETs'
+        'rm:delete ASSETs and DIRECTORYs'
+        'set:set the VALUE of KEYs for matching assets'
+        'shell-completion:display a tab-completion script for Onyo'
+        'tree:list the assets and directories of DIRECTORY in `tree` format'
+        'unset:remove the VALUE of KEY for matching ASSETs'
+    )
+
+    _arguments -C $args                 $toplevel_flags                 ':subcommand:->subcommand'                 '*::options:->options' && ret=0
+
+    case $state in
+        subcommand)
+            _describe -t subcommands 'onyo subcommand' subcommands && ret=0
+        ;;
+
+        options)
+            curcontext="${curcontext%:*}-$words[2]:"
+
+        case $words[1] in
+            cat)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*:ASSET:_files -W "$(_onyo_dir)"'
+                )
+                ;;
+            config)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*:ARGS:_git-config'
+                )
+                ;;
+            edit)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '*:ASSET:_files -W "$(_onyo_dir)"'
+                )
+                ;;
+            fsck)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                )
+                ;;
+            get)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-H --machine-readable)'{-H,--machine-readable}'[display assets separated by new lines and keys by tabs]'
+                    '(-k --keys)'{-k,--keys}'[key values to return]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[assets or directories to search through]:*-*:PATH:_files -W "$(_onyo_dir)"'
+                    '(-s --sort-ascending -S --sort-descending)'{-s,--sort-ascending}'[sort output in ascending order]'
+                    '(-S --sort-descending -s --sort-ascending)'{-S,--sort-descending}'[sort output in descending order]'
+                    '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
+                    '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
+                )
+                ;;
+            history)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-I --non-interactive)'{-I,--non-interactive}'[use the interactive history tool]'
+                    '::PATH:_files -W "$(_onyo_dir)"'
+                )
+                ;;
+            init)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '::DIR:_path_files -W "$(_onyo_dir)" -/'
+                )
+                ;;
+            mkdir)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '*:DIR:_path_files -W "$(_onyo_dir)" -/'
+                )
+                ;;
+            mv)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '*:SOURCE:_files -W "$(_onyo_dir)"'
+                    ':DEST:_files -W "$(_onyo_dir)"'
+                )
+                ;;
+            new)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-t --template)'{-t,--template}'[template to seed the new assets]:TEMPLATE:_path_files -W "$(_template_dir)" -g "*(.)"'
+                    '(-e --edit)'{-e,--edit}'[open new assets in an editor before creation]'
+                    '(-k --keys)'{-k,--keys}'[key-value pairs to set in the new assets]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[directory to create new assets in]:PATH:_files -W "$(_onyo_dir)"'
+                    '(-tsv --tsv)'{-tsv,--tsv}'[path to a TSV file describing the new assets]:TSV:_files -W "$(_onyo_dir)"'
+                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                )
+                ;;
+            rm)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '*:PATH:_files -W "$(_onyo_dir)"'
+                )
+                ;;
+            set)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-r --rename)'{-r,--rename}'[allow assigning values to keys that would result in renaming asset filenames]'
+                    '(-k --keys)'{-k,--keys}'[key-value pairs to set in assets; multiple pairs can be given (key=value key2=value2)]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[assets and/or directories to set KEY=VALUE in]:*-*::PATH:_files -W "$(_onyo_dir)"'
+                    '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
+                    '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
+                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                )
+                ;;
+            shell-completion)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-s --shell)'{-s,--shell}'[which shell to generate a tab-completion script for]:SHELL:(zsh)'
+                )
+                ;;
+            tree)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*::DIR:_path_files -W "$(_onyo_dir)" -/'
+                )
+                ;;
+            unset)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-k --keys)'{-k,--keys}'[keys to unset in assets; multiple keys can be given (key key2 key3)]:*-*:KEYS: '
+                    '(-p --path)'{-p,--path}'[assets and/or directories to unset values in]:*-*::PATH:_files -W "$(_onyo_dir)"'
+                    '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
+                    '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
+                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                )
+                ;;
+
+            *)
+                args+=(
+                    '*: :_default'
+                )
+                ;;
+        esac
+
+        _arguments -s -S $args && ret=0
+        ;;
+    esac
+
+    # load _git, so that _git-config is available for onyo config completion
+    whence -v _git-config > /dev/null || _git
+
+    _onyo_dir() {
+        #setopt local_options xtrace
+        local REPO=$PWD
+
+        # check if -C or --onyopath is used
+        for i in {1..$#fullwords} ; do
+            if [[ "$fullwords[$i]" == "-C" ]] || [[ "$fullwords[$i]" == "--onyopath" ]] ; then
+                # Hack to unescape any '\ ' from path.
+                # Sadly, printf %b does not work here, since it only interprets
+                # format controls, not escaping.
+                ONYOPATH=$(printf '%b' "$fullwords[$i+1]" | sed 's/\\ / /g')
+                REPO=$(realpath -e "$ONYOPATH")
+                break
+            fi
+        done
+
+        printf "$REPO"
+    }
+
+    _template_dir() {
+        DIR=$(_onyo_dir)
+
+        while [[ "$DIR" != '/' ]] ; do
+            TEMPLATE_DIR="${DIR}/.onyo/templates"
+            if [[ -d "$TEMPLATE_DIR" ]] ; then
+                printf "$TEMPLATE_DIR"
+                return
+            else
+                DIR=$(dirname "$DIR")
+            fi
+        done
+    }
+
+    return ret
+}
+
+# NOTE: If installing the output of this script in your fpath,
+#       uncomment '_onyo "$@"' and comment-out "compdef _onyo onyo".
+#_onyo "$@"
+compdef _onyo onyo
+
+#
+# ZSH completion script for Onyo
+#
+# To use this script and enable tab completion for Onyo rather than just seeing
+# this output, run
+#
+#    source <(onyo shell-completion)
+#

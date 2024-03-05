@@ -5,7 +5,7 @@ shared_arg_depth = dict(
     required=False,
     default=0,
     help=(
-        'Descent up to DEPTH levels into directories specified. DEPTH=0 '
+        'Descend up to DEPTH levels into directories specified. DEPTH=0 '
         'descends recursively without limit'))
 
 shared_arg_match = dict(

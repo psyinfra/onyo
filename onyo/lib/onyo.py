@@ -353,7 +353,7 @@ class OnyoRepo(object):
         # Note: pheewww - No. Installed resource needs to be found differently.
         #       Who the hell is supposed to maintain that? One cannot simply
         #       move this function without changing its implementation.
-        skel_dir = Path(Path(__file__).resolve().parent.parent, 'skel')
+        skel_dir = Path(__file__).resolve().parent.parent / 'skel'
 
         # populate .onyo dir
         shutil.copytree(skel_dir, self.dot_onyo)
@@ -552,7 +552,7 @@ class OnyoRepo(object):
         subtrees: Iterable of Path, optional
           Paths to look for assets under. Defaults to the root of the inventory.
         depth: int, optional
-          Number of levels to descent into. Must be greater equal 0.
+          Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
 
         Returns

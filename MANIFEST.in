@@ -1,1 +1,2 @@
 recursive-include onyo/skel *
+recursive-include onyo/shell_completion *
