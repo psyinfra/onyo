@@ -27,6 +27,11 @@ def test_onyo_new_invalid(inventory: Inventory) -> None:
     pytest.raises(subprocess.CalledProcessError, onyo_new, inventory, edit=True)
     # tsv must exist:
     pytest.raises(FileNotFoundError, onyo_new, inventory, tsv=inventory.root / "nonexisting.tsv")
+    # clone and template are mutually exclusive
+    pytest.raises(ValueError, onyo_new, inventory,
+                  keys=[{'serial': 'faux'}],
+                  clone=inventory.root / "somewhere" / "nested" / "TYPE_MAKE_MODEL.SERIAL",
+                  template='laptop.example')
 
 
 @pytest.mark.ui({'yes': True})
@@ -215,3 +220,38 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, path=directory, edit=True)
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_new_clones(inventory: Inventory) -> None:
+    existing_asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    existing_asset = inventory.get_asset(existing_asset_path)
+    asset_dir = inventory.root / "somewhere"
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    onyo_new(inventory,
+             keys=[{'serial': 'ANOTHER'},
+                   {'serial': 'whatever'}],
+             clone=existing_asset_path,
+             path=asset_dir)
+
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    # left worktree clean
+    assert inventory.repo.git.is_clean_worktree()
+
+    # first new asset:
+    new_asset_path1 = asset_dir / f"{existing_asset_path.name.split('.')[0]}.ANOTHER"
+    assert inventory.repo.is_asset_path(new_asset_path1)
+    new_asset = inventory.get_asset(new_asset_path1)
+    # equals existing asset except for path and serial:
+    assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['serial', 'path'])
+    assert new_asset['serial'] == 'ANOTHER'
+
+    # second new asset
+    new_asset_path2 = asset_dir / f"{existing_asset_path.name.split('.')[0]}.whatever"
+    assert inventory.repo.is_asset_path(new_asset_path2)
+    new_asset = inventory.get_asset(new_asset_path2)
+    # equals existing asset except for path and serial:
+    assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['serial', 'path'])
+    assert new_asset['serial'] == 'whatever'
