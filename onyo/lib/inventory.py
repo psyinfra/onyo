@@ -587,7 +587,7 @@ class Inventory(object):
             raise ValueError('The length of faux serial numbers must be >= 4.')
 
         if num < 1:
-            raise ValueError('The length of faux serial numbers must be >= 1.')
+            raise ValueError('The number of faux serial numbers must be >= 1.')
 
         alphanum = string.ascii_letters + string.digits
         faux_serials = set()
