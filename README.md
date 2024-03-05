@@ -35,6 +35,11 @@ python -m venv ~/.venvs/onyo
 source ~/.venvs/onyo/bin/activate
 ```
 
+Enabling tab-completion is also recommended:
+```
+source <(onyo shell-completion)
+```
+
 ## Demo
 An [example Onyo repository](https://github.com/psyinfra/onyo-demo/) is
 available. It's easier to get a feel for how Onyo works with a populated

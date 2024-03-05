@@ -29,6 +29,13 @@ To install Onyo, run the following from your command line:
 
    pip install git+https://github.com/psyinfra/onyo.git
 
+Enabling tab-completion is also recommended:
+.. code::
+
+   source <(onyo shell-completion)
+
+Add the above line to your shell's config file (e.g. ``~/.zshrc``) to make it
+persistent.
 
 .. _aliases:
 
