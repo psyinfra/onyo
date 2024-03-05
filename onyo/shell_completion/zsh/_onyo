@@ -42,7 +42,7 @@ _onyo() {
         'unset:remove the VALUE of KEY for matching ASSETs'
     )
 
-    _arguments -C $args                 $toplevel_flags                 ':subcommand:->subcommand'                 '*::options:->options' && ret=0
+    _arguments -C $args $toplevel_flags ':subcommand:->subcommand' '*::options:->options' && ret=0
 
     case $state in
         subcommand)
