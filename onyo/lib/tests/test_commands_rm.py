@@ -45,6 +45,13 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
                   paths=inventory.root / ".onyo" / "templates" / "laptop.example",
                   message="some subject\n\nAnd a body")
 
+    # delete inventory root
+    pytest.raises(InvalidInventoryOperationError,
+                  onyo_rm,
+                  inventory,
+                  paths=inventory.root,
+                  message="some subject\n\nAnd a body")
+
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
@@ -72,12 +79,10 @@ def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
     # assert inventory.repo.git.is_clean_worktree()
 
 
-# TODO: after #309, add a test for a call for deleting multiple times the same path
-@pytest.mark.skip(reason="still a BUG: #309")
 @pytest.mark.ui({'yes': True})
-@pytest.mark.repo_dirs("a/b/c", "a/d/c")
+@pytest.mark.repo_dirs("a/b/c", "a/b/c/c")
 def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
-    """FIX BUG FIRST. `onyo rm dir dir` for same dir twice?"""
+    """`onyo rm` should not fail when the same path is implied for removal multiple times."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -91,9 +96,22 @@ def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
     assert asset_path not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
+
+    # delete same dir twice implicitly
+    old_hexsha = inventory.repo.git.get_hexsha()
+    abc = inventory.root / "a/b/c"
+    abcc = inventory.root / "a/b/c/c"
+    assert inventory.repo.is_inventory_dir(abcc)
+    assert inventory.repo.is_inventory_dir(abc)
+    onyo_rm(inventory,
+            paths=[abc, abcc],
+            message="some subject\n\nAnd a body")
+    assert not abcc.exists()
+    assert not abc.exists()
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
