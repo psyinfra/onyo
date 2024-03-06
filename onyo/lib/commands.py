@@ -665,7 +665,7 @@ def onyo_new(inventory: Inventory,
              template: Optional[str] = None,
              clone: Optional[Path] = None,
              tsv: Optional[Path] = None,
-             keys: Optional[list[Dict[str, str]]] = None,
+             keys: Optional[list[Dict[str, str | int | float]]] = None,
              edit: bool = False,
              message: Optional[str] = None) -> None:
     """Create new assets and add them to the inventory.
