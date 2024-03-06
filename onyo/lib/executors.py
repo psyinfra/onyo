@@ -40,7 +40,18 @@ def exec_new_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[P
 def exec_new_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
     """Executor for the 'new_directory' operation
     """
-    paths = repo.mk_inventory_dirs(operands[0])
+    p: Path = operands[0]
+    asset = dict()
+    # This may be an asset file that needs to be turned into an asset dir:
+    turn_asset_dir = p.is_file() and repo.is_asset_path(p)
+    if turn_asset_dir:
+        asset = repo.get_asset_content(p)
+        p.unlink()
+    paths = repo.mk_inventory_dirs(p)
+    if turn_asset_dir:
+        asset['is_asset_directory'] = True
+        repo.write_asset_content(asset)
+        paths.append(p / OnyoRepo.ASSET_DIR_FILE_NAME)
     return paths, paths
 
 
@@ -54,6 +65,7 @@ def exec_remove_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], lis
         paths = [p]
     for p in paths:
         # missing_ok=True, b/c several operations may want to remove the same thing. No reason to fail here.
+        # TODO: Reconsider w/ #546
         p.unlink(missing_ok=True)
     return paths, []
 

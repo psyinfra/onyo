@@ -215,7 +215,7 @@ class Inventory(object):
         dirs = []
         for op in self.operations:
             if op.operator == OPERATIONS_MAPPING['new_directories']:
-                dirs.append(op.operands[1])
+                dirs.append(op.operands[0])
             elif op.operator == OPERATIONS_MAPPING['move_directories']:
                 dirs.append(op.operands[1] / op.operands[0].name)
         return dirs
@@ -311,7 +311,9 @@ class Inventory(object):
         operations = []
         if not self.repo.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path.")
-        if path.exists():  # What about adding an untracked dir?
+        # TODO: The following condition isn't entirely correct yet.
+        #       Address with issue #546.
+        if path.exists() and not self.repo.is_asset_path(path):
             raise ValueError(f"{path} already exists.")
 
         operations.append(self._add_operation('new_directories', (path,)))

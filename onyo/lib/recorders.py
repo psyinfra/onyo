@@ -64,11 +64,19 @@ def record_remove_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list
 
 
 def record_move_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"Moved assets:{linesep}": [record_move(repo, operands[0], operands[1])]}
+    records = {f"Moved assets:{linesep}": [record_move(repo, operands[0], operands[1])]}
+    if repo.is_asset_dir(operands[0]):
+        # In case of an asset dir, we need to record an operation for both aspects
+        records.update({f"Moved directories:{linesep}": [record_move(repo, operands[0], operands[1])]})
+    return records
 
 
 def record_move_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"Moved directories:{linesep}": [record_move(repo, operands[0], operands[1])]}
+    records = {f"Moved directories:{linesep}": [record_move(repo, operands[0], operands[1])]}
+    if repo.is_asset_dir(operands[0]):
+        # In case of an asset dir, we need to record an operation for both aspects
+        records.update({f"Moved assets:{linesep}": [record_move(repo, operands[0], operands[1])]})
+    return records
 
 
 def record_rename_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
@@ -76,13 +84,11 @@ def record_rename_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list
 
 
 def record_rename_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    # TODO: This needs a special case for asset dirs. Record both - an
-    # asset renamed and a directory renamed. This cannot be addressed by an
-    # actual rename directory operation being executed and then recorded, because renaming
-    # of asset depends on content and config. (Plus: We can't actually rename the same thing twice)
-    #
-    # This type of double recording may need to be done for other operations on asset dirs - double-check!
-    return {f"Renamed assets:{linesep}": [record_rename(repo, operands[0], operands[1])]}
+    records = {f"Renamed assets:{linesep}": [record_rename(repo, operands[0], operands[1])]}
+    if repo.is_asset_dir(operands[0]):
+        # In case of an asset dir, we need to record an operation for both aspects
+        records.update({f"Renamed directories:{linesep}": [record_rename(repo, operands[0], operands[1])]})
+    return records
 
 
 def record_modify_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
