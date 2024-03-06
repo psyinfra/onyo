@@ -664,6 +664,7 @@ def onyo_mv(inventory: Inventory,
 def onyo_new(inventory: Inventory,
              path: Optional[Path] = None,
              template: Optional[str] = None,
+             clone: Optional[Path] = None,
              tsv: Optional[Path] = None,
              keys: Optional[list[Dict[str, str]]] = None,
              edit: bool = False,
@@ -707,6 +708,11 @@ def onyo_new(inventory: Inventory,
         The name of a template file in ``.onyo/templates/`` that is copied as a
         base for the new assets to be created.
 
+    clone: Path, optional
+        Path to an asset to clone. Mutually exclusive with `template`.
+        Note, that a straight clone with no change via `keys`, `tsv` or `edit`
+        would result in the exact same asset, which therefore is bound to fail.
+
     tsv: Path, optional
         A path to a tsv table that describes new assets to be created.
 
@@ -734,7 +740,8 @@ def onyo_new(inventory: Inventory,
     keys = keys or []
     if not tsv and not keys and not edit:
         raise ValueError("Either key-value pairs or a tsv file must be given.")
-
+    if template and clone:
+        raise ValueError("'template' and 'clone' options are mutually exclusive.")
     # Try to get editor early in case it's bound to fail;
     # Empty string b/c pyre doesn't properly consider the condition and complains
     # when we pass `editor` where it's not optional.
@@ -750,6 +757,8 @@ def onyo_new(inventory: Inventory,
                 raise ValueError(f"No header fields in tsv {str(tsv)}")
             if template and 'template' in reader.fieldnames:
                 raise ValueError("Can't use '--template' option and 'template' column in tsv.")
+            if clone and 'template' in reader.fieldnames:
+                raise ValueError("Can't use '--clone' option and 'template' column in tsv.")
             if path and 'directory' in reader.fieldnames:
                 raise ValueError("Can't use '--path' option and 'directory' column in tsv.")
             tsv_dicts = [row for row in reader]
@@ -811,8 +820,8 @@ def onyo_new(inventory: Inventory,
             directory = inventory.root / directory
         spec['directory'] = directory
         # 2. start from template
-        template_name = spec.pop('template', None) or template
-        asset = inventory.get_asset_from_template(template_name)
+        asset = inventory.get_asset(clone) if clone \
+            else inventory.get_asset_from_template(spec.pop('template', None) or template)
         # 3. fill in asset specification
         asset.update(spec)
         # 4. (try to) add to inventory

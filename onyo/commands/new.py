@@ -21,6 +21,13 @@ args_new = {
         type=template,
         help='Name of the template to seed the new asset(s)'),
 
+    'clone': dict(
+        args=('-c', '--clone'),
+        metavar='CLONE',
+        required=False,
+        type=path,
+        help='Path to an asset to clone from'),
+
     'edit': dict(
         args=('-e', '--edit'),
         required=False,
@@ -71,6 +78,7 @@ def new(args: argparse.Namespace) -> None:
     onyo_new(inventory=inventory,
              path=Path(args.path).resolve() if args.path else None,
              template=args.template,
+             clone=Path(args.clone).resolve() if args.clone else None,
              tsv=Path(args.tsv).resolve() if args.tsv else None,
              keys=args.keys,
              edit=args.edit,
