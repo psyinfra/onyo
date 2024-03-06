@@ -169,15 +169,14 @@ def onyo_cat(inventory: Inventory,
     if non_asset_paths:
         raise ValueError("The following paths are not asset files:\n%s" %
                          "\n".join(non_asset_paths))
+    files = list(p / OnyoRepo.ASSET_DIR_FILE_NAME
+                 if inventory.repo.is_asset_dir(p)
+                 else p
+                 for p in paths)
     # TODO: "Full" asset validation. Address when fsck is reworked
-    assets_valid = validate_yaml(set(paths))
+    assets_valid = validate_yaml(deduplicate(files))
     # open file and print to stdout
-    for path in paths:
-        # TODO: Probably better to simply print
-        #       `dict_to_yaml(inventory.repo.get_asset_content(path))` - no need to
-        #       distinguish asset and asset dir at this level. However, need to
-        #       make sure to not print pointless empty lines.
-        f = path / OnyoRepo.ASSET_DIR_FILE_NAME if inventory.repo.is_asset_dir(path) else path
+    for f in files:
         ui.print(f.read_text(), end='')
     if not assets_valid:
         raise OnyoInvalidRepoError("Invalid assets")
