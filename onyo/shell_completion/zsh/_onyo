@@ -124,7 +124,7 @@ _onyo() {
                     '(-c --clone -t --template)'{-c,--clone}'[asset path to clone from]:CLONE:_files -W "$(_onyo_dir)"'
                     '(-e --edit)'{-e,--edit}'[open new assets in an editor before creation]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in the new assets]:*-*:KEYS: '
-                    '(-p --path)'{-p,--path}'[directory to create new assets in]:PATH:_files -W "$(_onyo_dir)"'
+                    '(-p --path)'{-p,--path}'[directory to create new assets in]:PATH:_files -W "$(_onyo_dir)" -/'
                     '(-tsv --tsv)'{-tsv,--tsv}'[path to a TSV file describing the new assets]:TSV:_files -W "$(_onyo_dir)"'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
                 )
