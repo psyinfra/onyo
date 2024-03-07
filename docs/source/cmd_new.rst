@@ -8,6 +8,26 @@ onyo new
    :path: new
 
 
+Reserved keys
+*************
+
+Onyo reserves some keys which have a special function when used while creating
+new assets, either with ``onyo new --keys`` or in a tsv table with
+``onyo new --tsv``.
+They can be used multiple times with different values to create multiple
+new assets at once with a different value for each asset.
+
+**directory**
+
+    The ``directory`` key is an alternative to ``onyo new --path`` to specify
+    the location in which to create new assets.
+
+**template**
+
+    The ``template`` key is an alternative to ``onyo new --template`` to specify
+    which template to use to create new assets.
+
+
 Example Usage
 *************
 
@@ -30,17 +50,16 @@ This command writes a YAML file to ``shelf/laptop_lenovo_T490s.abc123``:
    model: T490s
    serial: abc123
 
-Create multiple new assets with content, and overwrite the default message
-with a more helpful one describing the action:
+**Create multiple new assets with content in different locations, and overwrite
+the default message**
 
 .. code:: shell
 
    onyo new --keys RAM=16GB display_size=14.6 touch=yes
-   type=laptop make=lenovo model=T490s serial=abc123
-   type=laptop make=apple model=macbookpro serial=abc456
-   type=laptop make=apple model=macbookpro serial=17
+   type=laptop make=lenovo model=T490s serial=abc123 directory=Bingo\ Bob
+   type=laptop make=apple model=macbookpro serial=abc456 directory=Alice\ Wonderland
+   type=laptop make=apple model=macbookpro serial=17 directory=shelf
    --message "devices for the new group are delivered"
-   --path shelf/
 
 
 **Add inventory with a table**
