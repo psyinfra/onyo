@@ -396,3 +396,20 @@ def test_onyo_get_allows_duplicates(inventory: Inventory,
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
     assert output.count(asset_path.name) == 1
+
+
+def test_onyo_get_asset_dir(inventory: Inventory,
+                            capsys) -> None:
+    inventory.add_asset(dict(some_key="some_value",
+                             type="TYPE",
+                             make="MAKER",
+                             model="MODEL",
+                             serial="SERIAL2",
+                             other=1,
+                             directory=inventory.root,
+                             is_asset_directory=True)
+                        )
+    asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
+    inventory.commit("add an asset dir")
+    onyo_get(inventory, match=[Filter("other=1").match])
+    assert str(asset_dir.relative_to(inventory.root)) in capsys.readouterr().out
