@@ -910,10 +910,8 @@ def onyo_rm(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
-             paths: Optional[list[Path]] = None,
-             match: Optional[list[Callable[[dict], bool]]] = None,
+             paths: list[Path],
              rename: bool = False,
-             depth: int = 0,
              message: Optional[str] = None) -> Optional[str]:
     """Set key-value pairs of assets, and change asset names.
 
@@ -921,25 +919,19 @@ def onyo_set(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to set key/values for assets.
-    paths: list of Path, optional
-        Paths to assets or directories for which to set key-value pairs.
-        If paths are directories, the values will be set recursively in assets
-        under the specified path.
-        If no paths are specified, the inventory root is used as default.
+    paths: list of Path
+        Paths to assets for which to set key-value pairs.
     keys: dict
         Key-value pairs that will be set in assets. If keys already exist in an
         asset their value will be overwritten, if they do not exist the values
         are added.
         If keys are specified which appear in asset names the rename option is
         needed and changes the file names.
-    match: list of Callable, optional
-        TODO: Understand filtering. This might still be refactored.
+        The key 'is_asset_directory' (bool) can be used to change whether an
+        asset is an asset directory.
     rename: bool
         Whether to allow changing of keys that are part of the asset name.
         If False, such a change raises a `ValueError`.
-    depth: int
-        Depth limit of recursion if a `path` is a directory.
-        0 means no limit and is the default.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
@@ -949,28 +941,27 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
-    paths = paths or [inventory.root]
+    if not paths:
+        raise ValueError("At least one asset must be specified.")
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
     if any(not k or not k.strip() for k in keys.keys()):
         raise ValueError("Keys are not allowed to be empty or None-values.")
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
-    if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys.keys()):
-        raise ValueError(f"Can't set reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
-    non_inventory_paths = [str(p)
-                           for p in paths  # pyre-ignore[16]  `paths` not Optional anymore here
-                           if not inventory.repo.is_asset_path(p) and
-                           not inventory.repo.is_inventory_dir(p)]
-    if non_inventory_paths:
-        raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
-                         "\n".join(non_inventory_paths))
-    assets = inventory.get_assets_by_query(paths=paths,
-                                           depth=depth,
-                                           match=match)
+    # TODO: Remove is_asset_directory from RESERVED_KEYS altogether?
+    disallowed_keys = RESERVED_KEYS + PSEUDO_KEYS
+    disallowed_keys.remove("is_asset_directory")
+    if any(k in disallowed_keys for k in keys.keys()):
+        raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
 
-    for asset in assets:
+    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    if non_asset_paths:
+        raise ValueError("The following paths aren't assets:\n%s" %
+                         "\n".join(non_asset_paths))
+
+    for asset in [inventory.get_asset(p) for p in paths]:
         new_content = copy.deepcopy(asset)
         new_content.update(keys)
         for k in PSEUDO_KEYS:

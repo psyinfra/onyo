@@ -418,6 +418,17 @@ class Inventory(object):
         modified_asset = copy.deepcopy(new_asset)
         modified_asset['path'] = path
 
+        # If a change in is_asset_directory is implied, do this first:
+        if asset.get("is_asset_directory", False) != new_asset.get("is_asset_directory", False):
+            # remove or add dir aspect from/to asset
+            ops = self.add_directory(asset["path"]) if new_asset.get("is_asset_directory", False)\
+                else self.remove_directory(asset["path"])
+            operations.extend(ops)
+            # If there is no other change, we should not record a modify_assets operation!
+            if all(asset.get(k) == new_asset.get(k)
+                   for k in [a for a in asset.keys()] + [b for b in new_asset.keys()]
+                   if k != "is_asset_directory"):
+                return operations
         operations.append(self._add_operation('modify_assets', (asset, modified_asset)))
         # Modified_asset has the same 'path' at this point, regardless of potential renaming.
         # We modify the content in place and only then perform a potential rename.

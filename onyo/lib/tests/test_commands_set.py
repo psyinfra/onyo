@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 
-from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_set
@@ -22,6 +21,14 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
+    # set on non-asset
+    pytest.raises(ValueError,
+                  onyo_set,
+                  inventory,
+                  paths=[inventory.root / "somewhere"],
+                  keys=key_value,
+                  message="some subject\n\nAnd a body")
+
     # set outside the repository
     pytest.raises(ValueError,
                   onyo_set,
@@ -36,15 +43,6 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
                   inventory,
                   paths=[asset_path],
                   keys=[],
-                  message="some subject\n\nAnd a body")
-
-    # set with negative depth value
-    pytest.raises(ValueError,
-                  onyo_set,
-                  inventory,
-                  paths=[asset_path],
-                  keys=key_value,
-                  depth=-1,
                   message="some subject\n\nAnd a body")
 
     # set on ".anchor"
@@ -113,48 +111,6 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_set_directory(inventory: Inventory) -> None:
-    """`onyo_set()` sets a value in an asset when called on a directory."""
-    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    dir_path = inventory.root / "somewhere"
-    key_value = {"this_key": "that_value"}
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # set a value for a directory
-    onyo_set(inventory,
-             paths=[dir_path],
-             keys=key_value,  # pyre-ignore[6]
-             message="some subject\n\nAnd a body")
-
-    # check content
-    assert "this_key" in inventory.repo.get_asset_content(asset_path).keys()
-    assert "that_value" in inventory.repo.get_asset_content(asset_path).values()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.ui({'yes': True})
-def test_onyo_set_on_empty_directory(inventory: Inventory) -> None:
-    """`onyo_set()` does not error when called on a valid but empty directory,
-    but no commits are added."""
-    dir_path = inventory.root / 'empty'
-    key_value = {"this_key": "that_value"}
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # set on a directory without assets
-    onyo_set(inventory,
-             paths=[dir_path],
-             keys=key_value,  # pyre-ignore[6]
-             message="some subject\n\nAnd a body")
-
-    # no commit was added
-    assert inventory.repo.git.get_hexsha() == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.ui({'yes': True})
 def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
     """`onyo_set()` must raise an error when requested to set an
     illegal/reserverd field without `rename=True`."""
@@ -162,12 +118,10 @@ def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    illegal_fields = [
-        {"type": "new_value"},
-        {"make": "new_value"},
-        {"model": "new_value"},
-        {"serial": "new_value"}]
-    illegal_fields.extend([{k: "new_value"} for k in PSEUDO_KEYS + RESERVED_KEYS])
+    illegal_keys = PSEUDO_KEYS + RESERVED_KEYS + inventory.repo.get_asset_name_keys()
+    # TODO: Remove is_asset_directory from RESERVED_KEYS altogether?
+    illegal_keys.remove("is_asset_directory")
+    illegal_fields = [{k: "new_value"} for k in illegal_keys]
 
     # set on illegal fields
     for illegal in illegal_fields:
@@ -325,73 +279,6 @@ def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nold_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_set_match(inventory: Inventory) -> None:
-    """`onyo_set()` updates the correct assets when `match` is used."""
-    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset_path2 = inventory.root / "one_that_exists.test"
-    matches = [Filter("old_key=value").match]
-    key_value = {"new_key": "new_value"}
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # verify that one asset contains the "old_key" to match and the other not
-    assert "old_key" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "old_key" in inventory.repo.get_asset_content(asset_path2).keys()
-    # the new key is not yet in either asset
-    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "new_key" not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # set a value just in the matching asset, but specify both paths
-    onyo_set(inventory,
-             paths=[asset_path1, asset_path2],
-             match=matches,  # pyre-ignore[6]
-             keys=key_value,  # pyre-ignore[6]
-             message="some subject\n\nAnd a body")
-
-    # check content is just set in the matching asset, the other is unchanged
-    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "new_key" in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_set_no_matches(inventory: Inventory) -> None:
-    """`onyo_set()` behaves correctly when `match` matches no assets."""
-    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset_path2 = inventory.root / "one_that_exists.test"
-    matches = [Filter("unfound=values").match]
-    key_value = {"new_key": "new_value"}
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # verify that both assets don't contain neither "new_key" nor "unfound"
-    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "new_key" not in inventory.repo.get_asset_content(asset_path2).keys()
-    assert "unfound" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "unfound" not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # `onyo_set()` is called, but neither asset match so nothing will be set
-    onyo_set(inventory,
-             paths=[asset_path1, asset_path2],
-             match=matches,  # pyre-ignore[6]
-             keys=key_value,  # pyre-ignore[6]
-             message="some subject\n\nAnd a body")
-
-    # check content is not set in either asset because neither matched
-    assert "new_key" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "new_key" not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # no commit was added because nothing matched
-    assert inventory.repo.git.get_hexsha() == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
     ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_multiple(inventory: Inventory) -> None:
@@ -419,88 +306,6 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
     assert inventory.repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_set_depth(inventory: Inventory) -> None:
-    """`onyo_set()` with depth selects the correct assets."""
-    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset_path2 = inventory.root / "one_that_exists.test"
-    key_value = {"this_key": "that_value"}
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # check key does not exist in either asset
-    assert "this_key" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "this_key" not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # set a value using depth
-    onyo_set(inventory,
-             paths=[inventory.root],
-             keys=key_value,  # pyre-ignore[6]
-             depth=1,
-             message="some subject\n\nAnd a body")
-
-    # check key was set only in one asset:
-    assert "this_key" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "this_key" in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_set_depth_zero(inventory: Inventory) -> None:
-    """Calling `onyo_set(depth=0)` is legal and selects
-    all assets from all subpaths."""
-    key_value = {"this_key": "that_value"}
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # check key does not exist
-    for asset in inventory.repo.get_asset_paths():
-        assert "this_key" not in inventory.repo.get_asset_content(asset).keys()
-
-    # set a value
-    onyo_set(inventory,
-             keys=key_value,  # pyre-ignore[6]
-             paths=[inventory.root],
-             depth=0,
-             message="some subject\n\nAnd a body")
-
-    # check key was set in all assets
-    for asset in inventory.repo.get_asset_paths():
-        assert "this_key" in inventory.repo.get_asset_content(asset).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_set_default_inventory_root(inventory: Inventory) -> None:
-    """Calling `onyo_set()` without path uses inventory.root as default
-    and selects all assets of the inventory."""
-    key = {"new_key": "new_me"}
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # set a value without giving a path
-    onyo_set(inventory,
-             keys=key,  # pyre-ignore[6]
-             message="some subject\n\nAnd a body")
-
-    # check key was set in all assets
-    for asset in inventory.repo.get_asset_paths():
-        assert "new_key" in inventory.repo.get_asset_content(asset).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
     """Calling `onyo_set()` with a list containing the same asset multiple
@@ -522,3 +327,46 @@ def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_set_asset_dir(inventory: Inventory) -> None:
+    inventory.add_asset(dict(some_key="some_value",
+                             type="TYPE",
+                             make="MAKER",
+                             model="MODEL",
+                             serial="SERIAL2",
+                             other=1,
+                             directory=inventory.root,
+                             is_asset_directory=True)
+                        )
+    asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
+    inventory.commit("add an asset dir")
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # set a value in an asset dir
+    onyo_set(inventory,
+             paths=[asset_dir],
+             keys={'other': 2})
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.get_asset(asset_dir)['other'] == 2
+
+    # turn asset dir into asset file:
+    onyo_set(inventory,
+             paths=[asset_dir],
+             keys={'is_asset_directory': False})
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.get_hexsha('HEAD~2') == old_hexsha
+    assert inventory.repo.is_asset_path(asset_dir)
+    assert asset_dir.is_file()
+    assert inventory.get_asset(asset_dir)["some_key"] == "some_value"
+
+    # turn it back into an asset dir
+    onyo_set(inventory,
+             paths=[asset_dir],
+             keys={'is_asset_directory': True})
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
+    assert inventory.repo.is_asset_dir(asset_dir)
+    assert inventory.get_asset(asset_dir)["some_key"] == "some_value"

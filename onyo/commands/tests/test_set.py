@@ -131,31 +131,8 @@ def test_set_error_non_existing_assets(repo: OnyoRepo,
 
     # verify output and the state of the repository
     assert not ret.stdout
-    assert "The following paths are neither an inventory directory nor an asset:" in ret.stderr
+    assert "The following paths aren't assets:" in ret.stderr
     assert ret.returncode == 1
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('set_values', values)
-def test_set_with_dot_recursive(repo: OnyoRepo,
-                                set_values: list[str]) -> None:
-    """Test that when `onyo set KEY=VALUE .` is called from the repository root,
-    onyo selects all assets in the complete repo recursively.
-    """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values,
-                          '--path', "."], capture_output=True, text=True)
-
-    # verify that output mentions every asset
-    assert "The following assets will be changed:" in ret.stdout
-    for asset in asset_paths:
-        assert str(Path(asset)) in ret.stdout
-
-    # output must contain "+key: value" one time for each asset in repository
-    for value in set_values:
-        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(asset_paths)
-    assert not ret.stderr
-    assert ret.returncode == 0
     assert repo.git.is_clean_worktree()
 
 
@@ -163,50 +140,13 @@ def test_set_with_dot_recursive(repo: OnyoRepo,
 @pytest.mark.parametrize('set_values', values)
 def test_set_without_path(repo: OnyoRepo,
                           set_values: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE` without a given path selects all assets in
-    the repository, beginning with cwd.
+    """Test that `onyo set KEY=VALUE` without a given path fails.
     """
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values],
                          capture_output=True, text=True)
 
-    # verify that output contains one line per asset
-    assert "The following assets will be changed:" in ret.stdout
-    for asset in asset_paths:
-        assert str(Path(asset)) in ret.stdout
-
-    # one time for every asset in the repository
-    # "+key: value" should mentioned one time for each asset in root
-    for value in set_values:
-        assert ret.stdout.count(f"+{value.replace('=', ': ')}") == len(asset_paths)
-    assert not ret.stderr
-    assert ret.returncode == 0
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('directory', directories)
-@pytest.mark.parametrize('set_values', values)
-def test_set_recursive_directories(repo: OnyoRepo,
-                                   directory: str,
-                                   set_values: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE <directory>` updates
-    contents of assets correctly.
-    """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values,
-                          '--path', directory],
-                         capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert str(Path(directory)) in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify changes, and the repository clean
-    repo_assets = repo.asset_paths
-    for asset in [asset for asset in Path(directory).iterdir() if asset in repo_assets]:
-        for value in set_values:
-            assert value.replace("=", ": ") in Path.read_text(Path(asset))
+    assert ret.returncode != 0
+    assert "usage:" in ret.stderr  # argparse should already complain
     assert repo.git.is_clean_worktree()
 
 
@@ -236,28 +176,6 @@ def test_set_discard_changes_single_assets(repo: OnyoRepo,
 
 
 @pytest.mark.repo_contents(*assets)
-def test_set_discard_changes_recursive(repo: OnyoRepo) -> None:
-    """Test that `onyo set` discards changes for all assets successfully."""
-    set_values = "key=discard"
-    ret = subprocess.run(['onyo', 'set', '--keys', set_values],
-                         input='n', capture_output=True, text=True)
-
-    # verify output for just dot, should be all in onyo root, but not recursive
-    assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
-    assert "No assets updated." in ret.stdout
-    assert ret.stdout.count("+key: discard") == len(repo.asset_paths)
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify that no changes where written
-    repo_assets = repo.asset_paths
-    for asset in repo_assets:
-        assert "key: discard" not in Path.read_text(asset)
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [asset_paths[0]])
 @pytest.mark.parametrize('set_values', [values[0]])
 def test_set_message_flag(repo: OnyoRepo,
@@ -278,53 +196,6 @@ def test_set_message_flag(repo: OnyoRepo,
     ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
     assert msg in ret.stdout
     assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('set_values', [values[0]])
-@pytest.mark.parametrize('depth', ['0', '1', '3', '10'])
-def test_set_depth_flag(repo: OnyoRepo,
-                        set_values: list[str],
-                        depth: str) -> None:
-    """Test correct behavior for `onyo set --depth N KEY=VALUE <assets>` for
-    different values for `--depth N`.
-
-    The test searches through the output to find returned assets and ensures
-    the number of returned assets matches the expected number, and the
-    returned assets do not have more parents than the specified depth.
-    """
-    cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
-    ret = subprocess.run(cmd, input='n', capture_output=True, text=True)
-
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    expected_paths = repo.asset_paths if depth == '0' \
-        else [p for p in repo.asset_paths if depth != '0' and len(p.relative_to(repo.git.root).parents) <= int(depth)]
-
-    for p in repo.asset_paths:
-        if p in expected_paths:
-            assert str(p) in ret.stdout
-        else:
-            assert str(p) not in ret.stdout
-
-
-@pytest.mark.parametrize('set_values', [values[0]])
-@pytest.mark.parametrize('depth,expected', [
-    ('-1', "depth must be greater or equal 0, but is '-1'"),
-])
-def test_set_depth_flag_error(repo: OnyoRepo,
-                              set_values: list[str],
-                              depth: str,
-                              expected: str) -> None:
-    """Test correct behavior for `onyo set --depth N KEY=VALUE <assets>`
-    when an invalid depth value is given.
-    """
-    cmd = ['onyo', 'set', '--depth', depth, '--keys', *set_values]
-    ret = subprocess.run(cmd, capture_output=True, text=True)
-    assert not ret.stdout
-    assert expected in ret.stderr
-    assert ret.returncode == 1
 
 
 @pytest.mark.repo_contents(*assets)
