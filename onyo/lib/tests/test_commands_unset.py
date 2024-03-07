@@ -69,6 +69,9 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
                   keys=[key],
                   message="some subject\n\nAnd a body")
 
+    # no error scenario leaves the git worktree unclean
+    assert inventory.repo.git.is_clean_worktree()
+
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_on_empty_directory(inventory: Inventory) -> None:
@@ -86,6 +89,7 @@ def test_onyo_unset_on_empty_directory(inventory: Inventory) -> None:
 
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -112,6 +116,7 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
 
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -135,6 +140,7 @@ def test_onyo_unset_illegal_fields(inventory: Inventory) -> None:
 
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -163,9 +169,7 @@ def test_onyo_unset_errors_before_unset(inventory: Inventory) -> None:
     assert key in asset_path.read_text()
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -189,9 +193,7 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(
@@ -225,9 +227,7 @@ def test_onyo_unset_match(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(
@@ -260,9 +260,7 @@ def test_onyo_unset_no_matches(inventory: Inventory) -> None:
 
     # no commits added because nothing changed
     assert inventory.repo.git.get_hexsha() == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(
@@ -292,9 +290,7 @@ def test_onyo_unset_depth(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(
@@ -323,9 +319,7 @@ def test_onyo_unset_depth_zero(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -351,9 +345,7 @@ def test_onyo_unset_directories(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -371,9 +363,7 @@ def test_onyo_unset_empty_directory(inventory: Inventory) -> None:
 
     # nothing was changed, so nothing should have been committed
     assert inventory.repo.git.get_hexsha() == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(
@@ -403,9 +393,7 @@ def test_onyo_unset_multiple(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(
@@ -431,9 +419,7 @@ def test_onyo_unset_default_inventory_root(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -455,9 +441,7 @@ def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(
@@ -494,9 +478,7 @@ def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -516,6 +498,4 @@ def test_onyo_unset_allows_key_duplicates(inventory: Inventory) -> None:
     assert key not in inventory.repo.get_asset_content(asset_path).keys()
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()

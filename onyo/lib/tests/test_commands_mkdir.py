@@ -74,6 +74,9 @@ def test_onyo_mkdir_errors(inventory: Inventory) -> None:
                   dirs=[dir_path / ".onyo"],
                   message="some subject\n\nAnd a body")
 
+    # no error scenario leaves the inventory unclean
+    assert inventory.repo.git.is_clean_worktree()
+
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
@@ -98,9 +101,7 @@ def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
     assert not (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -121,9 +122,7 @@ def test_onyo_mkdir_simple(inventory: Inventory) -> None:
     assert (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -158,9 +157,7 @@ def test_onyo_mkdir_multiple(inventory: Inventory) -> None:
     assert (dir_path_new3 / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -194,9 +191,7 @@ def test_onyo_mkdir_create_multiple_subdirectories(inventory: Inventory) -> None
     assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -217,6 +212,4 @@ def test_onyo_mkdir_allows_duplicates(inventory: Inventory) -> None:
     assert (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
