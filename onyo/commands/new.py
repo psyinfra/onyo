@@ -68,8 +68,18 @@ args_new = {
 def new(args: argparse.Namespace) -> None:
     """
     Create new ``DIRECTORY/ASSET``\\(s), and add contents with ``--template``,
-    ``--keys`` and ``--edit``. If the directories do not exist, they will be
-    created.
+    ``--keys``, ``--clone`` and ``--edit``. If the directories do not exist,
+    they will be created.
+
+    When the same key is specified multiple times with ``onyo new --keys [...]``
+    onyo creates a new asset for each of them.
+    When creating X new assets, all keys must be specified exactly 1 or X times;
+    a key that is specified once will applied to all new assets with the same
+    value, otherwise they will be applied to each new asset in the order of
+    specification:
+    ``onyo new --keys type=laptop make=apple model=macbookpro serial=1 serial=2
+    serial=3 --path shelf/`` adds three assets with the same type, make and
+    model but different serial numbers to the ``shelf/`` directory.
 
     After the contents are added, the new ``assets``\\(s) will be checked for
     the validity of its YAML syntax.
