@@ -42,6 +42,8 @@ def mv(args: argparse.Namespace) -> None:
     Otherwise, when called on one or multiple assets or directories, the command will move
     ``SOURCE``\\(s) into ``DEST``.
 
+    Special case: If ``DEST`` is an asset file, it will be turned into an asset dir first.
+
     A list of all files and directories to modify will be presented, and the user prompted for
     confirmation.
 

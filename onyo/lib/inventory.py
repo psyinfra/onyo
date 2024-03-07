@@ -338,7 +338,7 @@ class Inventory(object):
         if src.parent == dst:
             # TODO: Instead of raise could be a silent noop.
             raise ValueError(f"Cannot move {src}: Destination {dst} is the current location.")
-        if not self.repo.is_inventory_dir(dst):
+        if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
             raise ValueError(f"Cannot move {src}: Destination {dst} is not in inventory directory.")
         if (dst / src.name).exists():
             raise ValueError(f"Target {dst / src.name} already exists.")
@@ -463,7 +463,7 @@ class Inventory(object):
     def move_directory(self, src: Path, dst: Path) -> list[InventoryOperation]:
         if not self.repo.is_inventory_dir(src):
             raise ValueError(f"Not an inventory directory: {src}")
-        if not self.repo.is_inventory_dir(dst):
+        if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
             raise ValueError(f"Destination is not an inventory directory: {dst}")
         if src.parent == dst:
             raise InvalidInventoryOperationError(f"Cannot move {src} -> {dst}. Consider renaming instead.")

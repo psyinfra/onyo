@@ -581,6 +581,8 @@ def onyo_mv(inventory: Inventory,
             message: Optional[str] = None) -> None:
     """Move assets or directories, or rename a directory.
 
+    If `destination` is an asset file, turns it into an asset dir first.
+
     Parameters
     ----------
     inventory: Inventory
@@ -613,6 +615,10 @@ def onyo_mv(inventory: Inventory,
     if destination.exists():
         # MOVE
         subject = "mv"
+        if not inventory.repo.is_inventory_dir(destination) \
+                and inventory.repo.is_asset_path(destination):
+            # destination is an existing asset; turn into asset dir
+            inventory.add_directory(destination)
         for s in sources:
             move_asset_or_dir(inventory, s, destination)
     elif len(sources) == 1 and destination.name == sources[0].name:
