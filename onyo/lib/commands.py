@@ -510,7 +510,8 @@ def onyo_mkdir(inventory: Inventory,
     ignore the duplicates.
 
     All paths in `dirs` must be new and valid directory paths inside the
-    inventory.
+    inventory. However, a path to an existing asset file is valid and means
+    to turn that asset file into an asset dir.
     At least one valid path is required.
     If any path specified is invalid no new directories are created, and an
     error is raised.

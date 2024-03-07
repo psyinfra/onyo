@@ -8,7 +8,6 @@ from ..commands import onyo_mkdir
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_errors(inventory: Inventory) -> None:
     """`onyo_mkdir` must raise the correct error in different illegal or impossible calls."""
-    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
 
     # mkdir on existing directory path
@@ -16,13 +15,6 @@ def test_onyo_mkdir_errors(inventory: Inventory) -> None:
                   onyo_mkdir,
                   inventory,
                   dirs=[dir_path],
-                  message="some subject\n\nAnd a body")
-
-    # mkdir on existing asset path
-    pytest.raises(ValueError,
-                  onyo_mkdir,
-                  inventory,
-                  dirs=[asset_path],
                   message="some subject\n\nAnd a body")
 
     # mkdir outside the repository
@@ -213,3 +205,18 @@ def test_onyo_mkdir_allows_duplicates(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_mkdir_asset(inventory: Inventory) -> None:
+    """`onyo_mkdir` turns an existing asset into an asset dir."""
+    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    onyo_mkdir(inventory,
+               dirs=[asset_path],
+               message="some subject\n\nAnd a body")
+
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.is_inventory_dir(asset_path)
