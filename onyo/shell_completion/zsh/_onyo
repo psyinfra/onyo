@@ -195,7 +195,9 @@ _onyo() {
                 # Sadly, printf %b does not work here, since it only interprets
                 # format controls, not escaping.
                 ONYOPATH=$(printf '%b' "$fullwords[$i+1]" | sed 's/\\ / /g')
-                REPO=$(realpath -e "$ONYOPATH")
+                REPO=$(realpath "$ONYOPATH")
+
+                [[ -d "$REPO" ]] || printf '"%s" is not a valid directory!\n' "$REPO" >&2
                 break
             fi
         done
