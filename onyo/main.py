@@ -21,7 +21,7 @@ class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
         return parts
 
     def _split_lines(self, text, width):
-        text = textwrap.dedent(text)
+        text = textwrap.dedent(text).strip()
         text = super()._split_lines(text, width)
 
         return text
@@ -32,7 +32,7 @@ class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
         docstrings. Sadly, docutils does not have a plain-text writer. That
         would be the ideal solution.
         """
-        text = textwrap.dedent(text)
+        text = textwrap.dedent(text).strip()
         text = super()._fill_text(text, width, indent)
 
         # `` -> `
