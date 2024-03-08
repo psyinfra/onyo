@@ -2,7 +2,12 @@ import pytest
 
 from onyo.lib.assets import Asset
 from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
-from onyo.lib.exceptions import InvalidInventoryOperationError, NoopError, NotAnAssetError
+from onyo.lib.exceptions import (
+    InvalidInventoryOperationError,
+    NoopError,
+    NotADirError,
+    NotAnAssetError
+)
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
 
@@ -443,8 +448,6 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
                   path=asset_dir_path
                   )
 
-    # TODO: THIS NEEDS TESTING WITH NON-COMPLIANT DIRECTORY NAME BEFORE -> implicit rename operation!
-
     inventory.add_asset(asset)
     # operations to add new asset and a dir are registered:
     assert num_operations(inventory, 'new_assets') == 1
@@ -518,6 +521,36 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.git.is_clean_worktree()
 
 
+def test_add_dir_asset(repo: OnyoRepo) -> None:
+    inventory = Inventory(repo)
+    asset = Asset(some_key="some_value",
+                  other=1,
+                  type="TYPE1",
+                  make="MAKE1",
+                  model="MODEL1",
+                  serial="1X2",
+                  directory=inventory.root)
+    inventory.add_asset(asset)
+    inventory.commit("Add an asset.")
+    asset_path = inventory.root / "TYPE1_MAKE1_MODEL1.1X2"
+
+    # Add directory aspect to existing asset:
+    inventory.add_directory(asset_path)
+
+    # registered operation:
+    assert len(inventory.operations) == 1
+    assert num_operations(inventory, 'new_directories') == 1
+    operands = [op.operands for op in inventory.operations]
+    assert all(isinstance(o, tuple) for o in operands)
+    assert (asset_path,) in operands
+    # nothing executed yet:
+    assert asset_path.is_file()
+
+    inventory.commit("Turn asset into asset dir")
+    assert inventory.repo.is_asset_dir(asset_path)
+    assert inventory.repo.git.is_clean_worktree()
+
+
 def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
@@ -531,6 +564,12 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
                   path=asset_dir_path
                   )
     inventory.add_asset(asset)
+    asset_within = Asset(type="a",
+                         make="b",
+                         model="c",
+                         serial="1A",
+                         directory=asset_dir_path)
+    inventory.add_asset(asset_within)
     inventory.commit("Whatever")
 
     inventory.remove_directory(asset_dir_path)
@@ -538,12 +577,15 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     assert inventory.repo.is_inventory_dir(asset_dir_path)
     assert inventory.repo.is_asset_path(asset_dir_path)
     assert asset_dir_path.is_dir()
+    assert num_operations(inventory, 'remove_assets') == 1
     assert num_operations(inventory, 'remove_directories') == 1
-    assert (asset_dir_path,) == inventory.operations[0].operands
+    assert (asset_dir_path / "a_b_c.1A",) == inventory.operations[0].operands
+    assert (asset_dir_path,) == inventory.operations[1].operands
 
     inventory.commit("Remove dir from asset dir")
     assert not inventory.repo.is_asset_dir(asset_dir_path)
     assert not inventory.repo.is_inventory_dir(asset_dir_path)
+    assert not inventory.repo.is_asset_path(asset_dir_path / "a_b_c.1A")
     assert inventory.repo.is_asset_path(asset_dir_path)
     assert asset_dir_path.is_file()
     assert inventory.repo.git.is_clean_worktree()
@@ -562,13 +604,13 @@ def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
                   path=asset_dir_path
                   )
     inventory.add_asset(asset)
+    asset_within = Asset(type="a",
+                         make="b",
+                         model="c",
+                         serial="1A",
+                         directory=asset_dir_path)
+    inventory.add_asset(asset_within)
     inventory.commit("Whatever")
-
-    # TODO: What if there are assets within? Auto-recurse? Switch?
-    #       Operation needs to be atomic. Hence, must be empty!
-    # TODO: What about an implicit remove_directory?
-    #       -> NOPE! That would mean to not be able to disentangle the two ever again, because this operation will be
-    #       recorded with this meaning.
     inventory.remove_asset(asset)
 
     # Nothing done on disc yet:
@@ -581,25 +623,19 @@ def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
 
     # Execute:
     inventory.commit("Turn asset dir into plain dir")
+    assert inventory.repo.git.is_clean_worktree()
     # It's still an inventory dir:
     assert inventory.repo.is_inventory_dir(asset_dir_path)
     # but not an asset anymore:
     assert not inventory.repo.is_asset_path(asset_dir_path)
     assert not (asset_dir_path / OnyoRepo.ASSET_DIR_FILE_NAME).exists()
-    assert inventory.repo.git.is_clean_worktree()
+    # asset within unaffected:
+    assert inventory.repo.is_asset_path(asset_within['directory'] / "a_b_c.1A")
 
 
 def test_move_asset_dir(repo: OnyoRepo) -> None:
     # An asset dir could be moved by either move_dir or move_asset. Since it's both, there's no difference when we treat
     # it as either one.
-
-    # TODO: Similar to rename, moving an asset dir needs to record two operations, while technically executing only one.
-    #       That is true for move_directory as well as move_asset
-    #       For both - rename and move - it's also possible to actually register two operations, but turn the directory
-    #       operation into a noop executor (but normal recorder) in case of an asset dir. However, that would somewhat
-    #       imply that such calls are only valid as an internal operation rather than an arbitrary caller calling
-    #       `move_directory(asset_dir)`. This in turn would suggest an ad-hoc "empty" Operation object instead of
-    #       internally calling `move_directory`! This might be the nicest approach so far.
 
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
@@ -630,6 +666,10 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     new_path = dir_path / asset_dir_path.name
     assert not asset_dir_path.exists()
     assert inventory.repo.is_asset_dir(new_path)
+    # Two operations recorded:
+    msg = inventory.repo.git.get_commit_msg()
+    assert "Moved assets" in msg
+    assert "Moved directories" in msg
 
     # Now move back but via `move_directory` instead.
     inventory.move_directory(new_path, inventory.root)
@@ -641,18 +681,19 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     assert not asset_dir_path.exists()
 
     inventory.commit("Move asset dir back")
-
     assert inventory.repo.is_asset_dir(asset_dir_path)
     assert not new_path.exists()
+    # Two operations recorded:
+    msg = inventory.repo.git.get_commit_msg()
+    assert "Moved assets" in msg
+    assert "Moved directories" in msg
 
 
 def test_rename_asset_dir(repo: OnyoRepo) -> None:
     # While an asset dir is both - an asset and a dir - it can't be renamed by a rename_dir operations, because it
     # needs to comply to the naming scheme configuration for assets. For renaming we can't treat it as just a dir.
-    # However, renaming the asset must also rename the dir. While on disc there's no difference, this would need to be
+    # However, renaming the asset must also rename the dir. While on disc there's no difference, this needs to be
     # recorded separately!
-    # TODO: This needs to be dealt with by the recorder generating an entry for both operations while technically only
-    # rename_asset is executed.
 
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
@@ -669,7 +710,7 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     inventory.commit("Whatever")
 
     # renaming the asset dir as a dir needs to fail
-    pytest.raises(ValueError, inventory.rename_directory, asset_dir_path, "newname")
+    pytest.raises(NotADirError, inventory.rename_directory, asset_dir_path, "newname")
 
     # renaming as an asset by changing the naming config
     inventory.repo.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
@@ -696,9 +737,14 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.is_inventory_dir(new_asset_dir_path)
     assert inventory.repo.git.is_clean_worktree()
 
+    # Two operations recorded:
+    msg = inventory.repo.git.get_commit_msg()
+    assert "Renamed assets" in msg
+    assert "Renamed directories" in msg
+
 
 def test_modify_asset_dir(repo: OnyoRepo) -> None:
-    # This should make no difference to modify any other asset
+    # This should make no difference to modifying any other asset
 
     inventory = Inventory(repo)
     newdir1 = repo.git.root / "somewhere"

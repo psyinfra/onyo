@@ -36,14 +36,6 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   destination=dir_path / "doesnotexist" / "somewhere",
                   message="some subject\n\nAnd a body")
 
-    # move directory to existing file
-    pytest.raises(ValueError,
-                  onyo_mv,
-                  inventory,
-                  source=dir_path,
-                  destination=asset_path,
-                  message="some subject\n\nAnd a body")
-
     # rename asset file
     pytest.raises(ValueError,
                   onyo_mv,
@@ -233,3 +225,52 @@ def test_onyo_mv_and_rename(inventory: Inventory) -> None:
     assert not inventory.repo.is_inventory_dir(source)
     assert inventory.repo.is_inventory_dir(destination)
     assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_mv_into_asset(inventory: Inventory) -> None:
+    asset = dict(some_key="some_value",
+                 type="TYPE",
+                 make="MAKE",
+                 model="MODEL",
+                 serial="SERIAL2",
+                 other=1,
+                 directory=inventory.root)
+    asset_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
+    inventory.add_asset(asset)
+    inventory.commit("Add second asset")
+
+    old_hexsha = inventory.repo.git.get_hexsha()
+    source = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+
+    onyo_mv(inventory,
+            source=source,
+            destination=asset_path,
+            message="Move asset into asset to create asset dir")
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
+    assert not source.exists()
+    # Turned destination into asset dir:
+    assert inventory.repo.is_asset_dir(asset_path)
+    # Actually moved source into destination:
+    assert inventory.repo.is_asset_path(asset_path / "TYPE_MAKER_MODEL.SERIAL")
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_mv_asset_dir(inventory: Inventory) -> None:
+    asset_dir = dict(some_key="some_value",
+                     type="TYPE",
+                     make="MAKE",
+                     model="MODEL",
+                     serial="SERIAL2",
+                     is_asset_directory=True,
+                     directory=inventory.root)
+    asset_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
+    inventory.add_asset(asset_dir)
+    inventory.commit("Add an asset dir.")
+
+    # We can't rename an asset dir w/ 'mv'
+    with pytest.raises(ValueError, match="requires the 'set' command"):
+        onyo_mv(inventory,
+                source=asset_path,
+                destination=asset_path.parent / "new_name")

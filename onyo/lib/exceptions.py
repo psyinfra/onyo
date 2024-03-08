@@ -40,3 +40,7 @@ class NoopError(InventoryOperationError):
 
 class NotAnAssetError(Exception):
     """Thrown if an object was expected to be an asset but isn't"""
+
+
+class NotADirError(Exception):
+    """Thrown if an object was expected to be a directory but isn't"""

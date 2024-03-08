@@ -1,6 +1,5 @@
 import pytest
 
-from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_unset
@@ -36,15 +35,6 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
                   keys=[],
                   message="some subject\n\nAnd a body")
 
-    # unset with negative depth value
-    pytest.raises(ValueError,
-                  onyo_unset,
-                  inventory,
-                  paths=[asset_path],
-                  keys=[key],
-                  depth=-1,
-                  message="some subject\n\nAnd a body")
-
     # unset on ".anchor"
     pytest.raises(ValueError,
                   onyo_unset,
@@ -70,25 +60,6 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
                   message="some subject\n\nAnd a body")
 
     # no error scenario leaves the git worktree unclean
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.ui({'yes': True})
-def test_onyo_unset_on_empty_directory(inventory: Inventory) -> None:
-    """`onyo_unset` does not error when called on a valid but empty directory,
-    but no commits are added."""
-    dir_path = inventory.root / 'empty'
-    key = "some_key"
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # unset on a directory without assets
-    onyo_unset(inventory,
-               paths=[dir_path],
-               keys=[key],
-               message="some subject\n\nAnd a body")
-
-    # no commit was added
-    assert inventory.repo.git.get_hexsha() == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
 
 
@@ -199,176 +170,6 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
 @pytest.mark.repo_contents(
     ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
-def test_onyo_unset_match(inventory: Inventory) -> None:
-    """`onyo_unset()` updates the correct assets when `match` is used."""
-    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset_path2 = inventory.root / "one_that_exists.test"
-    some_key = "some_key"
-    other_key = "other"
-    matches = [Filter("other=1").match]
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # verify that both assets contain the old "some_key", but just one has "other" to match
-    assert some_key in inventory.repo.get_asset_content(asset_path1).keys()
-    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
-    assert other_key in inventory.repo.get_asset_content(asset_path1).keys()
-    assert other_key not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # unset the value just in the matching asset, but specify both asset paths
-    onyo_unset(inventory,
-               paths=[asset_path1, asset_path2],
-               match=matches,  # pyre-ignore[6]
-               keys=[some_key],
-               message="some subject\n\nAnd a body")
-
-    # check content is just unset in the matching asset, the other is unchanged -> it did not match
-    assert some_key not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_unset_no_matches(inventory: Inventory) -> None:
-    """`onyo_unset()` does behave correct if `match` finds no assets."""
-    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset_path2 = inventory.root / "one_that_exists.test"
-    some_key = "some_key"
-    matches = [Filter("unfound=values").match]
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # verify that both assets contain the old "some_key", but none has the other to match
-    assert some_key in inventory.repo.get_asset_content(asset_path1).keys()
-    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
-    assert "unfound" not in inventory.repo.get_asset_content(asset_path1).keys()
-    assert "unfound" not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # call unset on two assets that will not match, so that nothing is changed
-    onyo_unset(inventory,
-               paths=[asset_path1, asset_path2],
-               match=matches,  # pyre-ignore[6]
-               keys=[some_key],
-               message="some subject\n\nAnd a body")
-
-    # check content still contains "some_key" because neither asset did match
-    assert some_key in inventory.repo.get_asset_content(asset_path1).keys()
-    assert some_key in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # no commits added because nothing changed
-    assert inventory.repo.git.get_hexsha() == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_unset_depth(inventory: Inventory) -> None:
-    """`onyo_unset()` with depth selects the correct assets."""
-    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset_path2 = inventory.root / "one_that_exists.test"
-    key = "some_key"
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # check key exists in both
-    assert key in inventory.repo.get_asset_content(asset_path1).keys()
-    assert key in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # unset a value using depth
-    onyo_unset(inventory,
-               paths=[inventory.root],
-               keys=[key],
-               depth=1,
-               message="some subject\n\nAnd a body")
-
-    # check key was removed only in one asset:
-    assert key in inventory.repo.get_asset_content(asset_path1).keys()
-    assert key not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_unset_depth_zero(inventory: Inventory) -> None:
-    """Calling `onyo_unset(depth=0)` is legal and selects
-    all assets from all subpaths."""
-    key = "some_key"
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # check key exists
-    for asset in inventory.repo.get_asset_paths():
-        assert key in inventory.repo.get_asset_content(asset).keys()
-
-    # unset a value
-    onyo_unset(inventory,
-               keys=[key],
-               paths=[inventory.root],
-               depth=0,
-               message="some subject\n\nAnd a body")
-
-    # check key was unset in all assets
-    for asset in inventory.repo.get_asset_paths():
-        assert key not in inventory.repo.get_asset_content(asset).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.ui({'yes': True})
-def test_onyo_unset_directories(inventory: Inventory) -> None:
-    """`onyo_unset()` on directories unsets keys recursively for all assets
-    in the directory."""
-    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    directory_path = inventory.root / "somewhere"
-    key = "some_key"
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # check key exists
-    assert key in inventory.repo.get_asset_content(asset_path).keys()
-
-    # unset a value
-    onyo_unset(inventory,
-               paths=[directory_path],
-               keys=[key],
-               message="some subject\n\nAnd a body")
-
-    # check key was removed from the asset
-    assert key not in inventory.repo.get_asset_content(asset_path).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.ui({'yes': True})
-def test_onyo_unset_empty_directory(inventory: Inventory) -> None:
-    """`onyo_unset()` on an empty directory does not error."""
-    empty_dir_path = inventory.root / 'empty'
-    key = "some_key"
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # unset a value on an empty dir does not error
-    onyo_unset(inventory,
-               paths=[empty_dir_path],
-               keys=[key],
-               message="some subject\n\nAnd a body")
-
-    # nothing was changed, so nothing should have been committed
-    assert inventory.repo.git.get_hexsha() == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
 def test_onyo_unset_multiple(inventory: Inventory) -> None:
     """Modify multiple assets in a single call and with one commit."""
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -390,32 +191,6 @@ def test_onyo_unset_multiple(inventory: Inventory) -> None:
     # check key was removed in both assets
     assert key not in inventory.repo.get_asset_content(asset_path1).keys()
     assert key not in inventory.repo.get_asset_content(asset_path2).keys()
-
-    # exactly one commit added
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_unset_default_inventory_root(inventory: Inventory) -> None:
-    """Calling `onyo_unset()` without path uses inventory.root as default."""
-    key = "some_key"
-    old_hexsha = inventory.repo.git.get_hexsha()
-
-    # check key exists
-    for asset in inventory.repo.get_asset_paths():
-        assert key in inventory.repo.get_asset_content(asset).keys()
-
-    # unset a value
-    onyo_unset(inventory,
-               keys=[key],
-               message="some subject\n\nAnd a body")
-
-    # check key was unset in all assets
-    for asset in inventory.repo.get_asset_paths():
-        assert key not in inventory.repo.get_asset_content(asset).keys()
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
@@ -499,3 +274,28 @@ def test_onyo_unset_allows_key_duplicates(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
+    inventory.add_asset(dict(some_key="some_value",
+                             type="TYPE",
+                             make="MAKER",
+                             model="MODEL",
+                             serial="SERIAL2",
+                             other=1,
+                             directory=inventory.root,
+                             is_asset_directory=True)
+                        )
+    asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
+    inventory.commit("add an asset dir")
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # set a value in an asset dir
+    onyo_unset(inventory,
+               paths=[asset_dir],
+               keys=['other', 'some_key'])
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert 'other' not in inventory.get_asset(asset_dir)
+    assert 'some_key' not in inventory.get_asset(asset_dir)

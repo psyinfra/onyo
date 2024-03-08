@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Set
+from typing import Set, Optional
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
@@ -71,10 +71,12 @@ def validate_assets(asset_files: Set[Path]) -> bool:
     return True
 
 
-def validate_yaml(asset_files: Set[Path]) -> bool:
+def validate_yaml(asset_files: Optional[list[Path]]) -> bool:
+    # Note: Does not (and cannot) account for asset dirs automatically in this form.
+    #       Thus needs to be done by caller.
     # Note: assumes absolute paths!
     invalid_yaml = []
-
+    asset_files = asset_files or []
     for asset in asset_files:
         # TODO: use valid_yaml()
         try:

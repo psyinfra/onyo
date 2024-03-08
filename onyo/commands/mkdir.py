@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import directory
+from onyo.argparse_helpers import path
 from onyo.lib.commands import onyo_mkdir
 from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_message
@@ -16,7 +16,7 @@ args_mkdir = {
     'directory': dict(
         metavar='DIR',
         nargs='+',
-        type=directory,
+        type=path,
         help='Directory(s) to create'),
 
     'message': shared_arg_message,
@@ -30,6 +30,9 @@ def mkdir(args: argparse.Namespace) -> None:
 
     An empty ``.anchor`` file is added to each directory, to ensure that git
     tracks them even when empty.
+
+    If a given path is an existing asset file, that asset will be turned into
+    an asset dir instead.
 
     If the directory already exists, or the path is protected, Onyo will throw
     an error. All checks are performed before creating directories.

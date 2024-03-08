@@ -52,6 +52,22 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
                   paths=inventory.root,
                   message="some subject\n\nAnd a body")
 
+    # delete dir in mode 'asset'
+    pytest.raises(ValueError,
+                  onyo_rm,
+                  inventory,
+                  paths=inventory.root / "somewhere",
+                  mode="asset",
+                  message="some subject\n\nAnd a body")
+
+    # delete asset in mode 'dir'
+    pytest.raises(ValueError,
+                  onyo_rm,
+                  inventory,
+                  paths=inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL",
+                  mode="dir",
+                  message="some subject\n\nAnd a body")
+
     # no error scenario leaves the git tree unclean
     assert inventory.repo.git.is_clean_worktree()
 
@@ -199,3 +215,57 @@ def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
+
+    inventory.add_asset(dict(some_key="some_value",
+                             type="TYPE",
+                             make="MAKE",
+                             model="MODEL",
+                             serial="SERIAL2",
+                             other=1,
+                             directory=inventory.root,
+                             is_asset_directory=True)
+                        )
+    asset_dir = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
+    inventory.commit("add an asset dir")
+
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # remove entirely
+    onyo_rm(inventory,
+            paths=asset_dir,
+            mode="all",
+            message="Remove asset dir completely")
+
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
+    assert not asset_dir.exists()
+
+    inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
+    inventory.repo.clear_caches()
+    # remove asset aspect only
+    onyo_rm(inventory,
+            paths=asset_dir,
+            mode="asset",
+            message="Remove asset aspect")
+
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.is_inventory_dir(asset_dir)
+    assert not inventory.repo.is_asset_path(asset_dir)
+
+    inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
+    inventory.repo.clear_caches()
+    # remove dir aspect only
+    onyo_rm(inventory,
+            paths=asset_dir,
+            mode="dir",
+            message="Remove asset aspect")
+
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
+    assert not inventory.repo.is_inventory_dir(asset_dir)
+    assert inventory.repo.is_asset_path(asset_dir)

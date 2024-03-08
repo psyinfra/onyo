@@ -17,6 +17,7 @@ from onyo.lib.exceptions import (
     OnyoRepoError,
     OnyoInvalidRepoError,
     PendingInventoryOperationError,
+    NotADirError,
     NotAnAssetError,
     NoopError,
 )
@@ -169,15 +170,14 @@ def onyo_cat(inventory: Inventory,
     if non_asset_paths:
         raise ValueError("The following paths are not asset files:\n%s" %
                          "\n".join(non_asset_paths))
+    files = list(p / OnyoRepo.ASSET_DIR_FILE_NAME
+                 if inventory.repo.is_asset_dir(p)
+                 else p
+                 for p in paths)
     # TODO: "Full" asset validation. Address when fsck is reworked
-    assets_valid = validate_yaml(set(paths))
+    assets_valid = validate_yaml(deduplicate(files))
     # open file and print to stdout
-    for path in paths:
-        # TODO: Probably better to simply print
-        #       `dict_to_yaml(inventory.repo.get_asset_content(path))` - no need to
-        #       distinguish asset and asset dir at this level. However, need to
-        #       make sure to not print pointless empty lines.
-        f = path / OnyoRepo.ASSET_DIR_FILE_NAME if inventory.repo.is_asset_dir(path) else path
+    for f in files:
         ui.print(f.read_text(), end='')
     if not assets_valid:
         raise OnyoInvalidRepoError("Invalid assets")
@@ -511,7 +511,8 @@ def onyo_mkdir(inventory: Inventory,
     ignore the duplicates.
 
     All paths in `dirs` must be new and valid directory paths inside the
-    inventory.
+    inventory. However, a path to an existing asset file is valid and means
+    to turn that asset file into an asset dir.
     At least one valid path is required.
     If any path specified is invalid no new directories are created, and an
     error is raised.
@@ -575,12 +576,27 @@ def move_asset_or_dir(inventory: Inventory,
         inventory.move_directory(source, destination)
 
 
+def _maybe_rename(inventory: Inventory,
+                  src: Path,
+                  dst: Path) -> None:
+    """Helper for `onyo_mv`"""
+
+    try:
+        inventory.rename_directory(src, dst)
+    except NotADirError as e:
+        # We tried to rename an asset dir.
+        inventory.reset()
+        raise ValueError("Renaming an asset requires the 'set' command.") from e
+
+
 @raise_on_inventory_state
 def onyo_mv(inventory: Inventory,
             source: list[Path] | Path,
             destination: Path,
             message: Optional[str] = None) -> None:
     """Move assets or directories, or rename a directory.
+
+    If `destination` is an asset file, turns it into an asset dir first.
 
     Parameters
     ----------
@@ -614,6 +630,10 @@ def onyo_mv(inventory: Inventory,
     if destination.exists():
         # MOVE
         subject = "mv"
+        if not inventory.repo.is_inventory_dir(destination) \
+                and inventory.repo.is_asset_path(destination):
+            # destination is an existing asset; turn into asset dir
+            inventory.add_directory(destination)
         for s in sources:
             move_asset_or_dir(inventory, s, destination)
     elif len(sources) == 1 and destination.name == sources[0].name:
@@ -628,13 +648,13 @@ def onyo_mv(inventory: Inventory,
             # Hence, first move and only then rename.
             subject = "mv + " + subject
             inventory.move_directory(sources[0], destination.parent)
-            inventory.rename_directory(destination.parent / sources[0].name, destination)
+            _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
             inventory._ignore_for_commit.append(destination.parent / sources[0].name)
         else:
-            inventory.rename_directory(sources[0], destination)
+            _maybe_rename(inventory, sources[0], destination)
     else:
-        raise ValueError("Can only move into an existing directory, or rename a single directory.")
+        raise ValueError("Can only move into an existing directory/asset, or rename a single directory.")
 
     if inventory.operations_pending():
         ui.print("The following will be {}:".format("moved" if subject == "mv" else "renamed"))
@@ -666,7 +686,7 @@ def onyo_new(inventory: Inventory,
              template: Optional[str] = None,
              clone: Optional[Path] = None,
              tsv: Optional[Path] = None,
-             keys: Optional[list[Dict[str, str]]] = None,
+             keys: Optional[list[Dict[str, str | int | float]]] = None,
              edit: bool = False,
              message: Optional[str] = None) -> None:
     """Create new assets and add them to the inventory.
@@ -801,6 +821,10 @@ def onyo_new(inventory: Inventory,
     else:
         # default
         path = path or Path.cwd()
+    if template and any('template' in d.keys() for d in specs):
+        raise ValueError("Can't use 'template' key and 'template' option.")
+    if clone and any('template' in d.keys() for d in specs):
+        raise ValueError("Can't use 'clone' key and 'template' option.")
 
     for pseudo_key in PSEUDO_KEYS:
         for d in specs:
@@ -820,8 +844,11 @@ def onyo_new(inventory: Inventory,
             directory = inventory.root / directory
         spec['directory'] = directory
         # 2. start from template
-        asset = inventory.get_asset(clone) if clone \
-            else inventory.get_asset_from_template(spec.pop('template', None) or template)
+        if clone:
+            asset = inventory.get_asset(clone)
+            asset.pop('path')
+        else:
+            asset = inventory.get_asset_from_template(spec.pop('template', None) or template)
         # 3. fill in asset specification
         asset.update(spec)
         # 4. (try to) add to inventory
@@ -855,7 +882,8 @@ def onyo_new(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_rm(inventory: Inventory,
             paths: list[Path] | Path,
-            message: Optional[str]) -> None:
+            message: Optional[str],
+            mode: Literal["asset", "dir", "all"] = "all") -> None:
     """Delete assets and/or directories from the inventory.
 
     Parameters
@@ -867,18 +895,43 @@ def onyo_rm(inventory: Inventory,
         List of paths to assets and/or directories to delete from the Inventory.
         If any path given is not valid, none of them gets deleted.
 
+    mode: str, optional
+        One of 'asset', 'dir', or 'all'.
+        In mode 'all' any given path is removed (recursively).
+        In mode 'asset' only paths to assets are accepted. If an asset
+        is in fact an asset dir, this removes the asset aspect of it only,
+        leaving behind a regular inventory dir.
+        In mode 'dir' only paths to dirs are accepted. If a dir happens to
+        be an asset dir, this removes the dir aspect from it, turning it
+        into a regular asset file.
+
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
     """
     paths = [paths] if not isinstance(paths, list) else paths
 
-    for p in paths:
-        try:
+    if mode == "all":
+        for p in paths:
+            try:
+                inventory.remove_asset(p)
+                is_asset = True
+            except NotAnAssetError:
+                is_asset = False
+            if not is_asset or inventory.repo.is_asset_dir(p):
+                inventory.remove_directory(p)
+    elif mode == "asset":
+        invalid_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+        if invalid_paths:
+            raise ValueError("The following paths aren't assets:\n%s" %
+                             "\n".join(invalid_paths))
+        for p in paths:
             inventory.remove_asset(p)
-            is_asset = True
-        except NotAnAssetError:
-            is_asset = False
-        if not is_asset or inventory.repo.is_asset_dir(p):
+    elif mode == "dir":
+        invalid_paths = [str(p) for p in paths if not inventory.repo.is_inventory_dir(p)]
+        if invalid_paths:
+            raise ValueError("The following paths aren't inventory directories:\n%s" %
+                             "\n".join(invalid_paths))
+        for p in paths:
             inventory.remove_directory(p)
 
     if inventory.operations_pending():
@@ -904,10 +957,8 @@ def onyo_rm(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
-             paths: Optional[list[Path]] = None,
-             match: Optional[list[Callable[[dict], bool]]] = None,
+             paths: list[Path],
              rename: bool = False,
-             depth: int = 0,
              message: Optional[str] = None) -> Optional[str]:
     """Set key-value pairs of assets, and change asset names.
 
@@ -915,25 +966,19 @@ def onyo_set(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to set key/values for assets.
-    paths: list of Path, optional
-        Paths to assets or directories for which to set key-value pairs.
-        If paths are directories, the values will be set recursively in assets
-        under the specified path.
-        If no paths are specified, the inventory root is used as default.
+    paths: list of Path
+        Paths to assets for which to set key-value pairs.
     keys: dict
         Key-value pairs that will be set in assets. If keys already exist in an
         asset their value will be overwritten, if they do not exist the values
         are added.
         If keys are specified which appear in asset names the rename option is
         needed and changes the file names.
-    match: list of Callable, optional
-        TODO: Understand filtering. This might still be refactored.
+        The key 'is_asset_directory' (bool) can be used to change whether an
+        asset is an asset directory.
     rename: bool
         Whether to allow changing of keys that are part of the asset name.
         If False, such a change raises a `ValueError`.
-    depth: int
-        Depth limit of recursion if a `path` is a directory.
-        0 means no limit and is the default.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
@@ -943,28 +988,27 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
-    paths = paths or [inventory.root]
+    if not paths:
+        raise ValueError("At least one asset must be specified.")
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
     if any(not k or not k.strip() for k in keys.keys()):
         raise ValueError("Keys are not allowed to be empty or None-values.")
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
-    if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys.keys()):
-        raise ValueError(f"Can't set reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
-    non_inventory_paths = [str(p)
-                           for p in paths  # pyre-ignore[16]  `paths` not Optional anymore here
-                           if not inventory.repo.is_asset_path(p) and
-                           not inventory.repo.is_inventory_dir(p)]
-    if non_inventory_paths:
-        raise ValueError("The following paths are neither an inventory directory nor an asset:\n%s" %
-                         "\n".join(non_inventory_paths))
-    assets = inventory.get_assets_by_query(paths=paths,
-                                           depth=depth,
-                                           match=match)
+    # TODO: Remove is_asset_directory from RESERVED_KEYS altogether?
+    disallowed_keys = RESERVED_KEYS + PSEUDO_KEYS
+    disallowed_keys.remove("is_asset_directory")
+    if any(k in disallowed_keys for k in keys.keys()):
+        raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
 
-    for asset in assets:
+    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    if non_asset_paths:
+        raise ValueError("The following paths aren't assets:\n%s" %
+                         "\n".join(non_asset_paths))
+
+    for asset in [inventory.get_asset(p) for p in paths]:
         new_content = copy.deepcopy(asset)
         new_content.update(keys)
         for k in PSEUDO_KEYS:
@@ -1033,9 +1077,7 @@ def onyo_tree(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: list[str],
-               match: Optional[list[Callable[[dict], bool]]] = None,
-               paths: Optional[list[Path]] = None,
-               depth: int = 0,
+               paths: list[Path],
                message: Optional[str] = None) -> None:
     """Remove keys from assets.
 
@@ -1048,19 +1090,8 @@ def onyo_unset(inventory: Inventory,
         If keys do not exist in an asset, a debug message is logged.
         If keys are specified which appear in asset names an error is raised.
         If `keys` is empty an error is raised.
-    match: list of Callable, optional
-      Callables suited for use with builtin `filter`. They are
-      passed an asset dictionary and expected to return a `bool`,
-      where `True` indicates a match. `keys` will be removed from
-      all assets that are matched by all callables in this list.
-    paths: list of Path, optional
-        Paths to assets or directories for which to unset key-value pairs.
-        If paths are directories, the values will be unset recursively in assets
-        under the specified path.
-        If no paths are specified, the inventory root is used as default.
-    depth: int
-        Depth limit of recursion if a `path` is a directory.
-        0 means no limit and is the default.
+    paths: list of Path
+        Paths to assets for which to unset key-value pairs.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
@@ -1070,27 +1101,17 @@ def onyo_unset(inventory: Inventory,
         If paths are invalid, or `keys` are empty or invalid.
 
     """
-    paths = paths or [inventory.root]
     if not keys:
         raise ValueError("At least one key must be specified.")
-    non_inventory_paths = [str(p) for p in paths  # pyre-ignore[16]  `paths` not Optional anymore
-                           if not inventory.repo.is_asset_path(p) and
-                           not inventory.repo.is_inventory_dir(p)]
-
-    if non_inventory_paths:
-        raise ValueError("The following paths are neither an inventory directory nor an ",
-                         "asset:\n%s" % "\n".join(non_inventory_paths))
-
+    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    if non_asset_paths:
+        raise ValueError("The following paths aren't assets:\n%s" % "\n".join(non_asset_paths))
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
         raise ValueError("Can't unset asset name keys.")
     if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
         raise ValueError(f"Can't unset reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
-    asset_paths_to_unset = inventory.get_assets_by_query(paths=paths,
-                                                         depth=depth,
-                                                         match=match)
-
-    for asset in asset_paths_to_unset:
+    for asset in [inventory.get_asset(p) for p in paths]:
         new_content = copy.deepcopy(asset)
         # remove keys to unset, if they exist
         for key in keys:

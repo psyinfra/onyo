@@ -133,6 +133,8 @@ _onyo() {
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-d --dir -a --asset)'{-d,--dir}'[only remove directories]'
+                    '(-a --asset -d --dir)'{-a,--asset}'[only remove assets]'
                     '*:PATH:_files -W "$(_onyo_dir)"'
                 )
                 ;;

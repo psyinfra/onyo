@@ -132,3 +132,22 @@ def test_onyo_cat_with_duplicate_path(inventory: Inventory,
 
     # verify output contains the asset contents once for each time the asset is in `paths`
     assert capsys.readouterr().out.count(Path.read_text(asset_path)) == 3
+
+
+def test_onyo_cat_asset_dir(inventory: Inventory,
+                            capsys) -> None:
+    inventory.add_asset(Asset(some_key="some_value",
+                              type="TYPE",
+                              make="MAKER",
+                              model="MODEL",
+                              serial="SERIAL2",
+                              other=1,
+                              directory=inventory.root,
+                              is_asset_directory=True)
+                        )
+    asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
+    inventory.commit("add an asset dir")
+
+    assert inventory.repo.is_asset_dir(asset_dir)
+    onyo_cat(inventory, [asset_dir])
+    assert "some_key: some_value" in capsys.readouterr().out

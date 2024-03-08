@@ -4,8 +4,12 @@ import copy
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Callable
-from typing import Generator, Optional
+from typing import (
+    Callable,
+    Generator,
+    Literal,
+    Optional,
+)
 
 from onyo.lib.assets import Asset
 from onyo.lib.differs import (
@@ -20,6 +24,7 @@ from onyo.lib.differs import (
     differ_move_directories,
 )
 from onyo.lib.exceptions import (
+    NotADirError,
     NotAnAssetError,
     NoopError,
     InvalidInventoryOperationError,
@@ -215,14 +220,19 @@ class Inventory(object):
         dirs = []
         for op in self.operations:
             if op.operator == OPERATIONS_MAPPING['new_directories']:
-                dirs.append(op.operands[1])
+                dirs.append(op.operands[0])
             elif op.operator == OPERATIONS_MAPPING['move_directories']:
                 dirs.append(op.operands[1] / op.operands[0].name)
         return dirs
 
-    def _get_pending_removals(self) -> list[Path]:
+    def _get_pending_removals(self,
+                              mode: Literal['assets', 'dirs', 'all'] = 'all') -> list[Path]:
         """Get paths that are removed by pending operations.
 
+        Parameters
+        ----------
+        mode: str, optional
+            What pending removals to consider: 'assets' only, 'dirs' only, or 'all'.
         Notes
         -----
         Just like `_get_pending_asset_names` and `_get_pending_dirs`,
@@ -235,10 +245,15 @@ class Inventory(object):
             To be removed paths.
         """
         paths = []
+        operators = []
+        if mode in ['assets', 'all']:
+            operators.append(OPERATIONS_MAPPING['remove_assets'])
+        if mode in ['dirs', 'all']:
+            operators.append(OPERATIONS_MAPPING['remove_directories'])
+        if mode == 'all':
+            operators.append(OPERATIONS_MAPPING['remove_generic_file'])
         for op in self.operations:
-            if op.operator in [OPERATIONS_MAPPING['remove_directories'],
-                               OPERATIONS_MAPPING['remove_assets'],
-                               OPERATIONS_MAPPING['remove_generic_file']]:
+            if op.operator in operators:
                 paths.append(op.operands[0])
         return paths
 
@@ -311,7 +326,11 @@ class Inventory(object):
         operations = []
         if not self.repo.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path.")
-        if path.exists():  # What about adding an untracked dir?
+        # TODO: The following conditions aren't entirely correct yet.
+        #       Address with issue #546.
+        if self.repo.is_inventory_dir(path):
+            raise NoopError(f"{path} already is a directory.")
+        if path.exists() and not self.repo.is_asset_path(path):
             raise ValueError(f"{path} already exists.")
 
         operations.append(self._add_operation('new_directories', (path,)))
@@ -320,7 +339,7 @@ class Inventory(object):
 
     def remove_asset(self, asset: Asset | Path) -> list[InventoryOperation]:
         path = asset if isinstance(asset, Path) else asset.get('path')
-        if path in self._get_pending_removals():
+        if path in self._get_pending_removals(mode='assets'):
             ui.log_debug(f"{path} already queued for removal.")
             # TODO: Consider NoopError when addressing #546.
             return []
@@ -336,7 +355,7 @@ class Inventory(object):
         if src.parent == dst:
             # TODO: Instead of raise could be a silent noop.
             raise ValueError(f"Cannot move {src}: Destination {dst} is the current location.")
-        if not self.repo.is_inventory_dir(dst):
+        if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
             raise ValueError(f"Cannot move {src}: Destination {dst} is not in inventory directory.")
         if (dst / src.name).exists():
             raise ValueError(f"Target {dst / src.name} already exists.")
@@ -416,6 +435,17 @@ class Inventory(object):
         modified_asset = copy.deepcopy(new_asset)
         modified_asset['path'] = path
 
+        # If a change in is_asset_directory is implied, do this first:
+        if asset.get("is_asset_directory", False) != new_asset.get("is_asset_directory", False):
+            # remove or add dir aspect from/to asset
+            ops = self.add_directory(asset["path"]) if new_asset.get("is_asset_directory", False)\
+                else self.remove_directory(asset["path"])
+            operations.extend(ops)
+            # If there is no other change, we should not record a modify_assets operation!
+            if all(asset.get(k) == new_asset.get(k)
+                   for k in [a for a in asset.keys()] + [b for b in new_asset.keys()]
+                   if k != "is_asset_directory"):
+                return operations
         operations.append(self._add_operation('modify_assets', (asset, modified_asset)))
         # Modified_asset has the same 'path' at this point, regardless of potential renaming.
         # We modify the content in place and only then perform a potential rename.
@@ -429,8 +459,7 @@ class Inventory(object):
         return operations
 
     def remove_directory(self, directory: Path) -> list[InventoryOperation]:
-        pending_removals = self._get_pending_removals()
-        if directory in pending_removals:
+        if directory in self._get_pending_removals(mode='dirs'):
             ui.log_debug(f"{directory} already queued for removal")
             # TODO: Consider NoopError when addressing #546.
             return []
@@ -451,7 +480,7 @@ class Inventory(object):
             elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
                 # Not an asset and not an inventory dir (hence also not an asset dir)
                 # implies we have a non-inventory file.
-                if p in pending_removals:
+                if p in self._get_pending_removals(mode='all'):
                     ui.log_debug(f"{p} already queued for removal")
                     continue
                 operations.append(self._add_operation('remove_generic_file', (p,)))
@@ -461,7 +490,7 @@ class Inventory(object):
     def move_directory(self, src: Path, dst: Path) -> list[InventoryOperation]:
         if not self.repo.is_inventory_dir(src):
             raise ValueError(f"Not an inventory directory: {src}")
-        if not self.repo.is_inventory_dir(dst):
+        if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
             raise ValueError(f"Destination is not an inventory directory: {dst}")
         if src.parent == dst:
             raise InvalidInventoryOperationError(f"Cannot move {src} -> {dst}. Consider renaming instead.")
@@ -473,7 +502,7 @@ class Inventory(object):
         if not self.repo.is_inventory_dir(src) and src not in self._get_pending_dirs():
             raise ValueError(f"Not an inventory directory: {src}")
         if self.repo.is_asset_dir(src):
-            raise ValueError("Renaming an asset directory must be done via `rename_asset`.")
+            raise NotADirError("Renaming an asset directory must be done via `rename_asset`.")
         if isinstance(dst, str):
             dst = src.parent / dst
         if src.parent != dst.parent:

@@ -142,31 +142,12 @@ def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
 
     # verify output
     assert not ret.stdout
-    assert "already exists" in ret.stderr
+    assert "already is a directory" in ret.stderr
     assert ret.returncode == 1
 
     d = Path(directory)
     assert d.is_dir()
     assert (d / ".anchor").is_file()
-
-    # verify that the repository is clean
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_files(*directories)  # used as files to test errors
-@pytest.mark.parametrize('file', directories)
-def test_dir_exists_as_file(repo: OnyoRepo, file: str) -> None:
-    """
-    Test the correct error behavior when `onyo mkdir <file>` is called on files.
-    """
-    ret = subprocess.run(['onyo', 'mkdir', file], capture_output=True, text=True)
-
-    # verify output
-    assert not ret.stdout
-    assert "already exists" in ret.stderr
-    assert ret.returncode == 1
-
-    assert Path(file).is_file()
 
     # verify that the repository is clean
     assert repo.git.is_clean_worktree()

@@ -66,7 +66,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
     onyo_new(inventory,
              path=inventory.root / "empty",
-             keys=specs)
+             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
 
@@ -96,7 +96,8 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
                   path=inventory.root / "empty",
                   keys=specs)
     # w/o `path` everything is fine:
-    onyo_new(inventory, keys=specs)
+    onyo_new(inventory,
+             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
     # another commit added
     assert inventory.repo.git.get_hexsha('HEAD~2') == old_hexsha
 
@@ -131,7 +132,8 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
               'model': 'exquisite',
               'template': 'laptop.example',
               'serial': '1234'}]
-    onyo_new(inventory, keys=specs)
+    onyo_new(inventory,
+             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
     # another commit added
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
     expected_path = inventory.root / f"{specs[0]['type']}_{specs[0]['make']}_{specs[0]['model']}.{specs[0]['serial']}"
@@ -163,7 +165,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 
     onyo_new(inventory,
              path=new_directory,
-             keys=specs)
+             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
@@ -194,7 +196,10 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
               'make': 'MAKER',
               'type': 'TYPE',
               'serial': 'totally_random'}]
-    onyo_new(inventory, keys=specs, path=directory, edit=True)
+    onyo_new(inventory,
+             keys=specs,  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             path=directory,
+             edit=True)
     expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
     assert inventory.repo.is_asset_path(expected_path)
     assert expected_path in inventory.repo.git.files
@@ -261,3 +266,18 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['serial', 'path'])
     assert new_asset['serial'] == 'whatever'
     assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_new_asset_dir(inventory: Inventory) -> None:
+    new_asset_dir = inventory.root / "a_b_c.1"
+    old_hexsha = inventory.repo.git.get_hexsha()
+    onyo_new(inventory,
+             keys=[{"type": "a",
+                    "make": "b",
+                    "model": "c",
+                    "serial": "1",
+                    "is_asset_directory": True}])
+    assert inventory.repo.is_asset_dir(new_asset_dir)
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
