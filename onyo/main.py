@@ -10,7 +10,7 @@ from onyo.lib.ui import ui
 
 
 # credit: https://stackoverflow.com/a/13429281
-class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
+class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
     def _format_action(self, action: argparse.Action) -> str:
         parts = super()._format_action(action)
 
@@ -19,6 +19,11 @@ class SubcommandHelpFormatter(argparse.RawDescriptionHelpFormatter):
             parts = parts.split("\n", 1)[1]
 
         return parts
+
+    def _split_lines(self, text, width):
+        text = super()._split_lines(text, width)
+
+        return text
 
     def _fill_text(self, text: str, width: int, indent: str) -> str:
         """
