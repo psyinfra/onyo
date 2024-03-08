@@ -18,7 +18,20 @@ args_rm = {
         nargs='+',
         type=path,
         help='Asset(s) and/or directory(s) to delete'),
-
+    'assets': dict(
+        args=('-a', '--asset'),
+        required=False,
+        default=False,
+        action='store_true',
+        help='Only remove assets. Turns asset dirs into plain dirs.'
+             'Mutually exclusive with ``--dir``.'),
+    'dirs': dict(
+        args=('-d', '--dir'),
+        required=False,
+        default=False,
+        action='store_true',
+        help='Only remove dirs. Turns asset dirs into plain asset files.'
+             'Mutually exclusive with ``--asset``.'),
     'message': shared_arg_message,
 }
 
@@ -35,6 +48,15 @@ def rm(args: argparse.Namespace) -> None:
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path]
+    if args.assets and args.dirs:
+        raise ValueError("'--dir' and '--asset' are mutually exclusive.")
+    mode = "all"
+    if args.assets:
+        mode = "asset"
+    elif args.dirs:
+        mode = "dir"
+
     onyo_rm(inventory,
             paths=paths,
+            mode=mode,  # pyre-ignore[6]  check doesn't understand that this is in fact one of "all", "asset", "dir"
             message='\n\n'.join(m for m in args.message) if args.message else None)

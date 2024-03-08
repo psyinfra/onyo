@@ -4,8 +4,12 @@ import copy
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Callable
-from typing import Generator, Optional
+from typing import (
+    Callable,
+    Generator,
+    Literal,
+    Optional,
+)
 
 from onyo.lib.assets import Asset
 from onyo.lib.differs import (
@@ -220,9 +224,14 @@ class Inventory(object):
                 dirs.append(op.operands[1] / op.operands[0].name)
         return dirs
 
-    def _get_pending_removals(self) -> list[Path]:
+    def _get_pending_removals(self,
+                              mode: Literal['assets', 'dirs', 'all'] = 'all') -> list[Path]:
         """Get paths that are removed by pending operations.
 
+        Parameters
+        ----------
+        mode: str, optional
+            What pending removals to consider: 'assets' only, 'dirs' only, or 'all'.
         Notes
         -----
         Just like `_get_pending_asset_names` and `_get_pending_dirs`,
@@ -235,10 +244,15 @@ class Inventory(object):
             To be removed paths.
         """
         paths = []
+        operators = []
+        if mode in ['assets', 'all']:
+            operators.append(OPERATIONS_MAPPING['remove_assets'])
+        if mode in ['dirs', 'all']:
+            operators.append(OPERATIONS_MAPPING['remove_directories'])
+        if mode == 'all':
+            operators.append(OPERATIONS_MAPPING['remove_generic_file'])
         for op in self.operations:
-            if op.operator in [OPERATIONS_MAPPING['remove_directories'],
-                               OPERATIONS_MAPPING['remove_assets'],
-                               OPERATIONS_MAPPING['remove_generic_file']]:
+            if op.operator in operators:
                 paths.append(op.operands[0])
         return paths
 
@@ -322,7 +336,7 @@ class Inventory(object):
 
     def remove_asset(self, asset: Asset | Path) -> list[InventoryOperation]:
         path = asset if isinstance(asset, Path) else asset.get('path')
-        if path in self._get_pending_removals():
+        if path in self._get_pending_removals(mode='assets'):
             ui.log_debug(f"{path} already queued for removal.")
             # TODO: Consider NoopError when addressing #546.
             return []
@@ -442,8 +456,7 @@ class Inventory(object):
         return operations
 
     def remove_directory(self, directory: Path) -> list[InventoryOperation]:
-        pending_removals = self._get_pending_removals()
-        if directory in pending_removals:
+        if directory in self._get_pending_removals(mode='dirs'):
             ui.log_debug(f"{directory} already queued for removal")
             # TODO: Consider NoopError when addressing #546.
             return []
@@ -464,7 +477,7 @@ class Inventory(object):
             elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
                 # Not an asset and not an inventory dir (hence also not an asset dir)
                 # implies we have a non-inventory file.
-                if p in pending_removals:
+                if p in self._get_pending_removals(mode='all'):
                     ui.log_debug(f"{p} already queued for removal")
                     continue
                 operations.append(self._add_operation('remove_generic_file', (p,)))

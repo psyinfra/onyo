@@ -73,14 +73,14 @@ def exec_remove_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], lis
 def exec_remove_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
     paths = []
     p = operands[0]
-    is_asset_dir = repo.is_asset_dir(p)  # required after dir was removed, therefore store
+    is_asset_dir = (p / OnyoRepo.ASSET_DIR_FILE_NAME).exists()  # required after dir was removed, therefore store
     asset = dict()
     anchor = p / repo.ANCHOR_FILE_NAME
     anchor.unlink()
     paths.append(anchor)
     if is_asset_dir:
         asset = repo.get_asset_content(p)
-        asset_dir_file = p / repo.ASSET_DIR_FILE_NAME
+        asset_dir_file = p / OnyoRepo.ASSET_DIR_FILE_NAME
         asset_dir_file.unlink()
         paths.append(asset_dir_file)
     p.rmdir()
