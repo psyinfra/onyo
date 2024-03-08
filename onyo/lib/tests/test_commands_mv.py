@@ -78,6 +78,9 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   destination=inventory.root / "new_name",
                   message="some subject\n\nAnd a body")
 
+    # no error scenario leaves the inventory unclean
+    assert inventory.repo.git.is_clean_worktree()
+
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_errors_before_mv(inventory: Inventory) -> None:
@@ -101,9 +104,7 @@ def test_onyo_mv_errors_before_mv(inventory: Inventory) -> None:
     assert not (destination_path / asset_path.name).is_file()
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -130,9 +131,7 @@ def test_onyo_mv_src_to_dest_with_same_name(inventory: Inventory) -> None:
     assert (destination_path / source_path.name / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -161,9 +160,7 @@ def test_onyo_mv_move_simple(inventory: Inventory) -> None:
     assert (destination_path / dir_path.name / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -192,9 +189,7 @@ def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
     assert (destination_path / OnyoRepo.ANCHOR_FILE_NAME).is_file()
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -219,9 +214,7 @@ def test_onyo_mv_rename_directory(inventory: Inventory) -> None:
     assert inventory.repo.is_inventory_dir(destination_path)
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -239,3 +232,4 @@ def test_onyo_mv_and_rename(inventory: Inventory) -> None:
     assert inventory.repo.git.is_clean_worktree()
     assert not inventory.repo.is_inventory_dir(source)
     assert inventory.repo.is_inventory_dir(destination)
+    assert inventory.repo.git.is_clean_worktree()

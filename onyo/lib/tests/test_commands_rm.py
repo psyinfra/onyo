@@ -52,6 +52,9 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
                   paths=inventory.root,
                   message="some subject\n\nAnd a body")
 
+    # no error scenario leaves the git tree unclean
+    assert inventory.repo.git.is_clean_worktree()
+
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
@@ -74,9 +77,7 @@ def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
     assert destination_path.is_dir()
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -130,9 +131,7 @@ def test_onyo_rm_move_single(inventory: Inventory) -> None:
     assert asset_path not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -151,9 +150,7 @@ def test_onyo_rm_delete_directory(inventory: Inventory) -> None:
     assert dir_path / OnyoRepo.ANCHOR_FILE_NAME not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -176,9 +173,7 @@ def test_onyo_rm_list(inventory: Inventory) -> None:
     assert dir_path / OnyoRepo.ANCHOR_FILE_NAME not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -203,6 +198,4 @@ def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
     assert asset_path not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    # TODO: verifying cleanness of worktree does not work,
-    #       because fixture returns inventory with untracked stuff
-    # assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.is_clean_worktree()

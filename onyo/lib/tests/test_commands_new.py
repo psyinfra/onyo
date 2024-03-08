@@ -32,6 +32,7 @@ def test_onyo_new_invalid(inventory: Inventory) -> None:
                   keys=[{'serial': 'faux'}],
                   clone=inventory.root / "somewhere" / "nested" / "TYPE_MAKE_MODEL.SERIAL",
                   template='laptop.example')
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -44,6 +45,7 @@ def test_onyo_new_tsv(inventory: Inventory, tsv: Path) -> None:
         # TODO: Same here; just ensures those tables still don't crash
         onyo_new(inventory, tsv=tsv)
         inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -140,6 +142,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     # (Note: key must be there - no `KeyError`; but content is `None`)
     for k in ['RAM', 'Size', 'USB']:
         assert asset_content[k] is None
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -178,6 +181,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
         new_asset = inventory.get_asset(p)
         assert new_asset.get("path") == p
         assert all(new_asset[k] == s[k] for k in s.keys())
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -220,6 +224,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, path=directory, edit=True)
+    assert inventory.repo.git.is_clean_worktree()
 
 
 @pytest.mark.ui({'yes': True})
@@ -255,3 +260,4 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     # equals existing asset except for path and serial:
     assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['serial', 'path'])
     assert new_asset['serial'] == 'whatever'
+    assert inventory.repo.git.is_clean_worktree()
