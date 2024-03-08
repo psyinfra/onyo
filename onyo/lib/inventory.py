@@ -326,8 +326,10 @@ class Inventory(object):
         operations = []
         if not self.repo.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path.")
-        # TODO: The following condition isn't entirely correct yet.
+        # TODO: The following conditions aren't entirely correct yet.
         #       Address with issue #546.
+        if self.repo.is_inventory_dir(path):
+            raise NoopError(f"{path} already is a directory.")
         if path.exists() and not self.repo.is_asset_path(path):
             raise ValueError(f"{path} already exists.")
 

@@ -142,7 +142,7 @@ def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
 
     # verify output
     assert not ret.stdout
-    assert "already exists" in ret.stderr
+    assert "already is a directory" in ret.stderr
     assert ret.returncode == 1
 
     d = Path(directory)
