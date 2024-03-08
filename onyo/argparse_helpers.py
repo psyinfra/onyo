@@ -39,7 +39,11 @@ class StoreKeyValuePairs(argparse.Action):
                          f"Max. times a key was given: {number_of_dicts}.{os.linesep}"
                          f"But also got: {', '.join(['{} {} times'.format(k, c) for k, c in invalid_keys])}")
 
-        def cvt(v: str) -> int | float | str:
+        def cvt(v: str) -> int | float | str | bool:
+            if v.lower() == "true":
+                return True
+            elif v.lower() == "false":
+                return False
             try:
                 r = int(v)
             except ValueError:
