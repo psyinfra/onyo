@@ -17,6 +17,7 @@ from onyo.lib.exceptions import (
     OnyoRepoError,
     OnyoInvalidRepoError,
     PendingInventoryOperationError,
+    NotADirError,
     NotAnAssetError,
     NoopError,
 )
@@ -575,6 +576,19 @@ def move_asset_or_dir(inventory: Inventory,
         inventory.move_directory(source, destination)
 
 
+def _maybe_rename(inventory: Inventory,
+                  src: Path,
+                  dst: Path) -> None:
+    """Helper for `onyo_mv`"""
+
+    try:
+        inventory.rename_directory(src, dst)
+    except NotADirError as e:
+        # We tried to rename an asset dir.
+        inventory.reset()
+        raise ValueError("Renaming an asset requires the 'set' command.") from e
+
+
 @raise_on_inventory_state
 def onyo_mv(inventory: Inventory,
             source: list[Path] | Path,
@@ -634,13 +648,13 @@ def onyo_mv(inventory: Inventory,
             # Hence, first move and only then rename.
             subject = "mv + " + subject
             inventory.move_directory(sources[0], destination.parent)
-            inventory.rename_directory(destination.parent / sources[0].name, destination)
+            _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
             inventory._ignore_for_commit.append(destination.parent / sources[0].name)
         else:
-            inventory.rename_directory(sources[0], destination)
+            _maybe_rename(inventory, sources[0], destination)
     else:
-        raise ValueError("Can only move into an existing directory, or rename a single directory.")
+        raise ValueError("Can only move into an existing directory/asset, or rename a single directory.")
 
     if inventory.operations_pending():
         ui.print("The following will be {}:".format("moved" if subject == "mv" else "renamed"))

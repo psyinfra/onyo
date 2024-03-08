@@ -24,6 +24,7 @@ from onyo.lib.differs import (
     differ_move_directories,
 )
 from onyo.lib.exceptions import (
+    NotADirError,
     NotAnAssetError,
     NoopError,
     InvalidInventoryOperationError,
@@ -499,7 +500,7 @@ class Inventory(object):
         if not self.repo.is_inventory_dir(src) and src not in self._get_pending_dirs():
             raise ValueError(f"Not an inventory directory: {src}")
         if self.repo.is_asset_dir(src):
-            raise ValueError("Renaming an asset directory must be done via `rename_asset`.")
+            raise NotADirError("Renaming an asset directory must be done via `rename_asset`.")
         if isinstance(dst, str):
             dst = src.parent / dst
         if src.parent != dst.parent:

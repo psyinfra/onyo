@@ -254,3 +254,23 @@ def test_onyo_mv_into_asset(inventory: Inventory) -> None:
     assert inventory.repo.is_asset_dir(asset_path)
     # Actually moved source into destination:
     assert inventory.repo.is_asset_path(asset_path / "TYPE_MAKER_MODEL.SERIAL")
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_mv_asset_dir(inventory: Inventory) -> None:
+    asset_dir = dict(some_key="some_value",
+                     type="TYPE",
+                     make="MAKE",
+                     model="MODEL",
+                     serial="SERIAL2",
+                     is_asset_directory=True,
+                     directory=inventory.root)
+    asset_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
+    inventory.add_asset(asset_dir)
+    inventory.commit("Add an asset dir.")
+
+    # We can't rename an asset dir w/ 'mv'
+    with pytest.raises(ValueError, match="requires the 'set' command"):
+        onyo_mv(inventory,
+                source=asset_path,
+                destination=asset_path.parent / "new_name")

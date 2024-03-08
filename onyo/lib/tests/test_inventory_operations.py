@@ -2,7 +2,12 @@ import pytest
 
 from onyo.lib.assets import Asset
 from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
-from onyo.lib.exceptions import InvalidInventoryOperationError, NoopError, NotAnAssetError
+from onyo.lib.exceptions import (
+    InvalidInventoryOperationError,
+    NoopError,
+    NotADirError,
+    NotAnAssetError
+)
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
 
@@ -705,7 +710,7 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     inventory.commit("Whatever")
 
     # renaming the asset dir as a dir needs to fail
-    pytest.raises(ValueError, inventory.rename_directory, asset_dir_path, "newname")
+    pytest.raises(NotADirError, inventory.rename_directory, asset_dir_path, "newname")
 
     # renaming as an asset by changing the naming config
     inventory.repo.set_config("onyo.assets.filename", "{serial}_{other}", "onyo")
