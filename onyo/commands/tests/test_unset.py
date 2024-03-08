@@ -215,23 +215,6 @@ def test_unset_error_non_existing_assets(repo: OnyoRepo,
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
 @pytest.mark.parametrize('key', ['num'])
-def test_unset_with_dot(repo: OnyoRepo,
-                        key: str) -> None:
-    """Test that when `onyo unset --keys KEY=VALUE --path .` is called from the repository root,
-    onyo uses all assets in the complete repo recursively."""
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', "."],
-                         capture_output=True, text=True)
-
-    assert "The following assets will be changed:" in ret.stdout
-    # verify that output contains one line per asset
-    assert ret.stdout.count(f"-{key}") == len(repo.get_asset_paths())
-    assert not ret.stderr
-    assert ret.returncode == 0
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
-@pytest.mark.parametrize('key', ['num'])
 def test_unset_without_path(repo: OnyoRepo,
                             key: str) -> None:
     """Test that `onyo unset --keys KEY` without a given path selects all assets recursively."""
@@ -239,29 +222,9 @@ def test_unset_without_path(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify the output
-    assert "The following assets will be changed:" in ret.stdout
-    assert ret.stdout.count(f"-{key}") == len(repo.get_asset_paths())
-    assert not ret.stderr
-    assert ret.returncode == 0
+    assert ret.returncode != 0
     assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
-@pytest.mark.parametrize('directory', [Path('one/'), Path('another/'), Path('one/two/three/four/')])
-@pytest.mark.parametrize('key', ['num'])
-def test_unset_recursive_directories(repo: OnyoRepo,
-                                     directory: Path,
-                                     key: str) -> None:
-    """Test that `onyo unset --keys KEY --path DIRECTORY` updates contents of assets in DIRECTORY.
-    """
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--path', directory],
-                         capture_output=True, text=True)
-
-    # verify changes, output, and that the repository is clean
-    for asset in repo.get_asset_paths([repo.git.root / directory]):
-        assert key not in asset.read_text()
-    assert ret.stdout.count(f"-{key}") == len(repo.get_asset_paths([repo.git.root / directory]))
-    assert repo.git.is_clean_worktree()
+    assert "usage:" in ret.stderr
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
@@ -286,30 +249,6 @@ def test_unset_discard_changes_single_assets(repo: OnyoRepo,
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
-@pytest.mark.parametrize('key', ['num'])
-def test_unset_discard_changes_recursive(repo: OnyoRepo,
-                                         key: str) -> None:
-    """Test that `onyo unset` discards changes for all assets successfully."""
-    # call `unset`, but discard changes
-    ret = subprocess.run(['onyo', 'unset', '--keys', key], input='n',
-                         capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert "Update assets? (y/n) " in ret.stdout
-    assert "No assets updated." in ret.stdout
-    assert ret.stdout.count(f"-{key}") == len(repo.asset_paths)
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify that the removal was not written but discarded
-    repo_assets = repo.asset_paths
-    for asset in repo_assets:
-        assert f"{key}" in Path.read_text(asset)
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
 @pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
 @pytest.mark.parametrize('key', ['num'])
 def test_unset_message_flag(repo: OnyoRepo,
@@ -327,46 +266,6 @@ def test_unset_message_flag(repo: OnyoRepo,
     # test that the onyo history does contain the user-defined message
     ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
     assert msg in ret.stdout
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
-                                              if t[0] in ['laptop_apple_macbookpro.1',
-                                                          'one/laptop_dell_precision.2',
-                                                          'one/two/headphones_apple_pro.3',
-                                                          'one/two/three/headphones_apple_pro.4',
-                                                          'one/two/three/four/headphones_apple_pro.5']]))
-@pytest.mark.parametrize('depth,expected', [
-    ('0', 5), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('999', 5)])
-@pytest.mark.parametrize('key', ['num'])
-def test_unset_depth(repo: OnyoRepo,
-                     depth: str,
-                     expected: int,
-                     key: str) -> None:
-    """Test that `onyo unset --depth x` retrieves the expected assets."""
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', 'num', '--depth', depth],
-                         capture_output=True, text=True)
-
-    # Check that for each expected asset there is one line mentioning the removal in the output
-    assert ret.stdout.count(f"-{key}") == expected
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-
-@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
-@pytest.mark.parametrize('key', ['num'])
-def test_unset_depth_error(repo: OnyoRepo,
-                           key: str) -> None:
-    """Test that `onyo unset --depth -1` returns the correct error."""
-    ret = subprocess.run(['onyo', 'unset', '--depth', '-1', '--keys', key],
-                         capture_output=True, text=True)
-
-    # verify output for invalid --depth
-    assert not ret.stdout
-    assert "depth must be greater or equal 0" in ret.stderr
-    assert ret.returncode == 1
-
-    # verify state of repo is clean
     assert repo.git.is_clean_worktree()
 
 

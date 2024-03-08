@@ -1030,9 +1030,7 @@ def onyo_tree(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: list[str],
-               match: Optional[list[Callable[[dict], bool]]] = None,
-               paths: Optional[list[Path]] = None,
-               depth: int = 0,
+               paths: list[Path],
                message: Optional[str] = None) -> None:
     """Remove keys from assets.
 
@@ -1045,19 +1043,8 @@ def onyo_unset(inventory: Inventory,
         If keys do not exist in an asset, a debug message is logged.
         If keys are specified which appear in asset names an error is raised.
         If `keys` is empty an error is raised.
-    match: list of Callable, optional
-      Callables suited for use with builtin `filter`. They are
-      passed an asset dictionary and expected to return a `bool`,
-      where `True` indicates a match. `keys` will be removed from
-      all assets that are matched by all callables in this list.
-    paths: list of Path, optional
-        Paths to assets or directories for which to unset key-value pairs.
-        If paths are directories, the values will be unset recursively in assets
-        under the specified path.
-        If no paths are specified, the inventory root is used as default.
-    depth: int
-        Depth limit of recursion if a `path` is a directory.
-        0 means no limit and is the default.
+    paths: list of Path
+        Paths to assets for which to unset key-value pairs.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
 
@@ -1067,27 +1054,17 @@ def onyo_unset(inventory: Inventory,
         If paths are invalid, or `keys` are empty or invalid.
 
     """
-    paths = paths or [inventory.root]
     if not keys:
         raise ValueError("At least one key must be specified.")
-    non_inventory_paths = [str(p) for p in paths  # pyre-ignore[16]  `paths` not Optional anymore
-                           if not inventory.repo.is_asset_path(p) and
-                           not inventory.repo.is_inventory_dir(p)]
-
-    if non_inventory_paths:
-        raise ValueError("The following paths are neither an inventory directory nor an ",
-                         "asset:\n%s" % "\n".join(non_inventory_paths))
-
+    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    if non_asset_paths:
+        raise ValueError("The following paths aren't assets:\n%s" % "\n".join(non_asset_paths))
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
         raise ValueError("Can't unset asset name keys.")
     if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
         raise ValueError(f"Can't unset reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
-    asset_paths_to_unset = inventory.get_assets_by_query(paths=paths,
-                                                         depth=depth,
-                                                         match=match)
-
-    for asset in asset_paths_to_unset:
+    for asset in [inventory.get_asset(p) for p in paths]:
         new_content = copy.deepcopy(asset)
         # remove keys to unset, if they exist
         for key in keys:
