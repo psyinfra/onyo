@@ -19,21 +19,36 @@ args_new = {
         metavar='TEMPLATE',
         required=False,
         type=template,
-        help='Name of the template to seed the new asset(s)'),
+        help="""
+            Name of a template to populate the contents of new assets.
+
+            This cannot be used with the ``--clone`` flag nor the ``template``
+            Reserved Key.
+        """
+    ),
 
     'clone': dict(
         args=('-c', '--clone'),
         metavar='CLONE',
         required=False,
         type=path,
-        help='Path to an asset to clone from'),
+        help="""
+            Path of an asset to clone.
+
+            This cannot be used with the ``--template`` flag nor the
+            ``template`` Reserved Key.
+        """
+    ),
 
     'edit': dict(
         args=('-e', '--edit'),
         required=False,
         default=False,
         action='store_true',
-        help='Open new assets in editor before creation'),
+        help="""
+            Open new assets in an editor.
+        """
+    ),
 
     'keys': dict(
         args=('-k', '--keys'),
@@ -41,25 +56,49 @@ args_new = {
         action=StoreKeyValuePairs,
         metavar="KEYS",
         nargs='+',
-        help=(
-            'Key-value pairs to set in the new asset(s). Multiple pairs can be '
-            'specified (e.g. key=value key2=value2). All fields that are part of '
-            'asset filenames (defined in .onyo/config under `onyo.assets.filename`) '
-            'are required. If the value `faux` is assigned to the key `serial`, '
-            'a random, repository-unique string will be filled in instead.')),
+        help="""
+            Key-value pairs to populate content of new assets.
+
+            Each key can be defined either 1 or N times (where N is the number
+            of assets to be created). A key that is declared once will apply
+            to all new assets, otherwise each will be applied to each new asset
+            in the order they were declared.
+
+            For example, create three new laptops with different serials:
+            ```
+            onyo new --keys type=laptop make=apple model=macbookpro serial=1 serial=2 serial=3 --path shelf/
+            ```
+
+            Shell brace-expansion makes this even more succinct:
+            ```
+            onyo new --keys type=laptop make=apple model=macbookpro serial={1,2,3} --path shelf/
+            ```
+        """
+    ),
 
     'path': dict(
         args=('-p', '--path'),
         metavar='PATH',
         type=path,
-        help='directory to create asset(s) in'),
+        help="""
+            Directory to create new assets in.
+
+            This cannot be used with the ``directory`` Reserved Key.
+        """
+    ),
 
     'tsv': dict(
         args=('-tsv', '--tsv'),
         metavar='TSV',
         required=False,
         type=path,
-        help='Path to a tsv file describing the new asset.'),
+        help="""
+            Path to a TSV file describing new assets.
+
+            The header declares the key names to be populated. The values to
+            populate assets are declared with one line per asset.
+        """
+    ),
 
     'message': shared_arg_message,
 }
@@ -67,22 +106,32 @@ args_new = {
 
 def new(args: argparse.Namespace) -> None:
     """
-    Create new ``DIRECTORY/ASSET``\\(s), and add contents with ``--template``,
-    ``--keys``, ``--clone`` and ``--edit``. If the directories do not exist,
-    they will be created.
+    Create new ``ASSET``\s and populate with key-value pairs. Destination
+    directories are created if they are missing.
 
-    When the same key is specified multiple times with ``onyo new --keys [...]``
-    onyo creates a new asset for each of them.
-    When creating X new assets, all keys must be specified exactly 1 or X times;
-    a key that is specified once will applied to all new assets with the same
-    value, otherwise they will be applied to each new asset in the order of
-    specification:
-    ``onyo new --keys type=laptop make=apple model=macbookpro serial=1 serial=2
-    serial=3 --path shelf/`` adds three assets with the same type, make and
-    model but different serial numbers to the ``shelf/`` directory.
+    Asset contents are populated in a waterfall pattern and can overwrite
+    values from previous steps:
 
-    After the contents are added, the new ``assets``\\(s) will be checked for
-    the validity of its YAML syntax.
+        1) ``--template`` or ``--clone``
+        2) ``--tsv``
+        3) ``--keys``
+        4) ``--edit`` (i.e. manual user input)
+
+    The keys that comprise the asset filename are required (configured by
+    `onyo.assets.filename`).
+
+    The contents of all new assets are checked for validity before committing.
+
+    RESERVED KEYS:
+
+    Some key names are reserved, and are not stored as keys in asset contents:
+
+        * ``directory``: directory to create the asset in relative to the root
+          of the repository. This key cannot be used with the ``--path`` flag.
+        * ``is_asset_directory``: whether to create the asset as an Asset
+          Directory.  Default is ``false``.
+        * ``template``: which template to use for the asset. This key cannot be
+          used with the ``--clone`` or ``--template`` flags.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     onyo_new(inventory=inventory,

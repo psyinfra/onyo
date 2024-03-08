@@ -34,7 +34,7 @@ _onyo() {
         'init:initialize a new Onyo repository'
         'mkdir:create DIRECTORYs'
         'mv:move SOURCEs (assets or directories) to the DEST directory, or rename a SOURCE directory to DEST'
-        'new:create new ASSETs'
+        'new:create new ASSETs and populate with KEY-VALUE pairs'
         'rm:delete ASSETs and DIRECTORYs'
         'set:set the VALUE of KEYs for matching assets'
         'shell-completion:display a tab-completion script for Onyo'
