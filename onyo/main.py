@@ -21,7 +21,18 @@ class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
         return parts
 
     def _split_lines(self, text, width):
+        """
+        This is a very, very naive approach to stripping rst syntax from
+        docstrings. Sadly, docutils does not have a plain-text writer. That
+        would be the ideal solution.
+        """
         text = textwrap.dedent(text).strip()
+
+        # `` -> `
+        text = text.replace('``', '`')
+        # remove escapes of characters; everything is literal here
+        text = text.replace('\\', '')
+
         text = super()._split_lines(text, width)
 
         return text
