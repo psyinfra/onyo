@@ -840,8 +840,11 @@ def onyo_new(inventory: Inventory,
             directory = inventory.root / directory
         spec['directory'] = directory
         # 2. start from template
-        asset = inventory.get_asset(clone) if clone \
-            else inventory.get_asset_from_template(spec.pop('template', None) or template)
+        if clone:
+            asset = inventory.get_asset(clone)
+            asset.pop('path')
+        else:
+            asset = inventory.get_asset_from_template(spec.pop('template', None) or template)
         # 3. fill in asset specification
         asset.update(spec)
         # 4. (try to) add to inventory
