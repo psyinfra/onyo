@@ -16,15 +16,16 @@ args_cat = {
         metavar='ASSET',
         nargs='+',
         type=file,
-        help='Paths of asset(s) to print'),
+        help='path of ``ASSET`` to print'),
 }
 
 
 def cat(args: argparse.Namespace) -> None:
-    """Print the contents of ``ASSET`` file(s) to the terminal.
+    """
+    Print the contents of ``ASSET``\s to the terminal.
 
-    At least one valid asset path is required. Assets can be given multiple times.
-    If any path specified is invalid, no contents are printed and an error is raised.
+    If any of the paths are invalid, then no contents are printed and an error
+    is returned.
     """
     paths = [Path(p).resolve() for p in args.asset]
 
