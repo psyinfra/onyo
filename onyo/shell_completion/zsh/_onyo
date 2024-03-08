@@ -17,7 +17,7 @@ _onyo() {
     args=( )
     toplevel_flags=(
         '(- : *)'{-h,--help}'[show this help message and exit]'
-        '(-C --onyopath)'{-C,--onyopath}'[run as if Onyo were started in DIR]:DIR:_files -/'
+        '(-C --onyopath)'{-C,--onyopath}'[run Onyo from DIR instead of the current working directory]:DIR:_files -/'
         '(-d --debug)'{-d,--debug}'[enable debug logging]'
         '(- : *)'{-v,--version}'[print onyo'\''s version and exit]'
         '(-q --quiet)'{-q,--quiet}'[silence messages printed to stdout; does not suppress interactive editors]'
