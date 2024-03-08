@@ -821,6 +821,10 @@ def onyo_new(inventory: Inventory,
     else:
         # default
         path = path or Path.cwd()
+    if template and any('template' in d.keys() for d in specs):
+        raise ValueError("Can't use 'template' key and 'template' option.")
+    if clone and any('template' in d.keys() for d in specs):
+        raise ValueError("Can't use 'clone' key and 'template' option.")
 
     for pseudo_key in PSEUDO_KEYS:
         for d in specs:
