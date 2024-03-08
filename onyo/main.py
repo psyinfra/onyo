@@ -21,6 +21,7 @@ class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
         return parts
 
     def _split_lines(self, text, width):
+        text = textwrap.dedent(text)
         text = super()._split_lines(text, width)
 
         return text
@@ -31,6 +32,7 @@ class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
         docstrings. Sadly, docutils does not have a plain-text writer. That
         would be the ideal solution.
         """
+        text = textwrap.dedent(text)
         text = super()._fill_text(text, width, indent)
 
         # `` -> `
@@ -88,9 +90,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_cat = subcmds.add_parser(
         'cat',
-        description=textwrap.dedent(commands.cat.__doc__),
+        description=commands.cat.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.cat.__doc__)
+        help=commands.cat.__doc__
     )
     cmd_cat.set_defaults(run=commands.cat)
     build_parser(cmd_cat, args_cat)
@@ -99,9 +101,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_config = subcmds.add_parser(
         'config',
-        description=textwrap.dedent(commands.config.__doc__),
+        description=commands.config.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.config.__doc__)
+        help=commands.config.__doc__
     )
     cmd_config.set_defaults(run=commands.config)
     build_parser(cmd_config, args_config)
@@ -110,9 +112,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_edit = subcmds.add_parser(
         'edit',
-        description=textwrap.dedent(commands.edit.__doc__),
+        description=commands.edit.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.edit.__doc__)
+        help=commands.edit.__doc__
     )
     cmd_edit.set_defaults(run=commands.edit)
     build_parser(cmd_edit, args_edit)
@@ -121,9 +123,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_fsck = subcmds.add_parser(
         'fsck',
-        description=textwrap.dedent(commands.fsck.__doc__),
+        description=commands.fsck.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.fsck.__doc__)
+        help=commands.fsck.__doc__
     )
     cmd_fsck.set_defaults(run=commands.fsck)
     #
@@ -131,9 +133,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_get = subcmds.add_parser(
         'get',
-        description=textwrap.dedent(commands.get.__doc__),
+        description=commands.get.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.get.__doc__)
+        help=commands.get.__doc__
     )
     cmd_get.set_defaults(run=commands.get)
     build_parser(cmd_get, args_get)
@@ -142,9 +144,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_history = subcmds.add_parser(
         'history',
-        description=textwrap.dedent(commands.history.__doc__),
+        description=commands.history.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.history.__doc__)
+        help=commands.history.__doc__
     )
     cmd_history.set_defaults(run=commands.history)
     build_parser(cmd_history, args_history)
@@ -153,9 +155,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_init = subcmds.add_parser(
         'init',
-        description=textwrap.dedent(commands.init.__doc__),
+        description=commands.init.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.init.__doc__)
+        help=commands.init.__doc__
     )
     cmd_init.set_defaults(run=commands.init)
     build_parser(cmd_init, args_init)
@@ -164,9 +166,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
-        description=textwrap.dedent(commands.mkdir.__doc__),
+        description=commands.mkdir.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.mkdir.__doc__)
+        help=commands.mkdir.__doc__
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
     build_parser(cmd_mkdir, args_mkdir)
@@ -175,9 +177,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_mv = subcmds.add_parser(
         'mv',
-        description=textwrap.dedent(commands.mv.__doc__),
+        description=commands.mv.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.mv.__doc__)
+        help=commands.mv.__doc__
     )
     cmd_mv.set_defaults(run=commands.mv)
     build_parser(cmd_mv, args_mv)
@@ -186,9 +188,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_new = subcmds.add_parser(
         'new',
-        description=textwrap.dedent(commands.new.__doc__),
+        description=commands.new.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.new.__doc__)
+        help=commands.new.__doc__
     )
     cmd_new.set_defaults(run=commands.new)
     build_parser(cmd_new, args_new)
@@ -197,9 +199,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_rm = subcmds.add_parser(
         'rm',
-        description=textwrap.dedent(commands.rm.__doc__),
+        description=commands.rm.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.rm.__doc__)
+        help=commands.rm.__doc__
     )
     cmd_rm.set_defaults(run=commands.rm)
     build_parser(cmd_rm, args_rm)
@@ -208,9 +210,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_set = subcmds.add_parser(
         'set',
-        description=textwrap.dedent(commands.set.__doc__),
+        description=commands.set.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.set.__doc__)
+        help=commands.set.__doc__
     )
     cmd_set.set_defaults(run=commands.set)
     build_parser(cmd_set, args_set)
@@ -219,9 +221,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
-        description=textwrap.dedent(commands.shell_completion.__doc__),
+        description=commands.shell_completion.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.shell_completion.__doc__)
+        help=commands.shell_completion.__doc__
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion)
     build_parser(cmd_shell_completion, args_shell_completion)
@@ -230,9 +232,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_tree = subcmds.add_parser(
         'tree',
-        description=textwrap.dedent(commands.tree.__doc__),
+        description=commands.tree.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.tree.__doc__)
+        help=commands.tree.__doc__
     )
     cmd_tree.set_defaults(run=commands.tree)
     build_parser(cmd_tree, args_tree)
@@ -241,9 +243,9 @@ def setup_parser() -> argparse.ArgumentParser:
     #
     cmd_unset = subcmds.add_parser(
         'unset',
-        description=textwrap.dedent(commands.unset.__doc__),
+        description=commands.unset.__doc__,
         formatter_class=SubcommandHelpFormatter,
-        help=textwrap.dedent(commands.unset.__doc__)
+        help=commands.unset.__doc__
     )
     cmd_unset.set_defaults(run=commands.unset)
     build_parser(cmd_unset, args_unset)
