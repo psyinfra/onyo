@@ -38,7 +38,7 @@ _onyo() {
         'rm:delete ASSETs and DIRECTORYs'
         'set:set the VALUE of KEYs for ASSETs'
         'shell-completion:display a tab-completion script for Onyo'
-        'tree:list the assets and directories of DIRECTORY in `tree` format'
+        'tree:list the assets and directories of DIRECTORYs in a tree-like format'
         'unset:remove KEY from ASSETs'
     )
 
