@@ -32,9 +32,9 @@ def edit(args: argparse.Namespace) -> None:
 
     The editor is selected by (in order):
 
-        * configuration option `onyo.core.editor`
-        * ``EDITOR`` environment variable
-        * ``nano`` (as a final fallback)
+      * configuration option `onyo.core.editor`
+      * ``EDITOR`` environment variable
+      * ``nano`` (as a final fallback)
 
     The contents of all edited ASSETs are checked for validity before
     committing. If problems are found, a prompt is offered to either reopen the

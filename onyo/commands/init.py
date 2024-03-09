@@ -31,9 +31,9 @@ def init(args: argparse.Namespace) -> None:
 
     Initialization steps are:
 
-        * create the target directory (if it does not exist)
-        * initialize as a git repository (if it is not one already)
-        * create the ``.onyo/`` directory, populate its contents, and commit
+      * create the target directory (if it does not exist)
+      * initialize as a git repository (if it is not one already)
+      * create the ``.onyo/`` directory, populate its contents, and commit
 
     Running ``onyo init`` on non-empty directories and git repositories is
     allowed. Only the ``.onyo`` directory will be committed. All other contents

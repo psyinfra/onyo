@@ -46,8 +46,8 @@ def history(args: argparse.Namespace) -> None:
 
     The commands to display history are configurable using ``onyo config``:
 
-        * ``onyo.history.interactive``
-        * ``onyo.history.non-interactive``
+      * ``onyo.history.interactive``
+      * ``onyo.history.non-interactive``
     """
 
     # Note: Currently exceptional command in that it's not a function in lib/commands, because of exit code handling.

@@ -38,19 +38,19 @@ def config(args: argparse.Namespace) -> None:
 
     Onyo configuration options:
 
-        * ``onyo.assets.filename``: The format for asset names on the
-          filesystem. (default: "{type}_{make}_{model}.{serial}")
-        * ``onyo.core.editor``: The editor to use for commands such as ``edit``
-          and ``new``. If unset, it will fallback to the environmental variable
-          ``EDITOR`` and lastly ``nano``. (default: unset)
-        * ``onyo.history.interactive``: The interactive command to use for
-          ``onyo history``. (default: "tig --follow")
-        * ``onyo.history.non-interactive``: The non-interactive command for
-          running ``onyo history --non-interactive``.
-          (default: "git --no-pager log --follow")
-        * ``onyo.new.template``: The default template to use with ``onyo new``.
-          (default: "empty")
-        * ``onyo.repo.version``: The Onyo repository version.
+      * ``onyo.assets.filename``: The format for asset names on the
+        filesystem. (default: "{type}_{make}_{model}.{serial}")
+      * ``onyo.core.editor``: The editor to use for commands such as ``edit``
+        and ``new``. If unset, it will fallback to the environmental variable
+        ``EDITOR`` and lastly ``nano``. (default: unset)
+      * ``onyo.history.interactive``: The interactive command to use for
+        ``onyo history``. (default: "tig --follow")
+      * ``onyo.history.non-interactive``: The non-interactive command for
+        running ``onyo history --non-interactive``.
+        (default: "git --no-pager log --follow")
+      * ``onyo.new.template``: The default template to use with ``onyo new``.
+        (default: "empty")
+      * ``onyo.repo.version``: The Onyo repository version.
     """
 
     # TODO: Wouldn't we want to commit (implying message parameter)?
