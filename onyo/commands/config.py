@@ -16,15 +16,17 @@ args_config = {
         metavar='ARGS',
         nargs='+',
         type=git_config,
-        help='Config options to set in .onyo/config'),
+        help='Config options to set in .onyo/config'
+    ),
 }
 
 
 def config(args: argparse.Namespace) -> None:
     """
-    Set, query, and unset Onyo repository configuration options. These options
-    are stored in ``.onyo/config``. This file is tracked by git and are shared
-    with all other consumers of an Onyo repository.
+    Set, query, and unset Onyo repository configuration options.
+
+    These options are stored in ``.onyo/config``, which is tracked by git and
+    shared with all other users of the Onyo repository.
 
     To set configuration options locally (and not commit them to the Onyo
     repository), use ``git config`` instead.
@@ -36,16 +38,19 @@ def config(args: argparse.Namespace) -> None:
 
     Onyo configuration options:
 
-    - ``onyo.core.editor``: The editor to use for commands such as ``edit`` and
-      ``new``. If unset, it will fallback to the environmental variable
-      ``EDITOR`` and lastly ``nano``. (default: unset)
-    - ``onyo.history.interactive``: The command used to display history when
-      running ``onyo history``. (default: "tig --follow")
-    - ``onyo.history.non-interactive``: The command used to print history when
-      running ``onyo history`` with ``--non-interactive``.
-      (default: "git --no-pager log --follow")
-    - ``onyo.new.template``: The default template to use with ``onyo new``.
-      (default: "empty")
+        * ``onyo.assets.filename``: The format for asset names on the
+          filesystem. (default: "{type}_{make}_{model}.{serial}")
+        * ``onyo.core.editor``: The editor to use for commands such as ``edit``
+          and ``new``. If unset, it will fallback to the environmental variable
+          ``EDITOR`` and lastly ``nano``. (default: unset)
+        * ``onyo.history.interactive``: The interactive command to use for
+          ``onyo history``. (default: "tig --follow")
+        * ``onyo.history.non-interactive``: The non-interactive command for
+          running ``onyo history --non-interactive``.
+          (default: "git --no-pager log --follow")
+        * ``onyo.new.template``: The default template to use with ``onyo new``.
+          (default: "empty")
+        * ``onyo.repo.version``: The Onyo repository version.
     """
 
     # TODO: Wouldn't we want to commit (implying message parameter)?
