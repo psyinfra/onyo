@@ -92,7 +92,7 @@ _onyo() {
             history)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-I --non-interactive)'{-I,--non-interactive}'[use the interactive history tool]'
+                    '(-I --non-interactive)'{-I,--non-interactive}'[use the non-interactive history tool]'
                     '::PATH:_files -W "$(_onyo_dir)"'
                 )
                 ;;
