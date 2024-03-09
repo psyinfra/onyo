@@ -36,10 +36,10 @@ _onyo() {
         'mv:move SOURCEs (assets or directories) to the DEST directory, or rename a SOURCE directory to DEST'
         'new:create new ASSETs and populate with KEY-VALUE pairs'
         'rm:delete ASSETs and DIRECTORYs'
-        'set:set the VALUE of KEYs for matching assets'
+        'set:set the VALUE of KEYs for ASSETs'
         'shell-completion:display a tab-completion script for Onyo'
         'tree:list the assets and directories of DIRECTORY in `tree` format'
-        'unset:remove the VALUE of KEY for matching ASSETs'
+        'unset:remove KEY from ASSETs'
     )
 
     _arguments -C $args $toplevel_flags ':subcommand:->subcommand' '*::options:->options' && ret=0
@@ -144,8 +144,6 @@ _onyo() {
                     '(-r --rename)'{-r,--rename}'[allow assigning values to keys that would result in renaming asset filenames]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in assets; multiple pairs can be given (key=value key2=value2)]:*-*:KEYS: '
                     '(-p --path)'{-p,--path}'[assets and/or directories to set KEY=VALUE in]:*-*::PATH:_files -W "$(_onyo_dir)"'
-                    '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
-                    '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
                 )
                 ;;
@@ -166,8 +164,6 @@ _onyo() {
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-k --keys)'{-k,--keys}'[keys to unset in assets; multiple keys can be given (key key2 key3)]:*-*:KEYS: '
                     '(-p --path)'{-p,--path}'[assets and/or directories to unset values in]:*-*::PATH:_files -W "$(_onyo_dir)"'
-                    '(-d --depth)'{-d,--depth}'[descend up to DEPTH levels into directories]:DEPTH: '
-                    '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
                 )
                 ;;
