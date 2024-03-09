@@ -17,7 +17,8 @@ args_edit = {
         metavar='ASSET',
         nargs='+',
         type=file,
-        help='Paths of asset(s) to edit'),
+        help='Paths of ASSETs to edit.'
+    ),
 
     'message': shared_arg_message,
 }
@@ -25,14 +26,19 @@ args_edit = {
 
 def edit(args: argparse.Namespace) -> None:
     """
-    Open the ``ASSET``\(s) using the editor specified by "onyo.core.editor",
-    the environment variable ``EDITOR``, or ``nano`` (as a final fallback).
+    Open ``ASSET``\s using an editor.
 
-    When multiple ``ASSET``\(s) are given, Onyo will open them in sequence.
+    When multiple ASSETs are given, they are opened sequentially.
 
-    After editing an ``ASSET``, the contents will be checked for valid YAML.
-    If problems are found, the choice will be offered to reopen the editor to
-    fix them, or discard the invalid changes made.
+    The editor is selected by (in order):
+
+        * configuration option `onyo.core.editor`
+        * ``EDITOR`` environment variable
+        * ``nano`` (as a final fallback)
+
+    The contents of all edited ASSETs are checked for validity before
+    committing. If problems are found, a prompt is offered to either reopen the
+    editor or discard the changes.
     """
 
     paths = [Path(p).resolve() for p in args.asset]
