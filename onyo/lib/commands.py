@@ -75,15 +75,15 @@ def fsck(repo: OnyoRepo,
 
     By default, the following tests will be performed:
 
-    - "clean-tree": verifies that the git tree is clean ---that there are
-      no changed (staged or unstaged) nor untracked files.
-    - "anchors": verifies that all folders (outside of .onyo) have an
+    * ``clean-tree``: verify that git has no changed (staged or unstaged) or
+      untracked files
+    * ``anchors``: verify that all directories (outside of .onyo) have an
       .anchor file
-    - "asset-unique": verifies that all asset names are unique
-    - "asset-yaml": loads each assets and checks if it's valid YAML
-    - "asset-validity": loads each asset and validates the contents against
-      the validation rulesets defined in ``.onyo/validation/``.
-    - "pseudo-keys": verifies that assets do not contain pseudo-key names
+    * ``asset-unique``: verify that all asset names are unique
+    * ``asset-yaml``: verify that all asset contents are valid YAML
+    * ``asset-validity``: verify that all assets pass the validation rulesets
+      defined in ``.onyo/validation/``
+    * ``pseudo-keys``: verify that asset contents do not contain pseudo-key names
 
     Parameters
     ----------
