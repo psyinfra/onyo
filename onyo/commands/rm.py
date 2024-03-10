@@ -17,34 +17,52 @@ args_rm = {
         metavar='PATH',
         nargs='+',
         type=path,
-        help='Asset(s) and/or directory(s) to delete'),
+        help="""
+            Assets and/or directories to delete.
+        """
+    ),
+
     'assets': dict(
         args=('-a', '--asset'),
         required=False,
         default=False,
         action='store_true',
-        help='Only remove assets. Turns asset dirs into plain dirs.'
-             'Mutually exclusive with ``--dir``.'),
+        help="""
+            Operate only on assets. Asset Files are removed. Asset Directories
+            are converted into normal directories.
+
+            This cannot be used with the ``--dir`` flag.
+        """
+    ),
+
     'dirs': dict(
         args=('-d', '--dir'),
         required=False,
         default=False,
         action='store_true',
-        help='Only remove dirs. Turns asset dirs into plain asset files.'
-             'Mutually exclusive with ``--asset``.'),
+        help="""
+            Operate only on directories. Directories are removed. Asset
+            Directories are converted into Asset Files.
+
+            This cannot be used with the ``--asset`` flag.
+        """
+    ),
+
     'message': shared_arg_message,
 }
 
 
 def rm(args: argparse.Namespace) -> None:
     """
-    Delete ``ASSET``\\(s) and ``DIRECTORY``\\(s).
+    Delete ASSETs and/or DIRECTORYs.
 
-    Directories and asset directories are deleted together with their contents.
-    If any of the specified paths is invalid, Onyo will error and delete none of them.
+    Directories and asset directories are deleted along with their contents.
 
-    A list of all files and directories to delete will be presented, and the
-    user prompted for confirmation.
+    The ``--asset`` and ``--dir` flags can be used to constrain actions to
+    either assets or directories (respectively).
+
+    If any of the given paths are invalid, Onyo will error and delete none of
+    them.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path]
