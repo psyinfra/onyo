@@ -14,63 +14,71 @@ if TYPE_CHECKING:
     import argparse
 
 args_get = {
-    'machine_readable': dict(
-        args=('-H', '--machine-readable'),
-        action='store_true',
-        help=(
-            'Display asset(s) separated by new lines, and keys by tabs instead '
-            'of printing a formatted table')),
 
     'keys': dict(
         args=('-k', '--keys'),
-        metavar='KEYS',
+        metavar='KEY',
         nargs='+',
-        help=(
-            'Key value(s) to return. Pseudo-keys (information not stored in '
-            'the asset file) are also available for queries')),
+        help="""
+            KEY values to print. Pseudo-keys (information not stored in the
+            asset file) are also available for queries.
+        """
+    ),
+
+    'machine_readable': dict(
+        args=('-H', '--machine-readable'),
+        action='store_true',
+        help="""
+            Useful for scripting. Do not print headers and separate values with
+            a single tab instead of variable white space.
+        """
+    ),
 
     'path': dict(
         args=('-p', '--path'),
         metavar='PATH',
         type=path,
         nargs='+',
-        help='Asset(s) or directory(s) to search through'),
+        help="""
+            PATHs to assets or directories to query.
+        """
+    ),
 
     'sort_ascending': dict(
         args=('-s', '--sort-ascending'),
         action='store_true',
         default=False,
-        help='Sort output in ascending order (excludes --sort-descending)'),
+        help="""
+            Sort output in ascending order (excludes --sort-descending).
+        """
+    ),
 
     'sort_descending': dict(
         args=('-S', '--sort-descending'),
         action='store_true',
         default=False,
-        help='Sort output in descending order (excludes --sort-ascending)'),
-
-    'depth': shared_arg_depth,
-    'match': shared_arg_match
+        help="""
+            Sort output in descending order (excludes --sort-ascending).
+        """
+    ),
 }
 
 
 def get(args: argparse.Namespace) -> None:
     """
-    Return matching ``ASSET``\(s) and values corresponding to the requested
-    ``KEY``\(s).
+    Return values of the requested KEYs for matching assets.
 
-    If no key(s) are given, the keys used in asset names are returned.
-    If no ``asset`` or ``directory`` is specified, the current working
+    If no KEYs are given, all keys in the asset name are used (see
+    ``onyo.assets.filename``). If no PATHs are given, the current working
     directory is used.
 
-    Filters can make use of pseudo-keys (i.e., properties of assets, that are
-    provided by onyo rather than the asset file, like 'path'). Values of the
-    dictionary or list type, as well as assets missing a value can be referenced
-    as '<dict>', '<list>', or '<unset>' instead of their contents, respectively.
-    If a requested key does not exist, its output is displayed as '<unset>'.
+    In addition to keys in asset contents, PSEUDO-KEYS can be queried and
+    matched.
 
-    The ``value`` of filters can be a string or a Python regular expression.
+      * ``is_asset_directory``: is the asset an Asset Directory
+      * ``path``: path of the asset from repo root
 
-    By default, the returned assets are sorted by their paths.
+    By default, the results are sorted by ``path``.
     """
     if args.sort_ascending and args.sort_descending:
         raise ValueError('--sort-ascending (-s) and --sort-descending (-S) cannot be '
