@@ -8,12 +8,22 @@ from onyo.argparse_helpers import path
 from onyo.lib.commands import onyo_get
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
-from onyo.shared_arguments import shared_arg_depth, shared_arg_match
 
 if TYPE_CHECKING:
     import argparse
 
 args_get = {
+    'depth': dict(
+        args=('-d', '--depth'),
+        metavar='DEPTH',
+        type=int,
+        required=False,
+        default=0,
+        help="""
+            Descend up to DEPTH levels into the directories specified. DEPTH=0
+            descends recursively without limit.
+        """
+    ),
 
     'keys': dict(
         args=('-k', '--keys'),
@@ -31,6 +41,22 @@ args_get = {
         help="""
             Useful for scripting. Do not print headers and separate values with
             a single tab instead of variable white space.
+        """
+    ),
+
+    'match': dict(
+        args=('-M', '--match'),
+        metavar='MATCH',
+        nargs='+',
+        type=str,
+        default=None,
+        help="""
+            Criteria to match assets in the form ``KEY=VALUE``, where VALUE is a
+            python regular expression. Pseudo-keys such as ``path`` can also be
+            used. Special values supported are:
+              * ``<dict>``
+              * ``<list>``
+              * ``<unset>``
         """
     ),
 
