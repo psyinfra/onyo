@@ -112,10 +112,10 @@ def new(args: argparse.Namespace) -> None:
     Asset contents are populated in a waterfall pattern and can overwrite
     values from previous steps:
 
-        1) ``--template`` or ``--clone``
-        2) ``--tsv``
-        3) ``--keys``
-        4) ``--edit`` (i.e. manual user input)
+      1) ``--template`` or ``--clone``
+      2) ``--tsv``
+      3) ``--keys``
+      4) ``--edit`` (i.e. manual user input)
 
     The keys that comprise the asset filename are required (configured by
     `onyo.assets.filename`).
@@ -126,12 +126,12 @@ def new(args: argparse.Namespace) -> None:
 
     Some key names are reserved, and are not stored as keys in asset contents:
 
-        * ``directory``: directory to create the asset in relative to the root
-          of the repository. This key cannot be used with the ``--path`` flag.
-        * ``is_asset_directory``: whether to create the asset as an Asset
-          Directory.  Default is ``false``.
-        * ``template``: which template to use for the asset. This key cannot be
-          used with the ``--clone`` or ``--template`` flags.
+      * ``directory``: directory to create the asset in relative to the root of
+        the repository. This key cannot be used with the ``--path`` flag.
+      * ``is_asset_directory``: whether to create the asset as an Asset
+        Directory.  Default is ``false``.
+      * ``template``: which template to use for the asset. This key cannot be
+        used with the ``--clone`` or ``--template`` flags.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     onyo_new(inventory=inventory,

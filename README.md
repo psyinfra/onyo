@@ -21,7 +21,7 @@ Onyo requires Python >= 3.11 and a few system utilities.
 
 Debian/Ubuntu:
 ```
-apt-get install git tig tree
+apt-get install git tig tree python3-pip
 ```
 
 macOS:
@@ -31,7 +31,7 @@ brew install git tig tree
 
 #### Setup and activate virtual environment:
 ```
-python -m venv ~/.venvs/onyo
+python3 -m venv ~/.venvs/onyo
 source ~/.venvs/onyo/bin/activate
 ```
 

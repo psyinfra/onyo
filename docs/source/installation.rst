@@ -11,7 +11,7 @@ system utilities.
 
 .. code:: shell
 
-   apt-get install git tig tree
+   apt-get install git tig tree python3-pip
 
 **macOS**:
 
@@ -27,7 +27,7 @@ To install Onyo, run the following from your command line:
 
 .. code::
 
-   pip install git+https://github.com/psyinfra/onyo.git
+   pip3 install git+https://github.com/psyinfra/onyo.git
 
 Enabling tab-completion is also recommended:
 .. code::

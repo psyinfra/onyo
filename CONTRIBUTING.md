@@ -25,7 +25,7 @@ cd onyo
 #### (3) Create then activate a virtual environment
 
 ```bash
-python -m venv ~/.venvs/onyo
+python3 -m venv ~/.venvs/onyo
 source ~/.venvs/onyo/bin/activate
 ```
 
@@ -33,7 +33,7 @@ source ~/.venvs/onyo/bin/activate
 
 Debian/Ubuntu:
 ```bash
-apt-get install git tig tree
+apt-get install git tig tree python3-pip
 ```
 
 macOS ([Homebrew](https://brew.sh):
@@ -44,7 +44,7 @@ brew install git tig tree
 #### (5) Install Onyo and test dependencies
 
 ```bash
-pip install -e ".[tests, docs]"
+pip3 install -e ".[tests, docs]"
 ```
 
 ### Running tests

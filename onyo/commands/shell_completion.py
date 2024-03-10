@@ -13,20 +13,25 @@ args_shell_completion = {
         required=False,
         default='zsh',
         choices=['zsh'],
-        help='Specify the shell for which to generate tab completion for')
+        help="""
+            The shell to generate a tab-completion script for.
+        """
+    )
 }
 
 
 def shell_completion(args: argparse.Namespace) -> None:
     """
-    Display a shell script for tab completion for Onyo.
+    Display a tab-completion shell script for Onyo.
 
     The output of this command should be "sourced" to enable tab completion.
 
-    example:
+    Example:
 
-        $ source <(onyo shell-completion)
-        $ onyo --<PRESS TAB to display available options>
+      ```
+      source <(onyo shell-completion)
+      onyo --<PRESS TAB to display available options>
+      ```
     """
     content = ''
     shell_completion_dir = Path(__file__).resolve().parent.parent / 'shell_completion'
@@ -35,6 +40,7 @@ def shell_completion(args: argparse.Namespace) -> None:
         shell_completion_file = shell_completion_dir / 'zsh' / '_onyo'
 
     # TODO: add bash
+    # bash: ~/.local/share/bash-completion/completions
 
     content = shell_completion_file.read_text()
     print(content)

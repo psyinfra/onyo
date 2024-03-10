@@ -20,30 +20,34 @@ args_history = {
         required=False,
         default=True,
         action='store_false',
-        help=(
-            "Use the interactive history tool (specified in '.onyo/config' "
-            "under 'onyo.history.interactive') to display the history of the "
-            "repository, an asset or a directory")),
+        help="""
+            Use the non-interactive tool to display history.
+        """
+    ),
 
     'path': dict(
         metavar='PATH',
         nargs='?',
         type=path,
-        help='Specify an asset or a directory to show the history of'),
+        help="""
+            PATH of an asset or directory to display the history of.
+        """
+    ),
 }
 
 
 def history(args: argparse.Namespace) -> None:
     """
-    Display the history of an ``ASSET`` or ``DIRECTORY``.
+    Display the history of ``PATH``.
 
-    Onyo detects whether an interactive TTY is in use, and will either use
-    the interactive display tool (specified in ``.onyo/config`` under
-    ``onyo.history.interactive``; default ``tig –-follow``) or the
-    non-interactive one (``onyo.history.non-interactive``; default ``git log``)
-    accordingly.
+    Onyo makes an effort to detect if the TTY is interactive in order to
+    automatically select whether to use the interactive or non-interactive
+    history tool.
 
-    The commands to display history are configurable using ``onyo config``.
+    The commands to display history are configurable using ``onyo config``:
+
+      * ``onyo.history.interactive``
+      * ``onyo.history.non-interactive``
     """
 
     # Note: Currently exceptional command in that it's not a function in lib/commands, because of exit code handling.
