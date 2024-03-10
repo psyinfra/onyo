@@ -57,13 +57,13 @@ args_new = {
         args=('-k', '--keys'),
         required=False,
         action=StoreKeyValuePairs,
-        metavar="KEYS",
+        metavar="KEY",
         nargs='+',
         help="""
-            Key-value pairs to populate content of new assets.
+            KEY-VALUE pairs to populate content of new assets.
 
-            Each key can be defined either 1 or N times (where N is the number
-            of assets to be created). A key that is declared once will apply
+            Each KEY can be defined either 1 or N times (where N is the number
+            of assets to be created). A KEY that is declared once will apply
             to all new assets, otherwise each will be applied to each new asset
             in the order they were declared.
 
@@ -106,18 +106,18 @@ args_new = {
 
 def new(args: argparse.Namespace) -> None:
     """
-    Create new ``ASSET``\s and populate with key-value pairs. Destination
+    Create new ``ASSET``\s and populate with KEY-VALUE pairs. Destination
     directories are created if they are missing.
 
     Asset contents are populated in a waterfall pattern and can overwrite
     values from previous steps:
 
-      1) ``--template`` or ``--clone``
+      1) ``--clone`` or ``--template``
       2) ``--tsv``
       3) ``--keys``
       4) ``--edit`` (i.e. manual user input)
 
-    The keys that comprise the asset filename are required (configured by
+    The KEYs that comprise the asset filename are required (configured by
     `onyo.assets.filename`).
 
     The contents of all new assets are checked for validity before committing.
