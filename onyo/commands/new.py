@@ -14,19 +14,6 @@ if TYPE_CHECKING:
 
 args_new = {
 
-    'template': dict(
-        args=('-t', '--template'),
-        metavar='TEMPLATE',
-        required=False,
-        type=template,
-        help="""
-            Name of a template to populate the contents of new assets.
-
-            This cannot be used with the ``--clone`` flag nor the ``template``
-            Reserved Key.
-        """
-    ),
-
     'clone': dict(
         args=('-c', '--clone'),
         metavar='CLONE',
@@ -40,13 +27,29 @@ args_new = {
         """
     ),
 
-    'edit': dict(
-        args=('-e', '--edit'),
+    'template': dict(
+        args=('-t', '--template'),
+        metavar='TEMPLATE',
         required=False,
-        default=False,
-        action='store_true',
+        type=template,
         help="""
-            Open new assets in an editor.
+            Name of a template to populate the contents of new assets.
+
+            This cannot be used with the ``--clone`` flag nor the ``template``
+            Reserved Key.
+        """
+    ),
+
+    'tsv': dict(
+        args=('-tsv', '--tsv'),
+        metavar='TSV',
+        required=False,
+        type=path,
+        help="""
+            Path to a TSV file describing new assets.
+
+            The header declares the key names to be populated. The values to
+            populate assets are declared with one line per asset.
         """
     ),
 
@@ -76,6 +79,16 @@ args_new = {
         """
     ),
 
+    'edit': dict(
+        args=('-e', '--edit'),
+        required=False,
+        default=False,
+        action='store_true',
+        help="""
+            Open new assets in an editor.
+        """
+    ),
+
     'path': dict(
         args=('-p', '--path'),
         metavar='PATH',
@@ -84,19 +97,6 @@ args_new = {
             Directory to create new assets in.
 
             This cannot be used with the ``directory`` Reserved Key.
-        """
-    ),
-
-    'tsv': dict(
-        args=('-tsv', '--tsv'),
-        metavar='TSV',
-        required=False,
-        type=path,
-        help="""
-            Path to a TSV file describing new assets.
-
-            The header declares the key names to be populated. The values to
-            populate assets are declared with one line per asset.
         """
     ),
 
