@@ -1042,7 +1042,7 @@ def onyo_set(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_tree(inventory: Inventory,
-              paths: list[Path] = []) -> None:
+              paths: Optional[list[Path]] = None) -> None:
     """Print the directory tree of paths.
 
     Parameters
@@ -1061,15 +1061,15 @@ def onyo_tree(inventory: Inventory,
         If paths are invalid.
     """
     # sanitize the paths
-    paths = paths if paths else [inventory.root]
-    non_inventory_dirs = [str(p) for p in paths if not inventory.repo.is_inventory_dir(p)]
+    dirs = paths if paths else [inventory.root]
+    non_inventory_dirs = [str(p) for p in dirs if not inventory.repo.is_inventory_dir(p)]
     if non_inventory_dirs:
         raise ValueError("The following paths are not inventory directories: %s" %
                          '\n'.join(non_inventory_dirs))
 
     # run it
     ret = subprocess.run(
-        ['tree', *map(str, paths)], capture_output=True, text=True, check=True)
+        ['tree', *map(str, dirs)], capture_output=True, text=True, check=True)
     # print tree output
     ui.print(ret.stdout)
 
