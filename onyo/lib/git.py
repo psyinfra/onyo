@@ -190,8 +190,9 @@ class GitRepo(object):
         """
         if isinstance(paths, Path):
             paths = [paths]
-        self._git(['add'] + [str(p) for p in paths])
-        self._git(['commit', '-m', message])
+        pathspecs = [str(p) for p in paths]
+        self._git(['add'] + pathspecs)
+        self._git(['commit', '-m', message, '--'] + pathspecs)
         self.clear_cache()
 
     @staticmethod
