@@ -68,6 +68,9 @@ def build_parser(parser, args: dict) -> None:
             parser.add_argument(**args[cmd])
 
 
+subcmds = None
+
+
 def setup_parser() -> argparse.ArgumentParser:
     from onyo.onyo_arguments import args_onyo
     from onyo.commands.cat import args_cat
@@ -85,6 +88,8 @@ def setup_parser() -> argparse.ArgumentParser:
     from onyo.commands.tree import args_tree
     from onyo.commands.unset import args_unset
 
+    global subcmds
+
     parser = argparse.ArgumentParser(
         description='A text-based inventory system backed by git.',
         formatter_class=SubcommandHelpFormatter
@@ -93,7 +98,8 @@ def setup_parser() -> argparse.ArgumentParser:
 
     # subcommands
     subcmds = parser.add_subparsers(
-        title='commands'
+        title='commands',
+        dest='cmd'
     )
     subcmds.metavar = '<command>'
     #
@@ -301,9 +307,14 @@ def main() -> None:
         if not any(x in sys.argv for x in ['-h', '--help']):
             sys.argv.insert(subcmd_index + 1, '--')
 
+    global subcmds
     # parse the arguments
     parser = setup_parser()
-    args = parser.parse_args()
+    args, extras = parser.parse_known_args()
+    if extras:
+        if args.cmd:
+            subcmds._name_parser_map[args.cmd].print_usage(file=sys.stderr)
+        parser.error("unrecognized arguments: %s" % " ".join(extras))
 
     # configure user interface
     ui.set_debug(args.debug)
