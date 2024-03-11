@@ -14,19 +14,6 @@ if TYPE_CHECKING:
 
 args_new = {
 
-    'template': dict(
-        args=('-t', '--template'),
-        metavar='TEMPLATE',
-        required=False,
-        type=template,
-        help="""
-            Name of a template to populate the contents of new assets.
-
-            This cannot be used with the ``--clone`` flag nor the ``template``
-            Reserved Key.
-        """
-    ),
-
     'clone': dict(
         args=('-c', '--clone'),
         metavar='CLONE',
@@ -40,50 +27,16 @@ args_new = {
         """
     ),
 
-    'edit': dict(
-        args=('-e', '--edit'),
+    'template': dict(
+        args=('-t', '--template'),
+        metavar='TEMPLATE',
         required=False,
-        default=False,
-        action='store_true',
+        type=template,
         help="""
-            Open new assets in an editor.
-        """
-    ),
+            Name of a template to populate the contents of new assets.
 
-    'keys': dict(
-        args=('-k', '--keys'),
-        required=False,
-        action=StoreKeyValuePairs,
-        metavar="KEYS",
-        nargs='+',
-        help="""
-            Key-value pairs to populate content of new assets.
-
-            Each key can be defined either 1 or N times (where N is the number
-            of assets to be created). A key that is declared once will apply
-            to all new assets, otherwise each will be applied to each new asset
-            in the order they were declared.
-
-            For example, create three new laptops with different serials:
-            ```
-            onyo new --keys type=laptop make=apple model=macbookpro serial=1 serial=2 serial=3 --path shelf/
-            ```
-
-            Shell brace-expansion makes this even more succinct:
-            ```
-            onyo new --keys type=laptop make=apple model=macbookpro serial={1,2,3} --path shelf/
-            ```
-        """
-    ),
-
-    'path': dict(
-        args=('-p', '--path'),
-        metavar='PATH',
-        type=path,
-        help="""
-            Directory to create new assets in.
-
-            This cannot be used with the ``directory`` Reserved Key.
+            This cannot be used with the ``--clone`` flag nor the ``template``
+            Reserved Key.
         """
     ),
 
@@ -100,24 +53,71 @@ args_new = {
         """
     ),
 
+    'keys': dict(
+        args=('-k', '--keys'),
+        required=False,
+        action=StoreKeyValuePairs,
+        metavar="KEY",
+        nargs='+',
+        help="""
+            KEY-VALUE pairs to populate content of new assets.
+
+            Each KEY can be defined either 1 or N times (where N is the number
+            of assets to be created). A KEY that is declared once will apply
+            to all new assets, otherwise each will be applied to each new asset
+            in the order they were declared.
+
+            For example, create three new laptops with different serials:
+            ```
+            onyo new --keys type=laptop make=apple model=macbookpro serial=1 serial=2 serial=3 --path shelf/
+            ```
+
+            Shell brace-expansion makes this even more succinct:
+            ```
+            onyo new --keys type=laptop make=apple model=macbookpro serial={1,2,3} --path shelf/
+            ```
+        """
+    ),
+
+    'edit': dict(
+        args=('-e', '--edit'),
+        required=False,
+        default=False,
+        action='store_true',
+        help="""
+            Open new assets in an editor.
+        """
+    ),
+
+    'path': dict(
+        args=('-p', '--path'),
+        metavar='PATH',
+        type=path,
+        help="""
+            Directory to create new assets in.
+
+            This cannot be used with the ``directory`` Reserved Key.
+        """
+    ),
+
     'message': shared_arg_message,
 }
 
 
 def new(args: argparse.Namespace) -> None:
     """
-    Create new ``ASSET``\s and populate with key-value pairs. Destination
+    Create new ``ASSET``\s and populate with KEY-VALUE pairs. Destination
     directories are created if they are missing.
 
     Asset contents are populated in a waterfall pattern and can overwrite
     values from previous steps:
 
-      1) ``--template`` or ``--clone``
+      1) ``--clone`` or ``--template``
       2) ``--tsv``
       3) ``--keys``
       4) ``--edit`` (i.e. manual user input)
 
-    The keys that comprise the asset filename are required (configured by
+    The KEYs that comprise the asset filename are required (configured by
     `onyo.assets.filename`).
 
     The contents of all new assets are checked for validity before committing.

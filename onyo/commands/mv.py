@@ -17,12 +17,18 @@ args_mv = {
         metavar='SOURCE',
         nargs='+',
         type=path,
-        help='Asset(s) and/or directory(s) to move into DEST'),
+        help="""
+            Assets and/or directories to move into DEST.
+        """
+    ),
 
     'destination': dict(
         metavar='DEST',
         type=path,
-        help='Destination to move SOURCE(s) into'),
+        help="""
+            Destination to move SOURCEs into.
+        """
+    ),
 
     'message': shared_arg_message,
 }
@@ -30,23 +36,14 @@ args_mv = {
 
 def mv(args: argparse.Namespace) -> None:
     """
-    Move ``SOURCE``\\(s) (assets or directories) to the ``DEST`` directory, or
-    rename a ``SOURCE`` directory to ``DEST``.
+    Move SOURCEs (assets or directories) into the DEST directory, or rename a
+    SOURCE directory to DEST.
 
-    Files cannot be renamed using ``onyo mv``, since their names are generated from their contents.
-    To rename a file, use ``onyo set``, or use ``onyo edit`` and change the keys used for the
-    asset's name.
-    To rename a directory, call ``onyo mv`` with a single ``SOURCE`` to rename, and a different and
-    non-existing ``DEST`` name in the same directory.
+    If DEST is an asset file, it will be converted into an Asset Directory and
+    then the SOURCEs will be moved into it.
 
-    Otherwise, when called on one or multiple assets or directories, the command will move
-    ``SOURCE``\\(s) into ``DEST``.
-
-    Special case: If ``DEST`` is an asset file, it will be turned into an asset dir first.
-
-    A list of all files and directories to modify will be presented, and the user prompted for
-    confirmation.
-
+    Assets cannot be renamed using ``onyo mv``. Their names are generated from
+    keys in their contents. To rename a file, use ``onyo set`` or ``onyo edit``.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 

@@ -20,19 +20,28 @@ args_set = {
         required=False,
         default=False,
         action='store_true',
-        help=(
-            'Permit assigning values to keys that would result in the '
-            'asset(s) being renamed.')),
+        help="""
+            Allow setting KEYs that are part of the asset name.
+            (see the `onyo.assets.filename` configuration option)
+        """
+    ),
 
     'keys': dict(
         args=('-k', '--keys'),
         required=True,
         action=StoreKeyValuePairs,
-        metavar="KEYS",
+        metavar="KEY",
         nargs='+',
-        help=(
-            'Specify key-value pairs to set in asset(s). Multiple pairs can '
-            'be specified (e.g. key=value key2=value2)')),
+        help="""
+            KEY-VALUE pairs to set in assets. Multiple pairs can be given
+            (e.g. key1=value1 key2=value2 key3=value3).
+
+            Quotes are necessary when using spaces or shell command characters:
+            ```
+            onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --path ...
+            ```
+        """
+    ),
 
     'path': dict(
         args=('-p', '--path'),
@@ -40,7 +49,10 @@ args_set = {
         metavar='PATH',
         nargs='+',
         type=path,
-        help='Asset(s) to set KEY=VALUE in'),
+        help="""
+            Assets to set KEY=VALUEs in.
+        """
+    ),
 
     'message': shared_arg_message,
 }
@@ -48,28 +60,22 @@ args_set = {
 
 def set(args: argparse.Namespace) -> None:
     """
-    Set the ``value`` of ``key`` for given assets. If a key does not exist,
-    it is added and set appropriately.
+    Set ``KEY``\s to ``VALUE`` for assets.
 
-    Key names can be any valid YAML key name.
+    KEY names can be any valid YAML key-name. If a KEY does not exist, it is
+    added and set appropriately.
 
-    Multiple ``key=value`` pairs can be declared and divided by spaces. Quotes
-    can be used around ``value``, which is necessary when it contains a comma,
-    whitespace, etc.
+    Setting KEYs used in the asset name require the ``--rename`` flag, and will
+    result in the asset being renamed on the filesystem.
 
-    Note, that the key ``is_asset_directory`` takes a bool and determines whether
-    an asset is in fact an asset dir. Changing that value with this command turns
-    an asset file into an asset dir (or vice versa).
-    Required keys as defined by the 'onyo.assets.filename' config (by default
-    ``type``, ``make``, ``model``, and ``serial``) can only be set when the
-    `--rename` flag is used. It will result in the file(s) being
-    renamed.
+    In addition to keys in asset contents, some PSEUDO-KEYS can be set:
 
-    Changes are printed to the terminal in the style of ``diff``.
+      * ``is_asset_directory``: boolean to control whether the asset is an
+        Asset Directory.
 
-    Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
-    error encountered while writing a file will cause Onyo to error and exit
-    immediately.
+    The contents of all modified assets are checked for validity before
+    committing. If problems are found, Onyo will error and leave the assets
+    unmodified.
     """
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))

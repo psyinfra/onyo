@@ -16,12 +16,14 @@ args_unset = {
     'keys': dict(
         args=('-k', '--keys'),
         required=True,
-        metavar="KEYS",
+        metavar="KEY",
         nargs='+',
         type=str,
-        help=(
-            'Specify keys to unset in assets. Multiple keys can be given '
-            '(e.g. key key2 key3)')),
+        help="""
+            KEYs to unset in assets. Multiple keys can be given
+            (e.g. key1 key2 key3).
+        """
+    ),
 
     'path': dict(
         args=('-p', '--path'),
@@ -29,7 +31,10 @@ args_unset = {
         metavar="PATH",
         nargs='+',
         type=path,
-        help='Asset(s) and/or directory(s) for which to unset values in'),
+        help="""
+            Assets unset KEYs in.
+        """
+    ),
 
     'message': shared_arg_message,
 }
@@ -37,21 +42,14 @@ args_unset = {
 
 def unset(args: argparse.Namespace) -> None:
     """
-    Remove the ``value`` of ``key`` for ``ASSET``\s.
+    Remove ``KEY``\s from assets.
 
-    Multiple ``key=value`` pairs can be declared and divided by spaces. Quotes
-    can be used around ``value``, which is necessary when it contains a comma,
-    whitespace, etc.
+    Keys that are used in asset names (see the ``onyo.assets.filename``
+    configuration option) cannot be unset.
 
-    Keys that are used in asset names as specified in the
-    ``onyo.assets.filename`` configuration cannot be unset.
-    To rename a file(s) use ``onyo set --rename``.
-
-    Changes are printed to the terminal in the style of ``diff``.
-
-    Errors reading or parsing files print to STDERR, but do not halt Onyo. Any
-    error encountered while writing a file will cause Onyo to error and exit
-    immediately.
+    The contents of all modified assets are checked for validity before
+    committing. If problems are found, Onyo will error and leave the assets
+    unmodified.
     """
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
