@@ -12,6 +12,7 @@ setup(
     install_requires=[
         'ruamel.yaml',
         'rich',
+        'rich-argparse',
     ],
     extras_require={
         'tests': [
