@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import textwrap
 from argparse import ArgumentParser, PARSER
@@ -55,8 +56,24 @@ def prepare_rst_for_rich(text: str) -> str:
     # de-indent text
     text = textwrap.dedent(text).strip()
 
-    # strip `` (inline code blocks)
-    text = text.replace('``', '')
+    # stylize arg descriptors (ALL CAPS ARGS)
+    text = re.sub('\*\*([A-Z\-]+)\*\*', r'[dark_cyan]\1[/dark_cyan]', text)
+
+    # stylize ** (bold)
+    text = re.sub('\*\*([^*]+)\*\*', r'[bold]\1[/bold]', text)
+
+    # stylize ``` (code blocks)
+    text = re.sub('```([^`]+)```', r'[underline]\1[/underline]', text)
+
+    # strip `` (inline code markers) for flags
+    # flags are auto-colorized by rich-argparse
+    text = re.sub('``(-[^`]+)``', r'\1', text)
+
+    # stylize remaining `` (inline code markers)
+    text = re.sub('``([^`]+)``', r'[bold magenta]\1[/bold magenta]', text)
+
+    # make bullet points prettier
+    text = text.replace(' * ', ' • ')
 
     # remove escaping
     text = text.replace('\\', '')
