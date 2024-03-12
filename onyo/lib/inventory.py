@@ -356,7 +356,7 @@ class Inventory(object):
             # TODO: Instead of raise could be a silent noop.
             raise ValueError(f"Cannot move {src}: Destination {dst} is the current location.")
         if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
-            raise ValueError(f"Cannot move {src}: Destination {dst} is not in inventory directory.")
+            raise ValueError(f"Cannot move {src}: Destination {dst} is not an inventory directory.")
         if (dst / src.name).exists():
             raise ValueError(f"Target {dst / src.name} already exists.")
 
