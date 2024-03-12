@@ -69,12 +69,12 @@ args_new = {
 
             For example, create three new laptops with different serials:
             ```
-            onyo new --keys type=laptop make=apple model=macbookpro serial=1 serial=2 serial=3 --path shelf/
+            $ onyo new --keys type=laptop make=apple model=macbookpro serial=1 serial=2 serial=3 --path shelf/
             ```
 
             Shell brace-expansion makes this even more succinct:
             ```
-            onyo new --keys type=laptop make=apple model=macbookpro serial={1,2,3} --path shelf/
+            $ onyo new --keys type=laptop make=apple model=macbookpro serial={1,2,3} --path shelf/
             ```
         """
     ),

@@ -38,7 +38,7 @@ args_set = {
 
             Quotes are necessary when using spaces or shell command characters:
             ```
-            onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --path ...
+            $ onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --path ...
             ```
         """
     ),

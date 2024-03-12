@@ -29,8 +29,8 @@ def shell_completion(args: argparse.Namespace) -> None:
     Example:
 
       ```
-      source <(onyo shell-completion)
-      onyo --<PRESS TAB to display available options>
+      $ source <(onyo shell-completion)
+      $ onyo --<PRESS TAB to display available options>
       ```
     """
     content = ''
