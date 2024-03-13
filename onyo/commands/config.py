@@ -16,7 +16,7 @@ args_config = {
         metavar='ARGS',
         nargs='+',
         type=git_config,
-        help='Config options to set in .onyo/config'
+        help='Config options to set in ``.onyo/config``.'
     ),
 }
 
@@ -31,9 +31,9 @@ def config(args: argparse.Namespace) -> None:
     To set configuration options locally (and not commit them to the Onyo
     repository), use ``git config`` instead.
 
-    ``onyo config`` is a wrapper around ``git config``. All of its options and
+    This command is a wrapper around ``git config``. All of its options and
     capabilities are available with the exception of ``--system``, ``--global``,
-    ``--local``, ``--worktree``, and ``--file``. Please see the git-config
+    ``--local``, ``--worktree``, and ``--file``. Please see the **git-config**
     manpage for more information about usage.
 
     Onyo configuration options:

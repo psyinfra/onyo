@@ -30,7 +30,7 @@ args_history = {
         nargs='?',
         type=path,
         help="""
-            PATH of an asset or directory to display the history of.
+            Path of an asset or directory to display the history of.
         """
     ),
 }
@@ -38,7 +38,7 @@ args_history = {
 
 def history(args: argparse.Namespace) -> None:
     """
-    Display the history of ``PATH``.
+    Display the history of **PATH**.
 
     Onyo makes an effort to detect if the TTY is interactive in order to
     automatically select whether to use the interactive or non-interactive

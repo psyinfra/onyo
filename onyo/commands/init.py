@@ -25,7 +25,7 @@ def init(args: argparse.Namespace) -> None:
     """
     Initialize an Onyo repository.
 
-    The current working directory will be initialized if neither ``DIR`` nor the
+    The current working directory will be initialized if neither **DIR** nor the
     ``onyo -C DIR`` flag are specified. If the target directory does not exist,
     it will be created.
 

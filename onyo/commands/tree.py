@@ -16,14 +16,14 @@ args_tree = {
         metavar='DIR',
         nargs='*',
         type=directory,
-        help='DIRECTORYs to list'
+        help='Directories to list'
     )
 }
 
 
 def tree(args: argparse.Namespace) -> None:
     """
-    List the assets and directories of ``DIRECTORY``\s in a tree-like format.
+    List the assets and directories of **DIRECTORY**\s in a tree-like format.
 
     If no directory is provided, the tree for CWD is listed.
 

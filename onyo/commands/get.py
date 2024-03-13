@@ -20,8 +20,8 @@ args_get = {
         required=False,
         default=0,
         help="""
-            Descend up to DEPTH levels into the directories specified. DEPTH=0
-            descends recursively without limit.
+            Descend up to **DEPTH** levels into the directories specified. A
+            depth of **0** descends recursively without limit.
         """
     ),
 
@@ -30,7 +30,7 @@ args_get = {
         metavar='KEY',
         nargs='+',
         help="""
-            KEY values to print. Pseudo-keys (information not stored in the
+            **KEY** values to print. Pseudo-keys (information not stored in the
             asset file) are also available for queries.
         """
     ),
@@ -51,9 +51,10 @@ args_get = {
         type=str,
         default=None,
         help="""
-            Criteria to match assets in the form ``KEY=VALUE``, where VALUE is a
-            python regular expression. Pseudo-keys such as ``path`` can also be
-            used. Special values supported are:
+            Criteria to match assets in the form ``KEY=VALUE``, where **VALUE**
+            is a python regular expression. Pseudo-keys such as ``path`` can
+            also be used. Special values supported are:
+
               * ``<dict>``
               * ``<list>``
               * ``<unset>``
@@ -66,7 +67,7 @@ args_get = {
         type=path,
         nargs='+',
         help="""
-            PATHs to assets or directories to query.
+            **PATH**\s to assets or directories to query.
         """
     ),
 
@@ -75,7 +76,7 @@ args_get = {
         action='store_true',
         default=False,
         help="""
-            Sort output in ascending order (excludes --sort-descending).
+            Sort output in ascending order (excludes ``--sort-descending``).
         """
     ),
 
@@ -84,7 +85,7 @@ args_get = {
         action='store_true',
         default=False,
         help="""
-            Sort output in descending order (excludes --sort-ascending).
+            Sort output in descending order (excludes ``--sort-ascending``).
         """
     ),
 }
@@ -92,13 +93,13 @@ args_get = {
 
 def get(args: argparse.Namespace) -> None:
     """
-    Return values of the requested KEYs for matching assets.
+    Return values of the requested **KEY**\s for matching assets.
 
-    If no KEYs are given, all keys in the asset name are used (see
-    ``onyo.assets.filename``). If no PATHs are given, the current working
+    If no **KEY**\s are given, all keys in the asset name are printed (see
+    ``onyo.assets.filename``). If no **PATH**\s are given, the current working
     directory is used.
 
-    In addition to keys in asset contents, PSEUDO-KEYS can be queried and
+    In addition to keys in asset contents, **PSEUDO-KEYS** can be queried and
     matched.
 
       * ``is_asset_directory``: is the asset an Asset Directory

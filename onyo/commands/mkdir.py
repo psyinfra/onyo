@@ -18,7 +18,7 @@ args_mkdir = {
         nargs='+',
         type=path,
         help="""
-            DIRECTORYs to create; or assets to convert into an Asset Directory.
+            Directories to create; or assets to convert into an Asset Directory.
         """
     ),
 
@@ -28,7 +28,7 @@ args_mkdir = {
 
 def mkdir(args: argparse.Namespace) -> None:
     """
-    Create DIRECTORYs or convert Asset Files into an Asset Directory.
+    Create **DIRECTORY**\s or convert Asset Files into an Asset Directory.
 
     Intermediate directories are created as needed (i.e. parent and child
     directories can be created in one call).
@@ -36,7 +36,7 @@ def mkdir(args: argparse.Namespace) -> None:
     An empty ``.anchor`` file is added to each directory, to ensure that git
     tracks them even when empty.
 
-    If the DIRECTORY already exists, the path is protected, or the asset is
+    If the **DIRECTORY** already exists, the path is protected, or the asset is
     already an Asset Directory, then Onyo will error and leave everything
     unmodified.
     """
