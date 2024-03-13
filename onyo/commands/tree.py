@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import directory
 from onyo.lib.commands import onyo_tree
 from onyo.lib.inventory import Inventory
 
@@ -15,7 +14,6 @@ args_tree = {
     'directory': dict(
         metavar='DIR',
         nargs='*',
-        type=directory,
         help='Directories to list'
     )
 }

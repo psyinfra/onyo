@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo.argparse_helpers import path, StoreKeyValuePairs
+from onyo.argparse_helpers import StoreKeyValuePairs
 from onyo.lib.commands import onyo_set
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
@@ -48,7 +48,6 @@ args_set = {
         required=True,
         metavar='ASSET',
         nargs='+',
-        type=path,
         help="""
             Assets to set **KEY-VALUE**\s in.
         """

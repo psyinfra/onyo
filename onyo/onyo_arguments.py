@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from onyo._version import __version__
-from onyo.argparse_helpers import directory
 
 args_onyo = {
     'opdir': dict(
@@ -9,7 +8,6 @@ args_onyo = {
         metavar='DIR',
         required=False,
         default=Path.cwd(),
-        type=directory,
         help="""
             Run Onyo from **DIR** instead of the current working directory.
         """

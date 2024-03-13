@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import directory, path, template, StoreKeyValuePairs
+from onyo.argparse_helpers import StoreKeyValuePairs
 from onyo.lib.commands import onyo_new
 from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_message
@@ -18,7 +18,6 @@ args_new = {
         args=('-c', '--clone'),
         metavar='CLONE',
         required=False,
-        type=path,
         help="""
             Path of an asset to clone.
 
@@ -31,7 +30,6 @@ args_new = {
         args=('-t', '--template'),
         metavar='TEMPLATE',
         required=False,
-        type=template,
         help="""
             Name of a template to populate the contents of new assets.
 
@@ -44,7 +42,6 @@ args_new = {
         args=('-tsv', '--tsv'),
         metavar='TSV',
         required=False,
-        type=path,
         help="""
             Path to a **TSV** file describing new assets.
 
@@ -92,7 +89,6 @@ args_new = {
     'directory': dict(
         args=('-d', '--directory'),
         metavar='DIRECTORY',
-        type=directory,
         help="""
             Directory to create new assets in.
 
