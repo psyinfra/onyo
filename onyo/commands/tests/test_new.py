@@ -31,7 +31,7 @@ def test_new(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new` can create an asset in different directories.
     """
     file_ = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -53,7 +53,7 @@ def test_new_interactive(repo: OnyoRepo) -> None:
     'y' as input in the dialog, instead of using the flag '--yes'.
     """
     file_ = f'{directories[0]}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--path', directories[0], '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', 'new', '--directory', directories[0], '--keys'] + asset_spec,
                          input='y', capture_output=True, text=True)
 
     # verify correct output
@@ -72,7 +72,7 @@ def test_new_interactive(repo: OnyoRepo) -> None:
 def test_new_top_level(repo: OnyoRepo) -> None:
     """
     Test that `onyo new` can create an asset on the top level of
-    the repository. This relies on CWD being the default for `--path`
+    the repository. This relies on CWD being the default for `--directory`
     and on the `repo` fixture CD'ing into the repo's root dir.
     """
     file_ = 'laptop_apple_macbookpro.0'
@@ -94,7 +94,7 @@ def test_new_top_level(repo: OnyoRepo) -> None:
 @pytest.mark.repo_dirs(*directories)
 def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
     """
-    Test that `onyo new --path <path>` can create an asset in sub-directories of
+    Test that `onyo new --directory <path>` can create an asset in sub-directories of
     the repository while the cwd is inside a different sub-directory.
     """
     # Change cwd to sub-directory
@@ -105,7 +105,7 @@ def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
     subdir = repo.git.root / "just another path"
     file_ = subdir / "laptop_apple_macbookpro.0"
 
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', subdir, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--directory', subdir, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -122,7 +122,7 @@ def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
 @pytest.mark.repo_dirs(*directories)
 def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
     """
-    Test that `onyo new --path <path>` can create an asset in sub-directories of
+    Test that `onyo new --directory <path>` can create an asset in sub-directories of
     the repository while the cwd is inside a different sub-directory with a
     relative path.
     """
@@ -136,7 +136,7 @@ def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
     # build a path for the new asset as a relative path
     subdir = Path(var) / "just another path"
 
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', subdir, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--directory', subdir, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -159,7 +159,7 @@ def test_folder_creation_with_new(repo: OnyoRepo, directory: str) -> None:
     existing dir 'overlap'.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -181,7 +181,7 @@ def test_with_faux_serial_number(repo: OnyoRepo) -> None:
     Test that `onyo new` can create multiple assets with faux serial numbers in
     multiple directories at once. To specify several assets, at least one key-value-pair
     has to be given multiple times. This test also needs to use the 'directory'
-    (reserved) key instead of `--path` in order to specify the directory per asset.
+    (reserved) key instead of `--directory` in order to specify the directory per asset.
     """
     filename_prefix = "laptop_apple_macbookpro.faux"  # created asset files are expected to be this plus a random suffix
 
@@ -238,7 +238,7 @@ def test_yes_flag(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new --yes` creates assets in different directories.
     """
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -269,7 +269,7 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
 
     # create asset with --keys
     ret = subprocess.run(
-        ['onyo', '--yes', 'new', '--path', directory, '--keys', key_values] + asset_spec,
+        ['onyo', '--yes', 'new', '--directory', directory, '--keys', key_values] + asset_spec,
         capture_output=True, text=True)
 
     # verify output
@@ -293,7 +293,7 @@ def test_new_message_flag(repo: OnyoRepo, directory: str) -> None:
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
 
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--message', msg, '--path', directory, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--message', msg, '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -311,7 +311,7 @@ def test_discard_changes(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo new` can discard new assets and the repository stays clean.
     """
     asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', 'new', '--path', directory, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', 'new', '--directory', directory, '--keys'] + asset_spec,
                          input='n', capture_output=True, text=True)
 
     # verify correct output
@@ -344,7 +344,7 @@ def test_new_protected_folder(repo: OnyoRepo, protected_folder: str) -> None:
     instead of creating an asset.
     """
     asset = f"{protected_folder}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', '--path', protected_folder, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', 'new', '--directory', protected_folder, '--keys'] + asset_spec,
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
@@ -369,7 +369,7 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
 
     # create asset with --edit, --template and --keys
     ret = subprocess.run(['onyo', '--yes', 'new', '--edit',
-                          '--template', template, '--path', directory, '--keys'] + key_values,
+                          '--template', template, '--directory', directory, '--keys'] + key_values,
                          capture_output=True, text=True)
 
     # verify output
@@ -405,7 +405,7 @@ def test_new_with_keys_overwrite_template(repo: OnyoRepo, directory: str) -> Non
 
     # create asset with --template and --keys
     ret = subprocess.run(['onyo', '--yes', 'new', '--template', template,
-                          '--path', directory, '--keys'] + key_values,
+                          '--directory', directory, '--keys'] + key_values,
                          capture_output=True, text=True)
 
     # verify output
@@ -442,7 +442,7 @@ def test_with_special_characters(
     asset = f'{directory}/{variant[0]}_{variant[1]}_{variant[2]}.{variant[3]}'
     keys = [f"type={variant[0]}", f"make={variant[1]}",
             f"model={variant[2]}", f"serial={variant[3]}"]
-    ret = subprocess.run(['onyo', '--yes', 'new', '--path', directory, '--keys'] + keys,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + keys,
                          capture_output=True, text=True)
 
     # verify correct output
@@ -464,7 +464,7 @@ def test_error_asset_exists_already(repo: OnyoRepo, directory: str) -> None:
     an asset name that already exists elsewhere in the directory.
     """
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', '--path', directory, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
     # verify correct error
@@ -659,10 +659,10 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
 
     # error if `onyo new` is called with TSV and assets in CLI
     ret = subprocess.run(['onyo', 'new', "--tsv", table_path,
-                          '--path', 'simple/laptop_apple_macbookpro.0'],
+                          '--directory', 'simple/laptop_apple_macbookpro.0'],
                          capture_output=True, text=True)
     assert not ret.stdout
-    assert "Can\'t use \'--path\' option and \'directory\' column in tsv." in ret.stderr
+    assert "Can\'t use \'--directory\' option and \'directory\' column in tsv." in ret.stderr
     assert ret.returncode == 1
 
     # error if both `--template` and 'template' column in tsv header are given

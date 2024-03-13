@@ -65,7 +65,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 2d. Assign newly purchased laptop to user
     laptop = member / "lenovo_thinkpad_laptop.123"
-    cmd = ['onyo', '--yes', 'new', '-p', str(member), '-m', "New purchase: ThinkPad",
+    cmd = ['onyo', '--yes', 'new', '--directory', str(member), '--message', "New purchase: ThinkPad",
            '--keys', 'memory=8GB', 'model=laptop', 'type=lenovo', 'make=thinkpad', 'serial=123']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
@@ -75,7 +75,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
-    cmd = ['onyo', '--yes', 'new', '-p', str(member), '-m', "New purchase: ThinkPad",
+    cmd = ['onyo', '--yes', 'new', '--directory', str(member), '--message', "New purchase: ThinkPad",
            '--keys', 'RAM=8GB', 'build-date=20160310', 'type=laptop', 'make=lenovo', 'model=thinkpad', 'serial=SN123Z']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0

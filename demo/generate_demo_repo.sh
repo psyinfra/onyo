@@ -96,19 +96,19 @@ onyo --yes mkdir repair
 onyo -y new --tsv "${SCRIPT_DIR}/inventory.tsv"
 
 # add a set of newly bought assets
-onyo -y new --keys type=laptop make=apple model=macbook serial=9r32he RAM=8GB display=13.3 --path warehouse/
-onyo -y new --keys type=laptop make=apple model=macbook serial=9r5qlk RAM=8GB display=13.3 --path warehouse/
-onyo -y new --keys type=laptop make=lenovo model=thinkpad serial=owh8e2 RAM=8GB display=14.6 --path warehouse/
-onyo -y new --keys type=laptop make=lenovo model=thinkpad serial=iu7h6d RAM=8GB display=14.6 --path warehouse/
-onyo -y new --keys type=laptop make=microsoft model=surface serial=oq782j RAM=8GB display=12.4 touchscreen=yes --path warehouse/
+onyo -y new --keys type=laptop make=apple model=macbook serial=9r32he RAM=8GB display=13.3 --directory warehouse/
+onyo -y new --keys type=laptop make=apple model=macbook serial=9r5qlk RAM=8GB display=13.3 --directory warehouse/
+onyo -y new --keys type=laptop make=lenovo model=thinkpad serial=owh8e2 RAM=8GB display=14.6 --directory warehouse/
+onyo -y new --keys type=laptop make=lenovo model=thinkpad serial=iu7h6d RAM=8GB display=14.6 --directory warehouse/
+onyo -y new --keys type=laptop make=microsoft model=surface serial=oq782j RAM=8GB display=12.4 touchscreen=yes --directory warehouse/
 
 # NOTE: headphones normally do not have a serial number, and thus a faux serial
 # would be generated (e.g. headphones_JBL_pro.faux). However, for the sake of a
 # reproducible demo, explicit serials are specified.
-onyo -y new --keys type=headphones make=apple model=airpods serial=7h8f04 --path warehouse/
-onyo -y new --keys type=headphones make=JBL model=pro serial=325gtt --path warehouse/
-onyo -y new --keys type=headphones make=JBL model=pro serial=e98t2p --path warehouse/
-onyo -y new --keys type=headphones make=JBL model=pro serial=ph9527 --path warehouse/
+onyo -y new --keys type=headphones make=apple model=airpods serial=7h8f04 --directory warehouse/
+onyo -y new --keys type=headphones make=JBL model=pro serial=325gtt --directory warehouse/
+onyo -y new --keys type=headphones make=JBL model=pro serial=e98t2p --directory warehouse/
+onyo -y new --keys type=headphones make=JBL model=pro serial=ph9527 --directory warehouse/
 
 # one of the headphones was added by accident; remove it.
 onyo -y rm warehouse/headphones_JBL_pro.ph9527
@@ -135,13 +135,13 @@ onyo get --match model=macbook -H --keys path | xargs onyo -y set --keys USB_A=2
 
 # add three newly purchased laptops; shell brace-expansion can be very useful
 onyo -y new --keys type=laptop make=apple model=macbook serial={uef82b3,9il2b4,73b2cn} RAM=8GB display=13.3 USB_A=2 USB_C=1 \
-    --path warehouse/
+    --directory warehouse/
 
 # Bingo Bob was hired; and new hardware was purchased for him
 onyo --yes mkdir "accounting/Bingo Bob"
-onyo -y new --keys type=monitor make=dell model=PH123 serial=86JZho display=22.0 --path warehouse/
-onyo -y new --keys type=laptop make=apple model=macbook serial=oiw629 RAM=8GB display=13.3 USB_A=2 --path warehouse/
-onyo -y new --keys type=headphones make=apple model=airpods serial=uzl8e1 --path warehouse/
+onyo -y new --keys type=monitor make=dell model=PH123 serial=86JZho display=22.0 --directory warehouse/
+onyo -y new --keys type=laptop make=apple model=macbook serial=oiw629 RAM=8GB display=13.3 USB_A=2 --directory warehouse/
+onyo -y new --keys type=headphones make=apple model=airpods serial=uzl8e1 --directory warehouse/
 onyo -y mv warehouse/monitor_dell_PH123.86JZho warehouse/laptop_apple_macbook.oiw629 warehouse/headphones_apple_airpods.uzl8e1 "accounting/Bingo Bob"
 
 # the broken laptop has been repaired (bad RAM, which has also been increased)
@@ -156,7 +156,7 @@ onyo -y mv warehouse/laptop_apple_macbook.uef82b3 ethics/Max\ Mustermann/
 onyo -y mkdir "management"
 onyo -y mv "ethics/Max Mustermann" management
 onyo -y mkdir "management/Alice Wonder"
-onyo -y new --keys type=laptop make=apple model=macbook serial=83hd0 RAM=8GB display=13.3 USB_A=2 --path "management/Alice Wonder/"
+onyo -y new --keys type=laptop make=apple model=macbook serial=83hd0 RAM=8GB display=13.3 USB_A=2 --directory "management/Alice Wonder/"
 
 # Theo joins; assign them a laptop from the warehouse
 onyo -y mkdir "ethics/Theo Turtle"

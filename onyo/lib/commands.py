@@ -682,7 +682,7 @@ def onyo_mv(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_new(inventory: Inventory,
-             path: Optional[Path] = None,
+             directory: Optional[Path] = None,
              template: Optional[str] = None,
              clone: Optional[Path] = None,
              tsv: Optional[Path] = None,
@@ -695,7 +695,7 @@ def onyo_new(inventory: Inventory,
     If keys and tsv and keys define multiple assets: Number of assets must match.
     If only one value pair key: Update tsv assets with them.
     If `keys` and tsv conflict: raise, there's no priority overwriting or something.
-    --path and `directory` reserved key given -> raise, no priority
+    --directory and `directory` reserved key given -> raise, no priority
     pseudo-keys must not be given -> PSEUDO_KEYS
 
     TODO: Document special keys (directory, asset dir, template, etc) -> RESERVED_KEYS
@@ -717,7 +717,7 @@ def onyo_new(inventory: Inventory,
     inventory: Inventory
         The Inventory in which to create new assets.
 
-    path: Path, optional
+    directory: Path, optional
         The directory to create new asset(s) in. Defaults to CWD.
         Note, that it technically is not a default (as per signature of this
         function), because we need to be able to tell whether a path was given
@@ -779,8 +779,8 @@ def onyo_new(inventory: Inventory,
                 raise ValueError("Can't use '--template' option and 'template' column in tsv.")
             if clone and 'template' in reader.fieldnames:
                 raise ValueError("Can't use '--clone' option and 'template' column in tsv.")
-            if path and 'directory' in reader.fieldnames:
-                raise ValueError("Can't use '--path' option and 'directory' column in tsv.")
+            if directory and 'directory' in reader.fieldnames:
+                raise ValueError("Can't use '--directory' option and 'directory' column in tsv.")
             tsv_dicts = [row for row in reader]
             # Any line's remainder (values beyond available columns) would be stored in the `None` key.
             # Note, that `i` is shifted by one in order to give the correct line number (header line + index of dict):
@@ -816,11 +816,11 @@ def onyo_new(inventory: Inventory,
     #       where everything after the first one comes from repetition (However, what about python interface where one
     #       could pass an arbitrary list of dicts? -> requires consistency check like TSV + doc).
     if any('directory' in d.keys() for d in specs):
-        if path:
-            raise ValueError("Can't use '--path' option and specify 'directory' key.")
+        if directory:
+            raise ValueError("Can't use '--directory' option and specify 'directory' key.")
     else:
         # default
-        path = path or Path.cwd()
+        directory = directory or Path.cwd()
     if template and any('template' in d.keys() for d in specs):
         raise ValueError("Can't use 'template' key and 'template' option.")
     if clone and any('template' in d.keys() for d in specs):
@@ -839,7 +839,7 @@ def onyo_new(inventory: Inventory,
 
     for spec in specs:
         # 1. Unify directory specification
-        directory = Path(spec.get('directory', path))
+        directory = Path(spec.get('directory', directory))
         if not directory.is_absolute():
             directory = inventory.root / directory
         spec['directory'] = directory
