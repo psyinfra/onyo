@@ -53,7 +53,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
 
     # 2b. Check the warehouse for a display
-    cmd = ['onyo', 'get', '-p', 'warehouse', '-H', '--match', 'type=monitor', "display=22.0"]
+    cmd = ['onyo', 'get', '--path', 'warehouse', '--machine-readable', '--match', 'type=monitor', "display=22.0"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     monitor = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
@@ -71,7 +71,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
     # 2e. That was completely wrong data entry. Essentially all the wrong keys.
     # Let's remove asset entirely and redo.
-    cmd = ['onyo', '--yes', 'rm', str(laptop), '-m', "Delete asset due to erroneous data entry"]
+    cmd = ['onyo', '--yes', 'rm', str(laptop), '--message', "Delete asset due to erroneous data entry"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -82,7 +82,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 3. Laptop got an FZJ inventory number
     # 3a. Find the laptop based on serial number:
-    cmd = ['onyo', 'get', '--match', 'serial=SN123Z', '-H']
+    cmd = ['onyo', 'get', '--match', 'serial=SN123Z', '--machine-readable']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
@@ -94,7 +94,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 4. Member switches workgroup
     # 4a. Member left display behind -> assign to their former group
-    cmd = ['onyo', 'get', '-H', '-p', str(member), '--match', 'type=monitor']
+    cmd = ['onyo', 'get', '--machine-readable', '--path', str(member), '--match', 'type=monitor']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     display = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
@@ -110,7 +110,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 5. Laptop gets an upgrade
     # 5a. Find based on inventory number
-    cmd = ['onyo', 'get', '-H', '--match', 'fzj_inventory=123A4']
+    cmd = ['onyo', 'get', '--machine-readable', '--match', 'fzj_inventory=123A4']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
@@ -128,7 +128,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 7. Member leaves institute
     # 7a. Retire laptop
-    cmd = ['onyo', 'get', '-H', '-p', str(member), '--match', "type=laptop"]
+    cmd = ['onyo', 'get', '--machine-readable', '--path', str(member), '--match', "type=laptop"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
@@ -143,21 +143,21 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     #  QUERIES
     # 1. What is available in the warehouse?
-    cmd = ['onyo', 'get', '-H', '-p', 'warehouse']
+    cmd = ['onyo', 'get', '--machine-readable', '--path', 'warehouse']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # warehouse was prefilled with 6 assets. We previously took one display out.
     assert len(ret.stdout.splitlines()) == 5
 
     # 2. List all assets that have an FZJ inventory number
-    cmd = ['onyo', 'get', '-H', '--match', 'fzj_inventory=.*']
+    cmd = ['onyo', 'get', '--machine-readable', '--match', 'fzj_inventory=.*']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # Prefilled assets had 6, we purchased an additional laptop that got an inventory too
     assert len(ret.stdout.splitlines()) == 7
 
     # 3. Find an asset based on a key
-    cmd = ['onyo', 'get', '-H', '--match', 'hostname=first.host']
+    cmd = ['onyo', 'get', '--machine-readable', '--match', 'hostname=first.host']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     output_lines = ret.stdout.splitlines()
@@ -165,14 +165,14 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert "somegroup/userA/laptop_apple_macbook.9r5qlk" in output_lines[0]
 
     # 4. Find an asset bases on pseudo keys (particular laptop model)
-    cmd = ['onyo', 'get', '-H', '--match', 'type=laptop', 'model=macbook']
+    cmd = ['onyo', 'get', '--machine-readable', '--match', 'type=laptop', 'model=macbook']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # We set up the repo with 3 macbooks
     assert len(ret.stdout.splitlines()) == 3
 
     # 5. Find all lenovo laptops used in a workgroup
-    cmd = ['onyo', 'get', '-H', '-p', 'somegroup', '--match', 'make=lenovo']
+    cmd = ['onyo', 'get', '--machine-readable', '--path', 'somegroup', '--match', 'make=lenovo']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # 'somegroup' got an apple and a lenovo from the start;
@@ -186,9 +186,9 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     # -> query for all matching laptops not in 'retired'.
 
     # TODO: Not directly possible via CLI at the moment. Best I can think of is
-    # `onyo get -H --match type=laptop --keys build-date -s | grep -v retired | grep -v unset`
+    # `onyo get --machine-readable --match type=laptop --keys build-date -s | grep -v retired | grep -v unset`
     # and do the date comparison in a loop over its output.
-    cmd = ['onyo', 'get', '-H', '--match', 'type=laptop', '--keys', 'build-date']
+    cmd = ['onyo', 'get', '--machine-readable', '--match', 'type=laptop', '--keys', 'build-date']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     results = []
@@ -210,7 +210,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 6. History of an asset
     # Tell the history of the retired laptop
-    cmd = ['onyo', 'history', '-I', str(laptop)]
+    cmd = ['onyo', 'history', '--non-interactive', str(laptop)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
