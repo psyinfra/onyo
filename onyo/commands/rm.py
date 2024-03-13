@@ -58,7 +58,7 @@ def rm(args: argparse.Namespace) -> None:
 
     Directories and asset directories are deleted along with their contents.
 
-    The ``--asset`` and ``--dir` flags can be used to constrain actions to
+    The ``--asset`` and ``--dir`` flags can be used to constrain actions to
     either assets or directories (respectively).
 
     If any of the given paths are invalid, Onyo will error and delete none of
