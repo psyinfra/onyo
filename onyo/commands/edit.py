@@ -17,7 +17,7 @@ args_edit = {
         metavar='ASSET',
         nargs='+',
         type=file,
-        help='Paths of ASSETs to edit.'
+        help='Paths of assets to edit.'
     ),
 
     'message': shared_arg_message,
@@ -26,17 +26,17 @@ args_edit = {
 
 def edit(args: argparse.Namespace) -> None:
     """
-    Open ``ASSET``\s using an editor.
+    Open **ASSET**\s using an editor.
 
-    When multiple ASSETs are given, they are opened sequentially.
+    When multiple **ASSET**\s are given, they are opened sequentially.
 
     The editor is selected by (in order):
 
-      * configuration option `onyo.core.editor`
+      * ``onyo.core.editor`` configuration option
       * ``EDITOR`` environment variable
       * ``nano`` (as a final fallback)
 
-    The contents of all edited ASSETs are checked for validity before
+    The contents of all edited **ASSET**\s are checked for validity before
     committing. If problems are found, a prompt is offered to either reopen the
     editor or discard the changes.
     """

@@ -54,7 +54,7 @@ args_rm = {
 
 def rm(args: argparse.Namespace) -> None:
     """
-    Delete ASSETs and/or DIRECTORYs.
+    Delete **ASSET**\s and/or **DIRECTORY**\s.
 
     Directories and asset directories are deleted along with their contents.
 

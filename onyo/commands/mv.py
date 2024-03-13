@@ -18,7 +18,7 @@ args_mv = {
         nargs='+',
         type=path,
         help="""
-            Assets and/or directories to move into DEST.
+            Assets and/or directories to move into **DEST**.
         """
     ),
 
@@ -26,7 +26,7 @@ args_mv = {
         metavar='DEST',
         type=path,
         help="""
-            Destination to move SOURCEs into.
+            Destination to move **SOURCE**\s into.
         """
     ),
 
@@ -36,11 +36,11 @@ args_mv = {
 
 def mv(args: argparse.Namespace) -> None:
     """
-    Move SOURCEs (assets or directories) into the DEST directory, or rename a
-    SOURCE directory to DEST.
+    Move **SOURCE**\s (assets or directories) into the **DEST** directory, or
+    rename a **SOURCE** directory to **DEST**.
 
-    If DEST is an asset file, it will be converted into an Asset Directory and
-    then the SOURCEs will be moved into it.
+    If **DEST** is an asset file, it will be converted into an Asset Directory and
+    then the **SOURCE**\s will be moved into it.
 
     Assets cannot be renamed using ``onyo mv``. Their names are generated from
     keys in their contents. To rename a file, use ``onyo set`` or ``onyo edit``.

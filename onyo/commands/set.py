@@ -21,8 +21,8 @@ args_set = {
         default=False,
         action='store_true',
         help="""
-            Allow setting KEYs that are part of the asset name.
-            (see the `onyo.assets.filename` configuration option)
+            Allow setting **KEY**\s that are part of the asset name.
+            (see the ``onyo.assets.filename`` configuration option)
         """
     ),
 
@@ -33,12 +33,12 @@ args_set = {
         metavar="KEY",
         nargs='+',
         help="""
-            KEY-VALUE pairs to set in assets. Multiple pairs can be given
-            (e.g. key1=value1 key2=value2 key3=value3).
+            **KEY-VALUE** pairs to set in assets. Multiple pairs can be given
+            (e.g. ``key1=value1 key2=value2 key3=value3``).
 
             Quotes are necessary when using spaces or shell command characters:
             ```
-            onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --path ...
+            $ onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --path ...
             ```
         """
     ),
@@ -50,7 +50,7 @@ args_set = {
         nargs='+',
         type=path,
         help="""
-            Assets to set KEY=VALUEs in.
+            Assets to set **KEY-VALUE**\s in.
         """
     ),
 
@@ -60,13 +60,13 @@ args_set = {
 
 def set(args: argparse.Namespace) -> None:
     """
-    Set ``KEY``\s to ``VALUE`` for assets.
+    Set **KEY**\s to **VALUE**\s for assets.
 
-    KEY names can be any valid YAML key-name. If a KEY does not exist, it is
-    added and set appropriately.
+    **KEY** names can be any valid YAML key-name. If a key is not present in an
+    asset, it is added and set appropriately.
 
-    Setting KEYs used in the asset name require the ``--rename`` flag, and will
-    result in the asset being renamed on the filesystem.
+    Setting **KEY**\s that are used in the asset name requires the ``--rename``
+    flag.
 
     In addition to keys in asset contents, some PSEUDO-KEYS can be set:
 

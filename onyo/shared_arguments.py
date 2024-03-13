@@ -4,8 +4,8 @@ shared_arg_message = dict(
     action='append',
     type=str,
     help="""
-        Use the given MESSAGE as the commit message (rather than the default).
-        If multiple ``-m`` options are given, their values are concatenated as
-        separate paragraphs.
+        Use the given **MESSAGE** as the commit message (rather than the default).
+        If multiple ``--message`` options are given, their values are
+        concatenated as separate paragraphs.
     """
 )

@@ -20,8 +20,8 @@ args_unset = {
         nargs='+',
         type=str,
         help="""
-            KEYs to unset in assets. Multiple keys can be given
-            (e.g. key1 key2 key3).
+            Keys to unset in assets. Multiple keys can be given
+            (e.g. **key1 key2 key3**).
         """
     ),
 
@@ -32,7 +32,7 @@ args_unset = {
         nargs='+',
         type=path,
         help="""
-            Assets unset KEYs in.
+            Assets to unset **KEY**s in.
         """
     ),
 
@@ -42,7 +42,7 @@ args_unset = {
 
 def unset(args: argparse.Namespace) -> None:
     """
-    Remove ``KEY``\s from assets.
+    Remove **KEY**\s from assets.
 
     Keys that are used in asset names (see the ``onyo.assets.filename``
     configuration option) cannot be unset.

@@ -16,7 +16,7 @@ args_config = {
         metavar='ARGS',
         nargs='+',
         type=git_config,
-        help='Config options to set in .onyo/config'
+        help='Config options to set in ``.onyo/config``.'
     ),
 }
 
@@ -31,16 +31,16 @@ def config(args: argparse.Namespace) -> None:
     To set configuration options locally (and not commit them to the Onyo
     repository), use ``git config`` instead.
 
-    ``onyo config`` is a wrapper around ``git config``. All of its options and
+    This command is a wrapper around ``git config``. All of its options and
     capabilities are available with the exception of ``--system``, ``--global``,
-    ``--local``, ``--worktree``, and ``--file``. Please see the git-config
+    ``--local``, ``--worktree``, and ``--file``. Please see the **git-config**
     manpage for more information about usage.
 
     Onyo configuration options:
 
       * ``onyo.assets.filename``: The format for asset names on the
         filesystem. (default: "{type}_{make}_{model}.{serial}")
-      * ``onyo.core.editor``: The editor to use for commands such as ``edit``
+      * ``onyo.core.editor``: The editor to use for subcommands such as ``edit``
         and ``new``. If unset, it will fallback to the environmental variable
         ``EDITOR`` and lastly ``nano``. (default: unset)
       * ``onyo.history.interactive``: The interactive command to use for

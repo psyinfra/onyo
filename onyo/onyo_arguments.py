@@ -11,7 +11,7 @@ args_onyo = {
         default=Path.cwd(),
         type=directory,
         help="""
-            Run Onyo from DIR instead of the current working directory.
+            Run Onyo from **DIR** instead of the current working directory.
         """
     ),
 

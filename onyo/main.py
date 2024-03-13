@@ -1,57 +1,84 @@
-import argparse
+from __future__ import annotations
+
 import os
+import re
 import sys
 import textwrap
+from argparse import ArgumentParser, PARSER
+from itertools import islice
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+from rich.containers import Lines
+from rich.text import Text
+from rich_argparse import RichHelpFormatter
 
 from onyo import commands
 from onyo.lib.ui import ui
 
+if TYPE_CHECKING:
+    from argparse import Action
+    from collections.abc import Iterator
 
-# credit: https://stackoverflow.com/a/13429281
-class SubcommandHelpFormatter(argparse.RawTextHelpFormatter):
-    def _format_action(self, action: argparse.Action) -> str:
-        parts = super()._format_action(action)
 
-        # strip the first line (metavar) of the subcommands section
-        if action.nargs == argparse.PARSER:
-            parts = parts.split("\n", 1)[1]
+class WrappedTextRichHelpFormatter(RichHelpFormatter):
+    def _rich_format_action(self, action: Action) -> Iterator[tuple[Text, Text | None]]:
+        parts = super()._rich_format_action(action)
+        # remove the superfluous first line (<COMMANDS>) of the subcommands section
+        if action.nargs == PARSER:
+            parts = islice(parts, 1, None)
 
         return parts
 
-    def _split_lines(self, text, width):
-        """
-        This is a very, very naive approach to stripping rst syntax from
-        docstrings. Sadly, docutils does not have a plain-text writer. That
-        would be the ideal solution.
-        """
-        text = textwrap.dedent(text).strip()
+    def _rich_split_lines(self, text: Text, width: int) -> Lines:
+        lines = Lines()
+        for line in text.split():
+            lines.extend(line.wrap(self.console, width))
+        return lines
 
-        # `` -> `
-        text = text.replace('``', '`')
-        # remove escapes of characters; everything is literal here
-        text = text.replace('\\', '')
+    def _rich_fill_text(self, text: Text, width: int, indent: Text) -> Text:
+        lines = self._rich_split_lines(text, width)
+        return Text("\n").join(indent + line for line in lines) + "\n"
 
-        text = super()._split_lines(text, width)
+    def _rich_format_text(self, text: str) -> Text:
+        text = prepare_rst_for_rich(text)
 
-        return text
+        return super()._rich_format_text(text)
 
-    def _fill_text(self, text: str, width: int, indent: str) -> str:
-        """
-        This is a very, very naive approach to stripping rst syntax from
-        docstrings. Sadly, docutils does not have a plain-text writer. That
-        would be the ideal solution.
-        """
-        text = textwrap.dedent(text).strip()
-        text = super()._fill_text(text, width, indent)
 
-        # `` -> `
-        text = text.replace('``', '`')
-        # remove escapes of characters; everything is literal here
-        text = text.replace('\\', '')
+def prepare_rst_for_rich(text: str) -> str:
+    """
+    This is a very naive approach to cleanup docstrings and help text in
+    preparation to print to the terminal.
 
-        return text
+    Some effort is made to stylize RST markup.
+    """
+    # de-indent text
+    text = textwrap.dedent(text).strip()
+
+    # stylize arg descriptors (ALL CAPS ARGS)
+    text = re.sub('\*\*([A-Z\-]+)\*\*', r'[dark_cyan]\1[/dark_cyan]', text)
+
+    # stylize ** (bold)
+    text = re.sub('\*\*([^*]+)\*\*', r'[bold]\1[/bold]', text)
+
+    # stylize ``` (code blocks)
+    text = re.sub('```([^`]+)```', r'[underline]\1[/underline]', text)
+
+    # strip `` (inline code markers) for flags
+    # flags are auto-colorized by rich-argparse
+    text = re.sub('``(-[^`]+)``', r'\1', text)
+
+    # stylize remaining `` (inline code markers)
+    text = re.sub('``([^`]+)``', r'[bold magenta]\1[/bold magenta]', text)
+
+    # make bullet points prettier
+    text = text.replace(' * ', ' • ')
+
+    # remove escaping
+    text = text.replace('\\', '')
+
+    return text
 
 
 def build_parser(parser, args: dict) -> None:
@@ -63,15 +90,15 @@ def build_parser(parser, args: dict) -> None:
         try:
             parser.add_argument(
                 *args[cmd]['args'],
-                **{k: v for k, v in args[cmd].items() if k != 'args'})
+                **{k: v for k, v in args[cmd].items() if k != 'args'} | {'help': prepare_rst_for_rich(args[cmd]['help'])})
         except KeyError:
-            parser.add_argument(**args[cmd])
+            parser.add_argument(**{k: v for k, v in args[cmd].items()} | {'help': prepare_rst_for_rich(args[cmd]['help'])})
 
 
 subcmds = None
 
 
-def setup_parser() -> argparse.ArgumentParser:
+def setup_parser() -> ArgumentParser:
     from onyo.onyo_arguments import args_onyo
     from onyo.commands.cat import args_cat
     from onyo.commands.config import args_config
@@ -90,9 +117,9 @@ def setup_parser() -> argparse.ArgumentParser:
 
     global subcmds
 
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description='A text-based inventory system backed by git.',
-        formatter_class=SubcommandHelpFormatter
+        formatter_class=WrappedTextRichHelpFormatter
     )
     build_parser(parser, args_onyo)
 
@@ -108,7 +135,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_cat = subcmds.add_parser(
         'cat',
         description=commands.cat.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Print the contents of assets to the terminal.'
     )
     cmd_cat.set_defaults(run=commands.cat)
@@ -119,7 +146,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_config = subcmds.add_parser(
         'config',
         description=commands.config.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Set, query, and unset Onyo repository configuration options.'
     )
     cmd_config.set_defaults(run=commands.config)
@@ -130,7 +157,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_edit = subcmds.add_parser(
         'edit',
         description=commands.edit.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Open assets using an editor.'
     )
     cmd_edit.set_defaults(run=commands.edit)
@@ -141,7 +168,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_fsck = subcmds.add_parser(
         'fsck',
         description=commands.fsck.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Run a suite of integrity checks on the Onyo repository and its contents.'
     )
     cmd_fsck.set_defaults(run=commands.fsck)
@@ -151,7 +178,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_get = subcmds.add_parser(
         'get',
         description=commands.get.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Return and sort asset values matching query patterns.'
     )
     cmd_get.set_defaults(run=commands.get)
@@ -162,7 +189,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_history = subcmds.add_parser(
         'history',
         description=commands.history.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Display the history of an asset or directory.'
     )
     cmd_history.set_defaults(run=commands.history)
@@ -173,7 +200,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_init = subcmds.add_parser(
         'init',
         description=commands.init.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Initialize a new Onyo repository.'
     )
     cmd_init.set_defaults(run=commands.init)
@@ -184,7 +211,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
         description=commands.mkdir.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Create directories.'
     )
     cmd_mkdir.set_defaults(run=commands.mkdir)
@@ -195,7 +222,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_mv = subcmds.add_parser(
         'mv',
         description=commands.mv.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Move assets or directories into a destination directory; or rename a directory.'
     )
     cmd_mv.set_defaults(run=commands.mv)
@@ -206,7 +233,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_new = subcmds.add_parser(
         'new',
         description=commands.new.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Create new assets and populate with key-value pairs.'
     )
     cmd_new.set_defaults(run=commands.new)
@@ -217,7 +244,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_rm = subcmds.add_parser(
         'rm',
         description=commands.rm.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Delete assets and directories.'
     )
     cmd_rm.set_defaults(run=commands.rm)
@@ -228,7 +255,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_set = subcmds.add_parser(
         'set',
         description=commands.set.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Set the value of keys for assets.'
     )
     cmd_set.set_defaults(run=commands.set)
@@ -239,7 +266,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
         description=commands.shell_completion.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Display a tab-completion script for Onyo.'
     )
     cmd_shell_completion.set_defaults(run=commands.shell_completion)
@@ -250,7 +277,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_tree = subcmds.add_parser(
         'tree',
         description=commands.tree.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='List the assets and directories of a directory in ``tree`` format.'
     )
     cmd_tree.set_defaults(run=commands.tree)
@@ -261,7 +288,7 @@ def setup_parser() -> argparse.ArgumentParser:
     cmd_unset = subcmds.add_parser(
         'unset',
         description=commands.unset.__doc__,
-        formatter_class=SubcommandHelpFormatter,
+        formatter_class=parser.formatter_class,
         help='Remove keys from assets.'
     )
     cmd_unset.set_defaults(run=commands.unset)
