@@ -146,7 +146,7 @@ def test_set_without_path(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     assert ret.returncode != 0
-    assert "usage:" in ret.stderr  # argparse should already complain
+    assert "Usage:" in ret.stderr  # argparse should already complain
     assert repo.git.is_clean_worktree()
 
 
