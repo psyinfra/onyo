@@ -30,8 +30,8 @@ args_get = {
         metavar='KEY',
         nargs='+',
         help="""
-            **KEY** values to print. Pseudo-keys (information not stored in the
-            asset file) are also available for queries.
+            **KEY**s to print the values of. Pseudo-keys (information not stored
+            in the asset file) are also available for queries.
         """
     ),
 
@@ -67,7 +67,7 @@ args_get = {
         type=path,
         nargs='+',
         help="""
-            **PATH**\s to assets or directories to query.
+            Assets or directories to query.
         """
     ),
 

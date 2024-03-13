@@ -15,7 +15,7 @@ args_init = {
         nargs='?',
         type=directory,
         help="""
-            Initialize DIR as an Onyo repository.
+            Directory to initialize as an Onyo repository.
         """
     )
 }
@@ -35,12 +35,12 @@ def init(args: argparse.Namespace) -> None:
       * initialize as a git repository (if it is not one already)
       * create the ``.onyo/`` directory, populate its contents, and commit
 
-    Running ``onyo init`` on non-empty directories and git repositories is
-    allowed. Only the ``.onyo`` directory will be committed. All other contents
-    will be left in their state.
+    Init-ing non-empty directories and git repositories is allowed. Only the
+    ``.onyo`` directory will be committed. All other contents will be left in
+    their state.
 
-    Running ``onyo init`` repeatedly on a repository will not alter the
-    contents, and will exit with an error.
+    Repeatedly init-ing a repository will not alter the contents, and will exit
+    with an error.
     """
     target_dir = Path(args.directory).resolve() if args.directory else Path.cwd()
     OnyoRepo(target_dir, init=True)

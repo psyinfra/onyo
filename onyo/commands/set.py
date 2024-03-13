@@ -66,7 +66,7 @@ def set(args: argparse.Namespace) -> None:
     asset, it is added and set appropriately.
 
     Setting **KEY**\s that are used in the asset name requires the ``--rename``
-    flag, and will result in the asset being renamed on the filesystem.
+    flag.
 
     In addition to keys in asset contents, some PSEUDO-KEYS can be set:
 

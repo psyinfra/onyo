@@ -21,7 +21,7 @@ args_unset = {
         type=str,
         help="""
             Keys to unset in assets. Multiple keys can be given
-            (e.g. key1 key2 key3).
+            (e.g. **key1 key2 key3**).
         """
     ),
 
@@ -32,7 +32,7 @@ args_unset = {
         nargs='+',
         type=path,
         help="""
-            Assets unset **KEY**s in.
+            Assets to unset **KEY**s in.
         """
     ),
 

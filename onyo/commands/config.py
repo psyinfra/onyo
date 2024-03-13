@@ -40,7 +40,7 @@ def config(args: argparse.Namespace) -> None:
 
       * ``onyo.assets.filename``: The format for asset names on the
         filesystem. (default: "{type}_{make}_{model}.{serial}")
-      * ``onyo.core.editor``: The editor to use for commands such as ``edit``
+      * ``onyo.core.editor``: The editor to use for subcommands such as ``edit``
         and ``new``. If unset, it will fallback to the environmental variable
         ``EDITOR`` and lastly ``nano``. (default: unset)
       * ``onyo.history.interactive``: The interactive command to use for

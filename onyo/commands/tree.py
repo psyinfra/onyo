@@ -25,7 +25,8 @@ def tree(args: argparse.Namespace) -> None:
     """
     List the assets and directories of **DIRECTORY**\s in a tree-like format.
 
-    If no directory is provided, the tree for CWD is listed.
+    If no directory is provided, the tree for the current working directory is
+    listed.
 
     If any of the directories do not exist, then no tree is printed and an error
     is returned.
