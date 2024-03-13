@@ -56,7 +56,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     cmd = ['onyo', 'get', '-p', 'warehouse', '-H', '--match', 'type=monitor', "display=22.0"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
-    monitor = Path(ret.stdout.splitlines()[0].split('\t')[-1])
+    monitor = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
 
     # 2c. Assign display to user
     cmd = ['onyo', '--yes', '--quiet', 'mv', str(monitor), str(member)]
@@ -85,7 +85,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     cmd = ['onyo', 'get', '--match', 'serial=SN123Z', '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
-    laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
+    laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
 
     # 3b. Set the inventory number
     cmd = ['onyo', '--yes', 'set', '-k', 'fzj_inventory=123A4', '-p', str(laptop)]
@@ -97,7 +97,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     cmd = ['onyo', 'get', '-H', '-p', str(member), '--match', 'type=monitor']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
-    display = Path(ret.stdout.splitlines()[0].split('\t')[-1])
+    display = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
     cmd = ['onyo', '--yes', '--quiet', 'mv', str(display), str(member.parent)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
@@ -113,7 +113,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     cmd = ['onyo', 'get', '-H', '--match', 'fzj_inventory=123A4']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
-    laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
+    laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
     # 5b. Change recorded RAM size
     cmd = ['onyo', '--yes', 'set', '-k', 'RAM=16GB', '-p', str(laptop)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -131,7 +131,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     cmd = ['onyo', 'get', '-H', '-p', str(member), '--match', "type=laptop"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
-    laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
+    laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
     cmd = ['onyo', '--yes', 'mv', str(laptop), "retired"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
@@ -193,6 +193,8 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
     results = []
     for date, path in [line.split('\t') for line in ret.stdout.splitlines()]:
+        date = date.strip("\"")
+        path = path.strip("\"")
         if "retired" in path or date == "<unset>":
             continue
         if 20160101 <= int(date) <= 20171231:
