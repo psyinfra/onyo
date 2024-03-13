@@ -163,7 +163,7 @@ _onyo() {
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-k --keys)'{-k,--keys}'[keys to unset in assets; multiple keys can be given (key key2 key3)]:*-*:KEYS: '
-                    '(-p --path)'{-p,--path}'[assets and/or directories to unset values in]:*-*::PATH:_files -W "$(_onyo_dir)"'
+                    '(-a --asset)'{-a,--asset}'[assets to unset values in]:*-*::ASSET:_files -W "$(_onyo_dir)"'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
                 )
                 ;;

@@ -25,10 +25,10 @@ args_unset = {
         """
     ),
 
-    'path': dict(
-        args=('-p', '--path'),
+    'asset': dict(
+        args=('-a', '--asset'),
         required=True,
-        metavar="PATH",
+        metavar="ASSET",
         nargs='+',
         type=path,
         help="""
@@ -53,8 +53,8 @@ def unset(args: argparse.Namespace) -> None:
     """
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
-    paths = [Path(p).resolve() for p in args.path]
+    assets = [Path(a).resolve() for a in args.asset]
     unset_cmd(inventory,
               keys=args.keys,
-              paths=paths,
+              assets=assets,
               message='\n\n'.join(m for m in args.message) if args.message else None)

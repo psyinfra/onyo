@@ -15,7 +15,7 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  paths=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"],
+                  assets=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"],
                   keys=[key],
                   message="some subject\n\nAnd a body")
 
@@ -23,7 +23,7 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  paths=[(inventory.root / "..").resolve()],
+                  assets=[(inventory.root / "..").resolve()],
                   keys=[key],
                   message="some subject\n\nAnd a body")
 
@@ -31,7 +31,7 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  paths=[asset_path],
+                  assets=[asset_path],
                   keys=[],
                   message="some subject\n\nAnd a body")
 
@@ -39,7 +39,7 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  paths=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
+                  assets=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
                   keys=[key],
                   message="some subject\n\nAnd a body")
 
@@ -47,7 +47,7 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  paths=[inventory.root / ".git"],
+                  assets=[inventory.root / ".git"],
                   keys=[key],
                   message="some subject\n\nAnd a body")
 
@@ -55,7 +55,7 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  paths=[inventory.root / ".onyo"],
+                  assets=[inventory.root / ".onyo"],
                   keys=[key],
                   message="some subject\n\nAnd a body")
 
@@ -79,7 +79,7 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
         pytest.raises(ValueError,
                       onyo_unset,
                       inventory,
-                      paths=[asset_path],
+                      assets=[asset_path],
                       keys=[illegal],
                       message="some subject\n\nAnd a body")
         # name fields are still in the asset
@@ -105,7 +105,7 @@ def test_onyo_unset_illegal_fields(inventory: Inventory) -> None:
         pytest.raises(ValueError,
                       onyo_unset,
                       inventory,
-                      paths=[asset_path],
+                      assets=[asset_path],
                       keys=[illegal],
                       message="some subject\n\nAnd a body")
 
@@ -128,8 +128,8 @@ def test_onyo_unset_errors_before_unset(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  paths=[asset_path,
-                         non_existing_asset_path],
+                  assets=[asset_path,
+                          non_existing_asset_path],
                   keys=[key],
                   message="some subject\n\nAnd a body")
 
@@ -155,7 +155,7 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
 
     # unset a value
     onyo_unset(inventory,
-               paths=[asset_path],
+               assets=[asset_path],
                keys=[key],
                message="some subject\n\nAnd a body")
 
@@ -183,8 +183,8 @@ def test_onyo_unset_multiple(inventory: Inventory) -> None:
 
     # create a new directory
     onyo_unset(inventory,
-               paths=[asset_path1,
-                      asset_path2],
+               assets=[asset_path1,
+                       asset_path2],
                keys=[key],
                message="some subject\n\nAnd a body")
 
@@ -207,7 +207,7 @@ def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
 
     # call `onyo_unset()` with asset duplicates
     onyo_unset(inventory,
-               paths=[asset_path, asset_path, asset_path],
+               assets=[asset_path, asset_path, asset_path],
                keys=[key],
                message="some subject\n\nAnd a body")
 
@@ -232,7 +232,7 @@ def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
     # trying to remove a non-existing key in an asset that does not exist does not error
     assert other_key not in inventory.repo.get_asset_content(asset_path1).keys()
     onyo_unset(inventory,
-               paths=[asset_path1],
+               assets=[asset_path1],
                keys=[other_key],
                message="some subject\n\nAnd a body")
 
@@ -243,8 +243,8 @@ def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
     assert other_key not in inventory.repo.get_asset_content(asset_path1).keys()
     assert other_key in inventory.repo.get_asset_content(asset_path2).keys()
     onyo_unset(inventory,
-               paths=[asset_path1,
-                      asset_path2],
+               assets=[asset_path1,
+                       asset_path2],
                keys=[other_key],
                message="some subject\n\nAnd a body")
 
@@ -265,7 +265,7 @@ def test_onyo_unset_allows_key_duplicates(inventory: Inventory) -> None:
 
     # call `onyo_unset()` with key duplicates
     onyo_unset(inventory,
-               paths=[asset_path],
+               assets=[asset_path],
                keys=[key, key, key],
                message="some subject\n\nAnd a body")
 
@@ -293,7 +293,7 @@ def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
 
     # set a value in an asset dir
     onyo_unset(inventory,
-               paths=[asset_dir],
+               assets=[asset_dir],
                keys=['other', 'some_key'])
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha

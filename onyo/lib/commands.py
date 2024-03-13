@@ -1077,7 +1077,7 @@ def onyo_tree(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: list[str],
-               paths: list[Path],
+               assets: list[Path],
                message: Optional[str] = None) -> None:
     """Remove keys from assets.
 
@@ -1090,7 +1090,7 @@ def onyo_unset(inventory: Inventory,
         If keys do not exist in an asset, a debug message is logged.
         If keys are specified which appear in asset names an error is raised.
         If `keys` is empty an error is raised.
-    paths: list of Path
+    assets: list of Path
         Paths to assets for which to unset key-value pairs.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
@@ -1098,12 +1098,12 @@ def onyo_unset(inventory: Inventory,
     Raises
     ------
     ValueError
-        If paths are invalid, or `keys` are empty or invalid.
+        If assets are invalid paths, or `keys` are empty or invalid.
 
     """
     if not keys:
         raise ValueError("At least one key must be specified.")
-    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
     if non_asset_paths:
         raise ValueError("The following paths aren't assets:\n%s" % "\n".join(non_asset_paths))
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
@@ -1111,7 +1111,7 @@ def onyo_unset(inventory: Inventory,
     if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
         raise ValueError(f"Can't unset reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
-    for asset in [inventory.get_asset(p) for p in paths]:
+    for asset in [inventory.get_asset(a) for a in assets]:
         new_content = copy.deepcopy(asset)
         # remove keys to unset, if they exist
         for key in keys:
