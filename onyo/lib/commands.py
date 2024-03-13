@@ -478,7 +478,7 @@ def onyo_get(inventory: Inventory,
     if machine_readable:
         sep = '\t'  # column separator
         for data in results:
-            values = sep.join([str(data[k]) for k in selected_keys])
+            values = sep.join([f"\"{str(data[k])}\"" for k in selected_keys])
             ui.print(f'{values}')
     elif results:
         table = Table(
