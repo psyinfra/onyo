@@ -88,7 +88,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
 
     # 3b. Set the inventory number
-    cmd = ['onyo', '--yes', 'set', '-k', 'fzj_inventory=123A4', '-p', str(laptop)]
+    cmd = ['onyo', '--yes', 'set', '--keys', 'fzj_inventory=123A4', '--asset', str(laptop)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -115,7 +115,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1].strip("\""))
     # 5b. Change recorded RAM size
-    cmd = ['onyo', '--yes', 'set', '-k', 'RAM=16GB', '-p', str(laptop)]
+    cmd = ['onyo', '--yes', 'set', '--keys', 'RAM=16GB', '--asset', str(laptop)]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 

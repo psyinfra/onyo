@@ -957,7 +957,7 @@ def onyo_rm(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
-             paths: list[Path],
+             assets: list[Path],
              rename: bool = False,
              message: Optional[str] = None) -> Optional[str]:
     """Set key-value pairs of assets, and change asset names.
@@ -966,7 +966,7 @@ def onyo_set(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to set key/values for assets.
-    paths: list of Path
+    assets: list of Path
         Paths to assets for which to set key-value pairs.
     keys: dict
         Key-value pairs that will be set in assets. If keys already exist in an
@@ -988,7 +988,7 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
-    if not paths:
+    if not assets:
         raise ValueError("At least one asset must be specified.")
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
@@ -1003,12 +1003,12 @@ def onyo_set(inventory: Inventory,
     if any(k in disallowed_keys for k in keys.keys()):
         raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
 
-    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
     if non_asset_paths:
         raise ValueError("The following paths aren't assets:\n%s" %
                          "\n".join(non_asset_paths))
 
-    for asset in [inventory.get_asset(p) for p in paths]:
+    for asset in [inventory.get_asset(a) for a in assets]:
         new_content = copy.deepcopy(asset)
         new_content.update(keys)
         for k in PSEUDO_KEYS:

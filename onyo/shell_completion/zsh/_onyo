@@ -143,7 +143,7 @@ _onyo() {
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-r --rename)'{-r,--rename}'[allow assigning values to keys that would result in renaming asset filenames]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in assets; multiple pairs can be given (key=value key2=value2)]:*-*:KEYS: '
-                    '(-p --path)'{-p,--path}'[assets and/or directories to set KEY=VALUE in]:*-*::PATH:_files -W "$(_onyo_dir)"'
+                    '(-a --asset)'{-a,--asset}'[assets to set KEY=VALUE in]:*-*::ASSET:_files -W "$(_onyo_dir)"'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
                 )
                 ;;

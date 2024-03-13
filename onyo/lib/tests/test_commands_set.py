@@ -17,7 +17,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"],
+                  assets=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
@@ -25,7 +25,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[inventory.root / "somewhere"],
+                  assets=[inventory.root / "somewhere"],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
@@ -33,7 +33,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[(inventory.root / "..").resolve()],
+                  assets=[(inventory.root / "..").resolve()],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
@@ -41,7 +41,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[asset_path],
+                  assets=[asset_path],
                   keys=[],
                   message="some subject\n\nAnd a body")
 
@@ -49,7 +49,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
+                  assets=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
@@ -57,7 +57,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[inventory.root / ".git"],
+                  assets=[inventory.root / ".git"],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
@@ -65,7 +65,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[inventory.root / ".onyo"],
+                  assets=[inventory.root / ".onyo"],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
@@ -90,7 +90,7 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
         pytest.raises(ValueError,
                       onyo_set,
                       inventory,
-                      paths=[asset_path],
+                      assets=[asset_path],
                       keys=empty,
                       message="some subject\n\nAnd a body")
 
@@ -99,7 +99,7 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
 
     # set a key with an empty value works
     onyo_set(inventory,
-             paths=[asset_path],
+             assets=[asset_path],
              keys={"key": ""},
              message="some subject\n\nAnd a body")
 
@@ -128,7 +128,7 @@ def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
         pytest.raises(ValueError,
                       onyo_set,
                       inventory,
-                      paths=[asset_path],
+                      assets=[asset_path],
                       keys=illegal,
                       message="some subject\n\nAnd a body")
 
@@ -153,8 +153,8 @@ def test_onyo_set_errors_before_set(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  paths=[asset_path,
-                         non_existing_asset_path],
+                  assets=[asset_path,
+                          non_existing_asset_path],
                   keys=key_value,
                   message="some subject\n\nAnd a body")
 
@@ -175,7 +175,7 @@ def test_onyo_set_simple(inventory: Inventory) -> None:
 
     # set a value in an asset
     onyo_set(inventory,
-             paths=[asset_path],
+             assets=[asset_path],
              keys=key_value,  # pyre-ignore[6]
              message="some subject\n\nAnd a body")
 
@@ -202,7 +202,7 @@ def test_onyo_set_already_set(inventory: Inventory) -> None:
 
     # set a value in an asset
     onyo_set(inventory,
-             paths=[asset_path],
+             assets=[asset_path],
              keys=key_value,  # pyre-ignore[6]
              message="some subject\n\nAnd a body")
 
@@ -229,7 +229,7 @@ def test_onyo_set_overwrite_existing_value(inventory: Inventory) -> None:
 
     # set a value in an asset
     onyo_set(inventory,
-             paths=[asset_path],
+             assets=[asset_path],
              keys=new_key_value,  # pyre-ignore[6]
              message="some subject\n\nAnd a body")
 
@@ -263,7 +263,7 @@ def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
 
     # set a value in an asset
     onyo_set(inventory,
-             paths=[asset_path],
+             assets=[asset_path],
              keys=new_key_values,  # pyre-ignore[6]
              message="some subject\n\nAnd a body")
 
@@ -290,8 +290,8 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
 
     # set a value in multiple assets at once
     onyo_set(inventory,
-             paths=[asset_path1,
-                    asset_path2],
+             assets=[asset_path1,
+                     asset_path2],
              keys=key_value,  # pyre-ignore[6]
              message="some subject\n\nAnd a body")
 
@@ -316,7 +316,7 @@ def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
 
     # call `onyo_set()` with `paths` containing duplicates
     onyo_set(inventory,
-             paths=[asset_path, asset_path, asset_path],
+             assets=[asset_path, asset_path, asset_path],
              keys=key_value,  # pyre-ignore[6]
              message="some subject\n\nAnd a body")
 
@@ -346,7 +346,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
 
     # set a value in an asset dir
     onyo_set(inventory,
-             paths=[asset_dir],
+             assets=[asset_dir],
              keys={'other': 2})
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
@@ -354,7 +354,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
 
     # turn asset dir into asset file:
     onyo_set(inventory,
-             paths=[asset_dir],
+             assets=[asset_dir],
              keys={'is_asset_directory': False})
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~2') == old_hexsha
@@ -364,7 +364,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
 
     # turn it back into an asset dir
     onyo_set(inventory,
-             paths=[asset_dir],
+             assets=[asset_dir],
              keys={'is_asset_directory': True})
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha

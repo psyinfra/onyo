@@ -127,11 +127,10 @@ onyo -y mv warehouse/headphones_JBL_pro.e98t2p "ethics/Achilles Book"
 onyo -y mv "ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2" repair
 onyo -y mv warehouse/laptop_microsoft_surface.oq782j "ethics/Achilles Book"
 
-# specify number of USB type A ports on all laptops
-onyo get --match type=laptop -H --keys path | xargs onyo -y set --keys USB_A=2 --path
+onyo get --match type=laptop -H --keys path | xargs onyo -y set --keys USB_A=2 --asset
 
 # specify the number of USB ports (type A and C) on MacBooks
-onyo get --match model=macbook -H --keys path | xargs onyo -y set --keys USB_A=2 USB_C=1 --path
+onyo get --match model=macbook -H --keys path | xargs onyo -y set --keys USB_A=2 USB_C=1 --asset
 
 # add three newly purchased laptops; shell brace-expansion can be very useful
 onyo -y new --keys type=laptop make=apple model=macbook serial={uef82b3,9il2b4,73b2cn} RAM=8GB display=13.3 USB_A=2 USB_C=1 \
@@ -145,7 +144,7 @@ onyo -y new --keys type=headphones make=apple model=airpods serial=uzl8e1 --dire
 onyo -y mv warehouse/monitor_dell_PH123.86JZho warehouse/laptop_apple_macbook.oiw629 warehouse/headphones_apple_airpods.uzl8e1 "accounting/Bingo Bob"
 
 # the broken laptop has been repaired (bad RAM, which has also been increased)
-onyo -y set --keys RAM=32GB --path repair/laptop_lenovo_thinkpad.owh8e2
+onyo -y set --keys RAM=32GB --asset repair/laptop_lenovo_thinkpad.owh8e2
 onyo -y mv repair/laptop_lenovo_thinkpad.owh8e2 warehouse
 
 # Max's laptop is old; retire it and replace with a new one
