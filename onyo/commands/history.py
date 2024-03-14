@@ -7,7 +7,6 @@ from shlex import quote
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import path
 from onyo.lib.command_utils import get_history_cmd
 from onyo.lib.ui import ui
 
@@ -28,7 +27,6 @@ args_history = {
     'path': dict(
         metavar='PATH',
         nargs='?',
-        type=path,
         help="""
             Path of an asset or directory to display the history of.
         """

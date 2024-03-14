@@ -65,7 +65,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
               'serial': '003'}]
     old_hexsha = inventory.repo.git.get_hexsha()
     onyo_new(inventory,
-             path=inventory.root / "empty",
+             directory=inventory.root / "empty",
              keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
@@ -89,13 +89,13 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
               'model': 'serial',
               'directory': 'completely/elsewhere',
               'serial': 'faux'}]
-    # 'directory' is in conflict with `path` being given:
+    # 'directory' is in conflict with `directory` being given:
     pytest.raises(ValueError,
                   onyo_new,
                   inventory,
-                  path=inventory.root / "empty",
+                  directory=inventory.root / "empty",
                   keys=specs)
-    # w/o `path` everything is fine:
+    # w/o `directory` everything is fine:
     onyo_new(inventory,
              keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
     # another commit added
@@ -124,7 +124,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     specs = [{'somekey': 'somevalue'}]
     pytest.raises(ValueError, onyo_new, inventory, keys=specs)
 
-    # use templates and `path`'s default - CWD.
+    # use templates and `directory`'s default - CWD.
     # Attention: CWD being inventory.root relies on current implementation of
     # the repo fixture, which the inventory fixture builds upon.
     specs = [{'type': 'flavor',
@@ -150,7 +150,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_creates_directories(inventory: Inventory) -> None:
     """`onyo_new()` must create new directories and subdirectories when called
-    on a `path` that does not yet exist, and add assets correctly to it.
+    on a `directory` that does not yet exist, and add assets correctly to it.
     """
     specs = [{'type': 'a type',
               'make': 'I made it',
@@ -164,7 +164,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
 
     onyo_new(inventory,
-             path=new_directory,
+             directory=new_directory,
              keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
 
     # exactly one commit added
@@ -198,7 +198,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
               'serial': 'totally_random'}]
     onyo_new(inventory,
              keys=specs,  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
-             path=directory,
+             directory=directory,
              edit=True)
     expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
     assert inventory.repo.is_asset_path(expected_path)
@@ -214,7 +214,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     # document is "{}" not "". Hence, appending would lead to a
     # YAML parser error.
     monkeypatch.setenv('EDITOR', "printf 'key: value' >")
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, path=directory, edit=True)
+    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
 
     # file already exists:
     edit_str = f"model: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}"
@@ -222,13 +222,13 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     specs = [{'template': 'empty',
               'serial': 'totally_random'}]
 
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, path=directory, edit=True)
+    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
 
     # asset already exists (but elsewhere - see fixture):
     edit_str = f"model: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: SERIAL{os.linesep}"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, path=directory, edit=True)
+    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
     assert inventory.repo.git.is_clean_worktree()
 
 
@@ -243,7 +243,7 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
              keys=[{'serial': 'ANOTHER'},
                    {'serial': 'whatever'}],
              clone=existing_asset_path,
-             path=asset_dir)
+             directory=asset_dir)
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha

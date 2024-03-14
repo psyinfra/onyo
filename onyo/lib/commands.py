@@ -682,7 +682,7 @@ def onyo_mv(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_new(inventory: Inventory,
-             path: Optional[Path] = None,
+             directory: Optional[Path] = None,
              template: Optional[str] = None,
              clone: Optional[Path] = None,
              tsv: Optional[Path] = None,
@@ -695,7 +695,7 @@ def onyo_new(inventory: Inventory,
     If keys and tsv and keys define multiple assets: Number of assets must match.
     If only one value pair key: Update tsv assets with them.
     If `keys` and tsv conflict: raise, there's no priority overwriting or something.
-    --path and `directory` reserved key given -> raise, no priority
+    --directory and `directory` reserved key given -> raise, no priority
     pseudo-keys must not be given -> PSEUDO_KEYS
 
     TODO: Document special keys (directory, asset dir, template, etc) -> RESERVED_KEYS
@@ -717,7 +717,7 @@ def onyo_new(inventory: Inventory,
     inventory: Inventory
         The Inventory in which to create new assets.
 
-    path: Path, optional
+    directory: Path, optional
         The directory to create new asset(s) in. Defaults to CWD.
         Note, that it technically is not a default (as per signature of this
         function), because we need to be able to tell whether a path was given
@@ -779,8 +779,8 @@ def onyo_new(inventory: Inventory,
                 raise ValueError("Can't use '--template' option and 'template' column in tsv.")
             if clone and 'template' in reader.fieldnames:
                 raise ValueError("Can't use '--clone' option and 'template' column in tsv.")
-            if path and 'directory' in reader.fieldnames:
-                raise ValueError("Can't use '--path' option and 'directory' column in tsv.")
+            if directory and 'directory' in reader.fieldnames:
+                raise ValueError("Can't use '--directory' option and 'directory' column in tsv.")
             tsv_dicts = [row for row in reader]
             # Any line's remainder (values beyond available columns) would be stored in the `None` key.
             # Note, that `i` is shifted by one in order to give the correct line number (header line + index of dict):
@@ -816,11 +816,11 @@ def onyo_new(inventory: Inventory,
     #       where everything after the first one comes from repetition (However, what about python interface where one
     #       could pass an arbitrary list of dicts? -> requires consistency check like TSV + doc).
     if any('directory' in d.keys() for d in specs):
-        if path:
-            raise ValueError("Can't use '--path' option and specify 'directory' key.")
+        if directory:
+            raise ValueError("Can't use '--directory' option and specify 'directory' key.")
     else:
         # default
-        path = path or Path.cwd()
+        directory = directory or Path.cwd()
     if template and any('template' in d.keys() for d in specs):
         raise ValueError("Can't use 'template' key and 'template' option.")
     if clone and any('template' in d.keys() for d in specs):
@@ -839,7 +839,7 @@ def onyo_new(inventory: Inventory,
 
     for spec in specs:
         # 1. Unify directory specification
-        directory = Path(spec.get('directory', path))
+        directory = Path(spec.get('directory', directory))
         if not directory.is_absolute():
             directory = inventory.root / directory
         spec['directory'] = directory
@@ -957,7 +957,7 @@ def onyo_rm(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
-             paths: list[Path],
+             assets: list[Path],
              rename: bool = False,
              message: Optional[str] = None) -> Optional[str]:
     """Set key-value pairs of assets, and change asset names.
@@ -966,7 +966,7 @@ def onyo_set(inventory: Inventory,
     ----------
     inventory: Inventory
         The Inventory in which to set key/values for assets.
-    paths: list of Path
+    assets: list of Path
         Paths to assets for which to set key-value pairs.
     keys: dict
         Key-value pairs that will be set in assets. If keys already exist in an
@@ -988,7 +988,7 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or changes are made that would result in
         renaming an asset, while `rename` is not true, or if `keys` is empty.
     """
-    if not paths:
+    if not assets:
         raise ValueError("At least one asset must be specified.")
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
@@ -1003,12 +1003,12 @@ def onyo_set(inventory: Inventory,
     if any(k in disallowed_keys for k in keys.keys()):
         raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
 
-    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
     if non_asset_paths:
         raise ValueError("The following paths aren't assets:\n%s" %
                          "\n".join(non_asset_paths))
 
-    for asset in [inventory.get_asset(p) for p in paths]:
+    for asset in [inventory.get_asset(a) for a in assets]:
         new_content = copy.deepcopy(asset)
         new_content.update(keys)
         for k in PSEUDO_KEYS:
@@ -1077,7 +1077,7 @@ def onyo_tree(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: list[str],
-               paths: list[Path],
+               assets: list[Path],
                message: Optional[str] = None) -> None:
     """Remove keys from assets.
 
@@ -1090,7 +1090,7 @@ def onyo_unset(inventory: Inventory,
         If keys do not exist in an asset, a debug message is logged.
         If keys are specified which appear in asset names an error is raised.
         If `keys` is empty an error is raised.
-    paths: list of Path
+    assets: list of Path
         Paths to assets for which to unset key-value pairs.
     message: str, optional
         An optional string to overwrite Onyo's default commit message.
@@ -1098,12 +1098,12 @@ def onyo_unset(inventory: Inventory,
     Raises
     ------
     ValueError
-        If paths are invalid, or `keys` are empty or invalid.
+        If assets are invalid paths, or `keys` are empty or invalid.
 
     """
     if not keys:
         raise ValueError("At least one key must be specified.")
-    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
     if non_asset_paths:
         raise ValueError("The following paths aren't assets:\n%s" % "\n".join(non_asset_paths))
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
@@ -1111,7 +1111,7 @@ def onyo_unset(inventory: Inventory,
     if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
         raise ValueError(f"Can't unset reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
 
-    for asset in [inventory.get_asset(p) for p in paths]:
+    for asset in [inventory.get_asset(a) for a in assets]:
         new_content = copy.deepcopy(asset)
         # remove keys to unset, if they exist
         for key in keys:

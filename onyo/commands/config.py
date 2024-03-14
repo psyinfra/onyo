@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import git_config
 from onyo.lib.commands import onyo_config
 from onyo.lib.inventory import Inventory
 
@@ -15,7 +14,6 @@ args_config = {
     'git_config_args': dict(
         metavar='ARGS',
         nargs='+',
-        type=git_config,
         help='Config options to set in ``.onyo/config``.'
     ),
 }

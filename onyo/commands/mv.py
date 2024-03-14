@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import path
 from onyo.lib.commands import onyo_mv
 from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_message
@@ -16,7 +15,6 @@ args_mv = {
     'source': dict(
         metavar='SOURCE',
         nargs='+',
-        type=path,
         help="""
             Assets and/or directories to move into **DEST**.
         """
@@ -24,7 +22,6 @@ args_mv = {
 
     'destination': dict(
         metavar='DEST',
-        type=path,
         help="""
             Destination to move **SOURCE**\s into.
         """

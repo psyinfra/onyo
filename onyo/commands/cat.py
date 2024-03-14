@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo.argparse_helpers import file
 from onyo.lib.commands import onyo_cat
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
@@ -15,7 +14,6 @@ args_cat = {
     'asset': dict(
         metavar='ASSET',
         nargs='+',
-        type=file,
         help='Paths of assets to print'
     ),
 }

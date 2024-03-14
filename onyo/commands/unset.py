@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import path
 from onyo.lib.commands import onyo_unset as unset_cmd
 from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_message
@@ -25,12 +24,11 @@ args_unset = {
         """
     ),
 
-    'path': dict(
-        args=('-p', '--path'),
+    'asset': dict(
+        args=('-a', '--asset'),
         required=True,
-        metavar="PATH",
+        metavar="ASSET",
         nargs='+',
-        type=path,
         help="""
             Assets to unset **KEY**s in.
         """
@@ -53,8 +51,8 @@ def unset(args: argparse.Namespace) -> None:
     """
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
-    paths = [Path(p).resolve() for p in args.path]
+    assets = [Path(a).resolve() for a in args.asset]
     unset_cmd(inventory,
               keys=args.keys,
-              paths=paths,
+              assets=assets,
               message='\n\n'.join(m for m in args.message) if args.message else None)

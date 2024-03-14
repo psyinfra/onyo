@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo.argparse_helpers import path, StoreKeyValuePairs
+from onyo.argparse_helpers import StoreKeyValuePairs
 from onyo.lib.commands import onyo_set
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
@@ -38,17 +38,16 @@ args_set = {
 
             Quotes are necessary when using spaces or shell command characters:
             ```
-            $ onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --path ...
+            $ onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --asset ...
             ```
         """
     ),
 
-    'path': dict(
-        args=('-p', '--path'),
+    'asset': dict(
+        args=('-a', '--asset'),
         required=True,
-        metavar='PATH',
+        metavar='ASSET',
         nargs='+',
-        type=path,
         help="""
             Assets to set **KEY-VALUE**\s in.
         """
@@ -79,14 +78,14 @@ def set(args: argparse.Namespace) -> None:
     """
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
-    paths = [Path(p).resolve() for p in args.path]
+    assets = [Path(a).resolve() for a in args.asset]
     # TODO: The following check should be incorporated in the argparse Action.
     #       IOW: This requires a variant of StoreKeyValuePairs, that does not
     #       allow for key duplication (and can tell which keys are affected)
     if len(args.keys) > 1:
         raise ValueError("Keys must not be given multiple times.")
     onyo_set(inventory=inventory,
-             paths=paths,
+             assets=assets,
              keys=args.keys[0],
              rename=args.rename,
              message='\n\n'.join(m for m in args.message) if args.message else None)

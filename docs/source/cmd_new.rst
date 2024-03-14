@@ -19,7 +19,7 @@ new assets at once with a different value for each asset.
 
 **directory**
 
-    The ``directory`` key is an alternative to ``onyo new --path`` to specify
+    The ``directory`` key is an alternative to ``onyo new --directory`` to specify
     the location in which to create new assets.
 
 **template**
@@ -37,7 +37,7 @@ Use ``onyo new`` to add a new asset and add some content to it:
 
 .. code:: shell
 
-   onyo new --keys RAM=8GB display=14.6 type=laptop make=lenovo model=T490s serial=abc123 --path shelf/
+   onyo new --keys RAM=8GB display=14.6 type=laptop make=lenovo model=T490s serial=abc123 --directory shelf/
 
 This command writes a YAML file to ``shelf/laptop_lenovo_T490s.abc123``:
 
@@ -110,7 +110,7 @@ will be written into the asset file
 To facilitate the creation of many similar devices, add templates under
 ``.onyo/templates/`` and use them with ``onyo new --template <template>``.
 
-``onyo new --edit --template laptop_lenovo --path shelf/`` adds a new laptop to
+``onyo new --edit --template laptop_lenovo --directory shelf/`` adds a new laptop to
 the inventory, using ``.onyo/templates/laptop_lenovo`` as a pre-filled template:
 
 .. code:: yaml

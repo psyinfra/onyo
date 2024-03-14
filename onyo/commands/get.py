@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo import OnyoRepo
-from onyo.argparse_helpers import path
 from onyo.lib.commands import onyo_get
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
@@ -64,7 +63,6 @@ args_get = {
     'path': dict(
         args=('-p', '--path'),
         metavar='PATH',
-        type=path,
         nargs='+',
         help="""
             Assets or directories to query.
