@@ -29,8 +29,10 @@ def tree(args: argparse.Namespace) -> None:
     If any of the directories do not exist, then no tree is printed and an error
     is returned.
     """
-
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
-    paths = [Path(p).resolve() for p in args.directory]
+    dirs = [(d, Path(d).resolve()) for d in args.directory]
+    # use CWD if no dirs
+    dirs = dirs if dirs else [('.', Path.cwd())]
+
     onyo_tree(inventory,
-              paths)
+              dirs)

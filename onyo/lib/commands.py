@@ -5,7 +5,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Literal, Optional, ParamSpec, TypeVar
+from typing import Callable, Dict, Generator, Literal, Optional, ParamSpec, TypeVar
 from functools import wraps
 
 from rich import box
@@ -1042,7 +1042,7 @@ def onyo_set(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_tree(inventory: Inventory,
-              paths: Optional[list[Path]] = None) -> None:
+              dirs: Optional[list[tuple[str, Path]]] = None) -> None:
     """Print the directory tree of paths.
 
     Parameters
@@ -1050,10 +1050,16 @@ def onyo_tree(inventory: Inventory,
     inventory: Inventory
         The inventory in which the directories to display are located.
 
-    paths: list of Path
-        The paths to directories for which to print the directory tree.
-        If no path is specified, `onyo_tree(inventory)` prints the
-        directory tree for the root of the inventory.
+    dirs: list of tuple
+        A list of tuples containing (str, Path) of directories to build a tree
+        of.
+
+        The description is used as a text representation of what path the user
+        requested. This way, regardless of how the user requested a path
+        (relative, absolute, subdir, etc), it is always printed "correctly".
+
+        If no dirs are specified, ``onyo_tree(inventory)`` prints the directory
+        tree from the root of the inventory.
 
     Raises
     ------
@@ -1061,17 +1067,57 @@ def onyo_tree(inventory: Inventory,
         If paths are invalid.
     """
     # sanitize the paths
-    dirs = paths if paths else [inventory.root]
-    non_inventory_dirs = [str(p) for p in dirs if not inventory.repo.is_inventory_dir(p)]
+    dirs = dirs if dirs else [('.', inventory.root)]
+    non_inventory_dirs = [desc for (desc, p) in dirs if not inventory.repo.is_inventory_dir(p)]
     if non_inventory_dirs:
         raise ValueError("The following paths are not inventory directories: %s" %
                          '\n'.join(non_inventory_dirs))
 
-    # run it
-    ret = subprocess.run(
-        ['tree', *map(str, dirs)], capture_output=True, text=True, check=True)
-    # print tree output
-    ui.print(ret.stdout)
+    for (desc, p) in dirs:
+        ui.rich_print(f'[bold][sandy_brown]{desc}[/sandy_brown][/bold]')
+        for line in _tree(p):
+            ui.rich_print(line)
+
+
+def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
+    """Yield lines that assemble tree-like output, stylized by rich.
+
+    Parameters
+    ----------
+    dir_path: Path
+        Path of directory to yield tree of.
+    prefix: str, optional
+        Lines should be prefixed with this string. In practice, only useful by
+        ``_tree`` itself recursing into directories.
+    """
+    space = '    '
+    pipe =  '│   '  # noqa: E222
+    tee =   '├── '  # noqa: E222
+    last =  '└── '  # noqa: E222
+
+    # get and sort the children
+    children = sorted(list(dir_path.iterdir()))
+    for path in children:
+        # ignore hidden files/dirs
+        if path.name[0] == '.':
+            continue
+
+        # choose child prefix
+        child_prefix = tee  # ├──
+        if path == children[-1]:
+            child_prefix = last  # └──
+
+        # colorize directories
+        path_name = path.name
+        if path.is_dir():
+            path_name = f'[bold][sandy_brown]{path.name}[/sandy_brown][/bold]'
+
+        yield f'{prefix}{child_prefix}{path_name}'
+
+        # descend into directories
+        if path.is_dir():
+            next_prefix_level = pipe if child_prefix == tee else space
+            yield from _tree(path, prefix=prefix + next_prefix_level)
 
 
 @raise_on_inventory_state
