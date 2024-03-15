@@ -77,19 +77,6 @@ def test_onyo_tree_multiple_paths(inventory: Inventory,
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_tree_without_explicit_paths(inventory: Inventory,
-                                          capsys) -> None:
-    """Display the root of the inventory, if onyo_tree() is called without paths."""
-    onyo_tree(inventory)
-
-    # verify assets and paths are in output
-    tree_output = capsys.readouterr().out
-    for path in inventory.repo.get_asset_paths(subtrees=[inventory.root]):
-        assert all([part in tree_output for part in path.relative_to(inventory.root).parts])
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.ui({'yes': True})
 def test_onyo_tree_relative_single(inventory: Inventory,
                                    capsys) -> None:
     """Display a tree for a relative subdirectory."""

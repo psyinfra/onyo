@@ -1042,7 +1042,7 @@ def onyo_set(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_tree(inventory: Inventory,
-              dirs: Optional[list[tuple[str, Path]]] = None) -> None:
+              dirs: list[tuple[str, Path]]) -> None:
     """Print the directory tree of paths.
 
     Parameters
@@ -1058,16 +1058,12 @@ def onyo_tree(inventory: Inventory,
         requested. This way, regardless of how the user requested a path
         (relative, absolute, subdir, etc), it is always printed "correctly".
 
-        If no dirs are specified, ``onyo_tree(inventory)`` prints the directory
-        tree from the root of the inventory.
-
     Raises
     ------
     ValueError
         If paths are invalid.
     """
     # sanitize the paths
-    dirs = dirs if dirs else [('.', inventory.root)]
     non_inventory_dirs = [desc for (desc, p) in dirs if not inventory.repo.is_inventory_dir(p)]
     if non_inventory_dirs:
         raise ValueError("The following paths are not inventory directories: %s" %
