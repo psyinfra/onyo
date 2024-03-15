@@ -101,7 +101,8 @@ def get(args: argparse.Namespace) -> None:
     matched.
 
       * ``is_asset_directory``: is the asset an Asset Directory
-      * ``path``: path of the asset from repo root
+      * ``directory``: parent directory of the asset relative to repo root
+      * ``path``: path of the asset relative to repo root
 
     By default, the results are sorted by ``path``.
     """

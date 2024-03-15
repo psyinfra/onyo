@@ -113,8 +113,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         assert files[0] in inventory.repo.git.files
         new_asset = inventory.get_asset(files[0])
         assert new_asset.get("path") == files[0]
-        # reserved key 'directory' is not part of the asset's content
-        assert 'directory' not in new_asset.keys()
+        assert new_asset.get("directory") == files[0].parent
         # content equals spec:
         assert all(new_asset[k] == s[k]
                    for k in s.keys()
@@ -254,16 +253,16 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     new_asset_path1 = asset_dir / f"{existing_asset_path.name.split('.')[0]}.ANOTHER"
     assert inventory.repo.is_asset_path(new_asset_path1)
     new_asset = inventory.get_asset(new_asset_path1)
-    # equals existing asset except for path and serial:
-    assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['serial', 'path'])
+    # equals existing asset except for directory, path, and serial:
+    assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['directory', 'path', 'serial'])
     assert new_asset['serial'] == 'ANOTHER'
 
     # second new asset
     new_asset_path2 = asset_dir / f"{existing_asset_path.name.split('.')[0]}.whatever"
     assert inventory.repo.is_asset_path(new_asset_path2)
     new_asset = inventory.get_asset(new_asset_path2)
-    # equals existing asset except for path and serial:
-    assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['serial', 'path'])
+    # equals existing asset except for directory, path, and serial:
+    assert all(v == new_asset[k] for k, v in existing_asset.items() if k not in ['directory', 'path', 'serial'])
     assert new_asset['serial'] == 'whatever'
     assert inventory.repo.git.is_clean_worktree()
 

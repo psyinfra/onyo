@@ -604,6 +604,7 @@ class OnyoRepo(object):
             a['is_asset_directory'] = False
         # Add pseudo-keys:
         a['path'] = path
+        a['directory'] = path.parent
         return a
 
     def write_asset_content(self,
