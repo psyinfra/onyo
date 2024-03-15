@@ -481,7 +481,7 @@ def onyo_get(inventory: Inventory,
             box=box.HORIZONTALS, title='', show_header=True,
             header_style='bold')
         for key in selected_keys:
-            table.add_column(key, no_wrap=True)
+            table.add_column(key, overflow='fold')
         for data in results:
             values = [str(data[k]) for k in selected_keys]
             table.add_row(*values)
