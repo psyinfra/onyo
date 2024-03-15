@@ -1,3 +1,4 @@
+onyo/_version.py
 .coverage
 build/
 __pycache__

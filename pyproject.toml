@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onyo"
+authors = [
+    {name = "Alex Waite", email = "alex@waite.eu"},
+    {name = "Tobias Kadelka", email = "t.kadelka@fz-juelich.de"},
+    {name = "Benjamin Poldrack", email = "benjaminpoldrack@gmail.com"},
+]
+description = "Textual inventory system backed by git"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["inventory", "git"]
+license = {text = "ISC"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "ruamel.yaml",
+    "rich",
+    "rich-argparse",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Bug Reports" = "https://github.com/psyinfra/onyo/issues"
+"Source" = "https://github.com/psyinfra/onyo/"
+
+[project.optional-dependencies]
+tests = [
+    'flake8',
+    'pyre-check',
+    'pytest',
+    'pytest-cov',
+    'pytest-randomly'
+]
+docs = [
+    'sphinx>=4.3.0',
+    'sphinx-argparse',
+    'sphinx-rtd-theme>=0.5.2'
+]
+
+[project.scripts]
+onyo = "onyo.main:main"
+
+[tool.setuptools_scm]
+version_file = "onyo/_version.py"
+
+#[tool.setuptools]
+## If there are data files included in your packages that need to be
+## installed, specify them here.
+#package-data = {"sample" = ["*.dat"]}
+
+[tool.setuptools.packages]
+find = {}  # Scanning implicit namespaces is active by default
