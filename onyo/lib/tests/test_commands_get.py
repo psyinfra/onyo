@@ -66,7 +66,7 @@ def test_onyo_get_empty_keys(inventory: Inventory,
     assert missing_key not in Path.read_text(asset_path1)
     onyo_get(inventory,
              paths=[asset_path1],
-             keys=[missing_key])
+             keys=[missing_key, "path"])
 
     # verify output
     output1 = capsys.readouterr().out
@@ -77,7 +77,7 @@ def test_onyo_get_empty_keys(inventory: Inventory,
     assert empty_key in Path.read_text(asset_path2)
     onyo_get(inventory,
              paths=[asset_path2],
-             keys=[empty_key])
+             keys=[empty_key, "path"])
 
     # verify output
     output2 = capsys.readouterr().out
@@ -106,11 +106,15 @@ def test_onyo_get_reserved_keys(inventory: Inventory,
 
     # get on reserved fields
     for reserved_key in reserved:
-        onyo_get(inventory, keys=[reserved_key])
-        # verify output
-        output = capsys.readouterr().out
-        assert asset_path.name in output
-        assert reserved_key in output
+        keys = [reserved_key]
+        if reserved_key != "path":
+            keys.append("path")
+        # verify that the key is in the header
+        onyo_get(inventory, keys=keys)
+        assert reserved_key in capsys.readouterr().out
+        # verify asset is returned
+        onyo_get(inventory, keys=keys, machine_readable=True)
+        assert asset_path.name in capsys.readouterr().out
 
 
 @pytest.mark.ui({'yes': True})
@@ -158,7 +162,7 @@ def test_onyo_get_simple(inventory: Inventory,
     # get a value in an asset
     onyo_get(inventory,
              paths=[asset_path],
-             keys=[get_key])
+             keys=[get_key, "path"])
 
     # verify output
     output = capsys.readouterr().out
@@ -177,14 +181,14 @@ def test_onyo_get_machine_readable(inventory: Inventory,
     # call `onyo_get()` without machine readable mode
     onyo_get(inventory,
              paths=[asset_path],
-             keys=[get_key])
+             keys=[get_key, "path"])
 
     standard_output = capsys.readouterr().out
 
     # call `onyo_get()` in machine readable mode
     onyo_get(inventory,
              paths=[asset_path],
-             keys=[get_key],
+             keys=[get_key, "path"],
              machine_readable=True)
 
     # verify output contains the correct information but is different from normal mode
@@ -209,13 +213,13 @@ def test_onyo_get_sorting(inventory: Inventory,
     # call `onyo_get()` with sort=ascending
     onyo_get(inventory,
              sort="ascending",
-             keys=[get_key])
+             keys=[get_key, "path"])
     ascending_output = capsys.readouterr().out
 
     # call `onyo_get()` with sort=descending
     onyo_get(inventory,
              sort="descending",
-             keys=[get_key])
+             keys=[get_key, "path"])
     descending_output = capsys.readouterr().out
 
     # verify output contains the correct information but is different depending on sorting
@@ -232,7 +236,7 @@ def test_onyo_get_sorting(inventory: Inventory,
                   onyo_get,
                   inventory,
                   sort="ILLEGAL",
-                  keys=[get_key])
+                  keys=[get_key, "path"])
 
 
 @pytest.mark.ui({'yes': True})
@@ -246,7 +250,7 @@ def test_onyo_get_on_directory(inventory: Inventory,
     # call `onyo_get()` on a directory
     onyo_get(inventory,
              paths=[dir_path],
-             keys=[get_key])
+             keys=[get_key, "path"])
 
     # verify output contains the asset inside the directory
     output = capsys.readouterr().out
@@ -273,7 +277,7 @@ def test_onyo_get_match(inventory: Inventory,
     onyo_get(inventory,
              paths=[asset_path1, asset_path2],
              match=matches,  # pyre-ignore[6]
-             keys=[get_key])
+             keys=[get_key, "path"])
 
     # verify output contains just information for matching assets
     output = capsys.readouterr().out
@@ -318,7 +322,7 @@ def test_onyo_get_multiple(inventory: Inventory,
     onyo_get(inventory,
              paths=[asset_path1,
                     asset_path2],
-             keys=[get_key])
+             keys=[get_key, "path"])
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out

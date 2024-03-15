@@ -142,7 +142,7 @@ def test_get_all(
     """
     keys = keys if keys else repo.get_asset_name_keys()
     cmd = ['onyo', 'get', '--path', *paths, '--depth', depth]
-    cmd += ['--keys', *keys] if keys else []
+    cmd += ['--keys', *keys + ["path"]] if keys else []
     cmd += ['--match', *matches] if matches else []
     cmd += [machine_readable] if machine_readable else []
     cmd += [sort] if sort else []
@@ -274,10 +274,10 @@ def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
                                                      'laptop_dell_precision.2',
                                                      'headphones_apple_pro.3']]])
 @pytest.mark.parametrize('keys', [
-    ['type', 'make', 'model', 'serial'],
-    ['unset', 'type', 'unset2', 'make'],
-    ['num', 'str', 'bool'],
-    ['TyPe', 'MAKE', 'moDEL', 'NuM', 'STR'],
+    ['type', 'make', 'model', 'serial', 'path'],
+    ['unset', 'type', 'unset2', 'make', 'path'],
+    ['num', 'str', 'bool', 'path'],
+    ['TyPe', 'MAKE', 'moDEL', 'NuM', 'STR', 'path'],
     []])
 def test_get_keys(
         repo: OnyoRepo, raw_assets: list[tuple[str, dict[str, Any]]],
@@ -285,6 +285,7 @@ def test_get_keys(
     """
     Test that `onyo get --keys x y z` retrieves the expected keys.
     """
+    from onyo.lib.consts import PSEUDO_KEYS
     cmd = ['onyo', 'get', '-H']
     cmd += ['--keys', *keys, ] if keys else []
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -292,13 +293,15 @@ def test_get_keys(
 
     # Asset name keys returned if no keys were specified
     if not keys:
-        keys = repo.get_asset_name_keys()
+        keys = repo.get_asset_name_keys() + ["path"]
 
     # Get all the key values and make sure they match
     for line in output:
         line = [field.strip("\"") for field in line]
         asset = raw_assets[[a[0] for a in raw_assets].index(line[-1])][1]
         for i, key in enumerate(keys):
+            if key in PSEUDO_KEYS:
+                continue
             # convert raw asset values to str because output type is str
             assert str(asset.get(key, '<unset>')) == line[i]
 
