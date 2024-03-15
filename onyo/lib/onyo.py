@@ -601,6 +601,7 @@ class OnyoRepo(object):
             a['is_asset_directory'] = True
         else:
             a = yaml_to_dict(path)
+            a['is_asset_directory'] = False
         # Add pseudo-keys:
         a['path'] = path
         return a

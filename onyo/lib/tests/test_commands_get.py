@@ -415,5 +415,13 @@ def test_onyo_get_asset_dir(inventory: Inventory,
                         )
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
-    onyo_get(inventory, match=[Filter("other=1").match])
-    assert str(asset_dir.relative_to(inventory.root)) in capsys.readouterr().out
+    onyo_get(inventory, match=[Filter("other=1").match], keys=["path", "is_asset_directory"])
+    output = capsys.readouterr().out
+    assert str(asset_dir.relative_to(inventory.root)) in output
+    assert str(True) in output
+
+
+def test_onyo_get_is_asset_dir(inventory: Inventory,
+                               capsys) -> None:
+    onyo_get(inventory, keys=["path", "is_asset_directory"])
+    assert str(False) in capsys.readouterr().out

@@ -80,7 +80,9 @@ def test_add_asset(repo: OnyoRepo) -> None:
     assert repo.is_asset_path(asset_file)
     asset_from_disc = repo.get_asset_content(asset_file)
     assert asset_file == asset_from_disc.pop('path')
-    assert asset_from_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + PSEUDO_KEYS}
+    for k, v in asset.items():
+        if k not in RESERVED_KEYS + PSEUDO_KEYS:
+            assert asset_from_disc[k] == v
     # TODO: check commit message
 
     # required keys must not be empty
@@ -260,7 +262,9 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     assert not new_asset_file.exists()
     asset_on_disc = repo.get_asset_content(asset_file)
     assert asset_file == asset_on_disc.pop('path')
-    assert asset_on_disc == {k: v for k, v in asset.items() if k not in RESERVED_KEYS + PSEUDO_KEYS}
+    for k, v in asset.items():
+        if k not in RESERVED_KEYS + PSEUDO_KEYS:
+            assert asset_on_disc[k] == v
 
     # TODO: diff
 
@@ -270,6 +274,7 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     assert repo.is_asset_path(new_asset_file)
     expected_asset = {k: v for k, v in new_asset.items() if k not in RESERVED_KEYS}
     expected_asset['path'] = new_asset_file
+    expected_asset['is_asset_directory'] = False
     assert repo.get_asset_content(new_asset_file) == expected_asset
 
 
