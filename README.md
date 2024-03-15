@@ -21,12 +21,12 @@ Onyo requires Python >= 3.11 and a few system utilities.
 
 Debian/Ubuntu:
 ```
-apt-get install git tig tree python3-pip
+apt-get install git tig python3-pip
 ```
 
 macOS:
 ```
-brew install git tig tree
+brew install git tig
 ```
 
 #### Setup and activate virtual environment:

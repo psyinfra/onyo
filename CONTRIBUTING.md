@@ -33,12 +33,12 @@ source ~/.venvs/onyo/bin/activate
 
 Debian/Ubuntu:
 ```bash
-apt-get install git tig tree python3-pip
+apt-get install git tig python3-pip
 ```
 
 macOS ([Homebrew](https://brew.sh):
 ```bash
-brew install git tig tree
+brew install git tig
 ```
 
 #### (5) Install Onyo and test dependencies

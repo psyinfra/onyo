@@ -11,13 +11,13 @@ system utilities.
 
 .. code:: shell
 
-   apt-get install git tig tree python3-pip
+   apt-get install git tig python3-pip
 
 **macOS**:
 
 .. code:: shell
 
-   brew install git tig tree
+   brew install git tig
 
 
 Onyo
