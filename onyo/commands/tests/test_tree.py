@@ -91,7 +91,7 @@ def test_tree_error_dir_does_not_exist(repo: OnyoRepo, directory: str) -> None:
     # verify output
     assert not ret.stdout
     assert "The following paths are not inventory directories:" in ret.stderr
-    assert str(repo.git.root / directory) in ret.stderr
+    assert str(directory) in ret.stderr
     assert ret.returncode == 1
 
 
@@ -106,7 +106,7 @@ def test_tree_error_is_file(repo: OnyoRepo, asset: str) -> None:
     # verify output
     assert not ret.stdout
     assert "The following paths are not inventory directories:" in ret.stderr
-    assert str(repo.git.root / asset) in ret.stderr
+    assert str(asset) in ret.stderr
     assert ret.returncode == 1
 
 

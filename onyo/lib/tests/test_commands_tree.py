@@ -3,7 +3,6 @@ import pytest
 from onyo.lib.inventory import Inventory
 from ..commands import onyo_tree
 
-# TODO: test with relativ paths?
 # TODO: test output?
 
 
@@ -86,7 +85,24 @@ def test_onyo_tree_without_explicit_paths(inventory: Inventory,
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
     for path in inventory.repo.get_asset_paths(subtrees=[inventory.root]):
-        assert all([part in tree_output for part in path.parts])
+        assert all([part in tree_output for part in path.relative_to(inventory.root).parts])
+    assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_tree_relative_single(inventory: Inventory,
+                                   capsys) -> None:
+    """Display a tree for a relative subdirectory."""
+    directory_path = inventory.root / "somewhere" / "nested"
+
+    # move an asset and a dir to the same destination
+    onyo_tree(inventory,
+              dirs=[("somewhere/nested", directory_path)])
+
+    # verify assets and paths are in output
+    tree_output = capsys.readouterr().out
+    for path in inventory.repo.get_asset_paths(subtrees=[directory_path]):
+        assert all([part in tree_output for part in path.relative_to(inventory.root).parts])
     assert inventory.repo.git.is_clean_worktree()
 
 
