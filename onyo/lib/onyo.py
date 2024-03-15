@@ -89,7 +89,7 @@ class OnyoRepo(object):
             self._init(path)
         else:
             if not self.is_valid_onyo_repo():
-                raise OnyoInvalidRepoError(f"'{path}' is no valid Onyo Repository.")
+                raise OnyoInvalidRepoError(f"'{path}' is not a valid Onyo Repository.")
 
         ui.log_debug(f"Onyo repo found at '{self.git.root}'")
 
