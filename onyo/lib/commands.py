@@ -417,8 +417,8 @@ def onyo_get(inventory: Inventory,
       this list.
     keys: list of str, optional
       Defines what key-value pairs of an asset a result is composed of.
-      If no `keys` are given the keys then the asset name keys are
-      used. The 'path' pseudo-key is always appended.
+      If no `keys` are given the keys then the asset name keys and
+      `path` are used.
       Keys may be repeated.
     sort: str
       How to sort the results by `keys`. Possible values are
@@ -453,7 +453,7 @@ def onyo_get(inventory: Inventory,
     if sort not in allowed_sorting:
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
-    selected_keys = selected_keys or inventory.repo.get_asset_name_keys()
+    selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['path']
     results = inventory.get_assets_by_query(paths=paths,
                                             depth=depth,
                                             match=match)
@@ -468,10 +468,6 @@ def onyo_get(inventory: Inventory,
         keys=selected_keys if keys else ['path'],
         reverse=sort == 'descending')
 
-    # for now, always include path to match previous behavior:
-    # TODO: Should we hardcode 'path' here?
-    if 'path' not in selected_keys:
-        selected_keys.append('path')
     # filter output for `keys` only
     results = [{k: v for k, v in r.items() if k in selected_keys} for r in results]
 
@@ -485,7 +481,7 @@ def onyo_get(inventory: Inventory,
             box=box.HORIZONTALS, title='', show_header=True,
             header_style='bold')
         for key in selected_keys:
-            table.add_column(key, no_wrap=True)
+            table.add_column(key, overflow='fold')
         for data in results:
             values = [str(data[k]) for k in selected_keys]
             table.add_row(*values)

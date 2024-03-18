@@ -188,7 +188,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     # TODO: Not directly possible via CLI at the moment. Best I can think of is
     # `onyo get --machine-readable --match type=laptop --keys build-date -s | grep -v retired | grep -v unset`
     # and do the date comparison in a loop over its output.
-    cmd = ['onyo', 'get', '--machine-readable', '--match', 'type=laptop', '--keys', 'build-date']
+    cmd = ['onyo', 'get', '--machine-readable', '--match', 'type=laptop', '--keys', 'build-date', 'path']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     results = []
