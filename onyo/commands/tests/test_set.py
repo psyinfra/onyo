@@ -407,7 +407,7 @@ def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
     # this does not work when called in set.py or onyo.py, because this test
     # function still has its own repo object, which does not get updated when
     # calling `onyo set` with subprocess.run()
-    repo.clear_caches()
+    repo.clear_cache()
 
     # verify that the name fields were not added to the contents and the names
     # are actually new

@@ -114,7 +114,7 @@ OPERATIONS_MAPPING: dict = {'new_directories': InventoryOperator(executor=exec_n
 # TODO: Conflict w/ existing operations?
 #       operations: raise InvalidInventoryOperationError on conflicts with pending operations,
 #       like removing something that is to be created. -> reset() or commit()
-# TODO: clear_caches from within commit? What about operations?
+# TODO: clear_cache from within commit? What about operations?
 class Inventory(object):
     """"""
 

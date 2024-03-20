@@ -87,9 +87,9 @@ def test_GitRepo_find_root(tmp_path: Path) -> None:
         GitRepo.find_root(tmp_path / 'non-existing/directory')
 
 
-def test_GitRepo_clear_caches(gitrepo) -> None:
+def test_GitRepo_clear_cache(gitrepo) -> None:
     """
-    The function `GitRepo.clear_caches()` must allow to empty the cache of the
+    The function `GitRepo.clear_cache()` must allow to empty the cache of the
     GitRepo, so that an invalid cache can be re-loaded by a new call of the
     property.
     """
@@ -107,7 +107,7 @@ def test_GitRepo_clear_caches(gitrepo) -> None:
     assert file in gitrepo.files
     assert not file.exists()
 
-    # test GitRepo.clear_caches() fixes the cache
+    # test GitRepo.clear_cache() fixes the cache
     gitrepo.clear_cache()
     assert file not in gitrepo.files
 

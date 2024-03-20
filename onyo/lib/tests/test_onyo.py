@@ -64,8 +64,8 @@ def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo: OnyoRepo,
                                    model="test",
                                    serial=0,
                                    path=Path('a') / 'test' / 'asset_for_test.0'))
-def test_clear_caches(onyorepo) -> None:
-    """The function `OnyoRepo.clear_caches()` must allow to empty the cache of
+def test_clear_cache(onyorepo) -> None:
+    """The function `OnyoRepo.clear_cache()` must allow to empty the cache of
     the OnyoRepo, so that an invalid cache can be re-loaded by a newly call of
     the property.
     """
@@ -85,8 +85,8 @@ def test_clear_caches(onyorepo) -> None:
     onyorepo.git.commit(asset, "asset deleted")
     assert asset in onyorepo.asset_paths
 
-    # clear_caches() fixes the cache:
-    onyorepo.clear_caches(assets=True)
+    # clear_cache() fixes the cache:
+    onyorepo.clear_cache()
     assert asset not in onyorepo.asset_paths
 
 

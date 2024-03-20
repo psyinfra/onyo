@@ -35,9 +35,6 @@ class OnyoRepo(object):
 
     asset_paths: list of Path
         The paths to all assets in the Repository.
-        This property is cached and consistent when only the public functions of
-        OnyoRepo are called. Usage of private or external functions might
-        require a manual reset of the cache with `OnyoRepo.clear_caches()`.
     """
 
     ONYO_DIR = Path('.onyo')
@@ -190,31 +187,20 @@ class OnyoRepo(object):
 
         return editor
 
-    def clear_caches(self,
-                     assets: bool = True) -> None:
-        """Clear caches of the instance of the repository object.
+    def clear_cache(self) -> None:
+        """Clear cache of this instance of GitRepo.
 
-        Paths such as files, assets, and directories are cached, and can become
-        stale when the repository contents are modified. This function clears
-        the caches of the properties.
-
-        By default all caches are cleared, and arguments make it possible to
-        specify which caches which should remain set.
+        Caches cleared are:
+        - `OnyoRepo.asset_paths`
+        - `GitRepo.git.clear_cache()`
 
         If the repository is exclusively modified via public API functions, the
-        caches of the `Repo` object are consistent. If the repository is
-        modified otherwise, this function clears the caches to ensure that the
-        caches do not contain stale information.
-
-        Parameters
-        ----------
-        assets: bool
-            An option to deactivate or activate the clearing of the
-            `asset_paths` cache.
+        cache of the `OnyoRepo` object is consistent. If the repository is
+        modified otherwise, use of this function may be necessary to ensure that
+        the cache does not contain stale information.
         """
-        if assets:
-            self._asset_paths = None
-            self.git.clear_cache()
+        self._asset_paths = None
+        self.git.clear_cache()
 
     @staticmethod
     def generate_commit_message(format_string: str,
@@ -270,12 +256,12 @@ class OnyoRepo(object):
 
     @property
     def asset_paths(self) -> list[Path]:
-        """Get the absolute `Path`s of all assets of this
-        repository.
+        """Get the absolute `Path`s of all assets in this repository.
 
-        This property is cached and the cache can be reset via `self.clear_caches()`.
-        Only committed files are considered to be assets, hence an automatic cache
-        invalidation only happens upon `self.commit()`.
+        This property is cached, and is reset automatically on `OnyoRepo.commit()`.
+
+        If changes are made by different means, use `OnyoRepo.clear_cache()` to
+        reset the cache.
         """
         if self._asset_paths is None:
             self._asset_paths = self.get_asset_paths()
@@ -684,8 +670,8 @@ class OnyoRepo(object):
     def commit(self, paths: Iterable[Path] | Path, message: str):
         """Commit changes to the repository.
 
-        This is resetting the cache for `self.asset_paths` and otherwise
-        just a proxy for `GitRepo.commit`.
+        This is resets the cache and is otherwise just a proxy for
+        `GitRepo.commit`.
 
         Parameters
         ----------
@@ -695,4 +681,4 @@ class OnyoRepo(object):
           The git commit message.
         """
         self.git.commit(paths=paths, message=message)
-        self.clear_caches()
+        self.clear_cache()

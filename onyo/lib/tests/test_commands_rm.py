@@ -245,7 +245,7 @@ def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
     assert not asset_dir.exists()
 
     inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
-    inventory.repo.clear_caches()
+    inventory.repo.clear_cache()
     # remove asset aspect only
     onyo_rm(inventory,
             paths=asset_dir,
@@ -258,7 +258,7 @@ def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
     assert not inventory.repo.is_asset_path(asset_dir)
 
     inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
-    inventory.repo.clear_caches()
+    inventory.repo.clear_cache()
     # remove dir aspect only
     onyo_rm(inventory,
             paths=asset_dir,
