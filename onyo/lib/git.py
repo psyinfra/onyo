@@ -21,8 +21,6 @@ class GitRepo(object):
       The absolute path to the root of the git worktree.
     files: list of Path
       A property containing the absolute paths to all files tracked by git.
-      This property is cached. Usage of private or external functions might
-      require a manual reset via `GitRepo.get_subtree.cache_clear()`.
     """
 
     def __init__(self,
@@ -103,19 +101,25 @@ class GitRepo(object):
     def files(self) -> list[Path]:
         """Get the absolute `Path`s of all tracked files.
 
-        This property is cached. The cache is reset on `GitRepo.commit()`.
-        If changes are made by different means, `GitRepo.clear_caches()`
-        is available to reset the cache.
+        This property is cached, and is reset automatically on `GitRepo.commit()`.
+
+        If changes are made by different means, use `GitRepo.clear_cache()` to
+        reset the cache.
         """
         if not self._files:
             self._files = self.get_subtrees()
         return self._files
 
     def clear_cache(self) -> None:
-        """Clear the `files` cache of this instance of GitRepo.
+        """Clear cache of this instance of GitRepo.
 
-        Needed if changes to the repository are made by other means
-        than `GitRepo.commit()`
+        Caches cleared are:
+        - `GitRepo.files`
+
+        If the repository is exclusively modified via public API functions, the
+        cache of the `GitRepo` object is consistent. If the repository is
+        modified otherwise, use of this function may be necessary to ensure that
+        the cache does not contain stale information.
         """
         self._files = None
 
