@@ -33,7 +33,7 @@ class OnyoRepo(object):
         The path to the `.onyo/` directory containing templates, the config file
         and other onyo specific information.
 
-    asset_paths: list of Path
+    asset_paths
         The paths to all assets in the Repository.
     """
 
@@ -52,17 +52,17 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
             An absolute path to the root of the Onyo Repository for which the
             `OnyoRepo` object should be initialized.
 
-        init: bool
+        init
             If `init=True`, the `path` will be initialized as a git repo and a
             `.onyo/` directory will be created. `find_root=True` must not be
             used in combination with `init=True`.
             Verifies the validity of the onyo repository.
 
-        find_root: bool
+        find_root
             When `find_root=True`, the function searches the root of a
             repository, beginning at `path`.
 
@@ -101,11 +101,11 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        name: str
+        name
           The name of the configuration option to set.
-        value: str
+        value
           The value to set for the configuration option.
-        location: str, optional
+        location
           The location of the configuration for which the value
           should be set. Standard Git config locations: 'system',
           'global', 'local', and 'worktree'.
@@ -213,10 +213,10 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        format_string: str
+        format_string
             A format string defining the commit message subject to generate.
 
-        max_length: int
+        max_length
             An integer specifying the maximal length for generated commit message subjects.
 
         **kwargs
@@ -301,7 +301,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        Path: Path
+        path
             The path where to set up an Onyo repository.
             The directory will be initialized as a git repository (if it is not
             one already), ``.onyo/`` directory created (containing default
@@ -359,7 +359,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           The path to check.
 
         Returns
@@ -385,7 +385,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           Path to check for pointing to an asset.
 
         Returns
@@ -405,7 +405,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           Path to check.
 
         Returns
@@ -425,7 +425,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           Path to check.
 
         Returns
@@ -444,7 +444,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           Path to check for matching an exclude pattern in an ignore
           file (`OnyoRepo.IGNORE_FILE_NAME`).
 
@@ -467,7 +467,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        name: str, optional
+        name
             The name of the template to look for. If no name is given, the
             template defined in the config file `.onyo/config` is returned.
 
@@ -535,9 +535,9 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        subtrees: Iterable of Path, optional
+        subtrees
           Paths to look for assets under. Defaults to the root of the inventory.
-        depth: int, optional
+        depth
           Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
 
@@ -568,7 +568,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           Asset path to load. This is expected to be either a YAML file
           or an asset directory (`OnyoRepo.ASSET_DIR_FILE_NAME`
           automatically appended).
@@ -677,9 +677,9 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        paths: Path or Iterable of Path
+        paths
           List of paths to commit.
-        message: str
+        message
           The git commit message.
         """
         self.git.commit(paths=paths, message=message)

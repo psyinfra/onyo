@@ -231,8 +231,9 @@ class Inventory(object):
 
         Parameters
         ----------
-        mode: str, optional
+        mode
             What pending removals to consider: 'assets' only, 'dirs' only, or 'all'.
+
         Notes
         -----
         Just like `_get_pending_asset_names` and `_get_pending_dirs`,
@@ -535,9 +536,9 @@ class Inventory(object):
 
         Parameters
         ----------
-        paths: list of Path, optional
+        paths
           Paths to look for assets under. Defaults to the root of the inventory.
-        depth: int, optional
+        depth
           Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
 
@@ -564,14 +565,14 @@ class Inventory(object):
 
         Parameters
         ----------
-        paths: list of Path, optional
+        paths
           Paths to look for assets under. Defaults to the root of
           the inventory. Passed to `self.get_assets`.
-        depth: int, optional
+        depth
           Number of levels to descend into. Must be greater or equal 0.
           If 0, descend recursively without limit. Defaults to 0.
           Passed to `self.get_assets`.
-        match: list of Callable, optional
+        match
           Callable suitable for the builtin `filter`, when called on a
           list of assets (dictionaries).
 

@@ -64,9 +64,9 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
 
     Parameters
     ----------
-    assets: Generator of dict
+    assets
       Asset dictionaries to fill.
-    keys: list of str
+    keys
       Keys for which to set `UNSET_VALUE` if not present in an asset.
     """
     for asset in assets:
@@ -80,11 +80,11 @@ def natural_sort(assets: list[dict],
 
     Parameters
     ----------
-    assets: list of dict
+    assets
       Assets to sort.
-    keys: list of str
+    keys
       Keys to sort `assets` by. Default: ['path'].
-    reverse: bool
+    reverse
       Whether to sort in reverse order.
     """
     keys = keys or ['path']

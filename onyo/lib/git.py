@@ -19,7 +19,7 @@ class GitRepo(object):
     ----------
     root: Path
       The absolute path to the root of the git worktree.
-    files: list of Path
+    files
       A property containing the absolute paths to all files tracked by git.
     """
 
@@ -30,9 +30,9 @@ class GitRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           An absolute path to the root of a git repository.
-        find_root: bool
+        find_root
           `find_root=True` allows to search the root of a git worktree from a
           subdirectory, beginning at `path`, instead of requiring the root.
         """
@@ -45,7 +45,7 @@ class GitRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           The path to identify the git worktree root for. This can be any
           subdirectory of the repository, or the root directory itself.
 
@@ -76,12 +76,12 @@ class GitRepo(object):
 
         Parameters
         ----------
-        args: list of str
+        args
           Arguments to specify the git call to run, e.g. args=['add', <file>]
           leads to a system call `git add <file>`.
-        cwd: Path, optional
+        cwd
           Run git commands from `cwd`. Default: `self.root`.
-        raise_error: bool
+        raise_error
           Whether to raise `subprocess.CalledProcessError` if the command
           returned with non-zero exitcode.
 
@@ -129,7 +129,7 @@ class GitRepo(object):
 
         Parameters
         ----------
-        paths: Iterable of Path
+        paths
           Roots of subtrees to consider. The entire worktree by default.
 
         Returns
@@ -187,9 +187,9 @@ class GitRepo(object):
 
         Parameters
         ----------
-        paths: Path or Iterable of Path
+        paths
           List of paths to commit.
-        message: str
+        message
           The git commit message.
         """
         if isinstance(paths, Path):
@@ -212,7 +212,7 @@ class GitRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           The path to check.
 
         Returns
@@ -232,12 +232,13 @@ class GitRepo(object):
 
         Parameters:
         -----------
-        name: str
+        name
           Name of the config variable to query. Follows the Git convention of
           "SECTION.NAME.KEY" to address a key in a git config file:
             [SECTION "NAME"]
               KEY = VALUE
-        file_: Path, optional
+
+        file_
           path to a config file to read instead of Git's default locations.
 
         Returns
@@ -273,11 +274,11 @@ class GitRepo(object):
 
         Parameters
         ----------
-        name: str
+        name
           The name of the configuration option to set.
-        value: str
+        value
           The value to set for the configuration option.
-        location: Path or str, optional
+        location
           The location of the configuration for which the value should
           be set. If a `Path`: config file to read, otherwise standard
           Git config locations: 'system', 'global', 'local',
@@ -314,9 +315,9 @@ class GitRepo(object):
 
         Parameters
         ----------
-        commitish: str, optional
+        commitish
           Any identifier that refers to a commit (defaults to "HEAD").
-        short: bool
+        short
           Whether to return the abbreviated form of the hexsha.
 
         Returns
@@ -350,7 +351,7 @@ class GitRepo(object):
 
         Parameters
         ----------
-        commitish: str, optional
+        commitish
             Any identifier that refers to a commit (defaults to "HEAD").
 
         Returns
@@ -368,9 +369,9 @@ class GitRepo(object):
 
         Parameters
         ----------
-        ignore: Path
+        ignore
           Path to a file containing exclude patterns to evaluate.
-        paths: list of Path
+        paths
           Paths to check against the patterns in `ignore`.
 
         Returns
