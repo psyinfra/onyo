@@ -256,7 +256,7 @@ class OnyoRepo(object):
 
     @property
     def asset_paths(self) -> list[Path]:
-        """Get the absolute `Path`s of all assets in this repository.
+        """Get the absolute ``Path``\ s of all assets in this repository.
 
         This property is cached, and is reset automatically on `OnyoRepo.commit()`.
 

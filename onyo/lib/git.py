@@ -99,7 +99,7 @@ class GitRepo(object):
 
     @property
     def files(self) -> list[Path]:
-        """Get the absolute `Path`s of all tracked files.
+        """Get the absolute ``Path``\ s of all tracked files.
 
         This property is cached, and is reset automatically on `GitRepo.commit()`.
 
@@ -234,11 +234,12 @@ class GitRepo(object):
         -----------
         name
           Name of the config variable to query. Follows the Git convention of
-          "SECTION.NAME.KEY" to address a key in a git config file:
+          "SECTION.NAME.KEY" to address a key in a git config file::
+
             [SECTION "NAME"]
               KEY = VALUE
 
-        file_
+        file\_
           path to a config file to read instead of Git's default locations.
 
         Returns
