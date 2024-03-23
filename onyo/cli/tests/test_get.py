@@ -5,7 +5,7 @@ from typing import Any, Generator, Optional
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.command_utils import fill_unset, natural_sort
 
 asset_contents = [

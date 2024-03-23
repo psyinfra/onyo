@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 prepared_tsvs = Path(__file__).parent / "tables"
 directories = ['simple',

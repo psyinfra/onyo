@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 
 assets = ['laptop_apple_macbookpro.0',

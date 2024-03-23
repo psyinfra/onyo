@@ -3,7 +3,7 @@ from itertools import product
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 
 @pytest.mark.repo_dirs('just-a-dir')

@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 
 def test_config_set(repo: OnyoRepo) -> None:

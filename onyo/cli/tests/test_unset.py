@@ -4,7 +4,7 @@ from typing import Any, Generator
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 
 def convert_contents(

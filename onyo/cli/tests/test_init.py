@@ -2,7 +2,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 
 def fully_populated_dot_onyo(directory: Path) -> bool:

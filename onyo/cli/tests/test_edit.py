@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 assets = [['laptop_apple_macbookpro.0', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 0"],
           ['simple/laptop_apple_macbookpro.1',
