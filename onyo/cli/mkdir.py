@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import onyo_mkdir
 from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_message

@@ -2,11 +2,11 @@ from pathlib import Path
 
 import pytest
 
+from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..assets import Asset
 from ..commands import onyo_cat
-from ... import OnyoInvalidRepoError
 
 
 @pytest.mark.ui({'yes': True})
