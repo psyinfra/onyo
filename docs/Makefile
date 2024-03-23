@@ -25,10 +25,12 @@ clean:
 	rm -f $(PYTHON_API_RST)
 	@$(SPHINXBUILD) -M clean "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-html:
+generate:
 	sphinx-apidoc --force --output-dir "$(SOURCEDIR)" --separate --maxdepth 2 --no-toc ../onyo '../onyo/cli/*' '../*tests*' '../onyo/conftest.py' '../onyo/shared_arguments.py' '../onyo/onyo_arguments.py'
 	ex -sc ':1s/onyo package/Python API/|x' "$(SOURCEDIR)/onyo.rst"
 	ex -sc ':2s/============/==========/|x' "$(SOURCEDIR)/onyo.rst"
+
+html: generate
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Catch-all target: route all unknown targets to Sphinx using the new
