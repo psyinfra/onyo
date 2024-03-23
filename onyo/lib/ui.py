@@ -26,7 +26,7 @@ class UI(object):
 
     Attributes
     ----------
-    log: Logger
+    logger: Logger
         The logger to display information with.
 
     quiet: bool

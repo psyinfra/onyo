@@ -19,8 +19,6 @@ class GitRepo(object):
     ----------
     root: Path
       The absolute path to the root of the git worktree.
-    files
-      A property containing the absolute paths to all files tracked by git.
     """
 
     def __init__(self,

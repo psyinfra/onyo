@@ -32,9 +32,6 @@ class OnyoRepo(object):
     dot_onyo: Path
         The path to the `.onyo/` directory containing templates, the config file
         and other onyo specific information.
-
-    asset_paths
-        The paths to all assets in the Repository.
     """
 
     ONYO_DIR = Path('.onyo')
