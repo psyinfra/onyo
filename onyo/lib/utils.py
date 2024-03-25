@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
 
@@ -10,7 +10,7 @@ from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 from onyo.lib.ui import ui
 
 
-def deduplicate(sequence: Optional[list]) -> Optional[list]:
+def deduplicate(sequence: list | None) -> list | None:
     """Get a deduplicated list, while preserving order.
 
     For ease of use, accepts `None` (and returns it in that case).

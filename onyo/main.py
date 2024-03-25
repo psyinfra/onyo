@@ -7,7 +7,7 @@ import textwrap
 from argparse import ArgumentParser, PARSER
 from itertools import islice
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from rich.containers import Lines
 from rich.text import Text
@@ -297,7 +297,7 @@ def setup_parser() -> ArgumentParser:
     return parser
 
 
-def get_subcmd_index(arglist, start: int = 1) -> Optional[int]:
+def get_subcmd_index(arglist, start: int = 1) -> int | None:
     """
     Get the index of the subcommand from a provided list of arguments (usually sys.argv).
 

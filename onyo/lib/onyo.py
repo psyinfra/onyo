@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 from .git import GitRepo
@@ -88,7 +88,7 @@ class OnyoRepo(object):
         ui.log_debug(f"Onyo repo found at '{self.git.root}'")
 
         # caches
-        self._asset_paths: Optional[list[Path]] = None
+        self._asset_paths: list[Path] | None = None
 
     def set_config(self,
                    name: str,
@@ -119,7 +119,7 @@ class OnyoRepo(object):
         return self.git.set_config(name=name, value=value, location=loc)
 
     def get_config(self,
-                   name: str) -> Optional[str]:
+                   name: str) -> str | None:
         """Get effective value of config `name`.
 
         This is considering regular git-config locations and checks
@@ -459,7 +459,7 @@ class OnyoRepo(object):
         return False
 
     def get_template(self,
-                     name: Optional[str] = None) -> dict:
+                     name: str | None = None) -> dict:
         """Select and return a template from the directory `.onyo/templates/`.
 
         Parameters
@@ -525,7 +525,7 @@ class OnyoRepo(object):
         return True
 
     def get_asset_paths(self,
-                        subtrees: Optional[Iterable[Path]] = None,
+                        subtrees: Iterable[Path] | None = None,
                         depth: int = 0) -> List[Path]:
         """Select all assets in the repository that are relative to the given
         `subtrees` descending at most `depth` directories.

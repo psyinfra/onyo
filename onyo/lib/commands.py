@@ -5,7 +5,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Generator, Literal, Optional, ParamSpec, TypeVar
+from typing import Callable, Dict, Generator, Literal, ParamSpec, TypeVar
 from functools import wraps
 
 from rich import box
@@ -69,7 +69,7 @@ def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
 
 
 def fsck(repo: OnyoRepo,
-         tests: Optional[list[str]] = None) -> None:
+         tests: list[str] | None = None) -> None:
     """Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
 
@@ -220,7 +220,7 @@ def onyo_config(inventory: Inventory,
 def _edit_asset(inventory: Inventory,
                 asset: dict,
                 operation: Callable,
-                editor: Optional[str]) -> dict:
+                editor: str | None) -> dict:
     """Edit `asset` via configured editor and a temporary asset file.
 
     Utility function for `onyo_edit` and `onyo_new(edit=True)`.
@@ -326,7 +326,7 @@ def _edit_asset(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_edit(inventory: Inventory,
               paths: list[Path],
-              message: Optional[str]) -> None:
+              message: str | None) -> None:
     """Edit the content of assets.
 
     Parameters
@@ -386,11 +386,11 @@ def onyo_edit(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_get(inventory: Inventory,
-             paths: Optional[list[Path]] = None,
+             paths: list[Path] | None = None,
              depth: int = 0,
              machine_readable: bool = False,
-             match: Optional[list[Callable[[dict], bool]]] = None,
-             keys: Optional[list[str]] = None,
+             match: list[Callable[[dict], bool]] | None = None,
+             keys: list[str] | None = None,
              sort: Literal['ascending', 'descending'] = 'ascending') -> list[dict]:
     """Query the repository for information about assets.
 
@@ -495,7 +495,7 @@ def onyo_get(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
-               message: Optional[str]) -> None:
+               message: str | None) -> None:
     """Create new directories in the inventory.
 
     Intermediate directories will be created as needed (i.e. parent and
@@ -589,7 +589,7 @@ def _maybe_rename(inventory: Inventory,
 def onyo_mv(inventory: Inventory,
             source: list[Path] | Path,
             destination: Path,
-            message: Optional[str] = None) -> None:
+            message: str | None = None) -> None:
     """Move assets or directories, or rename a directory.
 
     If `destination` is an asset file, turns it into an asset dir first.
@@ -678,13 +678,13 @@ def onyo_mv(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_new(inventory: Inventory,
-             directory: Optional[Path] = None,
-             template: Optional[str] = None,
-             clone: Optional[Path] = None,
-             tsv: Optional[Path] = None,
-             keys: Optional[list[Dict[str, str | int | float]]] = None,
+             directory: Path | None = None,
+             template: str | None = None,
+             clone: Path | None = None,
+             tsv: Path | None = None,
+             keys: list[Dict[str, str | int | float]] | None = None,
              edit: bool = False,
-             message: Optional[str] = None) -> None:
+             message: str | None = None) -> None:
     """Create new assets and add them to the inventory.
 
     Either keys, tsv or edit must be given.
@@ -878,7 +878,7 @@ def onyo_new(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_rm(inventory: Inventory,
             paths: list[Path] | Path,
-            message: Optional[str],
+            message: str | None,
             mode: Literal["asset", "dir", "all"] = "all") -> None:
     """Delete assets and/or directories from the inventory.
 
@@ -955,7 +955,7 @@ def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
              assets: list[Path],
              rename: bool = False,
-             message: Optional[str] = None) -> Optional[str]:
+             message: str | None = None) -> str | None:
     """Set key-value pairs of assets, and change asset names.
 
     Parameters
@@ -1116,7 +1116,7 @@ def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
 def onyo_unset(inventory: Inventory,
                keys: list[str],
                assets: list[Path],
-               message: Optional[str] = None) -> None:
+               message: str | None = None) -> None:
     """Remove keys from assets.
 
     Parameters

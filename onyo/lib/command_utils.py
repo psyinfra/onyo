@@ -4,7 +4,7 @@ import logging
 import re
 import shutil
 import sys
-from typing import Generator, Optional
+from typing import Generator
 
 from .consts import UNSET_VALUE
 from .onyo import OnyoRepo
@@ -74,7 +74,7 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
 
 
 def natural_sort(assets: list[dict],
-                 keys: Optional[list] = None,
+                 keys: list[str] | None = None,
                  reverse: bool = False) -> list[dict]:
     """Sort an asset list by a given list of `keys`.
 

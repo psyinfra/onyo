@@ -1,14 +1,14 @@
 import argparse
 import os
 
-from typing import Optional, Sequence
+from typing import Sequence
 
 
 class StoreKeyValuePairs(argparse.Action):
     def __init__(self,
                  option_strings: Sequence[str],
                  dest: str,
-                 nargs: Optional[int | str] = None,
+                 nargs: int | str | None = None,
                  **kwargs) -> None:
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
@@ -17,7 +17,7 @@ class StoreKeyValuePairs(argparse.Action):
                  parser: argparse.ArgumentParser,
                  namespace: argparse.Namespace,
                  key_values: list[str],
-                 option_string: Optional[str] = None) -> None:
+                 option_string: str | None = None) -> None:
         """Turn a list of 'key=value' pairs into a list of dictionaries
 
         Every key appearing multiple times in `key=value` is applied to a new dictionary every time.

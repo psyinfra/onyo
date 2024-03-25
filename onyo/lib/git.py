@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.ui import ui
@@ -35,7 +35,7 @@ class GitRepo(object):
           subdirectory, beginning at `path`, instead of requiring the root.
         """
         self.root = GitRepo.find_root(path) if find_root else path.resolve()
-        self._files: Optional[list[Path]] = None
+        self._files: list[Path] | None = None
 
     @staticmethod
     def find_root(path: Path) -> Path:
@@ -68,7 +68,7 @@ class GitRepo(object):
 
     def _git(self,
              args: list[str], *,
-             cwd: Optional[Path] = None,
+             cwd: Path | None = None,
              raise_error: bool = True) -> str:
         """A wrapper function for git calls, returning the output of commands.
 
@@ -122,7 +122,7 @@ class GitRepo(object):
         self._files = None
 
     def get_subtrees(self,
-                     paths: Optional[Iterable[Path]] = None) -> list[Path]:
+                     paths: Iterable[Path] | None = None) -> list[Path]:
         """Get tracked files in the subtrees rooted at `paths`.
 
         Parameters
@@ -222,7 +222,7 @@ class GitRepo(object):
 
     def get_config(self,
                    name: str,
-                   file_: Optional[Path] = None) -> Optional[str]:
+                   file_: Path | None = None) -> str | None:
         """Get the value for a configuration option specified by `name`.
 
         By default, git-config is read following its order of precedence (worktree,
@@ -268,7 +268,7 @@ class GitRepo(object):
     def set_config(self,
                    name: str,
                    value: str,
-                   location: Optional[str | Path] = None) -> None:
+                   location: str | Path | None = None) -> None:
         """Set the configuration option `name` to `value`.
 
         Parameters
@@ -308,8 +308,8 @@ class GitRepo(object):
 
     # Credit: Datalad
     def get_hexsha(self,
-                   commitish: Optional[str] = None,
-                   short: bool = False) -> Optional[str]:
+                   commitish: str | None = None,
+                   short: bool = False) -> str | None:
         """Return the hexsha of a given commit-ish.
 
         Parameters
@@ -345,7 +345,7 @@ class GitRepo(object):
             raise ValueError("Unknown commit identifier: %s" % commitish)
 
     def get_commit_msg(self,
-                       commitish: Optional[str] = None) -> str:
+                       commitish: str | None = None) -> str:
         """Returns the full commit message of a commit-ish.
 
         Parameters
