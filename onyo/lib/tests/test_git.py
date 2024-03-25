@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo import OnyoInvalidRepoError
+from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.git import GitRepo
 
 # TODO: Alternative approach to fixture:

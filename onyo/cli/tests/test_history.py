@@ -4,7 +4,7 @@ from typing import List
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import fsck
 
 # NOTE: the output of `onyo history` is not tested for formatting or content, as

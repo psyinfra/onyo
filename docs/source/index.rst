@@ -22,6 +22,7 @@ Overview
    configuration
    concepts
    command_line_reference
+   onyo
    examples
    changelog
 

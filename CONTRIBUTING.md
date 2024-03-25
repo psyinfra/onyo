@@ -94,7 +94,7 @@ sections describe conventions followed in this project, additionally to the
   - comprehensively test combinations of parameters
 - use only the Python API (no usage of `subprocess.run(["onyo", ...])`)
 
-### CLI Tests (`tests/commands/`):
+### CLI Tests (`tests/cli/`):
 
 - define the CLI behavior
   - comprehensively test combinations of arguments/flags

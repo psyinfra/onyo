@@ -26,7 +26,7 @@ class UI(object):
 
     Attributes
     ----------
-    log: Logger
+    logger: Logger
         The logger to display information with.
 
     quiet: bool
@@ -48,15 +48,15 @@ class UI(object):
 
         Parameters
         ----------
-        debug: bool
+        debug
             Activate the debug mode to display additional information via Onyo,
             and to print the full traceback stack if errors occur.
 
-        quiet: bool
+        quiet
             Activate the quiet mode (requires that `yes=True`) to suppress all
             output generation.
 
-        yes: bool
+        yes
             Activate the yes mode to suppress all interactive requests to the
             user, and instead answers them with yes.
         """
@@ -81,7 +81,7 @@ class UI(object):
 
         Parameters
         ----------
-        debug: bool
+        debug
             Activates debug mode, and configures the log level of the logger.
         """
         if debug:
@@ -95,7 +95,7 @@ class UI(object):
 
         Parameters
         ----------
-        quiet: bool
+        quiet
             `True` suppresses of all user output.
             Requires `yes` mode to be active.
 
@@ -115,7 +115,7 @@ class UI(object):
 
         Parameters
         ----------
-        yes: bool
+        yes
             Activate yes mode, which suppresses all user requests and answers
             them positively. Allows the activation of the quiet mode.
         """
@@ -128,12 +128,12 @@ class UI(object):
 
         Parameters
         ----------
-        error: str or Exception
+        error
             Prints the string, or the message of an error.
             If debug mode is activated, displays the full traceback of an
             exception.
 
-        end: str
+        end
             Specify the string at the end of prints.
             Per default, prints end with a line break.
         """
@@ -153,7 +153,7 @@ class UI(object):
 
         Parameters
         ----------
-        message: str
+        message
             The message to log.
         """
         self.logger.info(message)
@@ -165,10 +165,10 @@ class UI(object):
 
         Parameters
         ----------
-        args:
+        args
             passed to Logger.debug
 
-        kwargs:
+        kwargs
             passed to Logger.debug
         """
         self.logger.debug(*args, **kwargs)
@@ -180,7 +180,10 @@ class UI(object):
 
         Parameters
         ----------
-        args, kwargs:
+        args
+            passed on to builtin `print`.
+
+        kwargs
             passed on to builtin `print`.
         """
         if not self.quiet:
@@ -198,7 +201,7 @@ class UI(object):
 
         Parameters
         ----------
-        question: str
+        question
             A string asking the question to which the user should respond.
         """
         if self.yes:

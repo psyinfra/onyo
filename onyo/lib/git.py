@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.ui import ui
@@ -19,8 +19,6 @@ class GitRepo(object):
     ----------
     root: Path
       The absolute path to the root of the git worktree.
-    files: list of Path
-      A property containing the absolute paths to all files tracked by git.
     """
 
     def __init__(self,
@@ -30,14 +28,14 @@ class GitRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           An absolute path to the root of a git repository.
-        find_root: bool
+        find_root
           `find_root=True` allows to search the root of a git worktree from a
           subdirectory, beginning at `path`, instead of requiring the root.
         """
         self.root = GitRepo.find_root(path) if find_root else path.resolve()
-        self._files: Optional[list[Path]] = None
+        self._files: list[Path] | None = None
 
     @staticmethod
     def find_root(path: Path) -> Path:
@@ -45,7 +43,7 @@ class GitRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           The path to identify the git worktree root for. This can be any
           subdirectory of the repository, or the root directory itself.
 
@@ -70,18 +68,18 @@ class GitRepo(object):
 
     def _git(self,
              args: list[str], *,
-             cwd: Optional[Path] = None,
+             cwd: Path | None = None,
              raise_error: bool = True) -> str:
         """A wrapper function for git calls, returning the output of commands.
 
         Parameters
         ----------
-        args: list of str
+        args
           Arguments to specify the git call to run, e.g. args=['add', <file>]
           leads to a system call `git add <file>`.
-        cwd: Path, optional
+        cwd
           Run git commands from `cwd`. Default: `self.root`.
-        raise_error: bool
+        raise_error
           Whether to raise `subprocess.CalledProcessError` if the command
           returned with non-zero exitcode.
 
@@ -99,7 +97,7 @@ class GitRepo(object):
 
     @property
     def files(self) -> list[Path]:
-        """Get the absolute `Path`s of all tracked files.
+        """Get the absolute ``Path``\ s of all tracked files.
 
         This property is cached, and is reset automatically on `GitRepo.commit()`.
 
@@ -124,12 +122,12 @@ class GitRepo(object):
         self._files = None
 
     def get_subtrees(self,
-                     paths: Optional[Iterable[Path]] = None) -> list[Path]:
+                     paths: Iterable[Path] | None = None) -> list[Path]:
         """Get tracked files in the subtrees rooted at `paths`.
 
         Parameters
         ----------
-        paths: Iterable of Path
+        paths
           Roots of subtrees to consider. The entire worktree by default.
 
         Returns
@@ -187,9 +185,9 @@ class GitRepo(object):
 
         Parameters
         ----------
-        paths: Path or Iterable of Path
+        paths
           List of paths to commit.
-        message: str
+        message
           The git commit message.
         """
         if isinstance(paths, Path):
@@ -212,7 +210,7 @@ class GitRepo(object):
 
         Parameters
         ----------
-        path: Path
+        path
           The path to check.
 
         Returns
@@ -224,7 +222,7 @@ class GitRepo(object):
 
     def get_config(self,
                    name: str,
-                   file_: Optional[Path] = None) -> Optional[str]:
+                   file_: Path | None = None) -> str | None:
         """Get the value for a configuration option specified by `name`.
 
         By default, git-config is read following its order of precedence (worktree,
@@ -232,12 +230,14 @@ class GitRepo(object):
 
         Parameters:
         -----------
-        name: str
+        name
           Name of the config variable to query. Follows the Git convention of
-          "SECTION.NAME.KEY" to address a key in a git config file:
+          "SECTION.NAME.KEY" to address a key in a git config file::
+
             [SECTION "NAME"]
               KEY = VALUE
-        file_: Path, optional
+
+        file\_
           path to a config file to read instead of Git's default locations.
 
         Returns
@@ -268,16 +268,16 @@ class GitRepo(object):
     def set_config(self,
                    name: str,
                    value: str,
-                   location: Optional[str | Path] = None) -> None:
+                   location: str | Path | None = None) -> None:
         """Set the configuration option `name` to `value`.
 
         Parameters
         ----------
-        name: str
+        name
           The name of the configuration option to set.
-        value: str
+        value
           The value to set for the configuration option.
-        location: Path or str, optional
+        location
           The location of the configuration for which the value should
           be set. If a `Path`: config file to read, otherwise standard
           Git config locations: 'system', 'global', 'local',
@@ -308,15 +308,15 @@ class GitRepo(object):
 
     # Credit: Datalad
     def get_hexsha(self,
-                   commitish: Optional[str] = None,
-                   short: bool = False) -> Optional[str]:
+                   commitish: str | None = None,
+                   short: bool = False) -> str | None:
         """Return the hexsha of a given commit-ish.
 
         Parameters
         ----------
-        commitish: str, optional
+        commitish
           Any identifier that refers to a commit (defaults to "HEAD").
-        short: bool
+        short
           Whether to return the abbreviated form of the hexsha.
 
         Returns
@@ -345,12 +345,12 @@ class GitRepo(object):
             raise ValueError("Unknown commit identifier: %s" % commitish)
 
     def get_commit_msg(self,
-                       commitish: Optional[str] = None) -> str:
+                       commitish: str | None = None) -> str:
         """Returns the full commit message of a commit-ish.
 
         Parameters
         ----------
-        commitish: str, optional
+        commitish
             Any identifier that refers to a commit (defaults to "HEAD").
 
         Returns
@@ -368,9 +368,9 @@ class GitRepo(object):
 
         Parameters
         ----------
-        ignore: Path
+        ignore
           Path to a file containing exclude patterns to evaluate.
-        paths: list of Path
+        paths
           Paths to check against the patterns in `ignore`.
 
         Returns

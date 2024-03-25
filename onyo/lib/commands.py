@@ -5,7 +5,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Generator, Literal, Optional, ParamSpec, TypeVar
+from typing import Callable, Dict, Generator, Literal, ParamSpec, TypeVar
 from functools import wraps
 
 from rich import box
@@ -69,7 +69,7 @@ def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
 
 
 def fsck(repo: OnyoRepo,
-         tests: Optional[list[str]] = None) -> None:
+         tests: list[str] | None = None) -> None:
     """Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
 
@@ -87,10 +87,10 @@ def fsck(repo: OnyoRepo,
 
     Parameters
     ----------
-    repo: OnyoRepo
+    repo
         The Repository on which to perform the fsck on.
 
-    tests: list of str, optional
+    tests
         A list with the names of tests to perform. By default, all tests are
         performed on the repository.
 
@@ -148,9 +148,9 @@ def onyo_cat(inventory: Inventory,
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The inventory containing the assets to print.
-    paths: list of Path
+    paths
         Path(s) to assets for which to print the contents.
 
     Raises
@@ -193,9 +193,9 @@ def onyo_config(inventory: Inventory,
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The inventory in question.
-    config_args: list of str
+    config_args
         The options to be passed to the underlying call of ``git config``.
     """
     from onyo.lib.command_utils import sanitize_args_config
@@ -220,7 +220,7 @@ def onyo_config(inventory: Inventory,
 def _edit_asset(inventory: Inventory,
                 asset: dict,
                 operation: Callable,
-                editor: Optional[str]) -> dict:
+                editor: str | None) -> dict:
     """Edit `asset` via configured editor and a temporary asset file.
 
     Utility function for `onyo_edit` and `onyo_new(edit=True)`.
@@ -234,16 +234,16 @@ def _edit_asset(inventory: Inventory,
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
       Inventory to edit `asset` for. This is primarily used to check
       whether `operation` resulted in registered operations with that
       inventory in order to remove them, if the edit was not accepted.
-    asset: dict
+    asset
       Asset to edit.
-    editor: string, optional
+    editor
       Editor to use. This is a to-be executed shell string, that gets
       a path to a temporary file. Defaults to `OnyoRepo.get_editor()`.
-    operation: Callable
+    operation
       Function to call with the resulting asset. This function is
       expected to raise, if the edited asset isn't valid for that
       purpose.
@@ -326,18 +326,18 @@ def _edit_asset(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_edit(inventory: Inventory,
               paths: list[Path],
-              message: Optional[str]) -> None:
+              message: str | None) -> None:
     """Edit the content of assets.
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The inventory in which to edit assets.
 
-    paths: Path or list of Path
+    paths
         The assets to modify.
 
-    message: str, optional
+    message
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -386,41 +386,41 @@ def onyo_edit(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_get(inventory: Inventory,
-             paths: Optional[list[Path]] = None,
+             paths: list[Path] | None = None,
              depth: int = 0,
              machine_readable: bool = False,
-             match: Optional[list[Callable[[dict], bool]]] = None,
-             keys: Optional[list[str]] = None,
+             match: list[Callable[[dict], bool]] | None = None,
+             keys: list[str] | None = None,
              sort: Literal['ascending', 'descending'] = 'ascending') -> list[dict]:
     """Query the repository for information about assets.
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
       The inventory to query.
-    paths: list of Path, optional
+    paths
       Limits the query to assets underneath these paths.
       Paths can be assets and directories.
       If no paths are specified, the inventory root is used as default.
-    depth: int
+    depth
       Number of levels to descend into. Must be greater or equal 0.
       If 0, descend recursively without limit.
-    machine_readable: bool, optional
+    machine_readable
       Whether to print the matching assets as TAB-separated lines,
       where the columns correspond to the `keys`. If `False`,
       print a table meant for human consumption.
-    match: list of Callable, optional
+    match
       Callables suited for use with builtin `filter`. They are
       passed an asset dictionary and expected to return a `bool`,
       where `True` indicates a match. The result of the query
       consists of all assets that are matched by all callables in
       this list.
-    keys: list of str, optional
+    keys
       Defines what key-value pairs of an asset a result is composed of.
       If no `keys` are given the keys then the asset name keys and
       `path` are used.
       Keys may be repeated.
-    sort: str
+    sort
       How to sort the results by `keys`. Possible values are
       'ascending' and 'descending'. Default: 'ascending'.
       If other values are specified an error is raised.
@@ -495,7 +495,7 @@ def onyo_get(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
-               message: Optional[str]) -> None:
+               message: str | None) -> None:
     """Create new directories in the inventory.
 
     Intermediate directories will be created as needed (i.e. parent and
@@ -515,11 +515,11 @@ def onyo_mkdir(inventory: Inventory,
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The inventory in which to create new directories.
-    dirs: list of Path
+    dirs
         Paths to directories which to create.
-    message: str, optional
+    message
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -558,11 +558,11 @@ def move_asset_or_dir(inventory: Inventory,
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         Inventory to operate on.
-    source: Path
+    source
         Path object to an asset or directory which to move to the destination.
-    destination: Path
+    destination
         Path object to an asset or directory to which to move source.
     """
     # TODO: method of Inventory?
@@ -589,26 +589,26 @@ def _maybe_rename(inventory: Inventory,
 def onyo_mv(inventory: Inventory,
             source: list[Path] | Path,
             destination: Path,
-            message: Optional[str] = None) -> None:
+            message: str | None = None) -> None:
     """Move assets or directories, or rename a directory.
 
     If `destination` is an asset file, turns it into an asset dir first.
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The Inventory in which to move assets or directories.
 
-    source: Path or list of Path
+    source
         A list of source paths that will be moved to the destination.
         If a single source directory is given and the destination is a
         non-existing directory, the source will be renamed.
 
-    destination: Path
+    destination
         The path to which the source(s) will be moved, or a single
         source directory will be renamed.
 
-    message: str, optional
+    message
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -678,13 +678,13 @@ def onyo_mv(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_new(inventory: Inventory,
-             directory: Optional[Path] = None,
-             template: Optional[str] = None,
-             clone: Optional[Path] = None,
-             tsv: Optional[Path] = None,
-             keys: Optional[list[Dict[str, str | int | float]]] = None,
+             directory: Path | None = None,
+             template: str | None = None,
+             clone: Path | None = None,
+             tsv: Path | None = None,
+             keys: list[Dict[str, str | int | float]] | None = None,
              edit: bool = False,
-             message: Optional[str] = None) -> None:
+             message: str | None = None) -> None:
     """Create new assets and add them to the inventory.
 
     Either keys, tsv or edit must be given.
@@ -710,39 +710,39 @@ def onyo_new(inventory: Inventory,
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The Inventory in which to create new assets.
 
-    directory: Path, optional
+    directory
         The directory to create new asset(s) in. Defaults to CWD.
         Note, that it technically is not a default (as per signature of this
         function), because we need to be able to tell whether a path was given
         in order to check for conflict with a possible 'directory' key or
         table column.
 
-    template: str, optional
+    template
         The name of a template file in ``.onyo/templates/`` that is copied as a
         base for the new assets to be created.
 
-    clone: Path, optional
+    clone
         Path to an asset to clone. Mutually exclusive with `template`.
         Note, that a straight clone with no change via `keys`, `tsv` or `edit`
         would result in the exact same asset, which therefore is bound to fail.
 
-    tsv: Path, optional
+    tsv
         A path to a tsv table that describes new assets to be created.
 
-    keys: list of dict of str, optional
+    keys
         List of dictionaries with key/value pairs that will be set in the newly
         created assets. The keys used in the ``onyo.assets.filename`` config
         ``.onyo/config`` (e.g. ``filename = "{type}_{make}_{model}.{serial}"``)
         are used in the asset name and therefore a required.
 
-    edit: bool
+    edit
         If True, newly created assets are opened in the editor before the
         changes are saved.
 
-    message: str, optional
+    message
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -878,20 +878,20 @@ def onyo_new(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_rm(inventory: Inventory,
             paths: list[Path] | Path,
-            message: Optional[str],
+            message: str | None,
             mode: Literal["asset", "dir", "all"] = "all") -> None:
     """Delete assets and/or directories from the inventory.
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The inventory in which assets and/or directories will be deleted.
 
-    paths: Path or list of Path
+    paths
         List of paths to assets and/or directories to delete from the Inventory.
         If any path given is not valid, none of them gets deleted.
 
-    mode: str, optional
+    mode
         One of 'asset', 'dir', or 'all'.
         In mode 'all' any given path is removed (recursively).
         In mode 'asset' only paths to assets are accepted. If an asset
@@ -901,7 +901,7 @@ def onyo_rm(inventory: Inventory,
         be an asset dir, this removes the dir aspect from it, turning it
         into a regular asset file.
 
-    message: str, optional
+    message
         An optional string to overwrite Onyo's default commit message.
     """
     paths = [paths] if not isinstance(paths, list) else paths
@@ -955,16 +955,16 @@ def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
              assets: list[Path],
              rename: bool = False,
-             message: Optional[str] = None) -> Optional[str]:
+             message: str | None = None) -> str | None:
     """Set key-value pairs of assets, and change asset names.
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The Inventory in which to set key/values for assets.
-    assets: list of Path
+    assets
         Paths to assets for which to set key-value pairs.
-    keys: dict
+    keys
         Key-value pairs that will be set in assets. If keys already exist in an
         asset their value will be overwritten, if they do not exist the values
         are added.
@@ -972,10 +972,10 @@ def onyo_set(inventory: Inventory,
         needed and changes the file names.
         The key 'is_asset_directory' (bool) can be used to change whether an
         asset is an asset directory.
-    rename: bool
+    rename
         Whether to allow changing of keys that are part of the asset name.
         If False, such a change raises a `ValueError`.
-    message: str, optional
+    message
         An optional string to overwrite Onyo's default commit message.
 
     Raises
@@ -1043,10 +1043,10 @@ def onyo_tree(inventory: Inventory,
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The inventory in which the directories to display are located.
 
-    dirs: list of tuple
+    dirs
         A list of tuples containing (str, Path) of directories to build a tree
         of.
 
@@ -1076,9 +1076,9 @@ def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
 
     Parameters
     ----------
-    dir_path: Path
+    dir_path
         Path of directory to yield tree of.
-    prefix: str, optional
+    prefix
         Lines should be prefixed with this string. In practice, only useful by
         ``_tree`` itself recursing into directories.
     """
@@ -1116,21 +1116,21 @@ def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
 def onyo_unset(inventory: Inventory,
                keys: list[str],
                assets: list[Path],
-               message: Optional[str] = None) -> None:
+               message: str | None = None) -> None:
     """Remove keys from assets.
 
     Parameters
     ----------
-    inventory: Inventory
+    inventory
         The Inventory in which to unset key/values for assets.
-    keys: list of str
+    keys
         The keys that will be unset in assets.
         If keys do not exist in an asset, a debug message is logged.
         If keys are specified which appear in asset names an error is raised.
         If `keys` is empty an error is raised.
-    assets: list of Path
+    assets
         Paths to assets for which to unset key-value pairs.
-    message: str, optional
+    message
         An optional string to overwrite Onyo's default commit message.
 
     Raises

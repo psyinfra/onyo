@@ -1,4 +1,5 @@
 onyo/_version.py
+docs/source/onyo.*.rst
 .coverage
 build/
 __pycache__

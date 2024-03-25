@@ -7,8 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Onyo'
-copyright = '2022, Tobias Kadelka, Alex Waite'
-author = 'Tobias Kadelka, Alex Waite'
+copyright = '2024, Tobias Kadelka, Alex Waite, Benjamin Poldrack'
+author = 'Tobias Kadelka, Alex Waite, Benjamin Poldrack'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -18,7 +18,13 @@ author = 'Tobias Kadelka, Alex Waite'
 # ones.
 extensions = [
     'sphinxarg.ext',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+    'sphinx_autodoc_typehints',
 ]
+
+typehints_defaults = 'braces'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

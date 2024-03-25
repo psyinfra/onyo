@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 directories = ['simple',
                's p a c e s',

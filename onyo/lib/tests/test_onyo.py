@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo import OnyoRepo, OnyoInvalidRepoError
+from onyo.lib.onyo import OnyoRepo, OnyoInvalidRepoError
 
 
 def test_OnyoRepo_instantiation_existing(onyorepo: OnyoRepo) -> None:

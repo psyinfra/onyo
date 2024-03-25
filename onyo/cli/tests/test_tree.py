@@ -4,7 +4,7 @@ from typing import List
 
 import pytest
 
-from onyo.lib import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro']

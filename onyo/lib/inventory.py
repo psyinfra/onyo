@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Generator,
     Literal,
-    Optional,
 )
 
 from onyo.lib.assets import Asset
@@ -231,8 +230,9 @@ class Inventory(object):
 
         Parameters
         ----------
-        mode: str, optional
+        mode
             What pending removals to consider: 'assets' only, 'dirs' only, or 'all'.
+
         Notes
         -----
         Just like `_get_pending_asset_names` and `_get_pending_dirs`,
@@ -362,7 +362,7 @@ class Inventory(object):
 
         return [self._add_operation('move_assets', (src, dst))]
 
-    def rename_asset(self, asset: Asset | Path, name: Optional[str] = None) -> list[InventoryOperation]:
+    def rename_asset(self, asset: Asset | Path, name: str | None = None) -> list[InventoryOperation]:
         # ??? Do we need that? On the command level it's only accessible via modify_asset.
         # But: A config change is sufficient to make it not actually an asset modification.
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
@@ -526,7 +526,7 @@ class Inventory(object):
         return self.repo.get_asset_content(path)
 
     def get_assets(self,
-                   paths: Optional[list[Path]] = None,
+                   paths: list[Path] | None = None,
                    depth: int = 0) -> Generator[dict, None, None]:
         """Yield all assets under `paths` up to `depth` directory levels.
 
@@ -535,9 +535,9 @@ class Inventory(object):
 
         Parameters
         ----------
-        paths: list of Path, optional
+        paths
           Paths to look for assets under. Defaults to the root of the inventory.
-        depth: int, optional
+        depth
           Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
 
@@ -553,9 +553,9 @@ class Inventory(object):
         return self.repo.get_template(template)
 
     def get_assets_by_query(self,
-                            paths: Optional[list[Path]] = None,
-                            depth: Optional[int] = 0,
-                            match: Optional[list[Callable[[dict], bool]]] = None) -> Generator | filter:
+                            paths: list[Path] | None = None,
+                            depth: int | None = 0,
+                            match: list[Callable[[dict], bool]] | None = None) -> Generator | filter:
         """Get assets matching paths and filters.
 
         Convenience to run the builtin `filter` on all assets retrieved by
@@ -564,14 +564,14 @@ class Inventory(object):
 
         Parameters
         ----------
-        paths: list of Path, optional
+        paths
           Paths to look for assets under. Defaults to the root of
           the inventory. Passed to `self.get_assets`.
-        depth: int, optional
+        depth
           Number of levels to descend into. Must be greater or equal 0.
           If 0, descend recursively without limit. Defaults to 0.
           Passed to `self.get_assets`.
-        match: list of Callable, optional
+        match
           Callable suitable for the builtin `filter`, when called on a
           list of assets (dictionaries).
 

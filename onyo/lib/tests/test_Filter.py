@@ -1,6 +1,7 @@
 import pytest
 
-from onyo.lib import Filter, OnyoInvalidFilterError
+from onyo.lib.exceptions import OnyoInvalidFilterError
+from onyo.lib.filters import Filter
 
 
 @pytest.mark.parametrize('filt', ['type=laptop', 'key=value', 'foo=<unset>'])

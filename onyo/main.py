@@ -7,13 +7,13 @@ import textwrap
 from argparse import ArgumentParser, PARSER
 from itertools import islice
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from rich.containers import Lines
 from rich.text import Text
 from rich_argparse import RichHelpFormatter
 
-from onyo import commands
+from onyo import cli
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
@@ -100,20 +100,20 @@ subcmds = None
 
 def setup_parser() -> ArgumentParser:
     from onyo.onyo_arguments import args_onyo
-    from onyo.commands.cat import args_cat
-    from onyo.commands.config import args_config
-    from onyo.commands.edit import args_edit
-    from onyo.commands.get import args_get
-    from onyo.commands.history import args_history
-    from onyo.commands.init import args_init
-    from onyo.commands.mkdir import args_mkdir
-    from onyo.commands.mv import args_mv
-    from onyo.commands.new import args_new
-    from onyo.commands.rm import args_rm
-    from onyo.commands.set import args_set
-    from onyo.commands.shell_completion import args_shell_completion
-    from onyo.commands.tree import args_tree
-    from onyo.commands.unset import args_unset
+    from onyo.cli.cat import args_cat
+    from onyo.cli.config import args_config
+    from onyo.cli.edit import args_edit
+    from onyo.cli.get import args_get
+    from onyo.cli.history import args_history
+    from onyo.cli.init import args_init
+    from onyo.cli.mkdir import args_mkdir
+    from onyo.cli.mv import args_mv
+    from onyo.cli.new import args_new
+    from onyo.cli.rm import args_rm
+    from onyo.cli.set import args_set
+    from onyo.cli.shell_completion import args_shell_completion
+    from onyo.cli.tree import args_tree
+    from onyo.cli.unset import args_unset
 
     global subcmds
 
@@ -134,170 +134,170 @@ def setup_parser() -> ArgumentParser:
     #
     cmd_cat = subcmds.add_parser(
         'cat',
-        description=commands.cat.__doc__,
+        description=cli.cat.__doc__,
         formatter_class=parser.formatter_class,
         help='Print the contents of assets to the terminal.'
     )
-    cmd_cat.set_defaults(run=commands.cat)
+    cmd_cat.set_defaults(run=cli.cat)
     build_parser(cmd_cat, args_cat)
     #
     # subcommand "config"
     #
     cmd_config = subcmds.add_parser(
         'config',
-        description=commands.config.__doc__,
+        description=cli.config.__doc__,
         formatter_class=parser.formatter_class,
         help='Set, query, and unset Onyo repository configuration options.'
     )
-    cmd_config.set_defaults(run=commands.config)
+    cmd_config.set_defaults(run=cli.config)
     build_parser(cmd_config, args_config)
     #
     # subcommand "edit"
     #
     cmd_edit = subcmds.add_parser(
         'edit',
-        description=commands.edit.__doc__,
+        description=cli.edit.__doc__,
         formatter_class=parser.formatter_class,
         help='Open assets using an editor.'
     )
-    cmd_edit.set_defaults(run=commands.edit)
+    cmd_edit.set_defaults(run=cli.edit)
     build_parser(cmd_edit, args_edit)
     #
     # subcommand "fsck"
     #
     cmd_fsck = subcmds.add_parser(
         'fsck',
-        description=commands.fsck.__doc__,
+        description=cli.fsck.__doc__,
         formatter_class=parser.formatter_class,
         help='Run a suite of integrity checks on the Onyo repository and its contents.'
     )
-    cmd_fsck.set_defaults(run=commands.fsck)
+    cmd_fsck.set_defaults(run=cli.fsck)
     #
     # subcommand "get"
     #
     cmd_get = subcmds.add_parser(
         'get',
-        description=commands.get.__doc__,
+        description=cli.get.__doc__,
         formatter_class=parser.formatter_class,
         help='Return and sort asset values matching query patterns.'
     )
-    cmd_get.set_defaults(run=commands.get)
+    cmd_get.set_defaults(run=cli.get)
     build_parser(cmd_get, args_get)
     #
     # subcommand "history"
     #
     cmd_history = subcmds.add_parser(
         'history',
-        description=commands.history.__doc__,
+        description=cli.history.__doc__,
         formatter_class=parser.formatter_class,
         help='Display the history of an asset or directory.'
     )
-    cmd_history.set_defaults(run=commands.history)
+    cmd_history.set_defaults(run=cli.history)
     build_parser(cmd_history, args_history)
     #
     # subcommand "init"
     #
     cmd_init = subcmds.add_parser(
         'init',
-        description=commands.init.__doc__,
+        description=cli.init.__doc__,
         formatter_class=parser.formatter_class,
         help='Initialize a new Onyo repository.'
     )
-    cmd_init.set_defaults(run=commands.init)
+    cmd_init.set_defaults(run=cli.init)
     build_parser(cmd_init, args_init)
     #
     # subcommand "mkdir"
     #
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
-        description=commands.mkdir.__doc__,
+        description=cli.mkdir.__doc__,
         formatter_class=parser.formatter_class,
         help='Create directories.'
     )
-    cmd_mkdir.set_defaults(run=commands.mkdir)
+    cmd_mkdir.set_defaults(run=cli.mkdir)
     build_parser(cmd_mkdir, args_mkdir)
     #
     # subcommand "mv"
     #
     cmd_mv = subcmds.add_parser(
         'mv',
-        description=commands.mv.__doc__,
+        description=cli.mv.__doc__,
         formatter_class=parser.formatter_class,
         help='Move assets or directories into a destination directory; or rename a directory.'
     )
-    cmd_mv.set_defaults(run=commands.mv)
+    cmd_mv.set_defaults(run=cli.mv)
     build_parser(cmd_mv, args_mv)
     #
     # subcommand "new"
     #
     cmd_new = subcmds.add_parser(
         'new',
-        description=commands.new.__doc__,
+        description=cli.new.__doc__,
         formatter_class=parser.formatter_class,
         help='Create new assets and populate with key-value pairs.'
     )
-    cmd_new.set_defaults(run=commands.new)
+    cmd_new.set_defaults(run=cli.new)
     build_parser(cmd_new, args_new)
     #
     # subcommand "rm"
     #
     cmd_rm = subcmds.add_parser(
         'rm',
-        description=commands.rm.__doc__,
+        description=cli.rm.__doc__,
         formatter_class=parser.formatter_class,
         help='Delete assets and directories.'
     )
-    cmd_rm.set_defaults(run=commands.rm)
+    cmd_rm.set_defaults(run=cli.rm)
     build_parser(cmd_rm, args_rm)
     #
     # subcommand "set"
     #
     cmd_set = subcmds.add_parser(
         'set',
-        description=commands.set.__doc__,
+        description=cli.set.__doc__,
         formatter_class=parser.formatter_class,
         help='Set the value of keys for assets.'
     )
-    cmd_set.set_defaults(run=commands.set)
+    cmd_set.set_defaults(run=cli.set)
     build_parser(cmd_set, args_set)
     #
     # subcommand "shell-completion"
     #
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
-        description=commands.shell_completion.__doc__,
+        description=cli.shell_completion.__doc__,
         formatter_class=parser.formatter_class,
         help='Display a tab-completion script for Onyo.'
     )
-    cmd_shell_completion.set_defaults(run=commands.shell_completion)
+    cmd_shell_completion.set_defaults(run=cli.shell_completion)
     build_parser(cmd_shell_completion, args_shell_completion)
     #
     # subcommand "tree"
     #
     cmd_tree = subcmds.add_parser(
         'tree',
-        description=commands.tree.__doc__,
+        description=cli.tree.__doc__,
         formatter_class=parser.formatter_class,
         help='List the assets and directories of a directory in ``tree`` format.'
     )
-    cmd_tree.set_defaults(run=commands.tree)
+    cmd_tree.set_defaults(run=cli.tree)
     build_parser(cmd_tree, args_tree)
     #
     # subcommand "unset"
     #
     cmd_unset = subcmds.add_parser(
         'unset',
-        description=commands.unset.__doc__,
+        description=cli.unset.__doc__,
         formatter_class=parser.formatter_class,
         help='Remove keys from assets.'
     )
-    cmd_unset.set_defaults(run=commands.unset)
+    cmd_unset.set_defaults(run=cli.unset)
     build_parser(cmd_unset, args_unset)
 
     return parser
 
 
-def get_subcmd_index(arglist, start: int = 1) -> Optional[int]:
+def get_subcmd_index(arglist, start: int = 1) -> int | None:
     """
     Get the index of the subcommand from a provided list of arguments (usually sys.argv).
 

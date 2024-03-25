@@ -6,7 +6,7 @@ from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING
 
-from onyo import OnyoRepo
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.command_utils import get_history_cmd
 from onyo.lib.ui import ui
 

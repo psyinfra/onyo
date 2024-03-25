@@ -19,9 +19,9 @@ def exec_new_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[P
 
     Parameters
     ----------
-    repo: OnyoRepo
+    repo
       Onyo repository to operate on
-    operands: list
+    operands
       Each item of the list is a tuple of operation operands.
       Here a single item per tuple is expected: The to-be-added `Asset`
 

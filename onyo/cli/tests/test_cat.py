@@ -3,8 +3,9 @@ from typing import List
 
 import pytest
 
-from onyo.lib import OnyoRepo, OnyoInvalidRepoError
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import fsck
+from onyo.lib.exceptions import OnyoInvalidRepoError
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro']
