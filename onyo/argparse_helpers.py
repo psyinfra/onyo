@@ -61,27 +61,3 @@ class StoreKeyValuePairs(argparse.Action):
                 d[k] = cvt(v)
             results.append(d)
         setattr(namespace, self.dest, results)
-
-
-def parse_key_values(string):
-    r"""
-    Convert a string of key-value pairs to a dictionary.
-
-    The shell interprets the key-value string before it is passed to argparse.
-    As a result, no quotes are passed through, but the chunking follows what the
-    quoting declared.
-
-    Because of the lack of quoting, this function cannot handle a comma in
-    either the key or value.
-    """
-    results = {k: v for k, v in (pair.split('=') for pair in string.split(','))}
-    for k, v in results.items():
-        try:
-            results.update({k: int(v)})
-        except ValueError:
-            try:
-                results.update({k: float(v)})
-            except ValueError:
-                pass
-
-    return results
