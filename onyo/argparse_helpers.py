@@ -5,11 +5,22 @@ from typing import Sequence
 
 
 class StoreKeyValuePairs(argparse.Action):
+    r"""Store a list of dictionaries of key-value pairs.
+    """
+
     def __init__(self,
                  option_strings: Sequence[str],
                  dest: str,
                  nargs: int | str | None = None,
                  **kwargs) -> None:
+        r"""
+        Parameters
+        ----------
+        option_strings
+        dest
+        nargs
+        **kwargs
+        """
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
@@ -18,12 +29,24 @@ class StoreKeyValuePairs(argparse.Action):
                  namespace: argparse.Namespace,
                  key_values: list[str],
                  option_string: str | None = None) -> None:
-        r"""Turn a list of 'key=value' pairs into a list of dictionaries
+        r"""Turn a list of 'KEY=VALUE' pairs into a list of dictionaries.
 
-        Every key appearing multiple times in `key=value` is applied to a new dictionary every time.
-        All keys appearing multiple times, must appear the same number of times (and thereby define the number of dicts
-        to be created). In case of different counts: raise.
-        Every key appearing once in `key_values` will be applied to all dictionaries.
+        Each KEY can be defined either 1 or N times (where N is the number of
+        dictionaries to be created).
+
+        A KEY that is declared once will apply to all dictionaries.
+
+        All KEYs appearing N times must appear the same number of times. If not,
+        a message will print to standard error and the program will exit with
+        status code 2.
+
+        Parameters
+        ----------
+        parser
+        namespace
+        key_values
+            List of strings containing key-value pairs.
+        option_string
         """
 
         for kv in key_values:
