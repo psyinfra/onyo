@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import argparse
 import os
+from typing import TYPE_CHECKING
 
-from typing import Sequence
+if TYPE_CHECKING:
+    from typing import Sequence
 
 
 class StoreKeyValuePairs(argparse.Action):
@@ -52,15 +56,16 @@ class StoreKeyValuePairs(argparse.Action):
         for kv in key_values:
             if "=" not in kv:
                 parser.error(f"Invalid argument '{kv}'. Expected key-value pairs '<key>=<value>'.")
+
         pairs = [p.split('=', maxsplit=1) for p in key_values]
-        register_dict = {k: [] for k, v in pairs}
-        [register_dict[k].append(v) for k, v in pairs]
-        number_of_dicts = max(len(v) for v in register_dict.values())
-        invalid_keys = [(k, len(v)) for k, v in register_dict.items() if 1 < len(v) < number_of_dicts]
-        if invalid_keys:
-            parser.error(f"All keys given multiple times must be provided the same number of times."
-                         f"Max. times a key was given: {number_of_dicts}.{os.linesep}"
-                         f"But also got: {', '.join(['{} {} times'.format(k, c) for k, c in invalid_keys])}")
+        key_lists = {k: [] for k, v in pairs}
+        [key_lists[k].append(v) for k, v in pairs]
+
+        key_counts = {k: len(v) for k, v in key_lists.items()}
+        key_max_count = max(key_counts.values())
+        if any([True for k, c in key_counts.items() if 1 < c < key_max_count]):
+            parser.error(f"All keys given multiple times must be given the same number of times:{os.linesep}"
+                         f"{f'{os.linesep}'.join(['{}: {}'.format(k, c) for k, c in key_counts.items() if 1 < c])}")
 
         def cvt(v: str) -> int | float | str | bool:
             if v.lower() == "true":
@@ -77,9 +82,9 @@ class StoreKeyValuePairs(argparse.Action):
             return r
 
         results = []
-        for i in range(number_of_dicts):
+        for i in range(key_max_count):
             d = dict()
-            for k, values in register_dict.items():
+            for k, values in key_lists.items():
                 v = values[0] if len(values) == 1 else values[i]
                 d[k] = cvt(v)
             results.append(d)
