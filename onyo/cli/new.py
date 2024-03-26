@@ -102,7 +102,7 @@ args_new = {
 
 def new(args: argparse.Namespace) -> None:
     """
-    Create new **ASSET**\s and populate with **KEY-VALUE** pairs. Destination
+    Create new **ASSET**\ s and populate with **KEY-VALUE** pairs. Destination
     directories are created if they are missing.
 
     Asset contents are populated in a waterfall pattern and can overwrite
@@ -113,7 +113,7 @@ def new(args: argparse.Namespace) -> None:
       3) ``--keys``
       4) ``--edit`` (i.e. manual user input)
 
-    The **KEY**\s that comprise the asset filename are required (configured by
+    The **KEY**\ s that comprise the asset filename are required (configured by
     ``onyo.assets.filename``).
 
     The contents of all new assets are checked for validity before committing.

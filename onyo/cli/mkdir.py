@@ -26,7 +26,7 @@ args_mkdir = {
 
 def mkdir(args: argparse.Namespace) -> None:
     """
-    Create **DIRECTORY**\s or convert Asset Files into an Asset Directory.
+    Create **DIRECTORY**\ s or convert Asset Files into an Asset Directory.
 
     Intermediate directories are created as needed (i.e. parent and child
     directories can be created in one call).

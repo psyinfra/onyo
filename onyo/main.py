@@ -75,8 +75,9 @@ def prepare_rst_for_rich(text: str) -> str:
     # make bullet points prettier
     text = text.replace(' * ', ' • ')
 
-    # remove escaping
-    text = text.replace('\\', '')
+    # remove space-escaping
+    # (rST oddity that ``ASSET``s is illegal, but ``ASSET``\ s -> ASSETs)
+    text = text.replace('\\ ', '')
 
     return text
 

@@ -21,7 +21,7 @@ args_set = {
         default=False,
         action='store_true',
         help="""
-            Allow setting **KEY**\s that are part of the asset name.
+            Allow setting **KEY**\ s that are part of the asset name.
             (see the ``onyo.assets.filename`` configuration option)
         """
     ),
@@ -49,7 +49,7 @@ args_set = {
         metavar='ASSET',
         nargs='+',
         help="""
-            Assets to set **KEY-VALUE**\s in.
+            Assets to set **KEY-VALUE**\ s in.
         """
     ),
 
@@ -59,12 +59,12 @@ args_set = {
 
 def set(args: argparse.Namespace) -> None:
     """
-    Set **KEY**\s to **VALUE**\s for assets.
+    Set **KEY**\ s to **VALUE**\ s for assets.
 
     **KEY** names can be any valid YAML key-name. If a key is not present in an
     asset, it is added and set appropriately.
 
-    Setting **KEY**\s that are used in the asset name requires the ``--rename``
+    Setting **KEY**\ s that are used in the asset name requires the ``--rename``
     flag.
 
     In addition to keys in asset contents, some PSEUDO-KEYS can be set:
