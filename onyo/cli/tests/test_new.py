@@ -284,6 +284,28 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
     assert repo.git.is_clean_worktree()
 
 
+def test_error_keys_flag_mismatch_count(repo: OnyoRepo) -> None:
+    r"""
+    Test that `onyo new --keys KEY=VALUE` requires that repeated keys are given
+    the same number of times.
+    """
+    key_values = asset_spec + ['serial=1', 'mode=0', 'mode=1', 'mode=2']
+
+    # create asset with --keys
+    ret = subprocess.run(
+        ['onyo', '--yes', 'new', '--keys'] + key_values,
+        capture_output=True, text=True)
+
+    # verify correct error
+    assert not ret.stdout
+    assert "All keys given multiple times must be given the same number of times" in ret.stderr
+    assert ret.returncode == 2
+
+    # verify that no new assets were created and the repository stays clean
+    assert len(repo.asset_paths) == 0
+    assert repo.git.is_clean_worktree()
+
+
 @pytest.mark.parametrize('directory', directories)
 def test_new_message_flag(repo: OnyoRepo, directory: str) -> None:
     r"""
