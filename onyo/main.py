@@ -57,10 +57,10 @@ def prepare_rst_for_rich(text: str) -> str:
     text = textwrap.dedent(text).strip()
 
     # stylize arg descriptors (ALL CAPS ARGS)
-    text = re.sub('\*\*([A-Z\-]+)\*\*', r'[dark_cyan]\1[/dark_cyan]', text)
+    text = re.sub(r'\*\*([A-Z\-]+)\*\*', r'[dark_cyan]\1[/dark_cyan]', text)
 
     # stylize ** (bold)
-    text = re.sub('\*\*([^*]+)\*\*', r'[bold]\1[/bold]', text)
+    text = re.sub(r'\*\*([^*]+)\*\*', r'[bold]\1[/bold]', text)
 
     # stylize ``` (code blocks)
     text = re.sub('```([^`]+)```', r'[underline]\1[/underline]', text)
