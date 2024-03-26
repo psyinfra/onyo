@@ -15,7 +15,7 @@ args_rm = {
     'path': dict(
         metavar='PATH',
         nargs='+',
-        help="""
+        help=r"""
             Assets and/or directories to delete.
         """
     ),
@@ -25,7 +25,7 @@ args_rm = {
         required=False,
         default=False,
         action='store_true',
-        help="""
+        help=r"""
             Operate only on assets. Asset Files are removed. Asset Directories
             are converted into normal directories.
 
@@ -38,7 +38,7 @@ args_rm = {
         required=False,
         default=False,
         action='store_true',
-        help="""
+        help=r"""
             Operate only on directories. Directories are removed. Asset
             Directories are converted into Asset Files.
 
@@ -51,7 +51,7 @@ args_rm = {
 
 
 def rm(args: argparse.Namespace) -> None:
-    """
+    r"""
     Delete **ASSET**\ s and/or **DIRECTORY**\ s.
 
     Directories and asset directories are deleted along with their contents.

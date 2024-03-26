@@ -11,7 +11,7 @@ from ..commands import onyo_cat
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_cat_errors(inventory: Inventory) -> None:
-    """`onyo_cat` must raise the correct error in different illegal or impossible calls."""
+    r"""`onyo_cat` must raise the correct error in different illegal or impossible calls."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
 
@@ -80,7 +80,7 @@ def test_onyo_cat_errors(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_cat_single(inventory: Inventory,
                          capsys) -> None:
-    """`onyo_cat()` a single valid asset."""
+    r"""`onyo_cat()` a single valid asset."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
     # cat single asset
@@ -94,7 +94,7 @@ def test_onyo_cat_single(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_cat_multiple(inventory: Inventory,
                            capsys) -> None:
-    """`onyo_cat()` on multiple valid assets."""
+    r"""`onyo_cat()` on multiple valid assets."""
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     # TODO: simplify with new fixtures
     # add a different second asset to the inventory
@@ -123,7 +123,7 @@ def test_onyo_cat_multiple(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_cat_with_duplicate_path(inventory: Inventory,
                                       capsys) -> None:
-    """`onyo_cat()` Multiple times on the same asset succeeds."""
+    r"""`onyo_cat()` Multiple times on the same asset succeeds."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
     # cat single asset

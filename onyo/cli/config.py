@@ -20,7 +20,7 @@ args_config = {
 
 
 def config(args: argparse.Namespace) -> None:
-    """
+    r"""
     Set, query, and unset Onyo repository configuration options.
 
     These options are stored in ``.onyo/config``, which is tracked by git and

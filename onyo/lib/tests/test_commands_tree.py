@@ -8,7 +8,7 @@ from ..commands import onyo_tree
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_tree_errors(inventory: Inventory) -> None:
-    """`onyo_tree` must raise the correct error in different illegal or impossible calls."""
+    r"""`onyo_tree` must raise the correct error in different illegal or impossible calls."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
 
@@ -45,7 +45,7 @@ def test_onyo_tree_errors(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_tree_single(inventory: Inventory,
                           capsys) -> None:
-    """Display a tree for a directory."""
+    r"""Display a tree for a directory."""
     directory_path = inventory.root / "somewhere" / "nested"
 
     # move an asset and a dir to the same destination
@@ -62,7 +62,7 @@ def test_onyo_tree_single(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_tree_multiple_paths(inventory: Inventory,
                                   capsys) -> None:
-    """Display multiple trees with one call."""
+    r"""Display multiple trees with one call."""
     dir_path = inventory.root / 'somewhere' / 'nested'
 
     onyo_tree(inventory,
@@ -79,7 +79,7 @@ def test_onyo_tree_multiple_paths(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_tree_relative_single(inventory: Inventory,
                                    capsys) -> None:
-    """Display a tree for a relative subdirectory."""
+    r"""Display a tree for a relative subdirectory."""
     directory_path = inventory.root / "somewhere" / "nested"
 
     # move an asset and a dir to the same destination
@@ -95,7 +95,7 @@ def test_onyo_tree_relative_single(inventory: Inventory,
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_tree_errors_before_showing_trees(inventory: Inventory) -> None:
-    """`onyo_tree` must raise the correct error if one of the paths does not exist."""
+    r"""`onyo_tree` must raise the correct error if one of the paths does not exist."""
     directory_path = inventory.root / "somewhere" / "nested"
     non_existing_path = inventory.root / "doesnotexist"
 
@@ -113,7 +113,7 @@ def test_onyo_tree_errors_before_showing_trees(inventory: Inventory) -> None:
 @pytest.mark.repo_dirs("a/b/c", "a/d/c")
 def test_onyo_tree_with_same_dir_twice(inventory: Inventory,
                                        capsys) -> None:
-    """Allow to display the tree to a directory twice when
+    r"""Allow to display the tree to a directory twice when
     `onyo_tree()` is called with the same path twice at once."""
     directory_path = inventory.root / "somewhere" / "nested"
 

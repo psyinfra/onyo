@@ -11,7 +11,7 @@ from onyo.lib.ui import ui
 
 
 def deduplicate(sequence: list | None) -> list | None:
-    """Get a deduplicated list, while preserving order.
+    r"""Get a deduplicated list, while preserving order.
 
     For ease of use, accepts `None` (and returns it in that case).
     """

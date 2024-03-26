@@ -47,7 +47,7 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
 
 
 def prepare_rst_for_rich(text: str) -> str:
-    """
+    r"""
     This is a very naive approach to cleanup docstrings and help text in
     preparation to print to the terminal.
 
@@ -83,7 +83,7 @@ def prepare_rst_for_rich(text: str) -> str:
 
 
 def build_parser(parser, args: dict) -> None:
-    """
+    r"""
     Add arguments to a parser.
     """
     for cmd in args:
@@ -299,7 +299,7 @@ def setup_parser() -> ArgumentParser:
 
 
 def get_subcmd_index(arglist, start: int = 1) -> int | None:
-    """
+    r"""
     Get the index of the subcommand from a provided list of arguments (usually sys.argv).
 
     Returns the index on success, and None in failure.

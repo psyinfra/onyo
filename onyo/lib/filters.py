@@ -9,7 +9,7 @@ from onyo.lib.exceptions import OnyoInvalidFilterError
 
 @dataclass
 class Filter:
-    """This class translates a string expression to a match function
+    r"""This class translates a string expression to a match function
     suitable for the builtin `filter`.
 
     Intended for use with string patterns used with onyo's CLI.
@@ -19,7 +19,7 @@ class Filter:
     value: str = field(init=False)
 
     def __post_init__(self) -> None:
-        """
+        r"""
         Set up a `key=value` conditional as a filter, to allow assets to be
         matched with the filter. Asset keys are then assessed on whether the
         given key matches the given value. This can be used along with the
@@ -35,7 +35,7 @@ class Filter:
 
     @staticmethod
     def _format(arg: str) -> list[str]:
-        """Split filters by the first occurrence of the `=` (equals) sign."""
+        r"""Split filters by the first occurrence of the `=` (equals) sign."""
         if not isinstance(arg, str) or '=' not in arg:
             raise OnyoInvalidFilterError(
                 'Filters must be formatted as `key=value`')
@@ -49,7 +49,7 @@ class Filter:
             return False
 
     def match(self, asset: dict) -> bool:
-        """match self on a dictionary"""
+        r"""match self on a dictionary"""
         string_types = {'<list>': list, '<dict>': dict}
 
         # Check if filter is <unset> and there is no data

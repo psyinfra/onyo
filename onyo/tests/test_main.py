@@ -5,7 +5,7 @@ from onyo.conftest import Helpers
 
 
 def test_get_subcmd_index_missing(helpers: Helpers) -> None:
-    """
+    r"""
     All combinations of flags for onyo, without any subcommand.
     """
     for i in helpers.powerset(helpers.onyo_flags()):
@@ -17,7 +17,7 @@ def test_get_subcmd_index_missing(helpers: Helpers) -> None:
 
 
 def test_get_subcmd_index_valid(helpers: Helpers) -> None:
-    """
+    r"""
     All combinations of flags for onyo, with a subcommand.
     """
     for i in helpers.powerset(helpers.onyo_flags()):
@@ -29,7 +29,7 @@ def test_get_subcmd_index_valid(helpers: Helpers) -> None:
 
 
 def test_get_subcmd_index_overlap(helpers: Helpers) -> None:
-    """
+    r"""
     Arg values overlap with onyo or its subcommands. Borderline pathological.
     """
     full_cmd = ['onyo', '-C', 'onyo', '-d', 'mv', 'onyo', 'mv']

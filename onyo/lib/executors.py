@@ -15,7 +15,7 @@ from onyo.lib.onyo import OnyoRepo
 
 
 def exec_new_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
-    """Executor for the 'new_asset' operation
+    r"""Executor for the 'new_asset' operation
 
     Parameters
     ----------
@@ -38,7 +38,7 @@ def exec_new_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[P
 
 
 def exec_new_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
-    """Executor for the 'new_directory' operation
+    r"""Executor for the 'new_directory' operation
     """
     p: Path = operands[0]
     asset = dict()
@@ -92,7 +92,7 @@ def exec_remove_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path]
 
 
 def mover(src: Path, dst: Path) -> list[Path]:
-    """helper function for move assets/directories executors"""
+    r"""helper function for move assets/directories executors"""
     # expected: dst is inventory dir!
     src.rename(dst / src.name)
     return [src, dst / src.name]
@@ -128,7 +128,7 @@ def exec_modify_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], lis
 
 
 def generic_executor(func: Callable, repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
-    """This is intended for simple FS operations on non-inventory files
+    r"""This is intended for simple FS operations on non-inventory files
 
     only current usecase is recursive remove_directory. Not yet meant to be a stable implementation"""
     func(operands)

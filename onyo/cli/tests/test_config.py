@@ -16,7 +16,7 @@ def test_config_set(repo: OnyoRepo) -> None:
 
 
 def test_config_already_set(repo: OnyoRepo) -> None:
-    """`onyo config` does not error if a legal value is
+    r"""`onyo config` does not error if a legal value is
     already set and no changes are made."""
     assert 'onyo "history"' in Path('.onyo/config').read_text()
     assert 'interactive = tig --follow' in Path('.onyo/config').read_text()
@@ -45,7 +45,7 @@ def test_config_get_onyo(repo: OnyoRepo) -> None:
 
 
 def test_config_get_pristine(repo: OnyoRepo) -> None:
-    """
+    r"""
     onyo should not alter git config's output (newline, etc)
     """
     ret = subprocess.run(["onyo", "config", "onyo.test.get-pristine",
@@ -107,7 +107,7 @@ def test_config_unset(repo: OnyoRepo) -> None:
 
 
 def test_config_help(repo: OnyoRepo) -> None:
-    """
+    r"""
     `onyo config --help` is shown and not `git config --help`.
     """
     for flag in ['-h', '--help']:
@@ -120,7 +120,7 @@ def test_config_help(repo: OnyoRepo) -> None:
 
 
 def test_config_forbidden_flags(repo: OnyoRepo) -> None:
-    """
+    r"""
     Flags that change the source of values are not allowed.
     """
     for flag in ['--system', '--global', '--local', '--worktree', '--file',
@@ -133,7 +133,7 @@ def test_config_forbidden_flags(repo: OnyoRepo) -> None:
 
 
 def test_config_bubble_retcode(repo: OnyoRepo) -> None:
-    """
+    r"""
     Bubble up git-config's retcodes.
     According to the git config manpage, attempting to unset an option which
     does not exist exits with "5".
@@ -147,7 +147,7 @@ def test_config_bubble_retcode(repo: OnyoRepo) -> None:
 
 
 def test_config_bubble_stderr(repo: OnyoRepo) -> None:
-    """
+    r"""
     Bubble up git-config printing to stderr.
     """
     ret = subprocess.run(["onyo", "config", "--invalid-flag-oopsies",

@@ -15,14 +15,14 @@ args_mv = {
     'source': dict(
         metavar='SOURCE',
         nargs='+',
-        help="""
+        help=r"""
             Assets and/or directories to move into **DEST**.
         """
     ),
 
     'destination': dict(
         metavar='DEST',
-        help="""
+        help=r"""
             Destination to move **SOURCE**\ s into.
         """
     ),
@@ -32,7 +32,7 @@ args_mv = {
 
 
 def mv(args: argparse.Namespace) -> None:
-    """
+    r"""
     Move **SOURCE**\ s (assets or directories) into the **DEST** directory, or
     rename a **SOURCE** directory to **DEST**.
 

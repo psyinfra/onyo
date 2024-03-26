@@ -13,7 +13,7 @@ args_shell_completion = {
         required=False,
         default='zsh',
         choices=['zsh'],
-        help="""
+        help=r"""
             The shell to generate a tab-completion script for.
         """
     )
@@ -21,7 +21,7 @@ args_shell_completion = {
 
 
 def shell_completion(args: argparse.Namespace) -> None:
-    """
+    r"""
     Display a tab-completion shell script for Onyo.
 
     The output of this command should be "sourced" to enable tab completion.

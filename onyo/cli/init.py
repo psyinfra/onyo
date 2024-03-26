@@ -12,7 +12,7 @@ args_init = {
     'directory': dict(
         metavar='DIR',
         nargs='?',
-        help="""
+        help=r"""
             Directory to initialize as an Onyo repository.
         """
     )
@@ -20,7 +20,7 @@ args_init = {
 
 
 def init(args: argparse.Namespace) -> None:
-    """
+    r"""
     Initialize an Onyo repository.
 
     The current working directory will be initialized if neither **DIR** nor the

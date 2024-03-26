@@ -30,7 +30,7 @@ log: logging.Logger = logging.getLogger('onyo.command_utils')
 
 
 def sanitize_args_config(git_config_args: list[str]) -> list[str]:
-    """
+    r"""
     Check the git config arguments against a list of conflicting options. If
     conflicts are present, the conflict list will be printed and will exit with
     error.
@@ -58,7 +58,7 @@ def sanitize_args_config(git_config_args: list[str]) -> list[str]:
 
 def fill_unset(assets: Generator[dict, None, None] | filter,
                keys: list[str]) -> Generator[dict, None, None]:
-    """Fill values for missing `keys` in `assets` with `UNSET_VALUE`.
+    r"""Fill values for missing `keys` in `assets` with `UNSET_VALUE`.
 
     Helper for the onyo-get command.
 
@@ -76,7 +76,7 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
 def natural_sort(assets: list[dict],
                  keys: list[str] | None = None,
                  reverse: bool = False) -> list[dict]:
-    """Sort an asset list by a given list of `keys`.
+    r"""Sort an asset list by a given list of `keys`.
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def natural_sort(assets: list[dict],
 
 
 def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
-    """
+    r"""
     Get the command used to display history. The appropriate one is selected
     according to the interactive mode, and basic checks are performed for
     validity.

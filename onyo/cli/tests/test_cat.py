@@ -33,7 +33,7 @@ contents: List[List[str]] = [[x, content_str] for x in assets]
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 def test_cat(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that a single file is cat successfully, and that stdout matches file
     content.
     """
@@ -45,7 +45,7 @@ def test_cat(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_contents(*contents)
 def test_cat_multiple_inputs(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that multiple files are cat successfully, and that stdout matches file
     content.
     """
@@ -62,7 +62,7 @@ def test_cat_multiple_inputs(repo: OnyoRepo) -> None:
                                      ]
                          )
 def test_cat_non_existing_path(repo: OnyoRepo, variant: str) -> None:
-    """
+    r"""
     Test that cat fails for a path that doesn't exist.
     """
     ret = subprocess.run(['onyo', 'cat', variant], capture_output=True, text=True)
@@ -78,7 +78,7 @@ def test_cat_non_existing_path(repo: OnyoRepo, variant: str) -> None:
     ['one_that_exists.test', 'dir/two_that_exists.test', 'does_not_exist.test']]
 )
 def test_cat_multiple_paths_missing(repo: OnyoRepo, variant: list[str]) -> None:
-    """
+    r"""
     Test that cat fails with multiple paths if at least one doesn't exist.
     """
     ret = subprocess.run(['onyo', 'cat', *variant], capture_output=True, text=True)
@@ -90,7 +90,7 @@ def test_cat_multiple_paths_missing(repo: OnyoRepo, variant: list[str]) -> None:
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('directory', directories)
 def test_cat_error_with_directory(repo: OnyoRepo, directory: str) -> None:
-    """
+    r"""
     Test that cat fails if path provided not a file.
     """
     ret = subprocess.run(['onyo', 'cat', directory], capture_output=True, text=True)
@@ -102,7 +102,7 @@ def test_cat_error_with_directory(repo: OnyoRepo, directory: str) -> None:
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 def test_same_target(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that cat succeeds if the same path is provided more than once.
     """
     ret = subprocess.run(['onyo', 'cat', asset, asset], capture_output=True, text=True)
@@ -116,7 +116,7 @@ def test_same_target(repo: OnyoRepo, asset: str) -> None:
 @pytest.mark.parametrize('variant', [["no_trailing_newline.test",
                                       "---\nRAM:\nSize:\nUSB:"]])
 def test_no_trailing_newline(repo: OnyoRepo, variant: list[str]) -> None:
-    """
+    r"""
     Test that `onyo cat` outputs the file content exactly, and doesn't add any
     newlines or other characters.
     """
@@ -129,7 +129,7 @@ def test_no_trailing_newline(repo: OnyoRepo, variant: list[str]) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_no_trailing_newline_with_many_empty_assets(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that `onyo cat ASSET ASSET [...]` does not print empty lines when given
     a list of empty files.
 
@@ -146,7 +146,7 @@ def test_no_trailing_newline_with_many_empty_assets(repo: OnyoRepo) -> None:
 @pytest.mark.parametrize('variant',
                          [["bad_yaml_file.test", "I: \nam:bad:\nbad:yaml\n"]])
 def test_invalid_yaml(repo: OnyoRepo, variant: list[str]) -> None:
-    """
+    r"""
     Test that `onyo cat` returns non-zero for a file with invalid yaml content,
     but does print the content plus an error message.
     """

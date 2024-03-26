@@ -7,7 +7,7 @@ from ..commands import onyo_mv
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_errors(inventory: Inventory) -> None:
-    """`onyo_mv` must raise the correct error in different illegal or impossible calls."""
+    r"""`onyo_mv` must raise the correct error in different illegal or impossible calls."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
     dir_path2 = inventory.root / 'different' / 'place'
@@ -76,7 +76,7 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_errors_before_mv(inventory: Inventory) -> None:
-    """`onyo_mv` must raise the correct error and is not allowed to move/commit anything, if one of
+    r"""`onyo_mv` must raise the correct error and is not allowed to move/commit anything, if one of
     the sources does not exist.
     """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -102,7 +102,7 @@ def test_onyo_mv_errors_before_mv(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 @pytest.mark.repo_dirs("a/b/c", "a/d/c")
 def test_onyo_mv_src_to_dest_with_same_name(inventory: Inventory) -> None:
-    """Allow to move a directory into another one with the same name."""
+    r"""Allow to move a directory into another one with the same name."""
     source_path = inventory.root / "a" / "b" / "c"
     destination_path = inventory.root / "a" / "d" / "c"
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -128,7 +128,7 @@ def test_onyo_mv_src_to_dest_with_same_name(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_move_simple(inventory: Inventory) -> None:
-    """Move an asset and a directory in one commit into a destination."""
+    r"""Move an asset and a directory in one commit into a destination."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
     destination_path = inventory.root / 'different' / 'place'
@@ -157,7 +157,7 @@ def test_onyo_mv_move_simple(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
-    """Allow moving a source to a destination stating the
+    r"""Allow moving a source to a destination stating the
     destination name explicitely, e.g.:
     inventory.root/dir1/asset -> inventory.root/dir2/asset.
     """
@@ -186,7 +186,7 @@ def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_rename_directory(inventory: Inventory) -> None:
-    """`onyo_mv` must allow renaming of a directory."""
+    r"""`onyo_mv` must allow renaming of a directory."""
     dir_path = inventory.root / 'somewhere' / 'nested'
     destination_path = dir_path.parent / 'newname'
     old_hexsha = inventory.repo.git.get_hexsha()

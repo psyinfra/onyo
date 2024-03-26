@@ -10,7 +10,7 @@ log: logging.Logger = logging.getLogger('onyo.git')
 
 
 class GitRepo(object):
-    """Representation of a git repository.
+    r"""Representation of a git repository.
 
     This relies on subprocesses running on a git worktree.
     Does not currently support bare repositories.
@@ -24,7 +24,7 @@ class GitRepo(object):
     def __init__(self,
                  path: Path,
                  find_root: bool = False) -> None:
-        """Instantiates a `GitRepo` object with `path` as the root directory.
+        r"""Instantiates a `GitRepo` object with `path` as the root directory.
 
         Parameters
         ----------
@@ -39,7 +39,7 @@ class GitRepo(object):
 
     @staticmethod
     def find_root(path: Path) -> Path:
-        """Returns the git worktree root `path` belongs to.
+        r"""Returns the git worktree root `path` belongs to.
 
         Parameters
         ----------
@@ -70,7 +70,7 @@ class GitRepo(object):
              args: list[str], *,
              cwd: Path | None = None,
              raise_error: bool = True) -> str:
-        """A wrapper function for git calls, returning the output of commands.
+        r"""A wrapper function for git calls, returning the output of commands.
 
         Parameters
         ----------
@@ -97,7 +97,7 @@ class GitRepo(object):
 
     @property
     def files(self) -> list[Path]:
-        """Get the absolute ``Path``\ s of all tracked files.
+        r"""Get the absolute ``Path``\ s of all tracked files.
 
         This property is cached, and is reset automatically on `GitRepo.commit()`.
 
@@ -109,7 +109,7 @@ class GitRepo(object):
         return self._files
 
     def clear_cache(self) -> None:
-        """Clear cache of this instance of GitRepo.
+        r"""Clear cache of this instance of GitRepo.
 
         Caches cleared are:
         - `GitRepo.files`
@@ -123,7 +123,7 @@ class GitRepo(object):
 
     def get_subtrees(self,
                      paths: Iterable[Path] | None = None) -> list[Path]:
-        """Get tracked files in the subtrees rooted at `paths`.
+        r"""Get tracked files in the subtrees rooted at `paths`.
 
         Parameters
         ----------
@@ -153,7 +153,7 @@ class GitRepo(object):
         return files
 
     def is_clean_worktree(self) -> bool:
-        """Check whether the git worktree is clean.
+        r"""Check whether the git worktree is clean.
 
         Returns
         -------
@@ -163,7 +163,7 @@ class GitRepo(object):
         return not bool(self._git(['status', '--porcelain']))
 
     def maybe_init(self) -> None:
-        """Initialize `self.root` as a git repository
+        r"""Initialize `self.root` as a git repository
         if it is not already one.
         """
         # Note: Why? git-init would do that
@@ -181,7 +181,7 @@ class GitRepo(object):
     def commit(self,
                paths: Iterable[Path] | Path,
                message: str) -> None:
-        """Stage and commit changes in git.
+        r"""Stage and commit changes in git.
 
         Parameters
         ----------
@@ -199,7 +199,7 @@ class GitRepo(object):
 
     @staticmethod
     def is_git_path(path: Path) -> bool:
-        """Whether `path` is a git file or directory.
+        r"""Whether `path` is a git file or directory.
 
         A 'git path' is considered a path that is used by git
         itself (tracked or not) and therefore not valid for use
@@ -223,7 +223,7 @@ class GitRepo(object):
     def get_config(self,
                    name: str,
                    file_: Path | None = None) -> str | None:
-        """Get the value for a configuration option specified by `name`.
+        r"""Get the value for a configuration option specified by `name`.
 
         By default, git-config is read following its order of precedence (worktree,
         local, global, system). If a `file_` is given, this is read instead.
@@ -269,7 +269,7 @@ class GitRepo(object):
                    name: str,
                    value: str,
                    location: str | Path | None = None) -> None:
-        """Set the configuration option `name` to `value`.
+        r"""Set the configuration option `name` to `value`.
 
         Parameters
         ----------
@@ -310,7 +310,7 @@ class GitRepo(object):
     def get_hexsha(self,
                    commitish: str | None = None,
                    short: bool = False) -> str | None:
-        """Return the hexsha of a given commit-ish.
+        r"""Return the hexsha of a given commit-ish.
 
         Parameters
         ----------
@@ -346,7 +346,7 @@ class GitRepo(object):
 
     def get_commit_msg(self,
                        commitish: str | None = None) -> str:
-        """Returns the full commit message of a commit-ish.
+        r"""Returns the full commit message of a commit-ish.
 
         Parameters
         ----------
@@ -361,7 +361,7 @@ class GitRepo(object):
         return self._git(['log', commitish or 'HEAD', '-n1', '--pretty=%B'])
 
     def check_ignore(self, ignore: Path, paths: list[Path]) -> list[Path]:
-        """Get the `paths` that are matched by patterns defined in `ignore`.
+        r"""Get the `paths` that are matched by patterns defined in `ignore`.
 
         This is utilizing ``git-check-ignore`` to evaluate `paths` against
         a file `ignore`, that defines exclude patterns the gitignore-way.

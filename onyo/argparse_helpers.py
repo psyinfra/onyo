@@ -18,7 +18,7 @@ class StoreKeyValuePairs(argparse.Action):
                  namespace: argparse.Namespace,
                  key_values: list[str],
                  option_string: str | None = None) -> None:
-        """Turn a list of 'key=value' pairs into a list of dictionaries
+        r"""Turn a list of 'key=value' pairs into a list of dictionaries
 
         Every key appearing multiple times in `key=value` is applied to a new dictionary every time.
         All keys appearing multiple times, must appear the same number of times (and thereby define the number of dicts
@@ -64,7 +64,7 @@ class StoreKeyValuePairs(argparse.Action):
 
 
 def parse_key_values(string):
-    """
+    r"""
     Convert a string of key-value pairs to a dictionary.
 
     The shell interprets the key-value string before it is passed to argparse.

@@ -18,7 +18,7 @@ assets = [['laptop_apple_macbookpro.0', "type: laptop\nmake: apple\nmodel: macbo
 
 @pytest.mark.parametrize('variant', ['local', 'onyo'])
 def test_get_editor_git(repo: OnyoRepo, variant: str) -> None:
-    """
+    r"""
     Get the editor from git or onyo configs.
     """
     repo.set_config('onyo.core.editor', variant, location=variant)
@@ -29,7 +29,7 @@ def test_get_editor_git(repo: OnyoRepo, variant: str) -> None:
 
 
 def test_get_editor_envvar(repo: OnyoRepo) -> None:
-    """
+    r"""
     Get the editor from $EDITOR.
     """
     # verify that onyo.core.editor is not set
@@ -41,7 +41,7 @@ def test_get_editor_envvar(repo: OnyoRepo) -> None:
 
 
 def test_get_editor_fallback(repo: OnyoRepo) -> None:
-    """
+    r"""
     When no editor is set, nano is the fallback.
     """
     # verify that onyo.core.editor is not set
@@ -56,7 +56,7 @@ def test_get_editor_fallback(repo: OnyoRepo) -> None:
 
 
 def test_get_editor_precedence(repo: OnyoRepo) -> None:
-    """
+    r"""
     The order of precedence should be git > onyo > $EDITOR.
     """
     # set locations
@@ -82,7 +82,7 @@ def test_get_editor_precedence(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that for different paths it is possible to call `onyo edit` on a single
     asset file.
     """
@@ -102,7 +102,7 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_edit_multiple_assets(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that it is possible to call `onyo edit` with a list of multiple assets
     containing different file names at once.
     """
@@ -125,7 +125,7 @@ def test_edit_multiple_assets(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_edit_with_user_response(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that without the --yes flag, `onyo edit` requests a user response
     before saving changes.
     """
@@ -147,7 +147,7 @@ def test_edit_with_user_response(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_message_flag(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that `onyo edit --message msg` overwrites the default commit message
     with one specified by the user containing different special characters.
     """
@@ -169,7 +169,7 @@ def test_edit_message_flag(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_quiet_flag(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that `onyo edit --yes --quiet` does not print anything.
     """
     os.environ['EDITOR'] = "printf 'key: quiet' >>"
@@ -191,7 +191,7 @@ def test_quiet_flag(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that `onyo edit --quiet` does error without --yes flag.
     """
     os.environ['EDITOR'] = "printf 'key: quiet' >>"
@@ -210,7 +210,7 @@ def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_discard(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that if an asset got correctly changed, but the user answers to the
     "Save changes?" dialog with 'n', that the changes get discarded.
     """
@@ -242,7 +242,7 @@ def test_edit_discard(repo: OnyoRepo, asset: str) -> None:
     '.git/index'
 ])
 def test_edit_protected(repo: OnyoRepo, no_asset: str) -> None:
-    """
+    r"""
     Test the error behavior when called on protected files.
     """
     os.environ['EDITOR'] = "printf 'key: NOT_USED' >>"
@@ -264,7 +264,7 @@ def test_edit_protected(repo: OnyoRepo, no_asset: str) -> None:
     "very/very/very/deep/non_existing_asset.0"
 ])
 def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
-    """
+    r"""
     Test the error behavior when called on non-existing files, that Onyo does
     not create the files, and the repository stays valid.
     """
@@ -282,7 +282,7 @@ def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that Onyo detects yaml-errors, and responds correctly if the user
     answers the "cancel edit?" dialog with 'y' to discard the changes
     """
@@ -303,7 +303,7 @@ def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_edit_without_changes(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that onyo does not fail when no changes were made.
     This still requires a confirmation after editing an asset.
     """
@@ -320,7 +320,7 @@ def test_edit_without_changes(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_with_dot_dot(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Check that in an onyo repository it is possible to call `onyo edit` on an
     asset path that contains ".." leading outside and back into the repository.
     """

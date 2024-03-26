@@ -20,7 +20,7 @@ log: logging.Logger = logging.getLogger('onyo')
 
 
 class UI(object):
-    """
+    r"""
     An object handling user interaction, including printing, errors, requests,
     and others.
 
@@ -44,7 +44,7 @@ class UI(object):
                  yes: bool = False) -> None:
         # TODO: interactive mode with default values or autodetecting tty? And
         # should this be unified with the whole business of rich-coloring etc?
-        """Initialize the User Interface object for user communication of Onyo.
+        r"""Initialize the User Interface object for user communication of Onyo.
 
         Parameters
         ----------
@@ -77,7 +77,7 @@ class UI(object):
 
     def set_debug(self,
                   debug: bool = False) -> None:
-        """Toggle debug mode.
+        r"""Toggle debug mode.
 
         Parameters
         ----------
@@ -91,7 +91,7 @@ class UI(object):
 
     def set_quiet(self,
                   quiet: bool = False) -> None:
-        """Toggle quiet mode.
+        r"""Toggle quiet mode.
 
         Parameters
         ----------
@@ -111,7 +111,7 @@ class UI(object):
 
     def set_yes(self,
                 yes: bool = False) -> None:
-        """Toggle auto-response 'yes' to all questions.
+        r"""Toggle auto-response 'yes' to all questions.
 
         Parameters
         ----------
@@ -124,7 +124,7 @@ class UI(object):
     def error(self,
               error: str | Exception,
               end: str = os.linesep) -> None:
-        """Print an error message, if the `UI` is not set to quiet mode.
+        r"""Print an error message, if the `UI` is not set to quiet mode.
 
         Parameters
         ----------
@@ -149,7 +149,7 @@ class UI(object):
 
     def log(self,
             message: str) -> None:
-        """Log a message at `logging.INFO` level.
+        r"""Log a message at `logging.INFO` level.
 
         Parameters
         ----------
@@ -161,7 +161,7 @@ class UI(object):
     def log_debug(self,
                   *args,
                   **kwargs) -> None:
-        """Log at `logging.DEBUG` level.
+        r"""Log at `logging.DEBUG` level.
 
         Parameters
         ----------
@@ -176,7 +176,7 @@ class UI(object):
     def print(self,
               *args,
               **kwargs) -> None:
-        """Print a message, if the `UI` is not set to quiet mode.
+        r"""Print a message, if the `UI` is not set to quiet mode.
 
         Parameters
         ----------
@@ -191,7 +191,7 @@ class UI(object):
 
     def request_user_response(self,
                               question: str) -> bool:
-        """Print `question` and read a response from `stdin`.
+        r"""Print `question` and read a response from `stdin`.
 
         Returns True when user answers yes, False when no, and asks again if the
         input is neither.
@@ -215,7 +215,7 @@ class UI(object):
                 return False
 
     def rich_print(self, *args, **kwargs) -> None:
-        """Refactoring helper to print via the `rich` package.
+        r"""Refactoring helper to print via the `rich` package.
 
         Proxy for `rich.Console.print`.
         Takes `stderr: bool` option to use a stderr `Console`

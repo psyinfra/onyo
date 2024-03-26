@@ -23,7 +23,7 @@ args_edit = {
 
 
 def edit(args: argparse.Namespace) -> None:
-    """
+    r"""
     Open **ASSET**\ s using an editor.
 
     When multiple **ASSET**\ s are given, they are opened sequentially.
