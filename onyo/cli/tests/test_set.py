@@ -433,7 +433,7 @@ def test_duplicate_keys(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert ret.returncode == 1
+    assert ret.returncode == 2
     assert "Keys must not be given multiple times." in ret.stderr
     assert not ret.stdout
 

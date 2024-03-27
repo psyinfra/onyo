@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
-from onyo.argparse_helpers import StoreKeyValuePairs
+from onyo.argparse_helpers import StoreMultipleKeyValuePairs
 from onyo.lib.commands import onyo_new
 from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_message
@@ -53,7 +53,7 @@ args_new = {
     'keys': dict(
         args=('-k', '--keys'),
         required=False,
-        action=StoreKeyValuePairs,
+        action=StoreMultipleKeyValuePairs,
         metavar="KEY",
         nargs='+',
         help=r"""

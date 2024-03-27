@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo.argparse_helpers import StoreKeyValuePairs
+from onyo.argparse_helpers import StoreSingleKeyValuePairs
 from onyo.lib.commands import onyo_set
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
@@ -29,7 +29,7 @@ args_set = {
     'keys': dict(
         args=('-k', '--keys'),
         required=True,
-        action=StoreKeyValuePairs,
+        action=StoreSingleKeyValuePairs,
         metavar="KEY",
         nargs='+',
         help=r"""
@@ -79,13 +79,8 @@ def set(args: argparse.Namespace) -> None:
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     assets = [Path(a).resolve() for a in args.asset]
-    # TODO: The following check should be incorporated in the argparse Action.
-    #       IOW: This requires a variant of StoreKeyValuePairs, that does not
-    #       allow for key duplication (and can tell which keys are affected)
-    if len(args.keys) > 1:
-        raise ValueError("Keys must not be given multiple times.")
     onyo_set(inventory=inventory,
              assets=assets,
-             keys=args.keys[0],
+             keys=args.keys,
              rename=args.rename,
              message='\n\n'.join(m for m in args.message) if args.message else None)
