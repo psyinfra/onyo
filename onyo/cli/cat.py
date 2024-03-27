@@ -20,8 +20,8 @@ args_cat = {
 
 
 def cat(args: argparse.Namespace) -> None:
-    """
-    Print the contents of **ASSET**\s to the terminal.
+    r"""
+    Print the contents of **ASSET**\ s to the terminal.
 
     If any of the paths are invalid, then no contents are printed and an error
     is returned.

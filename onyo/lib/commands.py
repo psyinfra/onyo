@@ -33,7 +33,7 @@ P = ParamSpec('P')
 
 
 def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
-    """Raises if it's not OK to run an onyo command on `inventory`.
+    r"""Raises if it's not OK to run an onyo command on `inventory`.
 
     Decorator for onyo commands. Expects an `Inventory` to be part of
     the arguments to the decorated function.
@@ -70,7 +70,7 @@ def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
 
 def fsck(repo: OnyoRepo,
          tests: list[str] | None = None) -> None:
-    """Run a suite of checks to verify the integrity and validity of an Onyo
+    r"""Run a suite of checks to verify the integrity and validity of an Onyo
     repository and its contents.
 
     By default, the following tests will be performed:
@@ -140,7 +140,7 @@ def fsck(repo: OnyoRepo,
 @raise_on_inventory_state
 def onyo_cat(inventory: Inventory,
              paths: list[Path]) -> None:
-    """Print the contents of assets.
+    r"""Print the contents of assets.
 
     At least one valid asset path is required.
     The same paths can be given multiple times.
@@ -186,7 +186,7 @@ def onyo_cat(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_config(inventory: Inventory,
                 config_args: list[str]) -> None:
-    """Interface the configuration of an onyo repository.
+    r"""Interface the configuration of an onyo repository.
 
     The config file for the Repo will be identified and the config_args passed
     into a ``git config`` call on the config file.
@@ -221,7 +221,7 @@ def _edit_asset(inventory: Inventory,
                 asset: dict,
                 operation: Callable,
                 editor: str | None) -> dict:
-    """Edit `asset` via configured editor and a temporary asset file.
+    r"""Edit `asset` via configured editor and a temporary asset file.
 
     Utility function for `onyo_edit` and `onyo_new(edit=True)`.
     This is editing a temporary file initialized with `asset`. Once
@@ -327,7 +327,7 @@ def _edit_asset(inventory: Inventory,
 def onyo_edit(inventory: Inventory,
               paths: list[Path],
               message: str | None) -> None:
-    """Edit the content of assets.
+    r"""Edit the content of assets.
 
     Parameters
     ----------
@@ -392,7 +392,7 @@ def onyo_get(inventory: Inventory,
              match: list[Callable[[dict], bool]] | None = None,
              keys: list[str] | None = None,
              sort: Literal['ascending', 'descending'] = 'ascending') -> list[dict]:
-    """Query the repository for information about assets.
+    r"""Query the repository for information about assets.
 
     Parameters
     ----------
@@ -496,7 +496,7 @@ def onyo_get(inventory: Inventory,
 def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
                message: str | None) -> None:
-    """Create new directories in the inventory.
+    r"""Create new directories in the inventory.
 
     Intermediate directories will be created as needed (i.e. parent and
     child directories can be created in one call).
@@ -554,7 +554,7 @@ def onyo_mkdir(inventory: Inventory,
 def move_asset_or_dir(inventory: Inventory,
                       source: Path,
                       destination: Path) -> None:
-    """Move a source asset or directory to a destination.
+    r"""Move a source asset or directory to a destination.
 
     Parameters
     ----------
@@ -575,7 +575,7 @@ def move_asset_or_dir(inventory: Inventory,
 def _maybe_rename(inventory: Inventory,
                   src: Path,
                   dst: Path) -> None:
-    """Helper for `onyo_mv`"""
+    r"""Helper for `onyo_mv`"""
 
     try:
         inventory.rename_directory(src, dst)
@@ -590,7 +590,7 @@ def onyo_mv(inventory: Inventory,
             source: list[Path] | Path,
             destination: Path,
             message: str | None = None) -> None:
-    """Move assets or directories, or rename a directory.
+    r"""Move assets or directories, or rename a directory.
 
     If `destination` is an asset file, turns it into an asset dir first.
 
@@ -685,7 +685,7 @@ def onyo_new(inventory: Inventory,
              keys: list[Dict[str, str | int | float]] | None = None,
              edit: bool = False,
              message: str | None = None) -> None:
-    """Create new assets and add them to the inventory.
+    r"""Create new assets and add them to the inventory.
 
     Either keys, tsv or edit must be given.
     If keys and tsv and keys define multiple assets: Number of assets must match.
@@ -880,7 +880,7 @@ def onyo_rm(inventory: Inventory,
             paths: list[Path] | Path,
             message: str | None,
             mode: Literal["asset", "dir", "all"] = "all") -> None:
-    """Delete assets and/or directories from the inventory.
+    r"""Delete assets and/or directories from the inventory.
 
     Parameters
     ----------
@@ -956,7 +956,7 @@ def onyo_set(inventory: Inventory,
              assets: list[Path],
              rename: bool = False,
              message: str | None = None) -> str | None:
-    """Set key-value pairs of assets, and change asset names.
+    r"""Set key-value pairs of assets, and change asset names.
 
     Parameters
     ----------
@@ -1039,7 +1039,7 @@ def onyo_set(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_tree(inventory: Inventory,
               dirs: list[tuple[str, Path]]) -> None:
-    """Print the directory tree of paths.
+    r"""Print the directory tree of paths.
 
     Parameters
     ----------
@@ -1072,7 +1072,7 @@ def onyo_tree(inventory: Inventory,
 
 
 def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
-    """Yield lines that assemble tree-like output, stylized by rich.
+    r"""Yield lines that assemble tree-like output, stylized by rich.
 
     Parameters
     ----------
@@ -1117,7 +1117,7 @@ def onyo_unset(inventory: Inventory,
                keys: list[str],
                assets: list[Path],
                message: str | None = None) -> None:
-    """Remove keys from assets.
+    r"""Remove keys from assets.
 
     Parameters
     ----------

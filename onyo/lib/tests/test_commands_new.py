@@ -50,7 +50,7 @@ def test_onyo_new_tsv(inventory: Inventory, tsv: Path) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_keys(inventory: Inventory) -> None:
-    """`onyo_new()` must create new assets with the contents set correctly
+    r"""`onyo_new()` must create new assets with the contents set correctly
     when called with `keys`.
 
     Each successful call of `onyo_new()` must add one commit.
@@ -148,7 +148,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_creates_directories(inventory: Inventory) -> None:
-    """`onyo_new()` must create new directories and subdirectories when called
+    r"""`onyo_new()` must create new directories and subdirectories when called
     on a `directory` that does not yet exist, and add assets correctly to it.
     """
     specs = [{'type': 'a type',

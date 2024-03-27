@@ -16,7 +16,7 @@ log: logging.Logger = logging.getLogger('onyo.onyo')
 
 
 class OnyoRepo(object):
-    """
+    r"""
     An object representing an Onyo repository.
 
     Allows identifying and working with asset paths and directories, getting and
@@ -45,7 +45,7 @@ class OnyoRepo(object):
                  path: Path,
                  init: bool = False,
                  find_root: bool = False) -> None:
-        """Instantiates an `OnyoRepo` object with `path` as the root directory.
+        r"""Instantiates an `OnyoRepo` object with `path` as the root directory.
 
         Parameters
         ----------
@@ -94,7 +94,7 @@ class OnyoRepo(object):
                    name: str,
                    value: str,
                    location: str = 'onyo') -> None:
-        """Set the configuration option `name` to `value`.
+        r"""Set the configuration option `name` to `value`.
 
         Parameters
         ----------
@@ -120,7 +120,7 @@ class OnyoRepo(object):
 
     def get_config(self,
                    name: str) -> str | None:
-        """Get effective value of config `name`.
+        r"""Get effective value of config `name`.
 
         This is considering regular git-config locations and checks
         `OnyoRepo.ONYO_CONFIG` as fallback.
@@ -128,7 +128,7 @@ class OnyoRepo(object):
         return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
 
     def get_asset_name_keys(self) -> list[str]:
-        """Get a list of keys required for generating asset names
+        r"""Get a list of keys required for generating asset names
 
         This is extracting names of used keys from the
         ``onyo.assets.filename`` config, which is supposed to be
@@ -140,7 +140,7 @@ class OnyoRepo(object):
         '{', followed by a key name, which is then either closed
         directly via '}' or first followed by some formatting options
         in which case there's '[', '.', '!', etc.
-        Note, that '\\w' is used to match the key name, which includes
+        Note, that '\w' is used to match the key name, which includes
         alphanumeric characters as well as underscores, therefore
         matching python variable name restrictions. This is relevant,
         because we want to get a dict from the YAML and making the
@@ -166,7 +166,7 @@ class OnyoRepo(object):
         return re.findall(search_regex, config_str) if config_str else []
 
     def get_editor(self) -> str:
-        """Returns the editor, progressing through git, onyo, $EDITOR, and finally
+        r"""Returns the editor, progressing through git, onyo, $EDITOR, and finally
         fallback to "nano".
         """
         # onyo config and git config
@@ -185,7 +185,7 @@ class OnyoRepo(object):
         return editor
 
     def clear_cache(self) -> None:
-        """Clear cache of this instance of GitRepo.
+        r"""Clear cache of this instance of GitRepo.
 
         Caches cleared are:
         - `OnyoRepo.asset_paths`
@@ -203,7 +203,7 @@ class OnyoRepo(object):
     def generate_commit_message(format_string: str,
                                 max_length: int = 80,
                                 **kwargs) -> str:
-        """Generate a commit message subject.
+        r"""Generate a commit message subject.
 
         The function will shorten paths in the resulting string in order to try to fit into
         `max_length`.
@@ -253,7 +253,7 @@ class OnyoRepo(object):
 
     @property
     def asset_paths(self) -> list[Path]:
-        """Get the absolute ``Path``\ s of all assets in this repository.
+        r"""Get the absolute ``Path``\ s of all assets in this repository.
 
         This property is cached, and is reset automatically on `OnyoRepo.commit()`.
 
@@ -265,7 +265,7 @@ class OnyoRepo(object):
         return self._asset_paths
 
     def is_valid_onyo_repo(self) -> bool:
-        """Assert whether this is a properly set up onyo repository and has a fully
+        r"""Assert whether this is a properly set up onyo repository and has a fully
         populated `.onyo/` directory.
 
         Returns
@@ -291,7 +291,7 @@ class OnyoRepo(object):
 
     def _init(self,
               path: Path) -> None:
-        """Initialize an Onyo repository at `path`.
+        r"""Initialize an Onyo repository at `path`.
 
         Re-init-ing an existing repository is safe. It will not overwrite
         anything; it will raise an exception.
@@ -348,7 +348,7 @@ class OnyoRepo(object):
 
     def is_onyo_path(self,
                      path: Path) -> bool:
-        """Determine whether an absolute `path` is used by onyo internally.
+        r"""Determine whether an absolute `path` is used by onyo internally.
 
         Currently anything underneath `.onyo/`, anything named `.onyo*`,
         and an anchor files in an inventory directory is considered an
@@ -369,7 +369,7 @@ class OnyoRepo(object):
 
     def is_inventory_dir(self,
                          path: Path) -> bool:
-        """Whether `path` is an inventory directory.
+        r"""Whether `path` is an inventory directory.
 
         This only considers directories w/ committed anchor file.
         """
@@ -378,7 +378,7 @@ class OnyoRepo(object):
 
     def is_asset_path(self,
                       path: Path) -> bool:
-        """Whether `path` is an asset in the repository.
+        r"""Whether `path` is an asset in the repository.
 
         Parameters
         ----------
@@ -394,7 +394,7 @@ class OnyoRepo(object):
 
     def is_inventory_path(self,
                           path: Path) -> bool:
-        """Whether `path` is valid for tracking an asset or an inventory directory.
+        r"""Whether `path` is valid for tracking an asset or an inventory directory.
 
         This only checks whether `path` is suitable in principle.
         It does not check whether that path already exists or if it would be valid
@@ -416,7 +416,7 @@ class OnyoRepo(object):
             not self.is_onyo_ignored(path)
 
     def is_asset_dir(self, path: Path) -> bool:
-        """Whether `path` is an asset directory.
+        r"""Whether `path` is an asset directory.
 
         An asset directory is both, an asset and an inventory directory.
 
@@ -433,7 +433,7 @@ class OnyoRepo(object):
         return self.is_inventory_dir(path) and self.is_asset_path(path)
 
     def is_onyo_ignored(self, path: Path) -> bool:
-        """Whether `path` is matched by an ``.onyoignore`` file.
+        r"""Whether `path` is matched by an ``.onyoignore`` file.
 
         Such a path would be tracked by git, but not considered
         to be an inventory item by onyo.
@@ -460,7 +460,7 @@ class OnyoRepo(object):
 
     def get_template(self,
                      name: str | None = None) -> dict:
-        """Select and return a template from the directory `.onyo/templates/`.
+        r"""Select and return a template from the directory `.onyo/templates/`.
 
         Parameters
         ----------
@@ -491,7 +491,7 @@ class OnyoRepo(object):
         return yaml_to_dict(template_file)
 
     def validate_anchors(self) -> bool:
-        """Check if all dirs (except those in `.onyo/`) contain an .anchor file.
+        r"""Check if all dirs (except those in `.onyo/`) contain an .anchor file.
 
         Returns
         -------
@@ -527,7 +527,7 @@ class OnyoRepo(object):
     def get_asset_paths(self,
                         subtrees: Iterable[Path] | None = None,
                         depth: int = 0) -> List[Path]:
-        """Select all assets in the repository that are relative to the given
+        r"""Select all assets in the repository that are relative to the given
         `subtrees` descending at most `depth` directories.
 
         Parameters
@@ -561,7 +561,7 @@ class OnyoRepo(object):
 
     def get_asset_content(self,
                           path: Path) -> dict:
-        """Get a dictionary representing `path`'s content.
+        r"""Get a dictionary representing `path`'s content.
 
         Parameters
         ----------
@@ -607,7 +607,7 @@ class OnyoRepo(object):
 
     def mk_inventory_dirs(self,
                           dirs: Iterable[Path] | Path) -> list[Path]:
-        """Create inventory directories `dirs`.
+        r"""Create inventory directories `dirs`.
 
         Creates `dirs` including anchor files.
 
@@ -667,7 +667,7 @@ class OnyoRepo(object):
         return added_files
 
     def commit(self, paths: Iterable[Path] | Path, message: str):
-        """Commit changes to the repository.
+        r"""Commit changes to the repository.
 
         This is resets the cache and is otherwise just a proxy for
         `GitRepo.commit`.

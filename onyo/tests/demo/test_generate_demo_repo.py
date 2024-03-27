@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def test_generate_demo_repo(tmp_path, request) -> None:
-    """
+    r"""
     Generate an Onyo demo repository, and compare it against the git log of
     another known-good-demo-repo.
     """

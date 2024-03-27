@@ -23,10 +23,10 @@ args_edit = {
 
 
 def edit(args: argparse.Namespace) -> None:
-    """
-    Open **ASSET**\s using an editor.
+    r"""
+    Open **ASSET**\ s using an editor.
 
-    When multiple **ASSET**\s are given, they are opened sequentially.
+    When multiple **ASSET**\ s are given, they are opened sequentially.
 
     The editor is selected by (in order):
 
@@ -34,7 +34,7 @@ def edit(args: argparse.Namespace) -> None:
       * ``EDITOR`` environment variable
       * ``nano`` (as a final fallback)
 
-    The contents of all edited **ASSET**\s are checked for validity before
+    The contents of all edited **ASSET**\ s are checked for validity before
     committing. If problems are found, a prompt is offered to either reopen the
     editor or discard the changes.
     """

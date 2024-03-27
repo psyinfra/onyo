@@ -92,7 +92,7 @@ asset_contents = [
 
 def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
-    """Convert content dictionary to a plain-text string"""
+    r"""Convert content dictionary to a plain-text string"""
     for file, raw_contents in raw_assets:
         contents = ''
         for k, v in raw_contents.items():
@@ -109,7 +109,7 @@ def convert_contents(
                                                           'one/laptop_dell_precision.2',
                                                           'one/two/headphones_apple_pro.3']]))
 def test_get_defaults(repo: OnyoRepo) -> None:
-    """Test `onyo get` using default values"""
+    r"""Test `onyo get` using default values"""
     cmd = ['onyo', 'get']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     keys = ['type', 'make', 'model', 'serial', 'path']
@@ -137,7 +137,7 @@ def test_get_all(
         repo: OnyoRepo, matches: list[str], depth: str, keys: list[str],
         paths: list[str], machine_readable: str | None,
         sort: str | None) -> None:
-    """
+    r"""
     Test `onyo get` with a combination of arguments.
     """
     keys = keys if keys else repo.get_asset_name_keys()
@@ -187,7 +187,7 @@ def test_get_all(
     ([], 4)])
 def test_get_filter(
         repo: OnyoRepo, matches: list[str], expected: int) -> None:
-    """
+    r"""
     Test that `onyo get --match KEY=VALUE` retrieves the expected
     files.
     """
@@ -222,7 +222,7 @@ def test_get_filter(
     ([r'num=9\d*|\d{1,}'], 3)])
 def test_get_filter_regex(
         repo: OnyoRepo, matches: list[str], expected: int) -> None:
-    """
+    r"""
     Test that `onyo get --match KEY=VALUE` retrieves the expected
     files using a regular expression as value
     """
@@ -253,7 +253,7 @@ def test_get_filter_regex(
     ['num'],
     ['']])
 def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
-    """
+    r"""
     Test that `onyo get --match KEY=VALUE` returns an error if
     missing a value.
     """
@@ -282,7 +282,7 @@ def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
 def test_get_keys(
         repo: OnyoRepo, raw_assets: list[tuple[str, dict[str, Any]]],
         keys: list) -> None:
-    """
+    r"""
     Test that `onyo get --keys x y z` retrieves the expected keys.
     """
     from onyo.lib.consts import PSEUDO_KEYS
@@ -319,7 +319,7 @@ def test_get_keys(
 @pytest.mark.parametrize('depth,expected', [
     ('0', 5), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('999', 5)])
 def test_get_depth(repo: OnyoRepo, depth: str, expected: int) -> None:
-    """
+    r"""
     Test that `onyo get --depth x` retrieves the expected assets.
     """
     cmd = ['onyo', 'get', '--depth', depth, '-H']
@@ -344,7 +344,7 @@ def test_get_depth(repo: OnyoRepo, depth: str, expected: int) -> None:
                                                           'one/two/three/headphones_apple_pro.4',
                                                           'one/two/three/four/headphones_apple_pro.5']]))
 def test_get_depth_error(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that `onyo get --depth x` when a negative integer is used returns the
     expected exception
     """
@@ -379,7 +379,7 @@ def test_get_depth_error(repo: OnyoRepo) -> None:
 def test_get_path_at_depth(
         repo: OnyoRepo, paths: str, depth: str | None,
         expected: int) -> None:
-    """
+    r"""
     Test that `onyo get --path x --depth y` retrieves the expected assets by
     ensuring that `depth` is assessed relative to the given paths.
 
@@ -419,7 +419,7 @@ def test_get_path_at_depth(
     'path/that/does/not/exist/and/does/not/start/with/dot/slash',
     'def/ghi'])
 def test_get_path_error(repo: OnyoRepo, path: str) -> None:
-    """
+    r"""
     Test that `onyo get --path x --depth y` returns an exception if an invalid
     path is being used
     """
@@ -442,7 +442,7 @@ def test_get_path_error(repo: OnyoRepo, path: str) -> None:
 def test_get_sort(
         repo: OnyoRepo, sort: str | None, keys: list[str],
         expected: list[str]) -> None:
-    """
+    r"""
     Test that `onyo get --keys x y z` with `-s` (ascending) or `-S`
     (descending)  retrieves assets in the expected 'natural sorted' order.
     """
@@ -464,7 +464,7 @@ def test_get_sort(
 
 
 def test_get_sort_error(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that when using -s and -S simultaneously the appropriate error is
     returned.
     """
@@ -486,7 +486,7 @@ def test_get_sort_error(repo: OnyoRepo) -> None:
 def test_natural_sort(
         assets: list[dict], keys: list | None,
         reverse: bool) -> None:
-    """Test implementation of natural sorting algorithm"""
+    r"""Test implementation of natural sorting algorithm"""
     sorted_assets = natural_sort(assets, keys=keys, reverse=reverse)
     ids = [data.get('id') for data in sorted_assets]
 
@@ -509,7 +509,7 @@ def test_natural_sort(
     'type', 'make', 'model', 'serial', 'num', 'str', 'id']])
 def test_fill_unset(
         assets: list[dict], keys: list[str]) -> None:
-    """
+    r"""
     Test that the `fill_unset()` function fills unset keys with the value
     `'<unset>'`
     """

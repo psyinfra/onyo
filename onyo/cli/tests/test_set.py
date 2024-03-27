@@ -54,7 +54,7 @@ name_fields = [["type=desktop"],
 def test_set(repo: OnyoRepo,
              asset: str,
              set_values: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE <asset>` updates contents of assets."""
+    r"""Test that `onyo set KEY=VALUE <asset>` updates contents of assets."""
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values, '--asset', asset],
                          capture_output=True, text=True)
 
@@ -76,7 +76,7 @@ def test_set(repo: OnyoRepo,
 def test_set_interactive(repo: OnyoRepo,
                          asset: str,
                          set_values: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE <asset>` updates contents of assets."""
+    r"""Test that `onyo set KEY=VALUE <asset>` updates contents of assets."""
     ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--asset', asset],
                          input='y', capture_output=True, text=True)
 
@@ -97,7 +97,7 @@ def test_set_interactive(repo: OnyoRepo,
 @pytest.mark.parametrize('set_values', values)
 def test_set_multiple_assets(repo: OnyoRepo,
                              set_values: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE <asset>` can update the contents of multiple
+    r"""Test that `onyo set KEY=VALUE <asset>` can update the contents of multiple
     assets in a single call.
     """
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values,
@@ -121,7 +121,7 @@ def test_set_multiple_assets(repo: OnyoRepo,
 @pytest.mark.parametrize('no_assets', non_existing_assets)
 def test_set_error_non_existing_assets(repo: OnyoRepo,
                                        no_assets: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE <asset>` errors correctly for:
+    r"""Test that `onyo set KEY=VALUE <asset>` errors correctly for:
     - non-existing assets on root
     - non-existing assets in directories
     - one non-existing asset in a list of existing ones
@@ -140,7 +140,7 @@ def test_set_error_non_existing_assets(repo: OnyoRepo,
 @pytest.mark.parametrize('set_values', values)
 def test_set_without_path(repo: OnyoRepo,
                           set_values: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE` without a given path fails.
+    r"""Test that `onyo set KEY=VALUE` without a given path fails.
     """
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys', *set_values],
                          capture_output=True, text=True)
@@ -156,7 +156,7 @@ def test_set_without_path(repo: OnyoRepo,
 def test_set_discard_changes_single_assets(repo: OnyoRepo,
                                            asset: str,
                                            set_values: list[str]) -> None:
-    """Test that `onyo set` discards changes for assets successfully."""
+    r"""Test that `onyo set` discards changes for assets successfully."""
     ret = subprocess.run(['onyo', 'set', '--keys', *set_values, '--asset', asset],
                          input='n',
                          capture_output=True, text=True)
@@ -181,7 +181,7 @@ def test_set_discard_changes_single_assets(repo: OnyoRepo,
 def test_set_message_flag(repo: OnyoRepo,
                           asset: str,
                           set_values: list[str]) -> None:
-    """Test that `onyo set --message msg` overwrites the
+    r"""Test that `onyo set --message msg` overwrites the
     default commit message with one specified by the user
     containing various special characters.
     """
@@ -202,7 +202,7 @@ def test_set_message_flag(repo: OnyoRepo,
 @pytest.mark.parametrize('asset', [asset_paths[0]])
 def test_add_new_key_to_existing_content(repo: OnyoRepo,
                                          asset: str) -> None:
-    """Test that `onyo set KEY=VALUE <asset>` can be called two times with
+    r"""Test that `onyo set KEY=VALUE <asset>` can be called two times with
     different `KEY`, and adds it without overwriting existing values.
     """
     set_1 = "change=one"
@@ -244,7 +244,7 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo,
 @pytest.mark.parametrize('asset', [asset_paths[0]])
 def test_set_overwrite_key(repo: OnyoRepo,
                            asset: str) -> None:
-    """
+    r"""
     Test that `onyo set KEY=VALUE <asset>` can be called two times with
     different VALUE for the same KEY, and overwrites existing values correctly.
     """
@@ -284,7 +284,7 @@ def test_set_overwrite_key(repo: OnyoRepo,
 @pytest.mark.parametrize('asset', [asset_paths[0]])
 def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo,
                                                        asset: str) -> None:
-    """Test that `onyo set KEY=VALUE <asset>` updates contents of assets and adds
+    r"""Test that `onyo set KEY=VALUE <asset>` updates contents of assets and adds
     the correct output if called multiple times, and that the output is correct.
     """
     set_values = "change=one"
@@ -328,7 +328,7 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo,
 def test_values_already_set(repo: OnyoRepo,
                             asset: str,
                             set_values: list[str]) -> None:
-    """Test that `onyo set KEY=VALUE <asset>` updates
+    r"""Test that `onyo set KEY=VALUE <asset>` updates
     contents of assets once, and if called again with
     same valid values the command does display the correct
     info message without error, and the repository stays
@@ -366,7 +366,7 @@ def test_values_already_set(repo: OnyoRepo,
 def test_set_update_name_fields(repo: OnyoRepo,
                                 asset: str,
                                 set_values: list[str]) -> None:
-    """Test that `onyo set --rename --keys KEY=VALUE <asset>` can
+    r"""Test that `onyo set --rename --keys KEY=VALUE <asset>` can
     successfully change the names of assets, when KEY is
     type, make, model or/and serial number. Test also, that
     faux serials can be set and name fields are recognized
@@ -387,7 +387,7 @@ def test_set_update_name_fields(repo: OnyoRepo,
 
 @pytest.mark.repo_contents(*assets)
 def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
-    """Test that `onyo set --rename serial=faux <asset>`
+    r"""Test that `onyo set --rename serial=faux <asset>`
     can successfully update many assets with new faux
     serial numbers in one call.
     """
@@ -426,7 +426,7 @@ def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
 def test_duplicate_keys(repo: OnyoRepo,
                         asset: str,
                         set_values: list[str]) -> None:
-    """Test that `onyo set` fails, if the same key is given multiple times."""
+    r"""Test that `onyo set` fails, if the same key is given multiple times."""
 
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys',
                           *set_values, 'dup_key=1', 'dup_key=2', '--asset', asset],

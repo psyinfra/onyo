@@ -15,7 +15,7 @@ assets = ['laptop_apple_macbookpro.0',
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
 def test_mv_interactive_missing_y(repo: OnyoRepo) -> None:
-    """Default mode is interactive. It requires a "y" to approve."""
+    r"""Default mode is interactive. It requires a "y" to approve."""
     ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'],
                          capture_output=True, text=True)
     assert ret.returncode == 1
@@ -29,7 +29,7 @@ def test_mv_interactive_missing_y(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
 def test_mv_errors_non_existing_destination(repo: OnyoRepo) -> None:
-    """Moving an existing asset or directory into a non-existing destination must error."""
+    r"""Moving an existing asset or directory into a non-existing destination must error."""
     # Verify error for asset:
     ret = subprocess.run(
         ['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', 'non/existing/directory'],
@@ -55,7 +55,7 @@ def test_mv_errors_non_existing_destination(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
 def test_mv_interactive_abort(repo: OnyoRepo) -> None:
-    """Default mode is interactive. Provide the "n" to abort."""
+    r"""Default mode is interactive. Provide the "n" to abort."""
     ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'],
                          input='n', capture_output=True, text=True)
     assert ret.returncode == 0
@@ -69,7 +69,7 @@ def test_mv_interactive_abort(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files('subdir/laptop_apple_macbook.abc123')
 def test_mv_interactive(repo: OnyoRepo) -> None:
-    """Default mode is interactive. Provide the "y" to approve."""
+    r"""Default mode is interactive. Provide the "y" to approve."""
     ret = subprocess.run(['onyo', 'mv', 'subdir/laptop_apple_macbook.abc123', './'],
                          input='y', capture_output=True, text=True)
     assert ret.returncode == 0
@@ -85,7 +85,7 @@ def test_mv_interactive(repo: OnyoRepo) -> None:
 @pytest.mark.repo_dirs("destination/")
 @pytest.mark.parametrize('asset', assets)
 def test_mv_message_flag(repo: OnyoRepo, asset: str) -> None:
-    """Test that `onyo mv --message msg` overwrites the default commit message with one specified by
+    r"""Test that `onyo mv --message msg` overwrites the default commit message with one specified by
     the user containing different special characters.
     """
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"

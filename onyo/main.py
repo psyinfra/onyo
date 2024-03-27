@@ -47,7 +47,7 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
 
 
 def prepare_rst_for_rich(text: str) -> str:
-    """
+    r"""
     This is a very naive approach to cleanup docstrings and help text in
     preparation to print to the terminal.
 
@@ -57,10 +57,10 @@ def prepare_rst_for_rich(text: str) -> str:
     text = textwrap.dedent(text).strip()
 
     # stylize arg descriptors (ALL CAPS ARGS)
-    text = re.sub('\*\*([A-Z\-]+)\*\*', r'[dark_cyan]\1[/dark_cyan]', text)
+    text = re.sub(r'\*\*([A-Z\-]+)\*\*', r'[dark_cyan]\1[/dark_cyan]', text)
 
     # stylize ** (bold)
-    text = re.sub('\*\*([^*]+)\*\*', r'[bold]\1[/bold]', text)
+    text = re.sub(r'\*\*([^*]+)\*\*', r'[bold]\1[/bold]', text)
 
     # stylize ``` (code blocks)
     text = re.sub('```([^`]+)```', r'[underline]\1[/underline]', text)
@@ -75,14 +75,15 @@ def prepare_rst_for_rich(text: str) -> str:
     # make bullet points prettier
     text = text.replace(' * ', ' • ')
 
-    # remove escaping
-    text = text.replace('\\', '')
+    # remove space-escaping
+    # (rST oddity that ``ASSET``s is illegal, but ``ASSET``\ s -> ASSETs)
+    text = text.replace('\\ ', '')
 
     return text
 
 
 def build_parser(parser, args: dict) -> None:
-    """
+    r"""
     Add arguments to a parser.
     """
     for cmd in args:
@@ -298,7 +299,7 @@ def setup_parser() -> ArgumentParser:
 
 
 def get_subcmd_index(arglist, start: int = 1) -> int | None:
-    """
+    r"""
     Get the index of the subcommand from a provided list of arguments (usually sys.argv).
 
     Returns the index on success, and None in failure.

@@ -15,7 +15,7 @@ from onyo.lib.onyo import OnyoRepo
 
 
 def params(d: dict) -> MarkDecorator:
-    """
+    r"""
     Parameterizes a dictionary of the form:
     {
         "<ids>": {"variant": <variable>},
@@ -116,7 +116,7 @@ def onyorepo(gitrepo, request, monkeypatch) -> Generator[AnnotatedOnyoRepo, None
 
 @pytest.fixture(scope='function')
 def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None]:
-    """
+    r"""
     This fixture:
     - creates a new repository in a temporary directory
     - `cd`s into the repository
@@ -202,7 +202,7 @@ def inventory(repo) -> Generator:
 
 @pytest.fixture(scope="function", autouse=True)
 def clean_env(request) -> None:
-    """
+    r"""
     Ensure that $EDITOR is not inherited from the environment or other tests.
     """
     try:
@@ -240,7 +240,7 @@ def helpers() -> Type[Helpers]:
 
 @pytest.fixture(scope='function', autouse=True)
 def set_ui(request) -> None:
-    """Set up onyo.lib.ui according to a dict provided by the 'ui' marker"""
+    r"""Set up onyo.lib.ui according to a dict provided by the 'ui' marker"""
     from onyo.lib.ui import ui
     m = request.node.get_closest_marker('ui')
     if m:

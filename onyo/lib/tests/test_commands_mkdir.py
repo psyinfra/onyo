@@ -8,7 +8,7 @@ from ..exceptions import NoopError
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_errors(inventory: Inventory) -> None:
-    """`onyo_mkdir` must raise the correct error in different illegal or impossible calls."""
+    r"""`onyo_mkdir` must raise the correct error in different illegal or impossible calls."""
     dir_path = inventory.root / 'empty'
 
     # mkdir on existing directory path
@@ -73,7 +73,7 @@ def test_onyo_mkdir_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
-    """`onyo_mkdir` must raise the correct error and is not allowed to create/commit anything, if
+    r"""`onyo_mkdir` must raise the correct error and is not allowed to create/commit anything, if
     one of the specified paths is not valid.
     """
     dir_path_new = inventory.root / 'new_dir'
@@ -99,7 +99,7 @@ def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_simple(inventory: Inventory) -> None:
-    """Create a single new directory."""
+    r"""Create a single new directory."""
     dir_path_new = inventory.root / 'new_dir'
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -120,7 +120,7 @@ def test_onyo_mkdir_simple(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_multiple(inventory: Inventory) -> None:
-    """Create multiple new directories in a single call and with one commit."""
+    r"""Create multiple new directories in a single call and with one commit."""
     dir_path_new1 = inventory.root / 'new_dir1'
     dir_path_new2 = inventory.root / 'new_dir2'
     dir_path_new3 = inventory.root / 'new_dir3'
@@ -155,7 +155,7 @@ def test_onyo_mkdir_multiple(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_create_multiple_subdirectories(inventory: Inventory) -> None:
-    """Create multiple not-yet-existing subdirectories at once."""
+    r"""Create multiple not-yet-existing subdirectories at once."""
     dir_x = inventory.root / 'x'
     dir_y = inventory.root / 'x' / 'y'
     dir_z = inventory.root / 'x' / 'y' / 'z'
@@ -189,7 +189,7 @@ def test_onyo_mkdir_create_multiple_subdirectories(inventory: Inventory) -> None
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_allows_duplicates(inventory: Inventory) -> None:
-    """Calling `onyo_mkdir()` with a list containing the same path multiple times does not error."""
+    r"""Calling `onyo_mkdir()` with a list containing the same path multiple times does not error."""
     dir_path_new = inventory.root / 'new_dir'
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -210,7 +210,7 @@ def test_onyo_mkdir_allows_duplicates(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_asset(inventory: Inventory) -> None:
-    """`onyo_mkdir` turns an existing asset into an asset dir."""
+    r"""`onyo_mkdir` turns an existing asset into an asset dir."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 

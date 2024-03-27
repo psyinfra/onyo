@@ -18,7 +18,7 @@ args_new = {
         args=('-c', '--clone'),
         metavar='CLONE',
         required=False,
-        help="""
+        help=r"""
             Path of an asset to clone.
 
             This cannot be used with the ``--template`` flag nor the
@@ -30,7 +30,7 @@ args_new = {
         args=('-t', '--template'),
         metavar='TEMPLATE',
         required=False,
-        help="""
+        help=r"""
             Name of a template to populate the contents of new assets.
 
             This cannot be used with the ``--clone`` flag nor the ``template``
@@ -42,7 +42,7 @@ args_new = {
         args=('-tsv', '--tsv'),
         metavar='TSV',
         required=False,
-        help="""
+        help=r"""
             Path to a **TSV** file describing new assets.
 
             The header declares the key names to be populated. The values to
@@ -56,7 +56,7 @@ args_new = {
         action=StoreKeyValuePairs,
         metavar="KEY",
         nargs='+',
-        help="""
+        help=r"""
             **KEY-VALUE** pairs to populate content of new assets.
 
             Each **KEY** can be defined either 1 or N times (where N is the number
@@ -81,7 +81,7 @@ args_new = {
         required=False,
         default=False,
         action='store_true',
-        help="""
+        help=r"""
             Open new assets in an editor.
         """
     ),
@@ -89,7 +89,7 @@ args_new = {
     'directory': dict(
         args=('-d', '--directory'),
         metavar='DIRECTORY',
-        help="""
+        help=r"""
             Directory to create new assets in.
 
             This cannot be used with the ``directory`` Reserved Key.
@@ -101,8 +101,8 @@ args_new = {
 
 
 def new(args: argparse.Namespace) -> None:
-    """
-    Create new **ASSET**\s and populate with **KEY-VALUE** pairs. Destination
+    r"""
+    Create new **ASSET**\ s and populate with **KEY-VALUE** pairs. Destination
     directories are created if they are missing.
 
     Asset contents are populated in a waterfall pattern and can overwrite
@@ -113,7 +113,7 @@ def new(args: argparse.Namespace) -> None:
       3) ``--keys``
       4) ``--edit`` (i.e. manual user input)
 
-    The **KEY**\s that comprise the asset filename are required (configured by
+    The **KEY**\ s that comprise the asset filename are required (configured by
     ``onyo.assets.filename``).
 
     The contents of all new assets are checked for validity before committing.

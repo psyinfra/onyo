@@ -27,7 +27,7 @@ assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directo
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 def test_history_noninteractive(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that the default `onyo history -I ASSET` command runs and print to
     std.out, but not std.err.
     """
@@ -43,7 +43,7 @@ def test_history_noninteractive(repo: OnyoRepo, asset: str) -> None:
 @pytest.mark.parametrize('asset', ['does_not_exist.test',
                                    'subdir/does_not_exist.test'])
 def test_history_noninteractive_not_exist(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that `onyo history -I ASSET` when called on non-existing assets does
     correctly print into ret.stderr.
     """
@@ -62,7 +62,7 @@ def test_history_noninteractive_not_exist(repo: OnyoRepo, asset: str) -> None:
                           ['does_not_exist.test', 'file_does_exist.test']]
                          )
 def test_history_noninteractive_too_many_args(repo: OnyoRepo, variant: list[str]) -> None:
-    """
+    r"""
     Test that `onyo history -I` does not allow multiple input arguments.
     """
     ret = subprocess.run(['onyo', 'history', '-I', *variant],
@@ -75,7 +75,7 @@ def test_history_noninteractive_too_many_args(repo: OnyoRepo, variant: list[str]
 
 @pytest.mark.repo_files(assets[0])
 def test_history_interactive_fallback(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test `onyo history` does work without the `-I` flag.
 
     Note that the interactive mode cannot be tested directly, as onyo detects
@@ -91,7 +91,7 @@ def test_history_interactive_fallback(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files(assets[0])
 def test_history_config_unset(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that `onyo history` errors when no tool is configured.
     """
     # unset config for history tool
@@ -113,7 +113,7 @@ def test_history_config_unset(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files(assets[0])
 def test_history_config_invalid(repo: OnyoRepo) -> None:
-    """
+    r"""
     Test that `onyo history -I` does error correctly when the history-tool does
     not exist.
     """
@@ -134,7 +134,7 @@ def test_history_config_invalid(repo: OnyoRepo) -> None:
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 def test_history_fake_noninteractive_stdout(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that the history tool can be reconfigured, so that `onyo history` can
     run commands different from the default options.
     """
@@ -154,7 +154,7 @@ def test_history_fake_noninteractive_stdout(repo: OnyoRepo, asset: str) -> None:
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 def test_history_fake_noninteractive_stderr(repo: OnyoRepo, asset: str) -> None:
-    """
+    r"""
     Test that the history tool can be so reconfigured, that it prints into
     stderr instead of stdout.
     """
@@ -179,7 +179,7 @@ def test_history_fake_noninteractive_stderr(repo: OnyoRepo, asset: str) -> None:
                            'retval': 129}
                           ])
 def test_history_fake_noninteractive_bubble_exit_code(repo: OnyoRepo, variant: dict) -> None:
-    """
+    r"""
     Test that `onyo history` does bubble up the different exit codes that the
     tools configured return.
     """

@@ -115,7 +115,7 @@ OPERATIONS_MAPPING: dict = {'new_directories': InventoryOperator(executor=exec_n
 #       like removing something that is to be created. -> reset() or commit()
 # TODO: clear_cache from within commit? What about operations?
 class Inventory(object):
-    """"""
+    r""""""
 
     def __init__(self, repo: OnyoRepo) -> None:
         self.repo: OnyoRepo = repo
@@ -124,15 +124,15 @@ class Inventory(object):
 
     @property
     def root(self):
-        """Path to root inventory directory"""
+        r"""Path to root inventory directory"""
         return self.repo.git.root
 
     def reset(self) -> None:
-        """throw away pending operations"""
+        r"""throw away pending operations"""
         self.operations = []
 
     def commit(self, message: str) -> None:
-        """Execute and git-commit pending operations"""
+        r"""Execute and git-commit pending operations"""
         # get user message + generate appendix from operations
         # does order matter for execution? Prob.
         # ^  Nope. Fail on conflicts.
@@ -170,12 +170,12 @@ class Inventory(object):
             yield from operation.diff()
 
     def operations_pending(self) -> bool:
-        """Returns whether there's something to commit"""
+        r"""Returns whether there's something to commit"""
         # Note: Seems superfluous now (operations is a list rather than dict of lists)
         return bool(self.operations)
 
     def _get_pending_asset_names(self) -> list[str]:
-        """List of asset names that are targets of pending operations
+        r"""List of asset names that are targets of pending operations
 
         This is extracting paths that would exist if the currently
         pending operations were executed, in order to provide the
@@ -201,7 +201,7 @@ class Inventory(object):
         return names
 
     def _get_pending_dirs(self) -> list[Path]:
-        """Gets inventory dirs that would come into existence due to pending operations.
+        r"""Gets inventory dirs that would come into existence due to pending operations.
 
         Extracts paths to inventory dirs, that are the anticipated results of pending
         moves and creations.
@@ -226,7 +226,7 @@ class Inventory(object):
 
     def _get_pending_removals(self,
                               mode: Literal['assets', 'dirs', 'all'] = 'all') -> list[Path]:
-        """Get paths that are removed by pending operations.
+        r"""Get paths that are removed by pending operations.
 
         Parameters
         ----------
@@ -262,7 +262,7 @@ class Inventory(object):
     #
 
     def _add_operation(self, name: str, operands: tuple) -> InventoryOperation:
-        """Internal convenience helper to register an operation"""
+        r"""Internal convenience helper to register an operation"""
         op = InventoryOperation(operator=OPERATIONS_MAPPING[name],
                                 operands=operands,
                                 repo=self.repo)
@@ -528,7 +528,7 @@ class Inventory(object):
     def get_assets(self,
                    paths: list[Path] | None = None,
                    depth: int = 0) -> Generator[dict, None, None]:
-        """Yield all assets under `paths` up to `depth` directory levels.
+        r"""Yield all assets under `paths` up to `depth` directory levels.
 
         Generator, because it needs to read file content. This allows to act upon
         results while they are coming in.
@@ -556,7 +556,7 @@ class Inventory(object):
                             paths: list[Path] | None = None,
                             depth: int | None = 0,
                             match: list[Callable[[dict], bool]] | None = None) -> Generator | filter:
-        """Get assets matching paths and filters.
+        r"""Get assets matching paths and filters.
 
         Convenience to run the builtin `filter` on all assets retrieved by
         `self.get(paths, depth)` for each callable in `filters`, thus
@@ -590,7 +590,7 @@ class Inventory(object):
         return assets
 
     def asset_paths_available(self, assets: Asset | list[Asset]) -> None:
-        """Test whether path(s) used by `assets` are available in the inventory.
+        r"""Test whether path(s) used by `assets` are available in the inventory.
 
         Availability not only requires the path to not yet exist, but also the filename to be unique.
 
@@ -634,7 +634,7 @@ class Inventory(object):
     def get_faux_serials(self,
                          length: int = 6,
                          num: int = 1) -> set[str]:
-        """
+        r"""
         Generate a unique faux serial and verify that it is not used by any
         other asset in the repository. The length of the faux serial must be 4
         or greater.
@@ -665,7 +665,7 @@ class Inventory(object):
         return faux_serials
 
     def _required_key_empty(self, asset: dict) -> bool:
-        """Whether `asset` has an empty value for a required key.
+        r"""Whether `asset` has an empty value for a required key.
 
         Validation helper.
 

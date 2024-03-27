@@ -8,7 +8,7 @@ from ..commands import onyo_rm
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_errors(inventory: Inventory) -> None:
-    """`onyo_rm` must raise the correct error in different illegal or impossible calls."""
+    r"""`onyo_rm` must raise the correct error in different illegal or impossible calls."""
     # delete non-existing asset
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
@@ -74,7 +74,7 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
-    """`onyo_rm` must raise the correct error and is not allowed to delete anything if one of
+    r"""`onyo_rm` must raise the correct error and is not allowed to delete anything if one of
     the paths does not exist.
     """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -99,7 +99,7 @@ def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 @pytest.mark.repo_dirs("a/b/c", "a/b/c/c")
 def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
-    """`onyo rm` should not fail when the same path is implied for removal multiple times."""
+    r"""`onyo rm` should not fail when the same path is implied for removal multiple times."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -133,7 +133,7 @@ def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_move_single(inventory: Inventory) -> None:
-    """Delete a single asset path."""
+    r"""Delete a single asset path."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -152,7 +152,7 @@ def test_onyo_rm_move_single(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_delete_directory(inventory: Inventory) -> None:
-    """Delete a single directory path."""
+    r"""Delete a single directory path."""
     dir_path = inventory.root / 'empty'
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -171,7 +171,7 @@ def test_onyo_rm_delete_directory(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_list(inventory: Inventory) -> None:
-    """Delete a directory and an asset together as a list in one commit."""
+    r"""Delete a directory and an asset together as a list in one commit."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -194,7 +194,7 @@ def test_onyo_rm_list(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
-    """Delete a directory with contents."""
+    r"""Delete a directory with contents."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     nested = inventory.root / "somewhere" / "nested"
     old_hexsha = inventory.repo.git.get_hexsha()

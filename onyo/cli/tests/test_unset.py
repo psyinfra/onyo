@@ -9,7 +9,7 @@ from onyo.lib.onyo import OnyoRepo
 
 def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
-    """Convert content dictionary to a plain-text string."""
+    r"""Convert content dictionary to a plain-text string."""
     for file, raw_contents in raw_assets:
         contents = ''
         for k, v in raw_contents.items():
@@ -111,7 +111,7 @@ asset_contents = [
 def test_unset(repo: OnyoRepo,
                asset: str,
                key: str) -> None:
-    """Test that `onyo unset KEY <asset>` removes keys from of assets."""
+    r"""Test that `onyo unset KEY <asset>` removes keys from of assets."""
     ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--asset', asset],
                          capture_output=True, text=True)
 
@@ -133,7 +133,7 @@ def test_unset(repo: OnyoRepo,
 def test_unset_interactive(repo: OnyoRepo,
                            asset: str,
                            key: str) -> None:
-    """Test that `onyo unset KEY <asset>` removes keys from of assets."""
+    r"""Test that `onyo unset KEY <asset>` removes keys from of assets."""
     ret = subprocess.run(['onyo', 'unset', '--keys', key, '--asset', asset], input='y',
                          capture_output=True, text=True)
 
@@ -154,7 +154,7 @@ def test_unset_interactive(repo: OnyoRepo,
 @pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" not in t[1]])
 def test_unset_key_does_not_exist(repo: OnyoRepo,
                                   asset: str) -> None:
-    """Test that `onyo unset --keys KEY --asset ASSET` does not error when one of the KEYs does not
+    r"""Test that `onyo unset --keys KEY --asset ASSET` does not error when one of the KEYs does not
     exist."""
     no_key = "non_existing"
 
@@ -173,7 +173,7 @@ def test_unset_key_does_not_exist(repo: OnyoRepo,
 @pytest.mark.parametrize('key', ['num'])
 def test_unset_multiple_assets(repo: OnyoRepo,
                                key: str) -> None:
-    """Test that `onyo unset --keys KEY --asset ASSET [ASSET2 ...]` removes keys from of assets."""
+    r"""Test that `onyo unset --keys KEY --asset ASSET [ASSET2 ...]` removes keys from of assets."""
     assets = repo.get_asset_paths()
 
     # test unsetting keys for multiple assets:
@@ -202,7 +202,7 @@ def test_unset_multiple_assets(repo: OnyoRepo,
 def test_unset_error_non_existing_assets(repo: OnyoRepo,
                                          no_assets: list[str],
                                          key: str) -> None:
-    """Test that `onyo unset --keys KEY --asset ASSET` errors correctly for non-existing assets."""
+    r"""Test that `onyo unset --keys KEY --asset ASSET` errors correctly for non-existing assets."""
     ret = subprocess.run(['onyo', 'unset', '--keys', key, '--asset', *no_assets],
                          capture_output=True, text=True)
 
@@ -217,7 +217,7 @@ def test_unset_error_non_existing_assets(repo: OnyoRepo,
 @pytest.mark.parametrize('key', ['num'])
 def test_unset_without_path(repo: OnyoRepo,
                             key: str) -> None:
-    """Test that `onyo unset --keys KEY` without a given path selects all assets recursively."""
+    r"""Test that `onyo unset --keys KEY` without a given path selects all assets recursively."""
     ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key],
                          capture_output=True, text=True)
 
@@ -233,7 +233,7 @@ def test_unset_without_path(repo: OnyoRepo,
 def test_unset_discard_changes_single_assets(repo: OnyoRepo,
                                              asset: str,
                                              key: str) -> None:
-    """Test that `onyo unset` discards changes for assets successfully."""
+    r"""Test that `onyo unset` discards changes for assets successfully."""
     # do an `onyo unset`, but answer "n" to discard the changes done by unset
     ret = subprocess.run(['onyo', 'unset', '--keys', key, '--asset', asset], input='n',
                          capture_output=True, text=True)
@@ -254,7 +254,7 @@ def test_unset_discard_changes_single_assets(repo: OnyoRepo,
 def test_unset_message_flag(repo: OnyoRepo,
                             asset: str,
                             key: str) -> None:
-    """Test that `onyo unset --message msg` overwrites the default commit message with one specified
+    r"""Test that `onyo unset --message msg` overwrites the default commit message with one specified
     by the user containing different special characters."""
     msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
     ret = subprocess.run(['onyo', '--yes', 'unset', '--message', msg, '--keys', key,
@@ -279,7 +279,7 @@ def test_unset_message_flag(repo: OnyoRepo,
     ["num", "type"]])
 def test_unset_error_unset_name_fields(repo: OnyoRepo,
                                        name_field: list[str]) -> None:
-    """Test that `onyo unset KEY <asset>` throws the correct error without printing the usual
+    r"""Test that `onyo unset KEY <asset>` throws the correct error without printing the usual
     information (e.g. diff output), when called with a KEY that is a name field (type, make, model
     or/and serial number), not a content field.
     """

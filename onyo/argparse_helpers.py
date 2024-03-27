@@ -1,15 +1,30 @@
+from __future__ import annotations
+
 import argparse
 import os
+from typing import TYPE_CHECKING
 
-from typing import Sequence
+if TYPE_CHECKING:
+    from typing import Sequence
 
 
 class StoreKeyValuePairs(argparse.Action):
+    r"""Store a list of dictionaries of key-value pairs.
+    """
+
     def __init__(self,
                  option_strings: Sequence[str],
                  dest: str,
                  nargs: int | str | None = None,
                  **kwargs) -> None:
+        r"""
+        Parameters
+        ----------
+        option_strings
+        dest
+        nargs
+        **kwargs
+        """
         self._nargs = nargs
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
@@ -18,26 +33,39 @@ class StoreKeyValuePairs(argparse.Action):
                  namespace: argparse.Namespace,
                  key_values: list[str],
                  option_string: str | None = None) -> None:
-        """Turn a list of 'key=value' pairs into a list of dictionaries
+        r"""Turn a list of 'KEY=VALUE' pairs into a list of dictionaries.
 
-        Every key appearing multiple times in `key=value` is applied to a new dictionary every time.
-        All keys appearing multiple times, must appear the same number of times (and thereby define the number of dicts
-        to be created). In case of different counts: raise.
-        Every key appearing once in `key_values` will be applied to all dictionaries.
+        Each KEY can be defined either 1 or N times (where N is the number of
+        dictionaries to be created).
+
+        A KEY that is declared once will apply to all dictionaries.
+
+        All KEYs appearing N times must appear the same number of times. If not,
+        a message will print to standard error and the program will exit with
+        status code 2.
+
+        Parameters
+        ----------
+        parser
+        namespace
+        key_values
+            List of strings containing key-value pairs.
+        option_string
         """
 
         for kv in key_values:
             if "=" not in kv:
                 parser.error(f"Invalid argument '{kv}'. Expected key-value pairs '<key>=<value>'.")
+
         pairs = [p.split('=', maxsplit=1) for p in key_values]
-        register_dict = {k: [] for k, v in pairs}
-        [register_dict[k].append(v) for k, v in pairs]
-        number_of_dicts = max(len(v) for v in register_dict.values())
-        invalid_keys = [(k, len(v)) for k, v in register_dict.items() if 1 < len(v) < number_of_dicts]
-        if invalid_keys:
-            parser.error(f"All keys given multiple times must be provided the same number of times."
-                         f"Max. times a key was given: {number_of_dicts}.{os.linesep}"
-                         f"But also got: {', '.join(['{} {} times'.format(k, c) for k, c in invalid_keys])}")
+        key_lists = {k: [] for k, v in pairs}
+        [key_lists[k].append(v) for k, v in pairs]
+
+        key_counts = {k: len(v) for k, v in key_lists.items()}
+        key_max_count = max(key_counts.values())
+        if any([True for k, c in key_counts.items() if 1 < c < key_max_count]):
+            parser.error(f"All keys given multiple times must be given the same number of times:{os.linesep}"
+                         f"{f'{os.linesep}'.join(['{}: {}'.format(k, c) for k, c in key_counts.items() if 1 < c])}")
 
         def cvt(v: str) -> int | float | str | bool:
             if v.lower() == "true":
@@ -54,34 +82,10 @@ class StoreKeyValuePairs(argparse.Action):
             return r
 
         results = []
-        for i in range(number_of_dicts):
+        for i in range(key_max_count):
             d = dict()
-            for k, values in register_dict.items():
+            for k, values in key_lists.items():
                 v = values[0] if len(values) == 1 else values[i]
                 d[k] = cvt(v)
             results.append(d)
         setattr(namespace, self.dest, results)
-
-
-def parse_key_values(string):
-    """
-    Convert a string of key-value pairs to a dictionary.
-
-    The shell interprets the key-value string before it is passed to argparse.
-    As a result, no quotes are passed through, but the chunking follows what the
-    quoting declared.
-
-    Because of the lack of quoting, this function cannot handle a comma in
-    either the key or value.
-    """
-    results = {k: v for k, v in (pair.split('=') for pair in string.split(','))}
-    for k, v in results.items():
-        try:
-            results.update({k: int(v)})
-        except ValueError:
-            try:
-                results.update({k: float(v)})
-            except ValueError:
-                pass
-
-    return results

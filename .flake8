@@ -1,6 +1,8 @@
 [flake8]
-ignore = E501, W504, W605
-per-file-ignores =
-    tests/*test_*.py:E302
+ignore =
+    # E501: Line too long (82 > 79 characters)
+    E501,
+    # W504: Line break occurred after a binary operator
+    W504,
 exclude =
     build/

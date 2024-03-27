@@ -20,8 +20,8 @@ args_set = {
         required=False,
         default=False,
         action='store_true',
-        help="""
-            Allow setting **KEY**\s that are part of the asset name.
+        help=r"""
+            Allow setting **KEY**\ s that are part of the asset name.
             (see the ``onyo.assets.filename`` configuration option)
         """
     ),
@@ -32,7 +32,7 @@ args_set = {
         action=StoreKeyValuePairs,
         metavar="KEY",
         nargs='+',
-        help="""
+        help=r"""
             **KEY-VALUE** pairs to set in assets. Multiple pairs can be given
             (e.g. ``key1=value1 key2=value2 key3=value3``).
 
@@ -48,8 +48,8 @@ args_set = {
         required=True,
         metavar='ASSET',
         nargs='+',
-        help="""
-            Assets to set **KEY-VALUE**\s in.
+        help=r"""
+            Assets to set **KEY-VALUE**\ s in.
         """
     ),
 
@@ -58,13 +58,13 @@ args_set = {
 
 
 def set(args: argparse.Namespace) -> None:
-    """
-    Set **KEY**\s to **VALUE**\s for assets.
+    r"""
+    Set **KEY**\ s to **VALUE**\ s for assets.
 
     **KEY** names can be any valid YAML key-name. If a key is not present in an
     asset, it is added and set appropriately.
 
-    Setting **KEY**\s that are used in the asset name requires the ``--rename``
+    Setting **KEY**\ s that are used in the asset name requires the ``--rename``
     flag.
 
     In addition to keys in asset contents, some PSEUDO-KEYS can be set:

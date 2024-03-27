@@ -15,15 +15,15 @@ args_mv = {
     'source': dict(
         metavar='SOURCE',
         nargs='+',
-        help="""
+        help=r"""
             Assets and/or directories to move into **DEST**.
         """
     ),
 
     'destination': dict(
         metavar='DEST',
-        help="""
-            Destination to move **SOURCE**\s into.
+        help=r"""
+            Destination to move **SOURCE**\ s into.
         """
     ),
 
@@ -32,12 +32,12 @@ args_mv = {
 
 
 def mv(args: argparse.Namespace) -> None:
-    """
-    Move **SOURCE**\s (assets or directories) into the **DEST** directory, or
+    r"""
+    Move **SOURCE**\ s (assets or directories) into the **DEST** directory, or
     rename a **SOURCE** directory to **DEST**.
 
     If **DEST** is an asset file, it will be converted into an Asset Directory and
-    then the **SOURCE**\s will be moved into it.
+    then the **SOURCE**\ s will be moved into it.
 
     Assets cannot be renamed using ``onyo mv``. Their names are generated from
     keys in their contents. To rename a file, use ``onyo set`` or ``onyo edit``.

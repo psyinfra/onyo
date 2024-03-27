@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def fsck(args: argparse.Namespace) -> None:
-    """
+    r"""
     Run a suite of integrity checks on the Onyo repository and its contents.
 
     By default, the following tests are performed:

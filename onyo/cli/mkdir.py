@@ -15,7 +15,7 @@ args_mkdir = {
     'directory': dict(
         metavar='DIR',
         nargs='+',
-        help="""
+        help=r"""
             Directories to create; or assets to convert into an Asset Directory.
         """
     ),
@@ -25,8 +25,8 @@ args_mkdir = {
 
 
 def mkdir(args: argparse.Namespace) -> None:
-    """
-    Create **DIRECTORY**\s or convert Asset Files into an Asset Directory.
+    r"""
+    Create **DIRECTORY**\ s or convert Asset Files into an Asset Directory.
 
     Intermediate directories are created as needed (i.e. parent and child
     directories can be created in one call).
