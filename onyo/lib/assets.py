@@ -44,8 +44,3 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
         return False
 
     return True
-
-
-# The idea of an Asset class is currently abandoned. If not re-introduced, can go entirely.
-# It would, however, be a dict-like in any case (prob. derived from UserDict, though)
-Asset = dict

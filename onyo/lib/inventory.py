@@ -10,7 +10,6 @@ from typing import (
     Literal,
 )
 
-from onyo.lib.assets import Asset
 from onyo.lib.differs import (
     differ_new_assets,
     differ_new_directories,
@@ -269,7 +268,7 @@ class Inventory(object):
         self.operations.append(op)
         return op
 
-    def add_asset(self, asset: Asset) -> list[InventoryOperation]:
+    def add_asset(self, asset: dict) -> list[InventoryOperation]:
         # TODO: what if I call this with a modified (possibly moved) asset?
         # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or rest")
         operations = []
@@ -337,7 +336,7 @@ class Inventory(object):
         operations.extend([self._add_operation('new_directories', (p,)) for p in path.parents if not p.exists()])
         return operations
 
-    def remove_asset(self, asset: Asset | Path) -> list[InventoryOperation]:
+    def remove_asset(self, asset: dict | Path) -> list[InventoryOperation]:
         path = asset if isinstance(asset, Path) else asset.get('path')
         if path in self._get_pending_removals(mode='assets'):
             ui.log_debug(f"{path} already queued for removal.")
@@ -347,8 +346,8 @@ class Inventory(object):
             raise NotAnAssetError(f"No such asset: {path}")
         return [self._add_operation('remove_assets', (asset,))]
 
-    def move_asset(self, src: Path | Asset, dst: Path) -> list[InventoryOperation]:
-        if isinstance(src, Asset):
+    def move_asset(self, src: Path | dict, dst: Path) -> list[InventoryOperation]:
+        if isinstance(src, dict):
             src = Path(src.get('path'))
         if not self.repo.is_asset_path(src):
             raise NotAnAssetError(f"No such asset: {src}.")
@@ -362,13 +361,13 @@ class Inventory(object):
 
         return [self._add_operation('move_assets', (src, dst))]
 
-    def rename_asset(self, asset: Asset | Path, name: str | None = None) -> list[InventoryOperation]:
+    def rename_asset(self, asset: dict | Path, name: str | None = None) -> list[InventoryOperation]:
         # ??? Do we need that? On the command level it's only accessible via modify_asset.
         # But: A config change is sufficient to make it not actually an asset modification.
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
         #       separate operation already.
 
-        path = Path(asset.get('path')) if isinstance(asset, Asset) else asset
+        path = Path(asset.get('path')) if isinstance(asset, dict) else asset
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
 
@@ -378,7 +377,7 @@ class Inventory(object):
         #             registered modify operations. It's easier to not force compliance here, but simply let
         #             modify_asset generate the name and pass it.
         generated_name = self.generate_asset_name(
-            asset if isinstance(asset, Asset)
+            asset if isinstance(asset, dict)
             else self.repo.get_asset_content(path)
         )
         if name and name != generated_name:
@@ -396,9 +395,9 @@ class Inventory(object):
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
         return [self._add_operation('rename_assets', (path, destination))]
 
-    def modify_asset(self, asset: Asset | Path, new_asset: Asset) -> list[InventoryOperation]:
+    def modify_asset(self, asset: dict | Path, new_asset: dict) -> list[InventoryOperation]:
         operations = []
-        path = Path(asset.get('path')) if isinstance(asset, Asset) else asset
+        path = Path(asset.get('path')) if isinstance(asset, dict) else asset
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
         asset = self.repo.get_asset_content(path) if isinstance(asset, Path) else asset
@@ -548,7 +547,7 @@ class Inventory(object):
         """
         return (self.get_asset(p) for p in self.repo.get_asset_paths(subtrees=paths, depth=depth))
 
-    def get_asset_from_template(self, template: str) -> Asset:
+    def get_asset_from_template(self, template: str) -> dict:
         # TODO: Possibly join with get_asset (path optional)
         return self.repo.get_template(template)
 
@@ -589,7 +588,7 @@ class Inventory(object):
                 assets = filter(f, assets)
         return assets
 
-    def asset_paths_available(self, assets: Asset | list[Asset]) -> None:
+    def asset_paths_available(self, assets: dict | list[dict]) -> None:
         r"""Test whether path(s) used by `assets` are available in the inventory.
 
         Availability not only requires the path to not yet exist, but also the filename to be unique.
@@ -615,7 +614,7 @@ class Inventory(object):
             if path.name in [p.name for p in self.repo.asset_paths]:
                 raise ValueError(f"Asset name '{path.name}' already exists in inventory.")
 
-    def generate_asset_name(self, asset: Asset) -> str:
+    def generate_asset_name(self, asset: dict) -> str:
 
         config_str = self.repo.get_config("onyo.assets.filename")
         if not config_str:
