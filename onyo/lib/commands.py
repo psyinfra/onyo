@@ -101,7 +101,7 @@ def fsck(repo: OnyoRepo,
     """
 
     from functools import partial
-    from .assets import has_unique_names, validate_yaml
+    from onyo.lib.utils import has_unique_names, validate_yaml
 
     all_tests = {
         # TODO: fsck would probably want to relay or analyze `git-status` output, rather
@@ -158,7 +158,7 @@ def onyo_cat(inventory: Inventory,
         If paths are not valid assets, e.g. because their content is not valid
         YAML format.
     """
-    from .assets import validate_yaml
+    from onyo.lib.utils import validate_yaml
     if not paths:
         raise ValueError("At least one asset path must be specified.")
     non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
