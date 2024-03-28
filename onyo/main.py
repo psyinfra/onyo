@@ -29,7 +29,8 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
     RichHelpFormatter
     """
 
-    def _rich_format_action(self, action: Action) -> Iterator[tuple[Text, Text | None]]:
+    def _rich_format_action(self,
+                            action: Action) -> Iterator[tuple[Text, Text | None]]:
         r"""Remove <COMMANDS> from subcommands section of help.
 
         Parameters
@@ -44,7 +45,9 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
 
         return parts
 
-    def _rich_split_lines(self, text: Text, width: int) -> Lines:
+    def _rich_split_lines(self,
+                          text: Text,
+                          width: int) -> Lines:
         r"""Wrap lines according to width.
 
         Parameters
@@ -59,7 +62,10 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
             lines.extend(line.wrap(self.console, width))
         return lines
 
-    def _rich_fill_text(self, text: Text, width: int, indent: Text) -> Text:
+    def _rich_fill_text(self,
+                        text: Text,
+                        width: int,
+                        indent: Text) -> Text:
         r"""Wrap lines in description text according to width.
 
         Parameters
@@ -74,7 +80,8 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
         lines = self._rich_split_lines(text, width)
         return Text("\n").join(indent + line for line in lines) + "\n"
 
-    def _rich_format_text(self, text: str) -> Text:
+    def _rich_format_text(self,
+                          text: str) -> Text:
         r"""Convert RST docstrings to Rich syntax ready for help text.
 
         Parameters
@@ -126,7 +133,8 @@ def rst_to_rich(text: str) -> str:
     return text
 
 
-def build_parser(parser, args: dict) -> None:
+def build_parser(parser: ArgumentParser,
+                 args: dict) -> None:
     r"""Add options or arguments to an ArgumentParser.
 
     Parameters
@@ -372,7 +380,8 @@ def setup_parser() -> ArgumentParser:
     return parser
 
 
-def get_subcmd_index(arglist: list, start: int = 1) -> int | None:
+def get_subcmd_index(arglist: list,
+                     start: int = 1) -> int | None:
     r"""Get the index of the Onyo subcommand in a list of arguments.
 
     Parameters
