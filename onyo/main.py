@@ -387,9 +387,7 @@ def get_subcmd_index(arglist: list, start: int = 1) -> int | None:
     -------
     >>> subcmd_index = get_subcmd_index(sys.argv)
     """
-    # TODO: alternatively, this could use TabCompletion._argparse_to_dict()
-    # flags which accept an argument
-    flagplus = ['-C', '--onyopath']
+    onyo_flags_with_args = ['-C', '--onyopath']
 
     try:
         # find the first non-flag argument
@@ -399,25 +397,36 @@ def get_subcmd_index(arglist: list, start: int = 1) -> int | None:
         return None
 
     # check if it's the subcommand, or just an argument to a flag
-    if arglist[index - 1] in flagplus:
+    if arglist[index - 1] in onyo_flags_with_args:
         index = get_subcmd_index(arglist, index + 1)
 
     return index
 
 
 def main() -> None:
-    # NOTE: this unfortunately-located-hack is to pass uninterpreted args to
-    # "onyo config".
+    r"""Execute Onyo's CLI.
+    """
+    #
+    # ARGPARSE Hack #1
+    #
+    # This unfortunately-located-hack passes uninterpreted args to "onyo config".
     # nargs=argparse.REMAINDER is supposed to do this, but did not work for our
     # needs, and as of Python 3.8 is soft-deprecated (due to being buggy).
-    # For more information, see https://docs.python.org/3.10/library/argparse.html#arguments-containing
+    # See https://bugs.python.org/issue17050#msg315716 ; https://bugs.python.org/issue9334
     passthrough_subcmds = ['config']
     subcmd_index = get_subcmd_index(sys.argv)
     if subcmd_index and sys.argv[subcmd_index] in passthrough_subcmds:
-        # display the subcmd's --help, and don't pass it through
+        # display the onyo subcmd's --help, and don't pass it through
         if not any(x in sys.argv for x in ['-h', '--help']):
             sys.argv.insert(subcmd_index + 1, '--')
 
+    #
+    # ARGPARSE Hack #2
+    #
+    # This hack makes argparse print the help text for the subcommand when an
+    # unknown argument is encountered. Previously it only printed help for the
+    # top-level command.
+    # See https://bugs.python.org/issue34479
     global subcmds
     # parse the arguments
     parser = setup_parser()
@@ -427,6 +436,9 @@ def main() -> None:
             subcmds._name_parser_map[args.cmd].print_usage(file=sys.stderr)
         parser.error("unrecognized arguments: %s" % " ".join(extras))
 
+    #
+    # Begin normal, non-hack `main` stuff
+    #
     # configure user interface
     ui.set_debug(args.debug)
     ui.set_yes(args.yes)
@@ -449,7 +461,6 @@ def main() -> None:
             sys.exit(1)
         finally:
             os.chdir(old_cwd)
-
     else:
         parser.print_help()
         sys.exit(1)
