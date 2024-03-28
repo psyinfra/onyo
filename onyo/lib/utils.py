@@ -155,19 +155,4 @@ def write_asset_file(path: Path,
     asset
         A dictionary of content to write to the path.
     """
-    content = dict()
-    if path.exists():
-        # For comment roundtrip mode, first read existing file content
-        # to get ruamel.yaml's CommentedMap object and edit this rather
-        # than dumping the incoming dict as is, which would kill
-        # existing comments.
-        content = get_asset_content(path)
-        if content:
-            keys_to_remove = [k for k in content.keys() if k not in asset.keys()]
-            for k in keys_to_remove:
-                del content[k]
-            content.update(asset)
-    if not content:
-        # The file may have existed, but empty.
-        content = asset
-    path.open('w').write(dict_to_asset_yaml(content))
+    path.open('w').write(dict_to_asset_yaml(asset))
