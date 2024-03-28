@@ -22,7 +22,21 @@ if TYPE_CHECKING:
 
 
 class WrappedTextRichHelpFormatter(RichHelpFormatter):
+    r"""Fix the formatting sins of RichHelpFormatter, and convert RST to Rich.
+
+    See Also
+    --------
+    RichHelpFormatter
+    """
+
     def _rich_format_action(self, action: Action) -> Iterator[tuple[Text, Text | None]]:
+        r"""Remove <COMMANDS> from subcommands section of help.
+
+        Parameters
+        ----------
+        action
+            ArgParse Action.
+        """
         parts = super()._rich_format_action(action)
         # remove the superfluous first line (<COMMANDS>) of the subcommands section
         if action.nargs == PARSER:
@@ -31,27 +45,57 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
         return parts
 
     def _rich_split_lines(self, text: Text, width: int) -> Lines:
+        r"""Wrap lines according to width.
+
+        Parameters
+        ----------
+        text
+            Text to wrap.
+        width
+            Max character length to wrap lines at.
+        """
         lines = Lines()
         for line in text.split():
             lines.extend(line.wrap(self.console, width))
         return lines
 
     def _rich_fill_text(self, text: Text, width: int, indent: Text) -> Text:
+        r"""Wrap lines in description text according to width.
+
+        Parameters
+        ----------
+        text
+            Text to wrap.
+        width
+            Max character length to wrap lines at.
+        indent
+            Indentation text to precede lines with.
+        """
         lines = self._rich_split_lines(text, width)
         return Text("\n").join(indent + line for line in lines) + "\n"
 
     def _rich_format_text(self, text: str) -> Text:
-        text = prepare_rst_for_rich(text)
+        r"""Convert RST docstrings to Rich syntax ready for help text.
 
+        Parameters
+        ----------
+        text
+            Text to format.
+        """
+        text = prepare_rst_for_rich(text)
         return super()._rich_format_text(text)
 
 
 def prepare_rst_for_rich(text: str) -> str:
-    r"""
-    This is a very naive approach to cleanup docstrings and help text in
-    preparation to print to the terminal.
+    r"""Convert RST to Rich syntax.
 
-    Some effort is made to stylize RST markup.
+    Naively convert reStructuredText to Rich syntax, de-indent, and apply other
+    cleanups to prepare text to print to the terminal.
+
+    Parameters
+    ----------
+    text
+        reStructuredText to convert.
     """
     # de-indent text
     text = textwrap.dedent(text).strip()
@@ -83,8 +127,35 @@ def prepare_rst_for_rich(text: str) -> str:
 
 
 def build_parser(parser, args: dict) -> None:
-    r"""
-    Add arguments to a parser.
+    r"""Add options or arguments to an ArgumentParser.
+
+    Parameters
+    ----------
+    parser
+        Parser to add arguments to.
+    args
+        Dictionary of option/argument dictionaries containing key-values to pass
+        to ArgumentParser.add_argument(). The key name of the option/argument
+        dictionary is passed as the value to ``dest``.
+
+    See Also
+    --------
+    ArgumentParser.add_argument()
+
+    Example
+    -------
+    An example option/argument dictionary::
+
+        args = {
+            'debug': dict(
+                args=('-d', '--debug'),
+                required=False,
+                default=False,
+                action='store_true',
+                help=r"Enable debug logging."
+            ),
+        }
+        build_parser(parser, args)
     """
     for cmd in args:
         args[cmd]['dest'] = cmd
@@ -100,6 +171,8 @@ subcmds = None
 
 
 def setup_parser() -> ArgumentParser:
+    r"""Setup and return a fully populated ArgumentParser for Onyo and all subcommands.
+    """
     from onyo.onyo_arguments import args_onyo
     from onyo.cli.cat import args_cat
     from onyo.cli.config import args_config
@@ -298,11 +371,20 @@ def setup_parser() -> ArgumentParser:
     return parser
 
 
-def get_subcmd_index(arglist, start: int = 1) -> int | None:
-    r"""
-    Get the index of the subcommand from a provided list of arguments (usually sys.argv).
+def get_subcmd_index(arglist: list, start: int = 1) -> int | None:
+    r"""Get the index of the Onyo subcommand in a list of arguments.
 
-    Returns the index on success, and None in failure.
+    Parameters
+    ----------
+    arglist
+        The list of command line arguments passed to a Python script. Usually
+        ``sys.argv``.
+    start
+        The index to start searching from.
+
+    Example
+    -------
+    >>> subcmd_index = get_subcmd_index(sys.argv)
     """
     # TODO: alternatively, this could use TabCompletion._argparse_to_dict()
     # flags which accept an argument
