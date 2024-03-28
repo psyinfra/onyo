@@ -14,9 +14,17 @@ if TYPE_CHECKING:
 
 
 def deduplicate(sequence: list | None) -> list | None:
-    r"""Get a deduplicated list, while preserving order.
+    r"""Deduplicate a list and preserve its order.
 
-    For ease of use, accepts `None` (and returns it in that case).
+    The first occurrence of a value is kept. All later occurrences are
+    discarded.
+
+    For convenience, also accepts ``None`` and returns ``None`` in that case.
+
+    Parameters
+    ----------
+    sequence
+        List to deduplicate.
     """
     if not sequence:
         return sequence
@@ -25,9 +33,21 @@ def deduplicate(sequence: list | None) -> list | None:
 
 
 def dict_to_yaml(d: Dict[str, float | int | str | Path]) -> str:
-    # ignore reserved keys and pseudo keys, but keep comments for roundtrip,
-    # when `d` is a `ruamel.yaml.comments.CommentedMap`
-    # TODO: This implies "dict_to_asset_yaml" instead?! (Or account for pseudo- and reserved keys outside)
+    r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
+
+    Dictionaries that contain a map of comments (ruamel, etc) will have those
+    comments included in the string.
+
+    See Also
+    --------
+    onyo.lib.consts.RESERVED_KEYS
+
+    Parameters
+    ----------
+    d
+        Dictionary to strip of reserved-keys and convert to a YAML string.
+    """
+    # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
     for k in PSEUDO_KEYS + RESERVED_KEYS:
         if k in content.keys():
@@ -42,6 +62,15 @@ def dict_to_yaml(d: Dict[str, float | int | str | Path]) -> str:
 
 
 def get_asset_content(asset_file: Path) -> dict[str, float | int | str | Path]:
+    r"""Get the contents of an asset as a dictionary.
+
+    If the asset file's contents are not valid YAML, an error is printed.
+
+    Parameters
+    ----------
+    asset_file
+        The Path of the asset file to get the contents of.
+    """
     yaml = YAML(typ='rt', pure=True)
     contents = dict()
     try:
@@ -54,12 +83,23 @@ def get_asset_content(asset_file: Path) -> dict[str, float | int | str | Path]:
 
 
 def get_temp_file() -> Path:
+    r"""Create and return the Path of a new temporary file.
+    """
     from tempfile import mkstemp
     fd, tmp_path = mkstemp(prefix='onyo_', text=True)
     return Path(tmp_path)
 
 
 def has_unique_names(asset_files: Set[Path]) -> bool:
+    r"""Check files for unique file names.
+
+    If duplicates are found, an error is printed listing them.
+
+    Parameters
+    ----------
+    asset_files
+        A set of files to check for the uniqueness of their file names.
+    """
     asset_names = [a.name for a in asset_files]
     duplicates = [a for a in asset_files if asset_names.count(a.name) > 1]
     duplicates.sort(key=lambda x: x.name)
@@ -73,6 +113,15 @@ def has_unique_names(asset_files: Set[Path]) -> bool:
 
 
 def validate_yaml(asset_files: list[Path] | None) -> bool:
+    r"""Check files for valid YAML.
+
+    If files with invalid YAML are detected, an error is printed listing them.
+
+    Parameters
+    ----------
+    asset_files
+        A list of files to check for valid YAML.
+    """
     # Note: Does not (and cannot) account for asset dirs automatically in this form.
     #       Thus needs to be done by caller.
     # Note: assumes absolute paths!
@@ -95,6 +144,17 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
 
 def write_asset_file(path: Path,
                      asset: Dict[str, float | int | str | Path]) -> None:
+    r"""Write content to an asset file.
+
+    All ``RESERVED_KEYS`` will be stripped from the content before writing.
+
+    Parameters
+    ----------
+    path
+        The Path to write content to.
+    asset
+        A dictionary of content to write to the path.
+    """
     content = dict()
     if path.exists():
         # For comment roundtrip mode, first read existing file content
