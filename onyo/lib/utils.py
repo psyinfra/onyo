@@ -32,7 +32,7 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict[str, float | int | str | Path]) -> str:
+def dict_to_asset_yaml(d: Dict[str, bool | float | int | str | Path]) -> str:
     r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
@@ -61,7 +61,7 @@ def dict_to_asset_yaml(d: Dict[str, float | int | str | Path]) -> str:
     return s.getvalue()
 
 
-def get_asset_content(asset_file: Path) -> dict[str, float | int | str | Path]:
+def get_asset_content(asset_file: Path) -> dict[str, bool | float | int | str | Path]:
     r"""Get the contents of an asset as a dictionary.
 
     If the asset file's contents are not valid YAML, an error is printed.
@@ -143,7 +143,7 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
 
 
 def write_asset_file(path: Path,
-                     asset: Dict[str, float | int | str | Path]) -> None:
+                     asset: Dict[str, bool | float | int | str | Path]) -> None:
     r"""Write content to an asset file.
 
     All ``RESERVED_KEYS`` will be stripped from the content before writing.
