@@ -111,12 +111,3 @@ def write_asset_file(path: Path,
         # The file may have existed, but empty.
         content = asset
     path.open('w').write(dict_to_yaml(content))
-
-
-# TODO: Fuse with get_asset_content. Note different error behavior, though.
-def yaml_to_dict(path: Path) -> dict[str, float | int | str | Path]:
-    yaml = YAML(typ='rt', pure=True)
-    content = yaml.load(path)  # raises scanner.ScannerError
-    if content is None:
-        content = dict()
-    return content
