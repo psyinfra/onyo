@@ -10,7 +10,7 @@ from typing import Iterable, List
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 from .git import GitRepo
 from .ui import ui
-from .utils import yaml_to_dict, write_asset_file
+from .utils import get_asset_content, write_asset_file
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
 
@@ -488,7 +488,7 @@ class OnyoRepo(object):
         template_file = self.git.root / self.TEMPLATE_DIR / name
         if not template_file.is_file():
             raise ValueError(f"Template {name} does not exist.")
-        return yaml_to_dict(template_file)
+        return get_asset_content(template_file)
 
     def validate_anchors(self) -> bool:
         r"""Check if all dirs (except those in `.onyo/`) contain an .anchor file.
@@ -580,10 +580,10 @@ class OnyoRepo(object):
             raise ValueError(f"{path} is not an asset path")
         if self.is_inventory_dir(path):
             # It's an asset and an inventory dir -> asset dir
-            a = yaml_to_dict(path / self.ASSET_DIR_FILE_NAME)
+            a = get_asset_content(path / self.ASSET_DIR_FILE_NAME)
             a['is_asset_directory'] = True
         else:
-            a = yaml_to_dict(path)
+            a = get_asset_content(path)
             a['is_asset_directory'] = False
         # Add pseudo-keys:
         a['path'] = path

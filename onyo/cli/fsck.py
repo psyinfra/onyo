@@ -22,9 +22,6 @@ def fsck(args: argparse.Namespace) -> None:
         .anchor file
       * ``asset-unique``: verify that all asset names are unique
       * ``asset-yaml``: verify that all asset contents are valid YAML
-      * ``asset-validity``: verify that all assets pass the validation rulesets
-        defined in ``.onyo/validation/``
-      * ``pseudo-keys``: verify that asset contents do not contain pseudo-key names
     """
     # TODO: Pass args and have a test; Actually - no args defined?
     repo = OnyoRepo(Path.cwd(), find_root=True)

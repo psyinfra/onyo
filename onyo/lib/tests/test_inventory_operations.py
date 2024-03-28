@@ -1,6 +1,5 @@
 import pytest
 
-from onyo.lib.assets import Asset
 from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
 from onyo.lib.exceptions import (
     InvalidInventoryOperationError,
@@ -44,14 +43,13 @@ def test_add_asset(repo: OnyoRepo) -> None:
     newdir1 = inventory.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_file = newdir2 / "test_I_mk1.123"
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  directory=newdir2,
-                  type="test",
-                  make="I",
-                  model="mk1",
-                  serial="123"
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 directory=newdir2,
+                 type="test",
+                 make="I",
+                 model="mk1",
+                 serial="123")
     assert num_operations(inventory, 'new_assets') == 0
     assert num_operations(inventory, 'new_directories') == 0
 
@@ -90,7 +88,7 @@ def test_add_asset(repo: OnyoRepo) -> None:
     pytest.raises(ValueError, inventory.add_asset, asset)
 
     # To be added Asset requires a path:
-    asset = Asset(a_key='a_value')
+    asset = dict(a_key='a_value')
     pytest.raises(ValueError, inventory.add_asset, asset)
 
     # Asset must not yet exist:  (TODO: This may be wrong. Seems better if it must not yet exist as an asset,
@@ -98,7 +96,7 @@ def test_add_asset(repo: OnyoRepo) -> None:
     #                                   but an inventory operation.)
     existing_asset_file = repo.git.root / 'root_asset'
     existing_asset_file.touch()
-    asset = Asset(some='whatever', path=existing_asset_file)
+    asset = dict(some='whatever', path=existing_asset_file)
     pytest.raises(ValueError, inventory.add_asset, asset)
 
     # TODO: should also fail when adding an asset that is already pending? Or one that is also being removed, etc?
@@ -148,14 +146,13 @@ def test_move_asset(repo: OnyoRepo) -> None:
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_file = newdir2 / "test_I_mk1.123"
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  directory=newdir2,
-                  type="test",
-                  make="I",
-                  model="mk1",
-                  serial="123"
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 directory=newdir2,
+                 type="test",
+                 make="I",
+                 model="mk1",
+                 serial="123")
     inventory.add_asset(asset)
     inventory.commit("First asset added")
 
@@ -188,14 +185,13 @@ def test_rename_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
-    asset = Asset(some_key="some_value",
-                  type="TYPE",
-                  make="MAKER",
-                  model="MODEL",
-                  serial="SERIAL",
-                  other=1,
-                  directory=newdir2
-                  )
+    asset = dict(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model="MODEL",
+                 serial="SERIAL",
+                 other=1,
+                 directory=newdir2)
     inventory.add_asset(asset)
     inventory.commit("First asset added")
 
@@ -214,20 +210,19 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_file = newdir2 / "TYPE_MAKER_MODEL.SERIAL"
-    asset = Asset(some_key="some_value",
-                  type="TYPE",
-                  make="MAKER",
-                  model="MODEL",
-                  serial="SERIAL",
-                  other=1,
-                  directory=newdir2
-                  )
+    asset = dict(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model="MODEL",
+                 serial="SERIAL",
+                 other=1,
+                 directory=newdir2)
     inventory.add_asset(asset)
     inventory.commit("First asset added")
 
-    asset_changes = Asset(some_key="new_value",  # arbitrary content change
-                          model=""  # empty required key
-                          )
+    asset_changes = dict(some_key="new_value",  # arbitrary content change
+                         model=""  # empty required key
+                         )
     new_asset = asset.copy()
     new_asset.update(asset_changes)
 
@@ -317,14 +312,13 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     newdir2 = newdir1 / "new"
     emptydir = newdir1 / "empty"
     asset_file = newdir2 / "asset_file"
-    asset = Asset(some_key="some_value",
-                  type="TYPE",
-                  make="MAKER",
-                  model="MODEL",
-                  serial="SERIAL",
-                  other=1,
-                  directory=newdir2
-                  )
+    asset = dict(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model="MODEL",
+                 serial="SERIAL",
+                 other=1,
+                 directory=newdir2)
     inventory.add_asset(asset)
     inventory.add_directory(emptydir)
     inventory.commit("First asset added")
@@ -363,14 +357,13 @@ def test_move_directory(repo: OnyoRepo) -> None:
     newdir2 = newdir1 / "new"
     emptydir = newdir1 / "empty"
     asset_file = newdir2 / "asset_file"
-    asset = Asset(some_key="some_value",
-                  type="TYPE",
-                  make="MAKER",
-                  model="MODEL",
-                  serial="SERIAL",
-                  other=1,
-                  directory=newdir2
-                  )
+    asset = dict(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model="MODEL",
+                 serial="SERIAL",
+                 other=1,
+                 directory=newdir2)
     inventory.add_asset(asset)
     inventory.add_directory(emptydir)
     inventory.commit("First asset added")
@@ -403,14 +396,13 @@ def test_rename_directory(repo: OnyoRepo) -> None:
     newdir2 = newdir1 / "new"
     emptydir = newdir1 / "empty"
     asset_file = newdir2 / "asset_file"
-    asset = Asset(some_key="some_value",
-                  type="TYPE",
-                  make="MAKER",
-                  model="MODEL",
-                  serial="SERIAL",
-                  other=1,
-                  directory=newdir2
-                  )
+    asset = dict(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model="MODEL",
+                 serial="SERIAL",
+                 other=1,
+                 directory=newdir2)
     inventory.add_asset(asset)
     inventory.add_directory(emptydir)
     inventory.commit("First asset added")
@@ -444,15 +436,14 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
 
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  type="TYPE",
-                  make="MAKE",
-                  model="MODEL",
-                  serial="SERIAL",
-                  is_asset_directory=True,
-                  path=asset_dir_path
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 type="TYPE",
+                 make="MAKE",
+                 model="MODEL",
+                 serial="SERIAL",
+                 is_asset_directory=True,
+                 path=asset_dir_path)
 
     inventory.add_asset(asset)
     # operations to add new asset and a dir are registered:
@@ -484,15 +475,14 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     inventory.add_directory(dir_path)
     inventory.commit("New inventory dir")
 
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  type="TYPE1",
-                  make="MAKE1",
-                  model="MODEL1",
-                  serial="1X2",
-                  is_asset_directory=True,
-                  path=dir_path
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 type="TYPE1",
+                 make="MAKE1",
+                 model="MODEL1",
+                 serial="1X2",
+                 is_asset_directory=True,
+                 path=dir_path)
     expected_name = "{type}_{make}_{model}.{serial}".format(**asset)
     expected_path = dir_path.parent / expected_name
     inventory.add_asset(asset)
@@ -529,13 +519,13 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
 
 def test_add_dir_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  type="TYPE1",
-                  make="MAKE1",
-                  model="MODEL1",
-                  serial="1X2",
-                  directory=inventory.root)
+    asset = dict(some_key="some_value",
+                 other=1,
+                 type="TYPE1",
+                 make="MAKE1",
+                 model="MODEL1",
+                 serial="1X2",
+                 directory=inventory.root)
     inventory.add_asset(asset)
     inventory.commit("Add an asset.")
     asset_path = inventory.root / "TYPE1_MAKE1_MODEL1.1X2"
@@ -560,21 +550,20 @@ def test_add_dir_asset(repo: OnyoRepo) -> None:
 def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  type="TYPE",
-                  make="MAKE",
-                  model="MODEL",
-                  serial="SERIAL",
-                  is_asset_directory=True,
-                  path=asset_dir_path
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 type="TYPE",
+                 make="MAKE",
+                 model="MODEL",
+                 serial="SERIAL",
+                 is_asset_directory=True,
+                 path=asset_dir_path)
     inventory.add_asset(asset)
-    asset_within = Asset(type="a",
-                         make="b",
-                         model="c",
-                         serial="1A",
-                         directory=asset_dir_path)
+    asset_within = dict(type="a",
+                        make="b",
+                        model="c",
+                        serial="1A",
+                        directory=asset_dir_path)
     inventory.add_asset(asset_within)
     inventory.commit("Whatever")
 
@@ -600,21 +589,20 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
 def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  type="TYPE",
-                  make="MAKE",
-                  model="MODEL",
-                  serial="SERIAL",
-                  is_asset_directory=True,
-                  path=asset_dir_path
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 type="TYPE",
+                 make="MAKE",
+                 model="MODEL",
+                 serial="SERIAL",
+                 is_asset_directory=True,
+                 path=asset_dir_path)
     inventory.add_asset(asset)
-    asset_within = Asset(type="a",
-                         make="b",
-                         model="c",
-                         serial="1A",
-                         directory=asset_dir_path)
+    asset_within = dict(type="a",
+                        make="b",
+                        model="c",
+                        serial="1A",
+                        directory=asset_dir_path)
     inventory.add_asset(asset_within)
     inventory.commit("Whatever")
     inventory.remove_asset(asset)
@@ -636,7 +624,7 @@ def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
     assert not inventory.repo.is_asset_path(asset_dir_path)
     assert not (asset_dir_path / OnyoRepo.ASSET_DIR_FILE_NAME).exists()
     # asset within unaffected:
-    assert inventory.repo.is_asset_path(asset_within['directory'] / "a_b_c.1A")
+    assert inventory.repo.is_asset_path(asset_within['directory'] / "a_b_c.1A")  # pyre-ignore[58] Pyre is wrong here, and thinks asset_within['directory'] is a str
 
 
 def test_move_asset_dir(repo: OnyoRepo) -> None:
@@ -646,15 +634,14 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
     dir_path = inventory.root / "destination"
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  type="TYPE",
-                  make="MAKE",
-                  model="MODEL",
-                  serial="SERIAL",
-                  is_asset_directory=True,
-                  path=asset_dir_path
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 type="TYPE",
+                 make="MAKE",
+                 model="MODEL",
+                 serial="SERIAL",
+                 is_asset_directory=True,
+                 path=asset_dir_path)
     inventory.add_asset(asset)
     inventory.add_directory(dir_path)
     inventory.commit("Whatever")
@@ -703,15 +690,14 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
 
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Asset(some_key="some_value",
-                  other=1,
-                  type="TYPE",
-                  make="MAKE",
-                  model="MODEL",
-                  serial="SERIAL",
-                  is_asset_directory=True,
-                  path=asset_dir_path
-                  )
+    asset = dict(some_key="some_value",
+                 other=1,
+                 type="TYPE",
+                 make="MAKE",
+                 model="MODEL",
+                 serial="SERIAL",
+                 is_asset_directory=True,
+                 path=asset_dir_path)
     inventory.add_asset(asset)
     inventory.commit("Whatever")
 
@@ -756,23 +742,22 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_path = newdir2 / "TYPE_MAKER_MODEL.SERIAL"
-    asset = Asset(some_key="some_value",
-                  type="TYPE",
-                  make="MAKER",
-                  model="MODEL",
-                  serial="SERIAL",
-                  other=1,
-                  is_asset_directory=True,
-                  path=asset_path,
-                  directory=asset_path.parent
-                  )
+    asset = dict(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model="MODEL",
+                 serial="SERIAL",
+                 other=1,
+                 is_asset_directory=True,
+                 path=asset_path,
+                 directory=asset_path.parent)
     inventory.add_asset(asset)
     inventory.commit("asset dir added")
     assert inventory.repo.is_asset_dir(asset_path)
 
-    asset_changes = Asset(some_key="new_value",  # arbitrary content change
-                          model="CORRECTED-MODEL"  # implies rename w/ default name config
-                          )
+    asset_changes = dict(some_key="new_value",  # arbitrary content change
+                         model="CORRECTED-MODEL"  # implies rename w/ default name config
+                         )
     new_asset = asset.copy()
     new_asset.update(asset_changes)
     new_asset.pop('path')
@@ -789,7 +774,7 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     # nothing done on disc yet:
     assert inventory.repo.is_asset_dir(asset_path)
     assert not new_asset_path.exists()
-    assert asset == Asset(**repo.get_asset_content(asset_path))
+    assert asset == dict(**repo.get_asset_content(asset_path))
     assert inventory.repo.git.is_clean_worktree()
 
     # now commit:
@@ -798,6 +783,6 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.is_asset_dir(new_asset_path)
     assert inventory.repo.git.is_clean_worktree()
 
-    expected_asset = Asset(**new_asset)
+    expected_asset = dict(**new_asset)
     expected_asset['path'] = new_asset_path
     assert repo.get_asset_content(new_asset_path) == expected_asset

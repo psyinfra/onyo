@@ -5,7 +5,6 @@ import pytest
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
-from ..assets import Asset
 from ..commands import onyo_cat
 
 
@@ -98,13 +97,13 @@ def test_onyo_cat_multiple(inventory: Inventory,
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     # TODO: simplify with new fixtures
     # add a different second asset to the inventory
-    inventory.add_asset(Asset(some_key="some_value",
-                              type="TYPE",
-                              make="MAKER",
-                              model="MODEL",
-                              serial="SERIAL2",
-                              other=1,
-                              directory=inventory.root)
+    inventory.add_asset(dict(some_key="some_value",
+                             type="TYPE",
+                             make="MAKER",
+                             model="MODEL",
+                             serial="SERIAL2",
+                             other=1,
+                             directory=inventory.root)
                         )
     asset_path2 = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("Second asset added")
@@ -136,14 +135,14 @@ def test_onyo_cat_with_duplicate_path(inventory: Inventory,
 
 def test_onyo_cat_asset_dir(inventory: Inventory,
                             capsys) -> None:
-    inventory.add_asset(Asset(some_key="some_value",
-                              type="TYPE",
-                              make="MAKER",
-                              model="MODEL",
-                              serial="SERIAL2",
-                              other=1,
-                              directory=inventory.root,
-                              is_asset_directory=True)
+    inventory.add_asset(dict(some_key="some_value",
+                             type="TYPE",
+                             make="MAKER",
+                             model="MODEL",
+                             serial="SERIAL2",
+                             other=1,
+                             directory=inventory.root,
+                             is_asset_directory=True)
                         )
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
