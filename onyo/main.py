@@ -82,11 +82,11 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
         text
             Text to format.
         """
-        text = prepare_rst_for_rich(text)
+        text = rst_to_rich(text)
         return super()._rich_format_text(text)
 
 
-def prepare_rst_for_rich(text: str) -> str:
+def rst_to_rich(text: str) -> str:
     r"""Convert RST to Rich syntax.
 
     Naively convert reStructuredText to Rich syntax, de-indent, and apply other
@@ -120,7 +120,7 @@ def prepare_rst_for_rich(text: str) -> str:
     text = text.replace(' * ', ' • ')
 
     # remove space-escaping
-    # (rST oddity that ``ASSET``s is illegal, but ``ASSET``\ s -> ASSETs)
+    # (RST oddity that ``ASSET``s is illegal, but ``ASSET``\ s -> ASSETs)
     text = text.replace('\\ ', '')
 
     return text
@@ -159,12 +159,13 @@ def build_parser(parser, args: dict) -> None:
     """
     for cmd in args:
         args[cmd]['dest'] = cmd
-        try:
+        try:  # option flag
             parser.add_argument(
                 *args[cmd]['args'],
-                **{k: v for k, v in args[cmd].items() if k != 'args'} | {'help': prepare_rst_for_rich(args[cmd]['help'])})
-        except KeyError:
-            parser.add_argument(**{k: v for k, v in args[cmd].items()} | {'help': prepare_rst_for_rich(args[cmd]['help'])})
+                **{k: v for k, v in args[cmd].items() if k != 'args'} | {'help': rst_to_rich(args[cmd]['help'])})
+        except KeyError:  # argument
+            parser.add_argument(
+                **{k: v for k, v in args[cmd].items()} | {'help': rst_to_rich(args[cmd]['help'])})
 
 
 subcmds = None
