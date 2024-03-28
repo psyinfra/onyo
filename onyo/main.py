@@ -22,7 +22,21 @@ if TYPE_CHECKING:
 
 
 class WrappedTextRichHelpFormatter(RichHelpFormatter):
+    r"""Fix the formatting sins of RichHelpFormatter, and convert RST to Rich.
+
+    See Also
+    --------
+    RichHelpFormatter
+    """
+
     def _rich_format_action(self, action: Action) -> Iterator[tuple[Text, Text | None]]:
+        r"""Remove <COMMANDS> from subcommands section of help.
+
+        Parameters
+        ----------
+        action
+            ArgParse Action.
+        """
         parts = super()._rich_format_action(action)
         # remove the superfluous first line (<COMMANDS>) of the subcommands section
         if action.nargs == PARSER:
@@ -31,27 +45,57 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
         return parts
 
     def _rich_split_lines(self, text: Text, width: int) -> Lines:
+        r"""Wrap lines according to width.
+
+        Parameters
+        ----------
+        text
+            Text to wrap.
+        width
+            Max character length to wrap lines at.
+        """
         lines = Lines()
         for line in text.split():
             lines.extend(line.wrap(self.console, width))
         return lines
 
     def _rich_fill_text(self, text: Text, width: int, indent: Text) -> Text:
+        r"""Wrap lines in description text according to width.
+
+        Parameters
+        ----------
+        text
+            Text to wrap.
+        width
+            Max character length to wrap lines at.
+        indent
+            Indentation text to precede lines with.
+        """
         lines = self._rich_split_lines(text, width)
         return Text("\n").join(indent + line for line in lines) + "\n"
 
     def _rich_format_text(self, text: str) -> Text:
-        text = prepare_rst_for_rich(text)
+        r"""Convert RST docstrings to Rich syntax ready for help text.
 
+        Parameters
+        ----------
+        text
+            Text to format.
+        """
+        text = rst_to_rich(text)
         return super()._rich_format_text(text)
 
 
-def prepare_rst_for_rich(text: str) -> str:
-    r"""
-    This is a very naive approach to cleanup docstrings and help text in
-    preparation to print to the terminal.
+def rst_to_rich(text: str) -> str:
+    r"""Convert RST to Rich syntax.
 
-    Some effort is made to stylize RST markup.
+    Naively convert reStructuredText to Rich syntax, de-indent, and apply other
+    cleanups to prepare text to print to the terminal.
+
+    Parameters
+    ----------
+    text
+        reStructuredText to convert.
     """
     # de-indent text
     text = textwrap.dedent(text).strip()
@@ -76,30 +120,60 @@ def prepare_rst_for_rich(text: str) -> str:
     text = text.replace(' * ', ' • ')
 
     # remove space-escaping
-    # (rST oddity that ``ASSET``s is illegal, but ``ASSET``\ s -> ASSETs)
+    # (RST oddity that ``ASSET``s is illegal, but ``ASSET``\ s -> ASSETs)
     text = text.replace('\\ ', '')
 
     return text
 
 
 def build_parser(parser, args: dict) -> None:
-    r"""
-    Add arguments to a parser.
+    r"""Add options or arguments to an ArgumentParser.
+
+    Parameters
+    ----------
+    parser
+        Parser to add arguments to.
+    args
+        Dictionary of option/argument dictionaries containing key-values to pass
+        to ArgumentParser.add_argument(). The key name of the option/argument
+        dictionary is passed as the value to ``dest``.
+
+    See Also
+    --------
+    ArgumentParser.add_argument()
+
+    Example
+    -------
+    An example option/argument dictionary::
+
+        args = {
+            'debug': dict(
+                args=('-d', '--debug'),
+                required=False,
+                default=False,
+                action='store_true',
+                help=r"Enable debug logging."
+            ),
+        }
+        build_parser(parser, args)
     """
     for cmd in args:
         args[cmd]['dest'] = cmd
-        try:
+        try:  # option flag
             parser.add_argument(
                 *args[cmd]['args'],
-                **{k: v for k, v in args[cmd].items() if k != 'args'} | {'help': prepare_rst_for_rich(args[cmd]['help'])})
-        except KeyError:
-            parser.add_argument(**{k: v for k, v in args[cmd].items()} | {'help': prepare_rst_for_rich(args[cmd]['help'])})
+                **{k: v for k, v in args[cmd].items() if k != 'args'} | {'help': rst_to_rich(args[cmd]['help'])})
+        except KeyError:  # argument
+            parser.add_argument(
+                **{k: v for k, v in args[cmd].items()} | {'help': rst_to_rich(args[cmd]['help'])})
 
 
 subcmds = None
 
 
 def setup_parser() -> ArgumentParser:
+    r"""Setup and return a fully populated ArgumentParser for Onyo and all subcommands.
+    """
     from onyo.onyo_arguments import args_onyo
     from onyo.cli.cat import args_cat
     from onyo.cli.config import args_config
@@ -298,15 +372,22 @@ def setup_parser() -> ArgumentParser:
     return parser
 
 
-def get_subcmd_index(arglist, start: int = 1) -> int | None:
-    r"""
-    Get the index of the subcommand from a provided list of arguments (usually sys.argv).
+def get_subcmd_index(arglist: list, start: int = 1) -> int | None:
+    r"""Get the index of the Onyo subcommand in a list of arguments.
 
-    Returns the index on success, and None in failure.
+    Parameters
+    ----------
+    arglist
+        The list of command line arguments passed to a Python script. Usually
+        ``sys.argv``.
+    start
+        The index to start searching from.
+
+    Example
+    -------
+    >>> subcmd_index = get_subcmd_index(sys.argv)
     """
-    # TODO: alternatively, this could use TabCompletion._argparse_to_dict()
-    # flags which accept an argument
-    flagplus = ['-C', '--onyopath']
+    onyo_flags_with_args = ['-C', '--onyopath']
 
     try:
         # find the first non-flag argument
@@ -316,25 +397,36 @@ def get_subcmd_index(arglist, start: int = 1) -> int | None:
         return None
 
     # check if it's the subcommand, or just an argument to a flag
-    if arglist[index - 1] in flagplus:
+    if arglist[index - 1] in onyo_flags_with_args:
         index = get_subcmd_index(arglist, index + 1)
 
     return index
 
 
 def main() -> None:
-    # NOTE: this unfortunately-located-hack is to pass uninterpreted args to
-    # "onyo config".
+    r"""Execute Onyo's CLI.
+    """
+    #
+    # ARGPARSE Hack #1
+    #
+    # This unfortunately-located-hack passes uninterpreted args to "onyo config".
     # nargs=argparse.REMAINDER is supposed to do this, but did not work for our
     # needs, and as of Python 3.8 is soft-deprecated (due to being buggy).
-    # For more information, see https://docs.python.org/3.10/library/argparse.html#arguments-containing
+    # See https://bugs.python.org/issue17050#msg315716 ; https://bugs.python.org/issue9334
     passthrough_subcmds = ['config']
     subcmd_index = get_subcmd_index(sys.argv)
     if subcmd_index and sys.argv[subcmd_index] in passthrough_subcmds:
-        # display the subcmd's --help, and don't pass it through
+        # display the onyo subcmd's --help, and don't pass it through
         if not any(x in sys.argv for x in ['-h', '--help']):
             sys.argv.insert(subcmd_index + 1, '--')
 
+    #
+    # ARGPARSE Hack #2
+    #
+    # This hack makes argparse print the help text for the subcommand when an
+    # unknown argument is encountered. Previously it only printed help for the
+    # top-level command.
+    # See https://bugs.python.org/issue34479
     global subcmds
     # parse the arguments
     parser = setup_parser()
@@ -344,6 +436,9 @@ def main() -> None:
             subcmds._name_parser_map[args.cmd].print_usage(file=sys.stderr)
         parser.error("unrecognized arguments: %s" % " ".join(extras))
 
+    #
+    # Begin normal, non-hack `main` stuff
+    #
     # configure user interface
     ui.set_debug(args.debug)
     ui.set_yes(args.yes)
@@ -366,7 +461,6 @@ def main() -> None:
             sys.exit(1)
         finally:
             os.chdir(old_cwd)
-
     else:
         parser.print_help()
         sys.exit(1)
