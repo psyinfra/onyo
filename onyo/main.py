@@ -4,69 +4,117 @@ import os
 import re
 import sys
 import textwrap
-from argparse import ArgumentParser, PARSER
-from itertools import islice
+from argparse import ArgumentParser, PARSER, RawTextHelpFormatter
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from rich.containers import Lines
-from rich.text import Text
-from rich_argparse import RichHelpFormatter
+import rich
 
 from onyo import cli
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     from argparse import Action
-    from collections.abc import Iterator
+    from typing import List
 
 
-class WrappedTextRichHelpFormatter(RichHelpFormatter):
-    r"""Fix the formatting sins of RichHelpFormatter, and convert RST to Rich.
+class OnyoArgumentParser(ArgumentParser):
+    r"""Rich-ified ArgumentParser.
 
     See Also
     --------
-    RichHelpFormatter
+    argparse.ArgumentParser
     """
 
-    def _rich_format_action(self,
-                            action: Action) -> Iterator[tuple[Text, Text | None]]:
-        r"""Remove <COMMANDS> from subcommands section of help.
+    def _print_message(self,
+                       message: str,
+                       file=None) -> None:
+        r"""Print help text with Rich.
+        """
+        if message:
+            rich.print(message, file=file)
+
+
+class OnyoRawTextHelpFormatter(RawTextHelpFormatter):
+    r"""Fix the sins of argparse's formatting; convert RST to Rich markup.
+
+    See Also
+    --------
+    argparse.ArgumentParser.RawTextHelpFormatter
+    """
+
+    def _fill_text(self,
+                   text: str,
+                   width: int,
+                   indent: str) -> str:
+        r"""Wrap lines of text according to width.
+
+        Just a wrapper to convert RST->Rich first.
+
+        Parameters
+        ----------
+        text
+            Text to wrap.
+        width
+            Max character of lines before wrapping.
+        indent
+            Indentation text to precede lines with.
+        """
+        text = rst_to_rich(text)
+        return super()._fill_text(text, width, indent)
+
+    def _format_action(self,
+                       action: Action) -> str:
+        r"""Build the full text for an Action (command, option, argument, etc).
+
+        Just a wrapper to strip <COMMANDS> from subcommands section of help.
 
         Parameters
         ----------
         action
             ArgParse Action.
         """
-        parts = super()._rich_format_action(action)
+        action_text = super()._format_action(action)
         # remove the superfluous first line (<COMMANDS>) of the subcommands section
         if action.nargs == PARSER:
-            parts = islice(parts, 1, None)
+            action_text = action_text.split("\n", 1)[1]
 
-        return parts
+        return action_text
 
-    def _rich_split_lines(self,
-                          text: Text,
-                          width: int) -> Lines:
+    def _format_action_invocation(self,
+                                  action: Action) -> str:
+        r"""Build the options/options+arguments/arguments string.
+
+        Functionally identical to upstream, but with Rich markup added.
+
+        Parameters
+        ----------
+        action
+            ArgParse Action.
+        """
+        if action.option_strings:
+            # -s, --long
+            rendered_options = ', '.join([f"[cyan]{x}[/cyan]" for x in action.option_strings])
+
+            if action.nargs != 0:
+                # -s, --long ARGS
+                default = self._get_default_metavar_for_optional(action)
+                args_string = self._format_args(action, default)
+                rendered_options += ' ' + f"[dark_cyan]{args_string}[/dark_cyan]"
+
+            return rendered_options
+        else:
+            # ARGS
+            default = self._get_default_metavar_for_positional(action)
+            metavar, = self._metavar_formatter(action, default)(1)
+            return f"[dark_cyan]{metavar}[/dark_cyan]"
+
+    def _split_lines(self,
+                     text: str,
+                     width: int) -> List[str]:
         r"""Wrap lines according to width.
 
-        Parameters
-        ----------
-        text
-            Text to wrap.
-        width
-            Max character length to wrap lines at.
-        """
-        lines = Lines()
-        for line in text.split():
-            lines.extend(line.wrap(self.console, width))
-        return lines
-
-    def _rich_fill_text(self,
-                        text: Text,
-                        width: int,
-                        indent: Text) -> Text:
-        r"""Wrap lines in description text according to width.
+        Just a wrapper to convert RST->Rich first.
 
         Parameters
         ----------
@@ -74,23 +122,9 @@ class WrappedTextRichHelpFormatter(RichHelpFormatter):
             Text to wrap.
         width
             Max character length to wrap lines at.
-        indent
-            Indentation text to precede lines with.
-        """
-        lines = self._rich_split_lines(text, width)
-        return Text("\n").join(indent + line for line in lines) + "\n"
-
-    def _rich_format_text(self,
-                          text: str) -> Text:
-        r"""Convert RST docstrings to Rich syntax ready for help text.
-
-        Parameters
-        ----------
-        text
-            Text to format.
         """
         text = rst_to_rich(text)
-        return super()._rich_format_text(text)
+        return super()._split_lines(text, width)
 
 
 def rst_to_rich(text: str) -> str:
@@ -114,11 +148,10 @@ def rst_to_rich(text: str) -> str:
     text = re.sub(r'\*\*([^*]+)\*\*', r'[bold]\1[/bold]', text)
 
     # stylize ``` (code blocks)
-    text = re.sub('```([^`]+)```', r'[underline]\1[/underline]', text)
+    text = re.sub('```\\n([^`]+)\\n```', r'\n[underline]\1[/underline]', text)
 
-    # strip `` (inline code markers) for flags
-    # flags are auto-colorized by rich-argparse
-    text = re.sub('``(-[^`]+)``', r'\1', text)
+    # stylize `` (inline code markers) for flags
+    text = re.sub('``(-[^`]+)``', r'[cyan]\1[/cyan]', text)
 
     # stylize remaining `` (inline code markers)
     text = re.sub('``([^`]+)``', r'[bold magenta]\1[/bold magenta]', text)
@@ -170,17 +203,17 @@ def build_parser(parser: ArgumentParser,
         try:  # option flag
             parser.add_argument(
                 *args[cmd]['args'],
-                **{k: v for k, v in args[cmd].items() if k != 'args'} | {'help': rst_to_rich(args[cmd]['help'])})
+                **{k: v for k, v in args[cmd].items() if k != 'args'})
         except KeyError:  # argument
             parser.add_argument(
-                **{k: v for k, v in args[cmd].items()} | {'help': rst_to_rich(args[cmd]['help'])})
+                **{k: v for k, v in args[cmd].items()})
 
 
 subcmds = None
 
 
-def setup_parser() -> ArgumentParser:
-    r"""Setup and return a fully populated ArgumentParser for Onyo and all subcommands.
+def setup_parser() -> OnyoArgumentParser:
+    r"""Setup and return a fully populated OnyoArgumentParser for Onyo and all subcommands.
     """
     from onyo.onyo_arguments import args_onyo
     from onyo.cli.cat import args_cat
@@ -200,9 +233,9 @@ def setup_parser() -> ArgumentParser:
 
     global subcmds
 
-    parser = ArgumentParser(
+    parser = OnyoArgumentParser(
         description='A text-based inventory system backed by git.',
-        formatter_class=WrappedTextRichHelpFormatter
+        formatter_class=OnyoRawTextHelpFormatter
     )
     build_parser(parser, args_onyo)
 
