@@ -20,7 +20,7 @@ def test_onyo_debug(repo: OnyoRepo, variant: str) -> None:
 def test_onyo_help(repo: OnyoRepo, variant: str) -> None:
     ret = subprocess.run(['onyo', variant], capture_output=True, text=True)
     assert ret.returncode == 0
-    assert 'Usage: onyo [-h]' in ret.stdout
+    assert 'usage: onyo [-h]' in ret.stdout
     assert not ret.stderr
     assert repo.git.is_clean_worktree()
 
@@ -37,6 +37,6 @@ def test_onyo_without_subcommand(repo: OnyoRepo, helpers) -> None:
 
             ret = subprocess.run(full_cmd, capture_output=True, text=True)
             assert ret.returncode == 1
-            assert 'Usage: onyo [-h]' in ret.stdout
+            assert 'usage: onyo [-h]' in ret.stdout
             assert not ret.stderr
     assert repo.git.is_clean_worktree()

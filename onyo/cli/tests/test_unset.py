@@ -224,7 +224,7 @@ def test_unset_without_path(repo: OnyoRepo,
     # verify the output
     assert ret.returncode != 0
     assert repo.git.is_clean_worktree()
-    assert "Usage:" in ret.stderr
+    assert "usage:" in ret.stderr
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
