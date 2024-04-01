@@ -126,6 +126,21 @@ class OnyoRawTextHelpFormatter(RawTextHelpFormatter):
         text = rst_to_rich(text)
         return super()._split_lines(text, width)
 
+    def start_section(self,
+                      heading: str | None) -> None:
+        r"""Start a section.
+
+        Just a wrapper to stylize headings for Rich.
+
+        Parameters
+        ----------
+        heading
+            Heading text.
+        """
+        if heading:
+            heading = f'[orange1]{heading.title()}[/orange1]'
+        super().start_section(heading)
+
 
 def rst_to_rich(text: str) -> str:
     r"""Convert RST to Rich syntax.
@@ -155,6 +170,12 @@ def rst_to_rich(text: str) -> str:
 
     # stylize remaining `` (inline code markers)
     text = re.sub('``([^`]+)``', r'[bold magenta]\1[/bold magenta]', text)
+
+    # stylize headings
+    text = re.sub('([^\\n]+)\\n---+\\n', r'[orange1]\1:[/orange1]\n', text)
+    # and "rubric" as a hack because sphinx-argparse chokes on headings in
+    # help/epilog text.
+    text = re.sub('.. rubric:: ([^\\n]+)', r'[orange1]\1:[/orange1]', text)
 
     # make bullet points prettier
     text = text.replace(' * ', ' • ')

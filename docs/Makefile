@@ -32,6 +32,8 @@ generate:
 
 html: generate
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	# force "rubric" to be a heading (it should be a non-ToC heading)
+	find "$(BUILDDIR)" -name '*.html' -exec ex -sc '%s/<p class="rubric">\(.*\)<\/p>/<h2>\1<\/h2>/ge|x' {} ';'
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
