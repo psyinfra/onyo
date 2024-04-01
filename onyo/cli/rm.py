@@ -49,6 +49,22 @@ args_rm = {
     'message': shared_arg_message,
 }
 
+epilog_rm = r"""
+.. rubric:: Examples
+
+**Delete an asset from the inventory**
+
+.. code:: shell
+
+    onyo rm shelf/laptop_lenovo_T490s.abc123
+
+**Retire a user**
+
+.. code:: shell
+
+    onyo rm --message "Bob retired" admin/Bingo\ Bob/
+"""
+
 
 def rm(args: argparse.Namespace) -> None:
     r"""

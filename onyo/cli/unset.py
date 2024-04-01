@@ -37,6 +37,16 @@ args_unset = {
     'message': shared_arg_message,
 }
 
+epilog_unset = r"""
+.. rubric:: Examples
+
+**Remove values from an asset**
+
+.. code:: shell
+
+    onyo unset --keys display touch --path accounting/Karl\ Krebs/laptop_apple_macbookpro.222
+"""
+
 
 def unset(args: argparse.Namespace) -> None:
     r"""

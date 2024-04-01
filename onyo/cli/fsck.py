@@ -9,6 +9,16 @@ from onyo.lib.commands import fsck as fsck_cmd
 if TYPE_CHECKING:
     import argparse
 
+epilog_fsck = r"""
+.. rubric:: Examples
+
+**Verify the validity of the inventory**
+
+.. code:: shell
+
+    onyo fsck
+"""
+
 
 def fsck(args: argparse.Namespace) -> None:
     r"""

@@ -23,6 +23,23 @@ args_mkdir = {
     'message': shared_arg_message,
 }
 
+epilog_mkdir = r"""
+.. rubric:: Examples
+
+**Add a new user to a group**
+
+.. code:: shell
+
+    onyo mkdir accounting/Bingo\ Bob/
+
+
+**Create a new group with some users**
+
+.. code:: shell
+
+    onyo mkdir --message "the marketing group joined\!" marketing/Alice\ Wonder/ marketing/Karl\ Krebs
+"""
+
 
 def mkdir(args: argparse.Namespace) -> None:
     r"""

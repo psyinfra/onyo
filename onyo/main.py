@@ -240,20 +240,21 @@ def setup_parser() -> OnyoArgumentParser:
     r"""Setup and return a fully populated OnyoArgumentParser for Onyo and all subcommands.
     """
     from onyo.onyo_arguments import args_onyo
-    from onyo.cli.cat import args_cat
-    from onyo.cli.config import args_config
-    from onyo.cli.edit import args_edit
-    from onyo.cli.get import args_get
-    from onyo.cli.history import args_history
-    from onyo.cli.init import args_init
-    from onyo.cli.mkdir import args_mkdir
-    from onyo.cli.mv import args_mv
-    from onyo.cli.new import args_new
-    from onyo.cli.rm import args_rm
-    from onyo.cli.set import args_set
-    from onyo.cli.shell_completion import args_shell_completion
-    from onyo.cli.tree import args_tree
-    from onyo.cli.unset import args_unset
+    from onyo.cli.cat import args_cat, epilog_cat
+    from onyo.cli.config import args_config, epilog_config
+    from onyo.cli.edit import args_edit, epilog_edit
+    from onyo.cli.fsck import epilog_fsck
+    from onyo.cli.get import args_get, epilog_get
+    from onyo.cli.history import args_history, epilog_history
+    from onyo.cli.init import args_init, epilog_init
+    from onyo.cli.mkdir import args_mkdir, epilog_mkdir
+    from onyo.cli.mv import args_mv, epilog_mv
+    from onyo.cli.new import args_new, epilog_new
+    from onyo.cli.rm import args_rm, epilog_rm
+    from onyo.cli.set import args_set, epilog_set
+    from onyo.cli.shell_completion import args_shell_completion, epilog_shell_completion
+    from onyo.cli.tree import args_tree, epilog_tree
+    from onyo.cli.unset import args_unset, epilog_unset
 
     global subcmds
 
@@ -275,6 +276,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_cat = subcmds.add_parser(
         'cat',
         description=cli.cat.__doc__,
+        epilog=epilog_cat,
         formatter_class=parser.formatter_class,
         help='Print the contents of assets to the terminal.'
     )
@@ -286,6 +288,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_config = subcmds.add_parser(
         'config',
         description=cli.config.__doc__,
+        epilog=epilog_config,
         formatter_class=parser.formatter_class,
         help='Set, query, and unset Onyo repository configuration options.'
     )
@@ -297,6 +300,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_edit = subcmds.add_parser(
         'edit',
         description=cli.edit.__doc__,
+        epilog=epilog_edit,
         formatter_class=parser.formatter_class,
         help='Open assets using an editor.'
     )
@@ -308,6 +312,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_fsck = subcmds.add_parser(
         'fsck',
         description=cli.fsck.__doc__,
+        epilog=epilog_fsck,
         formatter_class=parser.formatter_class,
         help='Run a suite of integrity checks on the Onyo repository and its contents.'
     )
@@ -318,6 +323,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_get = subcmds.add_parser(
         'get',
         description=cli.get.__doc__,
+        epilog=epilog_get,
         formatter_class=parser.formatter_class,
         help='Return and sort asset values matching query patterns.'
     )
@@ -329,6 +335,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_history = subcmds.add_parser(
         'history',
         description=cli.history.__doc__,
+        epilog=epilog_history,
         formatter_class=parser.formatter_class,
         help='Display the history of an asset or directory.'
     )
@@ -340,6 +347,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_init = subcmds.add_parser(
         'init',
         description=cli.init.__doc__,
+        epilog=epilog_init,
         formatter_class=parser.formatter_class,
         help='Initialize a new Onyo repository.'
     )
@@ -351,6 +359,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_mkdir = subcmds.add_parser(
         'mkdir',
         description=cli.mkdir.__doc__,
+        epilog=epilog_mkdir,
         formatter_class=parser.formatter_class,
         help='Create directories.'
     )
@@ -362,6 +371,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_mv = subcmds.add_parser(
         'mv',
         description=cli.mv.__doc__,
+        epilog=epilog_mv,
         formatter_class=parser.formatter_class,
         help='Move assets or directories into a destination directory; or rename a directory.'
     )
@@ -373,6 +383,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_new = subcmds.add_parser(
         'new',
         description=cli.new.__doc__,
+        epilog=epilog_new,
         formatter_class=parser.formatter_class,
         help='Create new assets and populate with key-value pairs.'
     )
@@ -384,6 +395,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_rm = subcmds.add_parser(
         'rm',
         description=cli.rm.__doc__,
+        epilog=epilog_rm,
         formatter_class=parser.formatter_class,
         help='Delete assets and directories.'
     )
@@ -395,6 +407,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_set = subcmds.add_parser(
         'set',
         description=cli.set.__doc__,
+        epilog=epilog_set,
         formatter_class=parser.formatter_class,
         help='Set the value of keys for assets.'
     )
@@ -406,6 +419,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_shell_completion = subcmds.add_parser(
         'shell-completion',
         description=cli.shell_completion.__doc__,
+        epilog=epilog_shell_completion,
         formatter_class=parser.formatter_class,
         help='Display a tab-completion script for Onyo.'
     )
@@ -417,6 +431,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_tree = subcmds.add_parser(
         'tree',
         description=cli.tree.__doc__,
+        epilog=epilog_tree,
         formatter_class=parser.formatter_class,
         help='List the assets and directories of a directory in ``tree`` format.'
     )
@@ -428,6 +443,7 @@ def setup_parser() -> OnyoArgumentParser:
     cmd_unset = subcmds.add_parser(
         'unset',
         description=cli.unset.__doc__,
+        epilog=epilog_unset,
         formatter_class=parser.formatter_class,
         help='Remove keys from assets.'
     )

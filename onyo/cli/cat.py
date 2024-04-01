@@ -18,6 +18,24 @@ args_cat = {
     ),
 }
 
+epilog_cat = r"""
+.. rubric:: Examples
+
+**Display the contents of an asset file**
+
+.. code:: shell
+
+    onyo cat accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+
+    type: laptop
+    make: lenovo
+    model: T490s
+    serial: abc123
+    RAM: 16GB
+    display_size: '14.6'
+    touch: yes
+"""
+
 
 def cat(args: argparse.Namespace) -> None:
     r"""

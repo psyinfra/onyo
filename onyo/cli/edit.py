@@ -21,6 +21,17 @@ args_edit = {
     'message': shared_arg_message,
 }
 
+epilog_edit = r"""
+.. rubric:: Examples
+
+**Upgrade an asset**
+
+.. code:: shell
+
+   onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+   <spawns $EDITOR; user can edit the asset>
+"""
+
 
 def edit(args: argparse.Namespace) -> None:
     r"""

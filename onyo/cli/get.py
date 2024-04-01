@@ -88,6 +88,16 @@ args_get = {
     ),
 }
 
+epilog_get = r"""
+.. rubric:: Examples
+
+**Show all display sizes of the accounting group**
+
+.. code:: shell
+
+   onyo get --keys display --path accounting
+"""
+
 
 def get(args: argparse.Namespace) -> None:
     r"""

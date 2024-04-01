@@ -19,6 +19,16 @@ args_shell_completion = {
     )
 }
 
+epilog_shell_completion = r"""
+.. rubric:: Examples
+
+**Enable shell completion for onyo**
+
+.. code:: shell
+
+    source <(onyo shell-completion)
+"""
+
 
 def shell_completion(args: argparse.Namespace) -> None:
     r"""

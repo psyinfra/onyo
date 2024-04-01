@@ -18,6 +18,16 @@ args_tree = {
     )
 }
 
+epilog_tree = r"""
+.. rubric:: Examples
+
+**List all assets on the shelf**
+
+.. code:: shell
+
+   onyo tree shelf
+"""
+
 
 def tree(args: argparse.Namespace) -> None:
     r"""
