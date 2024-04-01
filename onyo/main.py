@@ -164,6 +164,9 @@ def rst_to_rich(text: str) -> str:
 
     # stylize ``` (code blocks)
     text = re.sub('```\\n([^`]+)\\n```', r'\n[underline]\1[/underline]', text)
+    # remove .. code:: statements
+    # Onyo uses them for code that should be stylized in HTML but not help text.
+    text = re.sub('.. code::[^\\n]+', '', text)
 
     # stylize `` (inline code markers) for flags
     text = re.sub('``(-[^`]+)``', r'[cyan]\1[/cyan]', text)
