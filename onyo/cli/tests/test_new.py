@@ -298,7 +298,7 @@ def test_error_keys_flag_mismatch_count(repo: OnyoRepo) -> None:
 
     # verify correct error
     assert not ret.stdout
-    assert "All keys given multiple times must be given the same number of times" in ret.stderr
+    assert "All keys given multiple times must be given the same number" in ret.stderr
     assert ret.returncode == 2
 
     # verify that no new assets were created and the repository stays clean
