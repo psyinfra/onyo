@@ -49,7 +49,7 @@ Remove a key from an asset:
 Remove a key from all laptops:
 
     $ onyo get --machine-readable --match type=laptop --keys path \
-           | xargs onyo --yes unset --keys USB_A --asset
+           | xargs -d "\n" onyo --yes unset --keys USB_A --asset
 """
 
 

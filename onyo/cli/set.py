@@ -76,7 +76,7 @@ Change the model name of all "mbp" to "macbookpro":
 .. code:: shell
 
     $ onyo get --machine-readable --match model=macbookpro --keys path \
-           | xargs onyo --yes set --rename --keys model=mbp --asset
+           | xargs -d "\n" onyo --yes set --rename --keys model=mbp --asset
 
 Change an Asset File to an Asset Directory:
 
