@@ -183,9 +183,9 @@ def rst_to_rich(text: str) -> str:
     # make bullet points prettier
     text = text.replace(' * ', ' • ')
 
-    # remove space-escaping
+    # remove space-escaping for pluralizing arguments
     # (RST oddity that ``ASSET``s is illegal, but ``ASSET``\ s -> ASSETs)
-    text = text.replace('\\ ', '')
+    text = text.replace('\\ s', 's')
 
     return text
 
