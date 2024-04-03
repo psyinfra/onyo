@@ -40,11 +40,16 @@ args_unset = {
 epilog_unset = r"""
 .. rubric:: Examples
 
-**Remove values from an asset**
+Remove a key from an asset:
 
 .. code:: shell
 
-    onyo unset --keys display touch --path accounting/Karl\ Krebs/laptop_apple_macbookpro.222
+    $ onyo unset --keys USB_A --path accounting/Bingo\ Bob/laptop_apple_macbook.oiw629
+
+Remove a key from all laptops:
+
+    $ onyo get --machine-readable --match type=laptop --keys path \
+           | xargs onyo --yes unset --keys USB_A --asset
 """
 
 

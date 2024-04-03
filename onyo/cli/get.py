@@ -91,11 +91,24 @@ args_get = {
 epilog_get = r"""
 .. rubric:: Examples
 
-**Show all display sizes of the accounting group**
+List all assets belonging to a user:
 
 .. code:: shell
 
-   onyo get --keys display --path accounting
+    $ onyo get --path accounting/Bingo\ Bob
+
+List all laptops in the warehouse:
+
+.. code:: shell
+
+    $ onyo get --match type=laptop --path warehouse/
+
+Get the path of all laptops of a specific make and model, and print in machine
+parsable format (suitable for piping):
+
+.. code:: shell
+
+    $ onyo get --match type=laptop make=apple model=macbookpro --keys path --machine-readable
 """
 
 

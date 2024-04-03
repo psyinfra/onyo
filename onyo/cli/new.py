@@ -102,101 +102,30 @@ args_new = {
 epilog_new = r"""
 .. rubric:: Examples
 
-**Add new assets**
-
-Use ``onyo new`` to add a new asset and add some content to it:
+Add three new assets, using an existing asset as a template:
 
 .. code:: shell
 
-   onyo new --keys RAM=8GB display=14.6 type=laptop make=lenovo model=T490s serial=abc123 --directory shelf/
+    $ onyo new --clone accounting/Bingo Bob/laptop_apple_macbook.oiw629 \
+           --keys serial={xyz123,xyz456,xyz789} --directory warehouse/
 
-This command writes a YAML file to ``shelf/laptop_lenovo_T490s.abc123``:
-
-.. code:: shell
-
-   RAM: 8GB
-   display: 14.6
-   type: laptop
-   make: lenovo
-   model: T490s
-   serial: abc123
-
-**Create multiple new assets with content in different locations, and overwrite
-the default message**
+Add a new asset using a template and open with an editor:
 
 .. code:: shell
 
-   onyo new --keys RAM=16GB display_size=14.6 touch=yes
-   type=laptop make=lenovo model=T490s serial=abc123 directory=Bingo\ Bob
-   type=laptop make=apple model=macbookpro serial=abc456 directory=Alice\ Wonderland
-   type=laptop make=apple model=macbookpro serial=17 directory=shelf
-   --message "devices for the new group are delivered"
+    $ onyo new --edit --template laptop_lenovo --directory warehouse/
+    <spawns editor>
 
-
-**Add inventory with a table**
-
-To add many different assets, instead of calling ``onyo new`` multiple times
-with different arguments, use a tsv table to describe the new devices:
+Add three new assets in different locations, and overwrite the default commit
+message:
 
 .. code:: shell
 
-   onyo new  --keys usb_ports=2 --tsv demo/inventory.tsv
-
-With ``inventory.tsv`` being:
-
-+--------+-------+------------+--------+------------------+---------+
-| type   | make  | model      | serial | directory        | display |
-+========+=======+============+========+==================+=========+
-| laptop | apple | macbookpro | 0io4ff | warehouse        | 13.3    |
-+--------+-------+------------+--------+------------------+---------+
-| laptop | apple | macbookpro | 1eic93 | warehouse        | 13.3    |
-+--------+-------+------------+--------+------------------+---------+
-| laptop | apple | macbookpro | j7tbkk | repair           | 13.3    |
-+--------+-------+------------+--------+------------------+---------+
-| laptop | apple | macbookpro | dd082o | repair           | 13.3    |
-+--------+-------+------------+--------+------------------+---------+
-| laptop | apple | macbookpro | 9sdjwa | admin/Karl Krebs | 13.3    |
-+--------+-------+------------+--------+------------------+---------+
-
-
-The columns type, make, model and serial define the asset name, and the column
-path sets the location were asset will be created (e.g.
-``warehouse/laptop_apple_macbookpro.0io4ff``). The rest of the information (the
-column ``display`` and the key value pair ``usb_ports=2`` from the CLI call)
-will be written into the asset file
-``warehouse/laptop_apple_macbookpro.0io4ff``:
-
-.. code:: shell
-
-    type: laptop
-    make: apple
-    model: macbookpro
-    serial: 0io4ff
-    display: 13.3
-    usb_ports: 2
-
-
-**Use pre-filled templates and adjust them to add new assets**
-
-To facilitate the creation of many similar devices, add templates under
-``.onyo/templates/`` and use them with ``onyo new --template <template>``.
-
-``onyo new --edit --template laptop_lenovo --directory shelf/`` adds a new laptop to
-the inventory, using ``.onyo/templates/laptop_lenovo`` as a pre-filled template:
-
-.. code:: yaml
-
-   ---
-   type: laptop
-   make: lenovo
-   model:
-   serial:
-   RAM: 16GB
-   Size: 14.6
-   USB: 3
-
-The command copies the contents of the template file into the new asset, and
-then the ``--edit`` flag opens the editor to add or adjust missing information.
+    $ onyo new --keys RAM=16GB display_size=14 \
+           type=laptop make=lenovo model=T490s serial=abc123 directory=accounting/Bingo\ Bob
+           type=laptop make=apple model=macbookpro serial=abc456 directory=management/Alice\ Wonderland
+           type=laptop make=apple model=macbookpro serial=abc789 directory=warehouse
+           --message "Devices for new hires were dropshipped"
 """
 
 

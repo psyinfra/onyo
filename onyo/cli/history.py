@@ -36,18 +36,11 @@ args_history = {
 epilog_history = r"""
 .. rubric:: Examples
 
-**List the history of an asset**
+See the history of all assets of a user:
 
 .. code:: shell
 
-   onyo history accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
-
-
-**List the history of all assets of a user**
-
-.. code:: shell
-
-   onyo history accounting/Bingo\ Bob
+    $ onyo history accounting/Bingo\ Bob
 """
 
 

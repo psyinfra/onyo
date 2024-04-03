@@ -24,12 +24,12 @@ args_edit = {
 epilog_edit = r"""
 .. rubric:: Examples
 
-**Upgrade an asset**
+Edit an asset (file or directory):
 
 .. code:: shell
 
-   onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
-   <spawns $EDITOR; user can edit the asset>
+    $ onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+    <spawns $EDITOR>
 """
 
 

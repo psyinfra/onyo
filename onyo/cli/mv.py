@@ -33,29 +33,29 @@ args_mv = {
 epilog_mv = r"""
 .. rubric:: Examples
 
-**Assign an asset**
+Assign an asset:
 
 .. code:: shell
 
-   onyo mv shelf/laptop_lenovo_T490s.abc123 accounting/Bingo\ Bob/
+    $ onyo mv shelf/laptop_lenovo_T490s.abc123 accounting/Bingo\ Bob/
 
-**Retire an asset**
-
-.. code:: shell
-
-   onyo mv accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123 retired/
-
-**Move a user to another workgroup**
+Retire an asset:
 
 .. code:: shell
 
-   onyo mv --message "Bob works now as an admin" accounting/Bingo\ Bob/ admin/
+    $ onyo mv accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123 retired/
 
-**Rename a group**
+Transfer a user to another department:
 
 .. code:: shell
 
-   onyo mv --message "Marketing is now Advertisement" marketing/ advertisement/
+    $ onyo mv accounting/Bingo\ Bob/ marketing/
+
+Rename a department:
+
+.. code:: shell
+
+    $ onyo mv --message "Creation is now Ideation" creation/ ideation/
 """
 
 

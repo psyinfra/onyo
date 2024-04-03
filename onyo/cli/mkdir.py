@@ -26,18 +26,18 @@ args_mkdir = {
 epilog_mkdir = r"""
 .. rubric:: Examples
 
-**Add a new user to a group**
+Add a new user to a group:
 
 .. code:: shell
 
-    onyo mkdir accounting/Bingo\ Bob/
+    $ onyo mkdir accounting/Bingo\ Bob/
 
-
-**Create a new group with some users**
+Convert an Asset File into an Asset Directory:
 
 .. code:: shell
 
-    onyo mkdir --message "the marketing group joined\!" marketing/Alice\ Wonder/ marketing/Karl\ Krebs
+    $ onyo mkdir accounting/Bingo\ Bob/laptop_apple_macbook.oiw629
+
 """
 
 

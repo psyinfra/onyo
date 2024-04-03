@@ -21,11 +21,11 @@ args_tree = {
 epilog_tree = r"""
 .. rubric:: Examples
 
-**List all assets on the shelf**
+List all assets and directories in a directory:
 
 .. code:: shell
 
-   onyo tree shelf
+    $ onyo tree shelf
 """
 
 

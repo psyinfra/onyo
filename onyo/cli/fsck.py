@@ -12,11 +12,11 @@ if TYPE_CHECKING:
 epilog_fsck = r"""
 .. rubric:: Examples
 
-**Verify the validity of the inventory**
+Check the validity of an Onyo repository:
 
 .. code:: shell
 
-    onyo fsck
+    $ onyo fsck
 """
 
 

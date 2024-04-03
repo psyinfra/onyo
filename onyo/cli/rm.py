@@ -52,17 +52,17 @@ args_rm = {
 epilog_rm = r"""
 .. rubric:: Examples
 
-**Delete an asset from the inventory**
+Delete an asset:
 
 .. code:: shell
 
-    onyo rm shelf/laptop_lenovo_T490s.abc123
+    $ onyo rm shelf/laptop_lenovo_T490s.abc123
 
-**Retire a user**
+Retire a user:
 
 .. code:: shell
 
-    onyo rm --message "Bob retired" admin/Bingo\ Bob/
+    $ onyo rm --message "Bob retired; he won at bingo" admin/Bingo\ Bob/
 """
 
 

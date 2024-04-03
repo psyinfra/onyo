@@ -59,20 +59,30 @@ args_set = {
 epilog_set = r"""
 .. rubric:: Examples
 
-**Upgrade an asset**
+Upgrade an asset:
 
 .. code:: shell
 
-    onyo set --keys RAM=16GB --path accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+    $ onyo set --keys RAM=16GB --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
 
-    - RAM: 8GB
-    + RAM: 16GB
-
-**Change the pseudo key of the name**
+Change a key used in the asset name (renaming it):
 
 .. code:: shell
 
-   onyo set --keys type=notebook --rename --path accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+    $ onyo set --rename --keys type=notebook --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+
+Change the model name of all "mbp" to "macbookpro":
+
+.. code:: shell
+
+    $ onyo get --machine-readable --match model=macbookpro --keys path \
+           | xargs onyo --yes set --rename --keys model=mbp --asset
+
+Change an Asset File to an Asset Directory:
+
+.. code:: shell
+
+    $ onyo set --keys is_asset_directory=true --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
 """
 
 
