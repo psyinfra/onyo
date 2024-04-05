@@ -30,6 +30,34 @@ args_mv = {
     'message': shared_arg_message,
 }
 
+epilog_mv = r"""
+.. rubric:: Examples
+
+Assign an asset:
+
+.. code:: shell
+
+    $ onyo mv shelf/laptop_lenovo_T490s.abc123 accounting/Bingo\ Bob/
+
+Retire an asset:
+
+.. code:: shell
+
+    $ onyo mv accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123 retired/
+
+Transfer a user to another department:
+
+.. code:: shell
+
+    $ onyo mv accounting/Bingo\ Bob/ marketing/
+
+Rename a department:
+
+.. code:: shell
+
+    $ onyo mv --message "Creation is now Ideation" creation/ ideation/
+"""
+
 
 def mv(args: argparse.Namespace) -> None:
     r"""

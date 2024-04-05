@@ -18,6 +18,22 @@ args_init = {
     )
 }
 
+epilog_init = r"""
+.. rubric:: Examples
+
+Initialize the current working directory as an Onyo repository:
+
+.. code:: shell
+
+    $ onyo init
+
+Create a new directory and initialize it as an Onyo repository:
+
+.. code:: shell
+
+    $ onyo init new_inventory_directory
+"""
+
 
 def init(args: argparse.Namespace) -> None:
     r"""

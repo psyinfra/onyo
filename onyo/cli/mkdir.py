@@ -23,6 +23,23 @@ args_mkdir = {
     'message': shared_arg_message,
 }
 
+epilog_mkdir = r"""
+.. rubric:: Examples
+
+Add a new user to a group:
+
+.. code:: shell
+
+    $ onyo mkdir accounting/Bingo\ Bob/
+
+Convert an Asset File into an Asset Directory:
+
+.. code:: shell
+
+    $ onyo mkdir accounting/Bingo\ Bob/laptop_apple_macbook.oiw629
+
+"""
+
 
 def mkdir(args: argparse.Namespace) -> None:
     r"""

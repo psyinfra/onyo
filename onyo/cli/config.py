@@ -18,6 +18,22 @@ args_config = {
     ),
 }
 
+epilog_config = r"""
+.. rubric:: Examples
+
+Get the tool used for interactive history:
+
+.. code:: shell
+
+    $ onyo config --get onyo.history.interactive
+
+Set the default template used by ``onyo new``:
+
+.. code:: shell
+
+    $ onyo config onyo.new.template "generic.asset"
+"""
+
 
 def config(args: argparse.Namespace) -> None:
     r"""

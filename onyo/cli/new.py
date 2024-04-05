@@ -99,6 +99,35 @@ args_new = {
     'message': shared_arg_message,
 }
 
+epilog_new = r"""
+.. rubric:: Examples
+
+Add three new assets, using an existing asset as a template:
+
+.. code:: shell
+
+    $ onyo new --clone accounting/Bingo Bob/laptop_apple_macbook.oiw629 \
+           --keys serial={xyz123,xyz456,xyz789} --directory warehouse/
+
+Add a new asset using a template and open with an editor:
+
+.. code:: shell
+
+    $ onyo new --edit --template laptop_lenovo --directory warehouse/
+    <spawns editor>
+
+Add three new assets in different locations, and overwrite the default commit
+message:
+
+.. code:: shell
+
+    $ onyo new --keys RAM=16GB display_size=14 \
+           type=laptop make=lenovo model=T490s serial=abc123 directory=accounting/Bingo\ Bob
+           type=laptop make=apple model=macbookpro serial=abc456 directory=management/Alice\ Wonderland
+           type=laptop make=apple model=macbookpro serial=abc789 directory=warehouse
+           --message "Devices for new hires were dropshipped"
+"""
+
 
 def new(args: argparse.Namespace) -> None:
     r"""

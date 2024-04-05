@@ -152,7 +152,6 @@ def test_get_all(
 
     if machine_readable:
         for line in output:
-            line = [field.strip("\"") for field in line]
             # match
             for f in matches:
                 key, value = f.split('=', 1)
@@ -201,7 +200,6 @@ def test_get_filter(
     for key in matches:
         key, value = key.split('=', 1)
         for line in output:
-            line = [field.strip("\"") for field in line]
             assert line[keys.index(key)] == value
 
     assert len(output) == expected
@@ -237,7 +235,6 @@ def test_get_filter_regex(
         r = re.compile(value)
 
         for line in output:
-            line = [field.strip("\"") for field in line]
             assert r.match(line[keys.index(key)])
 
     assert len(output) == expected
@@ -297,8 +294,8 @@ def test_get_keys(
 
     # Get all the key values and make sure they match
     for line in output:
-        line = [field.strip("\"") for field in line]
         asset = raw_assets[[a[0] for a in raw_assets].index(line[-1])][1]
+
         for i, key in enumerate(keys):
             if key in PSEUDO_KEYS:
                 continue
@@ -397,7 +394,6 @@ def test_get_path_at_depth(
 
     if set_paths:
         for line in output:
-            line = [field.strip("\"") for field in line]
             assert any(set_paths & set(Path(line[-1]).parents))
 
     assert len(output) == expected
@@ -456,7 +452,7 @@ def test_get_sort(
         if key == 'unset':  # nothing to be sorted
             continue
 
-        assert [line[i if sort else -1].strip("\"") for line in output] == \
+        assert [line[i if sort else -1] for line in output] == \
                list(reversed(expected)) if sort == '-S' else expected
 
     assert not ret.stderr

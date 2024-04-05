@@ -18,6 +18,28 @@ args_cat = {
     ),
 }
 
+epilog_cat = r"""
+.. rubric:: Examples
+
+Display the contents of an asset (file or directory):
+
+.. code:: shell
+
+    $ onyo cat accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+
+Display the contents of all assets in a directory:
+
+.. code:: shell
+
+    $ onyo cat admin/Karl\ Krebs/*
+
+Display the contents of an Asset Directory and all assets in it:
+
+.. code:: shell
+
+    $ onyo cat admin/Karl\ Krebs/laptop_apple_macbookpro.9sdjwb/{,*}
+"""
+
 
 def cat(args: argparse.Namespace) -> None:
     r"""

@@ -33,6 +33,16 @@ args_history = {
     ),
 }
 
+epilog_history = r"""
+.. rubric:: Examples
+
+See the history of all assets of a user:
+
+.. code:: shell
+
+    $ onyo history accounting/Bingo\ Bob
+"""
+
 
 def history(args: argparse.Namespace) -> None:
     r"""

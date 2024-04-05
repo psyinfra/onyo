@@ -128,10 +128,10 @@ onyo --yes mv "ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2" repair
 onyo --yes mv warehouse/laptop_microsoft_surface.oq782j "ethics/Achilles Book"
 
 # specify number of USB type A ports on all laptops
-onyo get --match type=laptop --machine-readable --keys path | xargs onyo --yes set --keys USB_A=2 --asset
+onyo get --match type=laptop --machine-readable --keys path | tr "\n" "\0" | xargs -0 onyo --yes set --keys USB_A=2 --asset
 
 # specify the number of USB ports (type A and C) on MacBooks
-onyo get --match model=macbook --machine-readable --keys path | xargs onyo --yes set --keys USB_A=2 USB_C=1 --asset
+onyo get --match model=macbook --machine-readable --keys path | tr "\n" "\0" | xargs -0 onyo --yes set --keys USB_A=2 USB_C=1 --asset
 
 # add three newly purchased laptops; shell brace-expansion can be very useful
 onyo --yes new --keys type=laptop make=apple model=macbook serial={uef82b3,9il2b4,73b2cn} RAM=8GB display=13.3 USB_A=2 USB_C=1 \

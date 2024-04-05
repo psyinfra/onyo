@@ -9,6 +9,16 @@ from onyo.lib.commands import fsck as fsck_cmd
 if TYPE_CHECKING:
     import argparse
 
+epilog_fsck = r"""
+.. rubric:: Examples
+
+Check the validity of an Onyo repository:
+
+.. code:: shell
+
+    $ onyo fsck
+"""
+
 
 def fsck(args: argparse.Namespace) -> None:
     r"""

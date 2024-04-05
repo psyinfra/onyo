@@ -19,19 +19,23 @@ args_shell_completion = {
     )
 }
 
+epilog_shell_completion = r"""
+.. rubric:: Examples
+
+Enable shell completion for ``onyo``:
+
+.. code:: shell
+
+    $ source <(onyo shell-completion)
+    $ onyo --<press TAB to display available options>
+"""
+
 
 def shell_completion(args: argparse.Namespace) -> None:
     r"""
     Display a tab-completion shell script for Onyo.
 
-    The output of this command should be "sourced" to enable tab completion.
-
-    Example:
-
-      ```
-      $ source <(onyo shell-completion)
-      $ onyo --<PRESS TAB to display available options>
-      ```
+    The output of this command is suitable to ``source`` in your shell.
     """
     content = ''
     shell_completion_dir = Path(__file__).resolve().parent.parent / 'shell_completion'

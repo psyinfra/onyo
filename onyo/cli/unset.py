@@ -37,6 +37,21 @@ args_unset = {
     'message': shared_arg_message,
 }
 
+epilog_unset = r"""
+.. rubric:: Examples
+
+Remove a key from an asset:
+
+.. code:: shell
+
+    $ onyo unset --keys USB_A --path accounting/Bingo\ Bob/laptop_apple_macbook.oiw629
+
+Remove a key from all laptops:
+
+    $ onyo get --machine-readable --match type=laptop --keys path \
+           | xargs -d "\n" onyo --yes unset --keys USB_A --asset
+"""
+
 
 def unset(args: argparse.Namespace) -> None:
     r"""
