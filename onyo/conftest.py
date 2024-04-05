@@ -8,7 +8,6 @@ from typing import Generator, List, Type
 import pytest
 from _pytest.mark.structures import MarkDecorator
 
-from onyo.lib.assets import Asset
 from onyo.lib.git import GitRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
@@ -186,13 +185,13 @@ def inventory(repo) -> Generator:
     # TODO: This is currently not in line with `repo`, where files and dirs are defined differently.
     #       Paths to created items should be delivered somehow.
     inventory = Inventory(repo=repo)
-    inventory.add_asset(Asset(some_key="some_value",
-                              type="TYPE",
-                              make="MAKER",
-                              model="MODEL",
-                              serial="SERIAL",
-                              other=1,
-                              directory=repo.git.root / "somewhere" / "nested")
+    inventory.add_asset(dict(some_key="some_value",
+                             type="TYPE",
+                             make="MAKER",
+                             model="MODEL",
+                             serial="SERIAL",
+                             other=1,
+                             directory=repo.git.root / "somewhere" / "nested")
                         )
     inventory.add_directory(repo.git.root / 'empty')
     inventory.add_directory(repo.git.root / 'different' / 'place')

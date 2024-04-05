@@ -1,5 +1,19 @@
 PSEUDO_KEYS = ['path']
-# The following keys have functional meaning for onyo and must not be part of user-defined asset content
+r"""Key names that are addressable but not in asset content.
+
+All ``PSEUDO_KEYS`` are reserved.
+
+See Also
+--------
+RESERVED_KEYS
+"""
 RESERVED_KEYS = ['directory', 'is_asset_directory', 'template']
+r"""Key names that are reserved and must not be part of asset content.
+
+These keys have functional meaning for Onyo. Thus they are reserved and cannot
+be part of asset content.
+"""
 # TODO: other symbols like <list>, <dict>, and potentially <none> or <null>?
 UNSET_VALUE = '<unset>'
+r"""String to represent keys that are not set.
+"""

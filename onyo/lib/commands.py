@@ -81,9 +81,6 @@ def fsck(repo: OnyoRepo,
       .anchor file
     * ``asset-unique``: verify that all asset names are unique
     * ``asset-yaml``: verify that all asset contents are valid YAML
-    * ``asset-validity``: verify that all assets pass the validation rulesets
-      defined in ``.onyo/validation/``
-    * ``pseudo-keys``: verify that asset contents do not contain pseudo-key names
 
     Parameters
     ----------
@@ -104,7 +101,7 @@ def fsck(repo: OnyoRepo,
     """
 
     from functools import partial
-    from .assets import has_unique_names, validate_yaml, validate_assets, contains_no_name_keys
+    from onyo.lib.utils import has_unique_names, validate_yaml
 
     all_tests = {
         # TODO: fsck would probably want to relay or analyze `git-status` output, rather
@@ -113,8 +110,6 @@ def fsck(repo: OnyoRepo,
         "anchors": repo.validate_anchors,
         "asset-unique": partial(has_unique_names, repo.asset_paths),
         "asset-yaml": partial(validate_yaml, {repo.git.root / a for a in repo.asset_paths}),
-        "asset-validity": partial(validate_assets, repo.asset_paths),
-        "pseudo-keys": partial(contains_no_name_keys, repo.asset_paths)
     }
     if tests:
         # only known tests are accepted
@@ -163,7 +158,7 @@ def onyo_cat(inventory: Inventory,
         If paths are not valid assets, e.g. because their content is not valid
         YAML format.
     """
-    from .assets import validate_yaml
+    from onyo.lib.utils import validate_yaml
     if not paths:
         raise ValueError("At least one asset path must be specified.")
     non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]

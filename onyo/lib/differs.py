@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Generator
 
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import dict_to_yaml
+from onyo.lib.utils import dict_to_asset_yaml
 
 
 # Differs signature: (repo: OnyoRepo, operands: tuple) -> Generator[str, None, None]:
@@ -14,8 +14,8 @@ from onyo.lib.utils import dict_to_yaml
 
 
 def diff_assets(asset_old: dict, asset_new: dict):
-    yield from unified_diff(dict_to_yaml(asset_old).splitlines(keepends=False),
-                            dict_to_yaml(asset_new).splitlines(keepends=False),
+    yield from unified_diff(dict_to_asset_yaml(asset_old).splitlines(keepends=False),
+                            dict_to_asset_yaml(asset_new).splitlines(keepends=False),
                             fromfile=str(asset_old.get('path', '')),
                             tofile=str(asset_new.get('path', '')),
                             lineterm="")
