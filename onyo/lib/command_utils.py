@@ -12,23 +12,6 @@ from .onyo import OnyoRepo
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
 
-# Note: Several functions only stage changes. Implies: This function somewhat
-# assumes commit to be called later, which is out of its own control.
-# May be better to only do the modification and have the caller take care of
-# what to do with those modifications.
-# Related: Staging probably not necessary. We can commit directly. Saves
-# overhead for git-calls and would only have a different effect if changes were
-# already staged before an onyo operation and are to be included in the commit.
-# Which sounds like a bad idea, b/c of obfuscating history. So, probably:
-# have functions to assemble paths/modifications and commit at once w/o staging
-# anything in-between.
-
-
-# Note: logging for user messaging rather than logging progress along internal
-# call paths. DataLad does, too, and it's bad. Conflates debugging with "real"
-# output.
-
-
 def sanitize_args_config(git_config_args: list[str]) -> list[str]:
     r"""
     Check the git config arguments against a list of conflicting options. If
