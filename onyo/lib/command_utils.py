@@ -12,13 +12,23 @@ from .onyo import OnyoRepo
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
 
-def sanitize_args_config(git_config_args: list[str]) -> list[str]:
-    r"""
-    Check the git config arguments against a list of conflicting options. If
-    conflicts are present, the conflict list will be printed and will exit with
-    error.
+def allowed_config_args(git_config_args: list[str]) -> bool:
+    r"""Check a list of arguments for disallowed ``git config`` flags.
 
-    Returns the unmodified  git config args on success.
+    ``git-config`` stores configuration information in a variety of locations.
+    This makes sure that such location flags aren't in the list (and --help).
+
+    A helper for the ``onyo config`` command.
+
+    Parameters
+    ----------
+    git_config_args
+        The list of arguments to pass to ``git config``.
+
+    Raises
+    ------
+    ValueError
+        If a disallowed flag is detected.
     """
     # git-config supports multiple layers of git configuration. Onyo uses
     # ``--file`` to write to .onyo/config. Other options are excluded.
@@ -36,7 +46,7 @@ def sanitize_args_config(git_config_args: list[str]) -> list[str]:
         if a in forbidden_flags:
             raise ValueError("The following options cannot be used with onyo config:\n%s\nExiting. Nothing was set." %
                              '\n'.join(forbidden_flags))
-    return git_config_args
+    return True
 
 
 def fill_unset(assets: Generator[dict, None, None] | filter,

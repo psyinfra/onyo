@@ -193,13 +193,13 @@ def onyo_config(inventory: Inventory,
     config_args
         The options to be passed to the underlying call of ``git config``.
     """
-    from onyo.lib.command_utils import sanitize_args_config
-    git_config_args = sanitize_args_config(config_args)
+    from onyo.lib.command_utils import allowed_config_args
+    allowed_config_args(config_args)
 
     subprocess.run(["git", 'config', '-f', str(inventory.repo.ONYO_CONFIG)] +
-                   git_config_args, cwd=inventory.repo.git.root, check=True)
+                   config_args, cwd=inventory.repo.git.root, check=True)
 
-    if not any(a.startswith('--get') or a == '--list' for a in git_config_args):
+    if not any(a.startswith('--get') or a == '--list' for a in config_args):
         # It's a write operation, and we'd want to commit
         # if there were any changes.
         try:
