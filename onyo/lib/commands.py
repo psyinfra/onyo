@@ -5,7 +5,11 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Generator, Literal, ParamSpec, TypeVar
+from typing import (
+    ParamSpec,
+    TYPE_CHECKING,
+    TypeVar,
+)
 from functools import wraps
 
 from rich import box
@@ -25,6 +29,14 @@ from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.ui import ui
 from onyo.lib.utils import deduplicate, write_asset_file
+
+if TYPE_CHECKING:
+    from typing import (
+        Callable,
+        Dict,
+        Generator,
+        Literal,
+    )
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 

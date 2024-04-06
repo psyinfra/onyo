@@ -1,12 +1,20 @@
+from __future__ import annotations
+
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Generator
+from typing import TYPE_CHECKING
 
 import pytest
 
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.command_utils import fill_unset, natural_sort
+
+if TYPE_CHECKING:
+    from typing import (
+        Any,
+        Generator,
+    )
 
 asset_contents = [
     ('laptop_apple_macbookpro.1', {'num': 8,

@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import logging
 import subprocess
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING
 
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.ui import ui
+
+if TYPE_CHECKING:
+    from typing import Iterable
 
 log: logging.Logger = logging.getLogger('onyo.git')
 

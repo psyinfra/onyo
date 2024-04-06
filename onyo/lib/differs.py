@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 from difflib import unified_diff
 from functools import partial
 from pathlib import Path
-from typing import Generator
+from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import dict_to_asset_yaml
 
+if TYPE_CHECKING:
+    from typing import Generator
 
 # Differs signature: (repo: OnyoRepo, operands: tuple) -> Generator[str, None, None]:
 # yielded strings are supposed to be lines of a diff for a given operation

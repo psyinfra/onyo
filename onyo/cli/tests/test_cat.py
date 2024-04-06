@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import subprocess
-from typing import List
+from typing import TYPE_CHECKING
 
 import pytest
 
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import fsck
 from onyo.lib.exceptions import OnyoInvalidRepoError
+
+if TYPE_CHECKING:
+    from typing import List
 
 files = ['laptop_apple_macbookpro',
          'lap top_ap ple_mac book pro']

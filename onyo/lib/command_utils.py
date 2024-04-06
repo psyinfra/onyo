@@ -4,10 +4,14 @@ import logging
 import re
 import shutil
 import sys
-from typing import Generator
+from typing import TYPE_CHECKING
 
 from .consts import UNSET_VALUE
-from .onyo import OnyoRepo
+
+if TYPE_CHECKING:
+    from typing import Generator
+
+    from .onyo import OnyoRepo
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 

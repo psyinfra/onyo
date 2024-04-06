@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import os
 import subprocess
 from collections.abc import Iterable
 from itertools import chain, combinations
 from pathlib import Path
-from typing import Generator, List, Type
+from typing import TYPE_CHECKING
 
 import pytest
 from _pytest.mark.structures import MarkDecorator
@@ -11,6 +13,13 @@ from _pytest.mark.structures import MarkDecorator
 from onyo.lib.git import GitRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+
+if TYPE_CHECKING:
+    from typing import (
+        Generator,
+        List,
+        Type,
+    )
 
 
 def params(d: dict) -> MarkDecorator:
