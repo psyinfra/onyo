@@ -16,7 +16,7 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
     r"""Check a list of arguments for disallowed ``git config`` flags.
 
     ``git-config`` stores configuration information in a variety of locations.
-    This makes sure that such location flags aren't in the list (and --help).
+    This makes sure that such location flags aren't in the list (and ``--help``).
 
     A helper for the ``onyo config`` command.
 
@@ -51,16 +51,20 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
 
 def fill_unset(assets: Generator[dict, None, None] | filter,
                keys: list[str]) -> Generator[dict, None, None]:
-    r"""Fill values for missing `keys` in `assets` with `UNSET_VALUE`.
+    r"""Fill values for missing ``keys`` in ``assets`` with ``UNSET_VALUE``.
 
-    Helper for the onyo-get command.
+    A helper for the ``onyo get`` command.
+
+    See Also
+    --------
+    onyo.lib.consts.UNSET_VALUE
 
     Parameters
     ----------
     assets
-      Asset dictionaries to fill.
+        Asset dictionaries to fill.
     keys
-      Keys for which to set `UNSET_VALUE` if not present in an asset.
+        Keys to create if not present in an asset, and set with ``UNSET_VALUE``.
     """
     for asset in assets:
         yield {k: UNSET_VALUE for k in keys} | asset
@@ -69,16 +73,16 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
 def natural_sort(assets: list[dict],
                  keys: list[str] | None = None,
                  reverse: bool = False) -> list[dict]:
-    r"""Sort an asset list by a given list of `keys`.
+    r"""Sort an asset list by a list of ``keys``.
 
     Parameters
     ----------
     assets
-      Assets to sort.
+        Assets to sort.
     keys
-      Keys to sort `assets` by. Default: ['path'].
+        Keys to sort ``assets`` by. Default: ``['path']``.
     reverse
-      Whether to sort in reverse order.
+        Whether to sort in reverse order.
     """
     keys = keys or ['path']
 
@@ -95,13 +99,27 @@ def natural_sort(assets: list[dict],
     return assets
 
 
-def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
-    r"""
-    Get the command used to display history. The appropriate one is selected
-    according to the interactive mode, and basic checks are performed for
-    validity.
+def get_history_cmd(interactive: bool,
+                    repo: OnyoRepo) -> str:
+    r"""Get the command to display history.
 
-    Returns the command on success.
+    The command is selected according to the (non)interactive mode, and
+    ``which`` verifies that it exists.
+
+    A helper for the ``onyo history`` command.
+
+    Parameters
+    ----------
+    interactive
+        Whether the CLI mode is interactive or not.
+    repo
+        The OnyoRepo to search through for the configuration.
+
+    Raises
+    ------
+    ValueError
+        If the configuration key is either not set or the configured history
+        program cannot be found by ``which``.
     """
     history_cmd = None
     config_name = 'onyo.history.interactive'
