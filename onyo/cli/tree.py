@@ -14,7 +14,9 @@ args_tree = {
     'directory': dict(
         metavar='DIR',
         nargs='*',
-        help='Directories to list'
+        help=r"""
+            Directories to list.
+        """
     )
 }
 
