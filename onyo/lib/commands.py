@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import logging
 import subprocess
-import sys
 from pathlib import Path
 from typing import (
     ParamSpec,
@@ -334,43 +333,34 @@ def onyo_edit(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory in which to edit assets.
-
+        The inventory containing the assets to edit.
     paths
-        The assets to modify.
-
+        Paths of assets to edit.
     message
-        An optional string to overwrite Onyo's default commit message.
+        A custom commit message.
 
     Raises
     ------
-    RuntimeError
-        If none of the assets specified are valid, e.g. the path does not exist.
+    ValueError
+        If a provided asset is not an asset, or if ``paths`` is empty.
     """
+
     from functools import partial
 
-    # check and set paths
-    # Note: This command is an exception. It skips the invalid paths and
-    #       proceeds to act upon the valid ones!
-    valid_asset_paths = []
-    for p in paths:
-        if not inventory.repo.is_asset_path(p):
-            ui.print(f"\n{p} is not an asset.", file=sys.stderr)
-        else:
-            valid_asset_paths.append(p)
-    if not valid_asset_paths:
-        raise RuntimeError("No asset updated.")
+    if not paths:
+        raise ValueError("At least one asset must be specified.")
+
+    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    if non_asset_paths:
+        raise ValueError("The following paths are not assets:\n%s" %
+                         "\n".join(non_asset_paths))
 
     editor = inventory.repo.get_editor()
-    for path in valid_asset_paths:
+    for path in paths:
         asset = inventory.get_asset(path)
         _edit_asset(inventory, asset, partial(inventory.modify_asset, path), editor)
 
     if inventory.operations_pending():
-        # TODO: Just like in `new` we don't need to repeat the diffs
-        ui.print("Changes:")
-        for line in inventory.diff():
-            ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -381,8 +371,10 @@ def onyo_edit(inventory: Inventory,
                     format_string="edit [{len}]: {operation_paths}",
                     len=len(operation_paths),
                     operation_paths=operation_paths)
+
             inventory.commit(message=message)
             return
+
     ui.print('No assets updated.')
 
 
