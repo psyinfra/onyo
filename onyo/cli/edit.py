@@ -31,7 +31,7 @@ Edit an asset (file or directory):
 .. code:: shell
 
     $ onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
-    <spawns $EDITOR>
+    <spawns editor>
 """
 
 
