@@ -17,15 +17,14 @@ from rich.table import Table
 from onyo.lib.command_utils import fill_unset, natural_sort
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 from onyo.lib.exceptions import (
-    OnyoRepoError,
-    OnyoInvalidRepoError,
-    PendingInventoryOperationError,
     NotADirError,
     NotAnAssetError,
     NoopError,
+    OnyoInvalidRepoError,
+    OnyoRepoError,
+    PendingInventoryOperationError,
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.ui import ui
 from onyo.lib.utils import deduplicate, write_asset_file
 
@@ -36,6 +35,7 @@ if TYPE_CHECKING:
         Generator,
         Literal,
     )
+    from onyo.lib.onyo import OnyoRepo
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -160,6 +160,7 @@ def onyo_cat(inventory: Inventory,
         If ``paths`` contains an invalid asset (e.g. content is invalid YAML).
     """
 
+    from onyo.lib.onyo import OnyoRepo
     from onyo.lib.utils import validate_yaml
 
     if not paths:
