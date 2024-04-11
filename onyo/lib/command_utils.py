@@ -4,38 +4,35 @@ import logging
 import re
 import shutil
 import sys
-from typing import Generator
+from typing import TYPE_CHECKING
 
 from .consts import UNSET_VALUE
-from .onyo import OnyoRepo
+
+if TYPE_CHECKING:
+    from typing import Generator
+
+    from .onyo import OnyoRepo
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
 
-# Note: Several functions only stage changes. Implies: This function somewhat
-# assumes commit to be called later, which is out of its own control.
-# May be better to only do the modification and have the caller take care of
-# what to do with those modifications.
-# Related: Staging probably not necessary. We can commit directly. Saves
-# overhead for git-calls and would only have a different effect if changes were
-# already staged before an onyo operation and are to be included in the commit.
-# Which sounds like a bad idea, b/c of obfuscating history. So, probably:
-# have functions to assemble paths/modifications and commit at once w/o staging
-# anything in-between.
+def allowed_config_args(git_config_args: list[str]) -> bool:
+    r"""Check a list of arguments for disallowed ``git config`` flags.
 
+    ``git-config`` stores configuration information in a variety of locations.
+    This makes sure that such location flags aren't in the list (and ``--help``).
 
-# Note: logging for user messaging rather than logging progress along internal
-# call paths. DataLad does, too, and it's bad. Conflates debugging with "real"
-# output.
+    A helper for the ``onyo config`` command.
 
+    Parameters
+    ----------
+    git_config_args
+        The list of arguments to pass to ``git config``.
 
-def sanitize_args_config(git_config_args: list[str]) -> list[str]:
-    r"""
-    Check the git config arguments against a list of conflicting options. If
-    conflicts are present, the conflict list will be printed and will exit with
-    error.
-
-    Returns the unmodified  git config args on success.
+    Raises
+    ------
+    ValueError
+        If a disallowed flag is detected.
     """
     # git-config supports multiple layers of git configuration. Onyo uses
     # ``--file`` to write to .onyo/config. Other options are excluded.
@@ -53,21 +50,25 @@ def sanitize_args_config(git_config_args: list[str]) -> list[str]:
         if a in forbidden_flags:
             raise ValueError("The following options cannot be used with onyo config:\n%s\nExiting. Nothing was set." %
                              '\n'.join(forbidden_flags))
-    return git_config_args
+    return True
 
 
 def fill_unset(assets: Generator[dict, None, None] | filter,
                keys: list[str]) -> Generator[dict, None, None]:
-    r"""Fill values for missing `keys` in `assets` with `UNSET_VALUE`.
+    r"""Fill values for missing ``keys`` in ``assets`` with ``UNSET_VALUE``.
 
-    Helper for the onyo-get command.
+    A helper for the ``onyo get`` command.
+
+    See Also
+    --------
+    onyo.lib.consts.UNSET_VALUE
 
     Parameters
     ----------
     assets
-      Asset dictionaries to fill.
+        Asset dictionaries to fill.
     keys
-      Keys for which to set `UNSET_VALUE` if not present in an asset.
+        Keys to create if not present in an asset, and set with ``UNSET_VALUE``.
     """
     for asset in assets:
         yield {k: UNSET_VALUE for k in keys} | asset
@@ -76,16 +77,16 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
 def natural_sort(assets: list[dict],
                  keys: list[str] | None = None,
                  reverse: bool = False) -> list[dict]:
-    r"""Sort an asset list by a given list of `keys`.
+    r"""Sort an asset list by a list of ``keys``.
 
     Parameters
     ----------
     assets
-      Assets to sort.
+        Assets to sort.
     keys
-      Keys to sort `assets` by. Default: ['path'].
+        Keys to sort ``assets`` by. Default: ``['path']``.
     reverse
-      Whether to sort in reverse order.
+        Whether to sort in reverse order.
     """
     keys = keys or ['path']
 
@@ -102,13 +103,27 @@ def natural_sort(assets: list[dict],
     return assets
 
 
-def get_history_cmd(interactive: bool, repo: OnyoRepo) -> str:
-    r"""
-    Get the command used to display history. The appropriate one is selected
-    according to the interactive mode, and basic checks are performed for
-    validity.
+def get_history_cmd(interactive: bool,
+                    repo: OnyoRepo) -> str:
+    r"""Get the command to display history.
 
-    Returns the command on success.
+    The command is selected according to the (non)interactive mode, and
+    ``which`` verifies that it exists.
+
+    A helper for the ``onyo history`` command.
+
+    Parameters
+    ----------
+    interactive
+        Whether the CLI mode is interactive or not.
+    repo
+        The OnyoRepo to search through for the configuration.
+
+    Raises
+    ------
+    ValueError
+        If the configuration key is either not set or the configured history
+        program cannot be found by ``which``.
     """
     history_cmd = None
     config_name = 'onyo.history.interactive'

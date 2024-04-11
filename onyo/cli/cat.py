@@ -14,7 +14,9 @@ args_cat = {
     'asset': dict(
         metavar='ASSET',
         nargs='+',
-        help='Paths of assets to print'
+        help=r"""
+            Paths of assets to print.
+        """
     ),
 }
 

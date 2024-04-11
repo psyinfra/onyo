@@ -5,12 +5,15 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Iterable, List
+from typing import TYPE_CHECKING
 
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 from .git import GitRepo
 from .ui import ui
 from .utils import get_asset_content, write_asset_file
+
+if TYPE_CHECKING:
+    from typing import Iterable, List
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
 

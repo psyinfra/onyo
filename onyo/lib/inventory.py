@@ -4,11 +4,7 @@ import copy
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import (
-    Callable,
-    Generator,
-    Literal,
-)
+from typing import TYPE_CHECKING
 
 from onyo.lib.differs import (
     differ_new_assets,
@@ -53,6 +49,13 @@ from onyo.lib.recorders import (
 )
 from onyo.lib.utils import deduplicate
 from onyo.lib.ui import ui
+
+if TYPE_CHECKING:
+    from typing import (
+        Callable,
+        Generator,
+        Literal,
+    )
 
 
 @dataclass

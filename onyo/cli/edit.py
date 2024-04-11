@@ -15,7 +15,9 @@ args_edit = {
     'asset': dict(
         metavar='ASSET',
         nargs='+',
-        help='Paths of assets to edit.'
+        help=r"""
+            Paths of assets to edit.
+        """
     ),
 
     'message': shared_arg_message,
@@ -29,7 +31,7 @@ Edit an asset (file or directory):
 .. code:: shell
 
     $ onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
-    <spawns $EDITOR>
+    <spawns editor>
 """
 
 

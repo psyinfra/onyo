@@ -10,7 +10,10 @@ from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
-    from typing import Dict, Set
+    from typing import (
+        Dict,
+        Set,
+    )
 
 
 def deduplicate(sequence: list | None) -> list | None:

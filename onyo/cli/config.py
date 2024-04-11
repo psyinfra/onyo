@@ -14,7 +14,9 @@ args_config = {
     'git_config_args': dict(
         metavar='ARGS',
         nargs='+',
-        help='Config options to set in ``.onyo/config``.'
+        help=r"""
+            Configuration arguments to operate on ``.onyo/config``.
+        """
     ),
 }
 

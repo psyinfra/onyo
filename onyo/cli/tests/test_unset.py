@@ -1,10 +1,18 @@
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
-from typing import Any, Generator
+from typing import TYPE_CHECKING
 
 import pytest
 
 from onyo.lib.onyo import OnyoRepo
+
+if TYPE_CHECKING:
+    from typing import (
+        Any,
+        Generator,
+    )
 
 
 def convert_contents(

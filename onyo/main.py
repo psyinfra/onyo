@@ -15,7 +15,10 @@ from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     from argparse import Action
-    from typing import List
+    from typing import (
+        IO,
+        List,
+    )
 
 
 class OnyoArgumentParser(ArgumentParser):
@@ -28,7 +31,7 @@ class OnyoArgumentParser(ArgumentParser):
 
     def _print_message(self,
                        message: str,
-                       file=None) -> None:
+                       file: IO[str] | None = None) -> None:
         r"""Print help text with Rich.
         """
         if message:

@@ -113,8 +113,7 @@ def test_edit_multiple_assets(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', '--yes', 'edit', *repo_assets],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    # diffs are currently listed twice: once per asset and in a summary at the end
-    assert ret.stdout.count("+key: multiple_assets") == 2 * len(repo_assets)
+    assert ret.stdout.count("+key: multiple_assets") == len(repo_assets)
     assert not ret.stderr
 
     # verify the changes were saved for all assets and the repository is clean
@@ -251,7 +250,7 @@ def test_edit_protected(repo: OnyoRepo, no_asset: str) -> None:
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert "is not an asset" in ret.stderr
+    assert "The following paths are not assets" in ret.stderr
     assert Path(no_asset).is_file()
     assert repo.git.is_clean_worktree()
 
@@ -274,7 +273,7 @@ def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
                          capture_output=True, text=True)
     assert ret.returncode == 1
     assert not ret.stdout
-    assert "is not an asset" in ret.stderr
+    assert "The following paths are not assets" in ret.stderr
     assert not Path(no_asset).is_file()
     assert repo.git.is_clean_worktree()
 

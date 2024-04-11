@@ -3,9 +3,12 @@ from __future__ import annotations
 import copy
 import logging
 import subprocess
-import sys
 from pathlib import Path
-from typing import Callable, Dict, Generator, Literal, ParamSpec, TypeVar
+from typing import (
+    ParamSpec,
+    TYPE_CHECKING,
+    TypeVar,
+)
 from functools import wraps
 
 from rich import box
@@ -14,17 +17,25 @@ from rich.table import Table
 from onyo.lib.command_utils import fill_unset, natural_sort
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 from onyo.lib.exceptions import (
-    OnyoRepoError,
-    OnyoInvalidRepoError,
-    PendingInventoryOperationError,
     NotADirError,
     NotAnAssetError,
     NoopError,
+    OnyoInvalidRepoError,
+    OnyoRepoError,
+    PendingInventoryOperationError,
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.ui import ui
 from onyo.lib.utils import deduplicate, write_asset_file
+
+if TYPE_CHECKING:
+    from typing import (
+        Callable,
+        Dict,
+        Generator,
+        Literal,
+    )
+    from onyo.lib.onyo import OnyoRepo
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -33,20 +44,13 @@ P = ParamSpec('P')
 
 
 def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
-    r"""Raises if it's not OK to run an onyo command on `inventory`.
+    r"""Raise if the ``Inventory`` state is unsafe to run an onyo command.
 
-    Decorator for onyo commands. Expects an `Inventory` to be part of
-    the arguments to the decorated function.
+    Decorator for Onyo commands. Requires an ``Inventory`` to be among the
+    arguments of the decorated function.
 
-    Notes
-    -----
-    Currently simply assesses whether the worktree is clean and there
-    are no pending operations in `inventory`.
-    This may change to a more finegrained assessment of what kinds
-    of commands can safely run on the current state of `inventory`.
-    For example: `onyo_cat` could be allowed to run on a dirty worktree,
-    or at least if there are no modifications to the asset file(s) it's
-    supposed to print while not caring for modifications to other files.
+    Assesses whether the worktree is clean and there are no pending operations
+    in an ``Inventory``.
     """
 
     @wraps(func)
@@ -70,31 +74,29 @@ def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
 
 def fsck(repo: OnyoRepo,
          tests: list[str] | None = None) -> None:
-    r"""Run a suite of checks to verify the integrity and validity of an Onyo
-    repository and its contents.
+    r"""Run a suite of integrity checks on an Onyo repository and its contents.
 
-    By default, the following tests will be performed:
+    By default, the following tests are performed:
 
-    * ``clean-tree``: verify that git has no changed (staged or unstaged) or
-      untracked files
-    * ``anchors``: verify that all directories (outside of .onyo) have an
-      .anchor file
+    * ``anchors``: verify that all directories (outside of ``.onyo/``) have an
+      ``.anchor`` file
     * ``asset-unique``: verify that all asset names are unique
     * ``asset-yaml``: verify that all asset contents are valid YAML
+    * ``clean-tree``: verify that git has no changed (staged or unstaged) or
+      untracked files
 
     Parameters
     ----------
     repo
-        The Repository on which to perform the fsck on.
+        The repository on which to perform the fsck.
 
     tests
-        A list with the names of tests to perform. By default, all tests are
-        performed on the repository.
+        A list of tests to run. By default, all tests are run.
 
     Raises
     ------
     ValueError
-        If a test is specified that does not exist.
+        If a specified test does not exist.
 
     OnyoInvalidRepoError
         If a test fails.
@@ -137,43 +139,48 @@ def onyo_cat(inventory: Inventory,
              paths: list[Path]) -> None:
     r"""Print the contents of assets.
 
-    At least one valid asset path is required.
-    The same paths can be given multiple times.
-    If any path specified is invalid, no contents are printed and an error is raised.
+    The same path can be given multiple times.
+
+    If any path is not an asset, nothing is printed.
+    If any asset content is invalid, the content of all assets is still printed.
 
     Parameters
     ----------
     inventory
         The inventory containing the assets to print.
     paths
-        Path(s) to assets for which to print the contents.
+        Paths of assets to print the contents of.
 
     Raises
     ------
     ValueError
-        If paths point to a location which is not an asset, or `paths`
-        is empty.
+        If a provided asset is not an asset, or if ``paths`` is empty.
 
     OnyoInvalidRepoError
-        If paths are not valid assets, e.g. because their content is not valid
-        YAML format.
+        If ``paths`` contains an invalid asset (e.g. content is invalid YAML).
     """
+
+    from onyo.lib.onyo import OnyoRepo
     from onyo.lib.utils import validate_yaml
+
     if not paths:
-        raise ValueError("At least one asset path must be specified.")
+        raise ValueError("At least one asset must be specified.")
+
     non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
     if non_asset_paths:
-        raise ValueError("The following paths are not asset files:\n%s" %
+        raise ValueError("The following paths are not assets:\n%s" %
                          "\n".join(non_asset_paths))
+
     files = list(p / OnyoRepo.ASSET_DIR_FILE_NAME
                  if inventory.repo.is_asset_dir(p)
                  else p
                  for p in paths)
-    # TODO: "Full" asset validation. Address when fsck is reworked
-    assets_valid = validate_yaml(deduplicate(files))
     # open file and print to stdout
     for f in files:
         ui.print(f.read_text(), end='')
+
+    # TODO: "Full" asset validation. Address when fsck is reworked
+    assets_valid = validate_yaml(deduplicate(files))
     if not assets_valid:
         raise OnyoInvalidRepoError("Invalid assets")
 
@@ -181,27 +188,27 @@ def onyo_cat(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_config(inventory: Inventory,
                 config_args: list[str]) -> None:
-    r"""Interface the configuration of an onyo repository.
+    r"""Set, query, and unset Onyo repository configuration options.
 
-    The config file for the Repo will be identified and the config_args passed
-    into a ``git config`` call on the config file.
+    Arguments are passed through directly to ``git config``. Those that change
+    the config file location (such as ``--system``) are not allowed.
 
     Parameters
     ----------
     inventory
-        The inventory in question.
+        The inventory to configure.
     config_args
-        The options to be passed to the underlying call of ``git config``.
+        Options and arguments to pass to the underlying call of ``git config``.
     """
-    from onyo.lib.command_utils import sanitize_args_config
-    git_config_args = sanitize_args_config(config_args)
 
+    from onyo.lib.command_utils import allowed_config_args
+
+    allowed_config_args(config_args)
     subprocess.run(["git", 'config', '-f', str(inventory.repo.ONYO_CONFIG)] +
-                   git_config_args, cwd=inventory.repo.git.root, check=True)
+                   config_args, cwd=inventory.repo.git.root, check=True)
 
-    if not any(a.startswith('--get') or a == '--list' for a in git_config_args):
-        # It's a write operation, and we'd want to commit
-        # if there were any changes.
+    if not any(a.startswith('--get') or a == '--list' for a in config_args):
+        # commit if there are any changes
         try:
             inventory.repo.commit(inventory.repo.ONYO_CONFIG,
                                   'config: modify repository config')
@@ -327,43 +334,34 @@ def onyo_edit(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory in which to edit assets.
-
+        The inventory containing the assets to edit.
     paths
-        The assets to modify.
-
+        Paths of assets to edit.
     message
-        An optional string to overwrite Onyo's default commit message.
+        A custom commit message.
 
     Raises
     ------
-    RuntimeError
-        If none of the assets specified are valid, e.g. the path does not exist.
+    ValueError
+        If a provided asset is not an asset, or if ``paths`` is empty.
     """
+
     from functools import partial
 
-    # check and set paths
-    # Note: This command is an exception. It skips the invalid paths and
-    #       proceeds to act upon the valid ones!
-    valid_asset_paths = []
-    for p in paths:
-        if not inventory.repo.is_asset_path(p):
-            ui.print(f"\n{p} is not an asset.", file=sys.stderr)
-        else:
-            valid_asset_paths.append(p)
-    if not valid_asset_paths:
-        raise RuntimeError("No asset updated.")
+    if not paths:
+        raise ValueError("At least one asset must be specified.")
+
+    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    if non_asset_paths:
+        raise ValueError("The following paths are not assets:\n%s" %
+                         "\n".join(non_asset_paths))
 
     editor = inventory.repo.get_editor()
-    for path in valid_asset_paths:
+    for path in paths:
         asset = inventory.get_asset(path)
         _edit_asset(inventory, asset, partial(inventory.modify_asset, path), editor)
 
     if inventory.operations_pending():
-        # TODO: Just like in `new` we don't need to repeat the diffs
-        ui.print("Changes:")
-        for line in inventory.diff():
-            ui.print(line)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -374,8 +372,10 @@ def onyo_edit(inventory: Inventory,
                     format_string="edit [{len}]: {operation_paths}",
                     len=len(operation_paths),
                     operation_paths=operation_paths)
+
             inventory.commit(message=message)
             return
+
     ui.print('No assets updated.')
 
 

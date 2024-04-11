@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
 
+if TYPE_CHECKING:
+    from typing import Callable
 
 # Executors signature: (repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]
 #                      first returned list are the paths that need to be committed
