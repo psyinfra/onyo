@@ -29,17 +29,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
       - name: Generate and publish a fresh demo repository
-        env:
-          ONYO_DEMO_ACCESS_TOKEN: ${{ secrets.ONYO_DEMO_ACCESS_TOKEN }}
         run: |
           printf '\ngenerate a fresh demo repository\n'
           demo/generate_demo_repo.sh /tmp/fresh_demo
 
-          printf '\nmake sure we are on the main branch\n'
-          git -C /tmp/fresh_demo checkout -B main
+          printf '\nswitch to dedicated demo branch\n'
+          git -C /tmp/fresh_demo checkout -B demo
+
+          printf '\nadd files for automatic updating of demo\n'
+          cp -r demo/.github /tmp/fresh_demo/
+          cp demo/.onyoignore /tmp/fresh_demo/
+          git -C /tmp/fresh_demo add .github .onyoignore
+          git -C /tmp/fresh_demo commit -m "add files for onyo demo repository"
 
           printf '\nset the location of the demo repo\n'
-          git -C /tmp/fresh_demo remote add origin https://aqw:${ONYO_DEMO_ACCESS_TOKEN}@github.com/psyinfra/onyo-demo
+          git -C /tmp/fresh_demo remote add demo https://github.com/psyinfra/onyo
 
           printf '\npush to onyo-demo\n'
-          git -C /tmp/fresh_demo push --force --set-upstream origin main
+          git -C /tmp/fresh_demo push --force --set-upstream demo demo
