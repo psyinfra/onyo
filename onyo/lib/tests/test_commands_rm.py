@@ -52,20 +52,12 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
                   paths=inventory.root,
                   message="some subject\n\nAnd a body")
 
-    # delete dir in mode 'asset'
-    pytest.raises(ValueError,
+    # non-empty dir w/o `recursive`
+    pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / "somewhere",
-                  mode="asset",
-                  message="some subject\n\nAnd a body")
-
-    # delete asset in mode 'dir'
-    pytest.raises(ValueError,
-                  onyo_rm,
-                  inventory,
-                  paths=inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL",
-                  mode="dir",
+                  recursive=False,
                   message="some subject\n\nAnd a body")
 
     # no error scenario leaves the git tree unclean
@@ -121,9 +113,12 @@ def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
     abcc = inventory.root / "a/b/c/c"
     assert inventory.repo.is_inventory_dir(abcc)
     assert inventory.repo.is_inventory_dir(abc)
+    # --recursive is required, b/c 'abc' isn't empty. This is not changed by the fact that
+    # the content happens to be listed afterwards anyway.
     onyo_rm(inventory,
             paths=[abc, abcc],
-            message="some subject\n\nAnd a body")
+            message="some subject\n\nAnd a body",
+            recursive=True)
     assert not abcc.exists()
     assert not abc.exists()
     # exactly one commit added
@@ -202,7 +197,8 @@ def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
     # delete a path
     onyo_rm(inventory,
             paths=nested,
-            message="some subject\n\nAnd a body")
+            message="some subject\n\nAnd a body",
+            recursive=True)
 
     # "somewhere" NOT deleted
     assert (inventory.root / "somewhere").is_dir
@@ -219,7 +215,8 @@ def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
-
+    # As long as there no assets within, `rm` should remove the asset dir
+    # with and without the `--recursive` flag being set
     inventory.add_asset(dict(some_key="some_value",
                              type="TYPE",
                              make="MAKE",
@@ -234,11 +231,11 @@ def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
 
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    # remove entirely
+    # remove w/o recursive set
     onyo_rm(inventory,
             paths=asset_dir,
-            mode="all",
-            message="Remove asset dir completely")
+            message="Remove asset dir completely",
+            recursive=False)
 
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -246,26 +243,12 @@ def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
 
     inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
     inventory.repo.clear_cache()
-    # remove asset aspect only
+    # remove w/ recursive set
     onyo_rm(inventory,
             paths=asset_dir,
-            mode="asset",
-            message="Remove asset aspect")
+            message="Remove asset aspect",
+            recursive=True)
 
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
-    assert inventory.repo.is_inventory_dir(asset_dir)
-    assert not inventory.repo.is_asset_path(asset_dir)
-
-    inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
-    inventory.repo.clear_cache()
-    # remove dir aspect only
-    onyo_rm(inventory,
-            paths=asset_dir,
-            mode="dir",
-            message="Remove asset aspect")
-
-    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.repo.git.is_clean_worktree()
-    assert not inventory.repo.is_inventory_dir(asset_dir)
-    assert inventory.repo.is_asset_path(asset_dir)
+    assert not asset_dir.exists()

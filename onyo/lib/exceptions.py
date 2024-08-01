@@ -25,6 +25,10 @@ class InvalidInventoryOperationError(InventoryOperationError):
     r"""Thrown if an invalid inventory operation is requested."""
 
 
+class InventoryDirNotEmpty(InvalidInventoryOperationError):
+    r"""Thrown if an inventory directory needs to be empty to perform an operation but isn't."""
+
+
 class PendingInventoryOperationError(InventoryOperationError):
     r"""Thrown if there are unexpected pending operations."""
     # TODO  -> enhance message w/ hint to Inventory.reset/commit?

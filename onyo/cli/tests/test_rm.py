@@ -69,7 +69,7 @@ def test_rm_single_dirs_with_files(repo: OnyoRepo, directory: str) -> None:
     Test that `onyo rm DIRECTORY` deletes directories successfully and leaves
     the repository in a clean state.
     """
-    ret = subprocess.run(['onyo', '--yes', 'rm', directory],
+    ret = subprocess.run(['onyo', '--yes', 'rm', '--recursive', directory],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be deleted:" in ret.stdout
@@ -86,7 +86,7 @@ def test_rm_multiple_directories(repo: OnyoRepo) -> None:
     Test that `onyo rm DIRECTORY` deletes a list of directories all at once and
     leaves the repository in a clean state.
     """
-    ret = subprocess.run(['onyo', '--yes', 'rm', *directories[1:]],
+    ret = subprocess.run(['onyo', '--yes', 'rm', '--recursive', *directories[1:]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert "The following will be deleted:" in ret.stdout
@@ -183,17 +183,3 @@ def test_rm_message_flag(repo: OnyoRepo, asset: str) -> None:
     ret = subprocess.run(['onyo', 'history', '-I', '.'], capture_output=True, text=True)
     assert msg in ret.stdout
     assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
-def test_rm_modes(repo: OnyoRepo, asset: str) -> None:
-    # Note: Doesn't actually test modes, just that the flags
-    #       are recognized (otherwise we should get a usage-message)
-    #       and fail if both are given.
-    #       Actual mode test done in python.
-    msg = "Some message"
-    ret = subprocess.run(['onyo', 'rm', '-a', '-d', '-m', msg, asset],
-                         capture_output=True, text=True)
-    assert ret.returncode != 0
-    assert "mutually exclusive" in ret.stderr

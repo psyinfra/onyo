@@ -20,29 +20,13 @@ args_rm = {
         """
     ),
 
-    'assets': dict(
-        args=('-a', '--asset'),
+    'recursive': dict(
+        args=('-r', '--recursive'),
         required=False,
         default=False,
         action='store_true',
         help=r"""
-            Operate only on assets. Asset Files are removed. Asset Directories
-            are converted into normal directories.
-
-            This cannot be used with the ``--dir`` flag.
-        """
-    ),
-
-    'dirs': dict(
-        args=('-d', '--dir'),
-        required=False,
-        default=False,
-        action='store_true',
-        help=r"""
-            Operate only on directories. Directories are removed. Asset
-            Directories are converted into Asset Files.
-
-            This cannot be used with the ``--asset`` flag.
+            If set, remove directories recursively including their content.
         """
     ),
 
@@ -70,25 +54,16 @@ def rm(args: argparse.Namespace) -> None:
     r"""
     Delete **ASSET**\ s and/or **DIRECTORY**\ s.
 
-    Directories and asset directories are deleted along with their contents.
-
-    The ``--asset`` and ``--dir`` flags can be used to constrain actions to
-    either assets or directories (respectively).
+    Directories and asset directories are deleted along with their contents,
+    if the ``--recursive`` flag is set. Otherwise, fails on non-empty directories.
 
     If any of the given paths are invalid, Onyo will error and delete none of
     them.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path]
-    if args.assets and args.dirs:
-        raise ValueError("'--dir' and '--asset' are mutually exclusive.")
-    mode = "all"
-    if args.assets:
-        mode = "asset"
-    elif args.dirs:
-        mode = "dir"
 
     onyo_rm(inventory,
             paths=paths,
-            mode=mode,  # pyre-ignore[6]  check doesn't understand that this is in fact one of "all", "asset", "dir"
+            recursive=args.recursive,
             message='\n\n'.join(m for m in args.message) if args.message else None)
