@@ -555,7 +555,7 @@ class Inventory(object):
         """
         return (self.get_asset(p) for p in self.repo.get_asset_paths(subtrees=paths, depth=depth))
 
-    def get_asset_from_template(self, template: str) -> dict:
+    def get_asset_from_template(self, template: Path | str | None) -> dict:
         # TODO: Possibly join with get_asset (path optional)
         return self.repo.get_template(template)
 

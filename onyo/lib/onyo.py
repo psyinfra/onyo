@@ -462,14 +462,17 @@ class OnyoRepo(object):
         return False
 
     def get_template(self,
-                     name: str | None = None) -> dict:
-        r"""Select and return a template from the directory `.onyo/templates/`.
+                     path: Path | str | None = None) -> dict:
+        r"""Select a template file and return an asset dict from it.
+         from the directory `.onyo/templates/`
 
         Parameters
         ----------
-        name
-            The name of the template to look for. If no name is given, the
-            template defined in the config file `.onyo/config` is returned.
+        path
+            Template file. If this a relative path or a string, then this
+            is interpreted as relative to the template directory.
+            If no path is given, the template defined in the config file
+            `.onyo/config` is returned.
 
         Returns
         -------
@@ -483,14 +486,15 @@ class OnyoRepo(object):
         ValueError
             If the requested template can't be found or is not a file.
         """
-        if not name:
-            name = self.get_config('onyo.new.template')
-            if name is None:
+        if not path:
+            path = self.get_config('onyo.new.template')
+            if path is None:
                 return dict()
-
-        template_file = self.git.root / self.TEMPLATE_DIR / name
+        template_file = self.git.root / self.TEMPLATE_DIR / path \
+            if isinstance(path, str) or not path.is_absolute() \
+            else path
         if not template_file.is_file():
-            raise ValueError(f"Template {name} does not exist.")
+            raise ValueError(f"Template {path} does not exist.")
         return get_asset_content(template_file)
 
     def validate_anchors(self) -> bool:

@@ -385,7 +385,7 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
     """
     # set editor, template, key=value and asset
     os.environ['EDITOR'] = "printf 'key: value' >>"
-    template = "laptop.example"
+    template = repo.git.root / repo.TEMPLATE_DIR / "laptop.example"
     asset = Path(f"{directory}/laptop_apple_macbookpro.0")
     key_values = asset_spec + ["mode=keys"]
 
