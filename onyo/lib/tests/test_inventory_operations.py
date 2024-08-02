@@ -281,12 +281,6 @@ def test_add_directory(repo: OnyoRepo) -> None:
     invalid_inventory_dir = repo.git.root / '.git' / 'new'
     pytest.raises(ValueError, inventory.add_directory, invalid_inventory_dir)
 
-    # can not add existing dirs:  (TODO: Same as new_asset - this behavior is not entirely correct at this level.
-    #                                    dir w/o anchor could get one. Could also be untracked and now to be added.
-    existing_inventory_dir = repo.git.root / 'exists'
-    existing_inventory_dir.mkdir()
-    pytest.raises(ValueError, inventory.add_directory, existing_inventory_dir)
-
     new_dir = repo.git.root / 'newdir'
     inventory.add_directory(new_dir)
 

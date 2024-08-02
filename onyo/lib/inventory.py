@@ -332,12 +332,15 @@ class Inventory(object):
         # TODO: The following conditions aren't entirely correct yet.
         #       Address with issue #546.
         if self.repo.is_inventory_dir(path):
-            raise NoopError(f"{path} already is a directory.")
-        if path.exists() and not self.repo.is_asset_path(path):
-            raise ValueError(f"{path} already exists.")
+            raise NoopError(f"{path} already is an inventory directory.")
+        if not self.repo.is_asset_path(path) and path.exists() and not path.is_dir():
+            # path is an existing file or symlink that is not an asset - can't do.
+            raise ValueError(f"{path} already exists and is not a directory.")
 
         operations.append(self._add_operation('new_directories', (path,)))
-        operations.extend([self._add_operation('new_directories', (p,)) for p in path.parents if not p.exists()])
+        operations.extend([self._add_operation('new_directories', (p,))
+                           for p in path.parents
+                           if self.root in p.parents and not self.repo.is_inventory_dir(p)])
         return operations
 
     def remove_asset(self, asset: dict | Path) -> list[InventoryOperation]:
