@@ -162,7 +162,7 @@ def test_onyo_mkdir_create_multiple_subdirectories(inventory: Inventory) -> None
 
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    # call onyo_mkdir with the deepest new directory, and create the other dirs implicitely
+    # call onyo_mkdir with the deepest new directory, and create the other dirs implicitly
     onyo_mkdir(inventory,
                dirs=[dir_z],
                message="some subject\n\nAnd a body")
@@ -178,6 +178,41 @@ def test_onyo_mkdir_create_multiple_subdirectories(inventory: Inventory) -> None
     assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME).is_file()
     assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
     # directory x was created and anchor exists
+    assert dir_z.is_dir()
+    assert inventory.repo.is_inventory_dir(dir_z)
+    assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME).is_file()
+    assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    # exactly one commit added
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert inventory.repo.git.is_clean_worktree()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_mkdir_add_multiple_subdirectories(inventory: Inventory) -> None:
+    r"""Add multiple existing subdirectories to the inventory at once."""
+    dir_x = inventory.root / 'x'
+    dir_y = inventory.root / 'x' / 'y'
+    dir_z = inventory.root / 'x' / 'y' / 'z'
+    dir_z.mkdir(parents=True)
+    assert dir_x.is_dir() and dir_y.is_dir() and dir_z.is_dir()
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # call onyo_mkdir with the deepest directory, and add the other dirs implicitly
+    onyo_mkdir(inventory,
+               dirs=[dir_z],
+               message="some subject\n\nAnd a body")
+
+    # directory x was added and anchor exists
+    assert dir_x.is_dir()
+    assert inventory.repo.is_inventory_dir(dir_x)
+    assert (dir_x / OnyoRepo.ANCHOR_FILE_NAME).is_file()
+    assert (dir_x / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    # directory x was added and anchor exists
+    assert dir_y.is_dir()
+    assert inventory.repo.is_inventory_dir(dir_y)
+    assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME).is_file()
+    assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    # directory x was added and anchor exists
     assert dir_z.is_dir()
     assert inventory.repo.is_inventory_dir(dir_z)
     assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME).is_file()
@@ -223,7 +258,7 @@ def test_onyo_mkdir_asset(inventory: Inventory) -> None:
     assert inventory.repo.is_inventory_dir(asset_path)
 
     # re-execution fails:
-    with pytest.raises(NoopError, match="already is a directory"):
+    with pytest.raises(NoopError, match="already is an inventory directory"):
         onyo_mkdir(inventory,
                    dirs=[asset_path],
                    message="some subject\n\nAnd a body")

@@ -136,13 +136,13 @@ def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
 def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
     r"""
     Test the correct behavior when `onyo mkdir <path>` is called on an
-    existing directory name.
+    existing directory.
     """
     ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
 
     # verify output
     assert not ret.stdout
-    assert "already is a directory" in ret.stderr
+    assert "already is an inventory directory" in ret.stderr
     assert ret.returncode == 1
 
     d = Path(directory)
@@ -150,6 +150,16 @@ def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
     assert (d / ".anchor").is_file()
 
     # verify that the repository is clean
+    assert repo.git.is_clean_worktree()
+
+    # existing non-inventory dir
+    regular_dir = repo.git.root / "something new"
+    regular_dir.mkdir()
+    ret = subprocess.run(['onyo', '--yes', 'mkdir', regular_dir], capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert regular_dir.is_dir()
+    assert (regular_dir / ".anchor").is_file()
+    assert repo.is_inventory_dir(regular_dir)
     assert repo.git.is_clean_worktree()
 
 
