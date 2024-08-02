@@ -12,7 +12,7 @@ from typing import (
 from functools import wraps
 
 from rich import box
-from rich.table import Table
+from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't find Table
 
 from onyo.lib.command_utils import fill_unset, natural_sort
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
@@ -23,6 +23,7 @@ from onyo.lib.exceptions import (
     OnyoInvalidRepoError,
     OnyoRepoError,
     PendingInventoryOperationError,
+    InventoryDirNotEmpty,
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.ui import ui
@@ -874,7 +875,7 @@ def onyo_new(inventory: Inventory,
 def onyo_rm(inventory: Inventory,
             paths: list[Path] | Path,
             message: str | None,
-            mode: Literal["asset", "dir", "all"] = "all") -> None:
+            recursive: bool = False) -> None:
     r"""Delete assets and/or directories from the inventory.
 
     Parameters
@@ -886,44 +887,27 @@ def onyo_rm(inventory: Inventory,
         List of paths to assets and/or directories to delete from the Inventory.
         If any path given is not valid, none of them gets deleted.
 
-    mode
-        One of 'asset', 'dir', or 'all'.
-        In mode 'all' any given path is removed (recursively).
-        In mode 'asset' only paths to assets are accepted. If an asset
-        is in fact an asset dir, this removes the asset aspect of it only,
-        leaving behind a regular inventory dir.
-        In mode 'dir' only paths to dirs are accepted. If a dir happens to
-        be an asset dir, this removes the dir aspect from it, turning it
-        into a regular asset file.
+    recursive
+        Recursively remove a directory with all its content. If not set,
+        fail on non-empty directories.
 
     message
         An optional string to overwrite Onyo's default commit message.
     """
     paths = [paths] if not isinstance(paths, list) else paths
 
-    if mode == "all":
-        for p in paths:
-            try:
-                inventory.remove_asset(p)
-                is_asset = True
-            except NotAnAssetError:
-                is_asset = False
-            if not is_asset or inventory.repo.is_asset_dir(p):
-                inventory.remove_directory(p)
-    elif mode == "asset":
-        invalid_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
-        if invalid_paths:
-            raise ValueError("The following paths aren't assets:\n%s" %
-                             "\n".join(invalid_paths))
-        for p in paths:
+    for p in paths:
+        try:
             inventory.remove_asset(p)
-    elif mode == "dir":
-        invalid_paths = [str(p) for p in paths if not inventory.repo.is_inventory_dir(p)]
-        if invalid_paths:
-            raise ValueError("The following paths aren't inventory directories:\n%s" %
-                             "\n".join(invalid_paths))
-        for p in paths:
-            inventory.remove_directory(p)
+            is_asset = True
+        except NotAnAssetError:
+            is_asset = False
+        if not is_asset or inventory.repo.is_asset_dir(p):
+            try:
+                inventory.remove_directory(p, recursive=recursive)
+            except InventoryDirNotEmpty as e:
+                # Enhance message from failed operation with command specific context:
+                raise InventoryDirNotEmpty(f"{str(e)}\nDid you forget '--recursive'?") from e
 
     if inventory.operations_pending():
         ui.print('The following will be deleted:')

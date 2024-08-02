@@ -78,7 +78,7 @@ def get_asset_content(asset_file: Path) -> dict[str, bool | float | int | str | 
     contents = dict()
     try:
         contents = yaml.load(asset_file)
-    except scanner.ScannerError as e:
+    except scanner.ScannerError as e:  # pyre-ignore[66]
         ui.error(f"{asset_file} has invalid YAML syntax: {str(e)}")
     if contents is None:
         return dict()
@@ -134,7 +134,7 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
         # TODO: use valid_yaml()
         try:
             YAML(typ='rt').load(asset)
-        except scanner.ScannerError:
+        except scanner.ScannerError:  # pyre-ignore[66]
             invalid_yaml.append(str(asset))
 
     if invalid_yaml:

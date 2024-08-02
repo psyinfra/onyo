@@ -22,6 +22,7 @@ from onyo.lib.exceptions import (
     NotAnAssetError,
     NoopError,
     InvalidInventoryOperationError,
+    InventoryDirNotEmpty,
 )
 from onyo.lib.executors import (
     exec_new_assets,
@@ -460,18 +461,19 @@ class Inventory(object):
             pass
         return operations
 
-    def remove_directory(self, directory: Path) -> list[InventoryOperation]:
+    def remove_directory(self, directory: Path, recursive: bool = True) -> list[InventoryOperation]:
         if directory in self._get_pending_removals(mode='dirs'):
             ui.log_debug(f"{directory} already queued for removal")
             # TODO: Consider NoopError when addressing #546.
             return []
         if directory == self.root:
-            # We can't remove root!
             raise InvalidInventoryOperationError("Can't remove inventory root.")
         operations = []
         if not self.repo.is_inventory_dir(directory):
             raise InvalidInventoryOperationError(f"Not an inventory directory: {directory}")
         for p in directory.iterdir():
+            if not recursive and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
+                raise InventoryDirNotEmpty(f"Directory {directory} not empty.")
             try:
                 operations.extend(self.remove_asset(p))
                 is_asset = True
