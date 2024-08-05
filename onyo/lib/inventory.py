@@ -9,44 +9,44 @@ from typing import TYPE_CHECKING
 from onyo.lib.differs import (
     differ_new_assets,
     differ_new_directories,
-    differ_rename_directories,
     differ_modify_assets,
     differ_move_assets,
-    differ_remove_assets,
-    differ_rename_assets,
-    differ_remove_directories,
     differ_move_directories,
+    differ_remove_assets,
+    differ_remove_directories,
+    differ_rename_assets,
+    differ_rename_directories,
 )
 from onyo.lib.exceptions import (
-    NotADirError,
-    NotAnAssetError,
-    NoopError,
     InvalidInventoryOperationError,
     InventoryDirNotEmpty,
+    NoopError,
+    NotADirError,
+    NotAnAssetError,
 )
 from onyo.lib.executors import (
+    exec_modify_assets,
+    exec_move_assets,
+    exec_move_directories,
     exec_new_assets,
     exec_new_directories,
-    exec_modify_assets,
     exec_remove_assets,
-    exec_move_assets,
-    exec_rename_assets,
     exec_remove_directories,
+    exec_rename_assets,
     exec_rename_directories,
-    exec_move_directories,
     generic_executor,
 )
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.recorders import (
-    record_new_assets,
-    record_new_directories,
-    record_rename_assets,
     record_modify_assets,
     record_move_assets,
+    record_move_directories,
+    record_new_assets,
+    record_new_directories,
     record_remove_assets,
     record_remove_directories,
+    record_rename_assets,
     record_rename_directories,
-    record_move_directories
 )
 from onyo.lib.utils import deduplicate
 from onyo.lib.ui import ui
