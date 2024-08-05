@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 # TODO: Double-check we always report posix paths!
 
 
-def diff_assets(asset_old: dict, asset_new: dict):
+def diff_assets(asset_old: dict, asset_new: dict) -> Generator[str, None, None]:
     yield from unified_diff(dict_to_asset_yaml(asset_old).splitlines(keepends=False),
                             dict_to_asset_yaml(asset_new).splitlines(keepends=False),
                             fromfile=str(asset_old.get('path', '')),
@@ -25,7 +25,7 @@ def diff_assets(asset_old: dict, asset_new: dict):
                             lineterm="")
 
 
-def diff_path_change(src: Path, dst: Path):
+def diff_path_change(src: Path, dst: Path) -> Generator[str, None, None]:
     yield f"{str(src)} -> {str(dst)}"
 
 
@@ -35,7 +35,7 @@ diff_modified_asset = diff_assets
 diff_renamed_asset = diff_assets  # This is the same, because a rename requires a change in keys composing the name (or change in config).
 
 
-def diff_moved_asset(asset_old: dict | Path, asset_new: Path):
+def diff_moved_asset(asset_old: dict | Path, asset_new: Path) -> Generator[str, None, None]:
     # could be same. Just check isinstance?
     yield from diff_path_change(asset_old if isinstance(asset_old, Path) else asset_old.get('path'),
                                 asset_new)
