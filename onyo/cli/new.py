@@ -31,7 +31,10 @@ args_new = {
         metavar='TEMPLATE',
         required=False,
         help=r"""
-            Name of a template to populate the contents of new assets.
+            Path to a template to populate the contents of new assets.
+            Relative paths will first attempt to resolve relative the to the
+            template directory (i.e. just the template name), otherwise it
+            will resolve relative to the current working directory.
 
             This cannot be used with the ``--clone`` flag nor the ``template``
             Reserved Key.
@@ -159,9 +162,17 @@ def new(args: argparse.Namespace) -> None:
         used with the ``--clone`` or ``--template`` flags.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
+    if args.template:
+        template = Path(args.template)
+        if not template.is_absolute():
+            probe_template = inventory.root / inventory.repo.TEMPLATE_DIR / template
+            if probe_template.exists():
+                template = probe_template
+    else:
+        template = None
     onyo_new(inventory=inventory,
              directory=Path(args.directory).resolve() if args.directory else None,
-             template=args.template,
+             template=template,
              clone=Path(args.clone).resolve() if args.clone else None,
              tsv=Path(args.tsv).resolve() if args.tsv else None,
              keys=args.keys,

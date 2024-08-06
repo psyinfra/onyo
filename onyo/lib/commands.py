@@ -675,7 +675,7 @@ def onyo_mv(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_new(inventory: Inventory,
              directory: Path | None = None,
-             template: str | None = None,
+             template: Path | str | None = None,
              clone: Path | None = None,
              tsv: Path | None = None,
              keys: list[Dict[str, str | int | float]] | None = None,
@@ -717,8 +717,8 @@ def onyo_new(inventory: Inventory,
         table column.
 
     template
-        The name of a template file in ``.onyo/templates/`` that is copied as a
-        base for the new assets to be created.
+        Path to a template file. If relative, this is allowed to be relative to ``.onyo/templates/``.
+        The template is copied as a base for the new assets to be created.
 
     clone
         Path to an asset to clone. Mutually exclusive with `template`.
@@ -840,7 +840,8 @@ def onyo_new(inventory: Inventory,
             asset = inventory.get_asset(clone)
             asset.pop('path')
         else:
-            asset = inventory.get_asset_from_template(spec.pop('template', None) or template)
+            t = spec.pop('template', None) or template
+            asset = inventory.get_asset_from_template(Path(t) if t else None)
         # 3. fill in asset specification
         asset.update(spec)
         # 4. (try to) add to inventory

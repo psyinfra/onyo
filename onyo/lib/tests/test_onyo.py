@@ -141,8 +141,9 @@ def test_is_onyo_path(onyorepo) -> None:
 def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
     """
     The function `OnyoRepo.get_template` returns a dictionary representing
-    a template in `.onyo/templates/*`. Default can be configured via 'onyo.new.template'.
-    With no config and no name given, returns an empty dict.
+    a template file. If a relative path is specified, it will first look in
+    `.onyo/templates/`. A default template can be configured via
+    'onyo.new.template'. With no config and no name given, returns an empty dict.
     """
     # Call the function without parameter to get the empty template:
     assert onyorepo.get_template() == dict()
@@ -153,12 +154,14 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
         if path.name == OnyoRepo.ANCHOR_FILE_NAME:
             continue
 
-        template = onyorepo.get_template(path.name)
-        assert isinstance(template, dict)
-        if path.name != 'empty':  # TODO: Make issue about removing `empty` file. That's pointless.
-            assert template != dict()  # TODO: compare content
-        else:
-            assert template == dict()
+        # specify path as absolute, relative to template dir and relative to CWD (repo root):
+        for given_path in [path, path.name, path.relative_to(onyorepo.git.root)]:
+            template = onyorepo.get_template(path.name)
+            assert isinstance(template, dict)
+            if path.name != 'empty':  # TODO: Make issue about removing `empty` file. That's pointless.
+                assert template != dict()  # TODO: compare content
+            else:
+                assert template == dict()
 
     # verify the correct error response when called with a template name that
     # does not exist
