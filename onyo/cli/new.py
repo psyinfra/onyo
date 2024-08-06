@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from onyo.lib.onyo import OnyoRepo
 from onyo.argparse_helpers import StoreMultipleKeyValuePairs
 from onyo.lib.commands import onyo_new
+from onyo.lib.exceptions import InvalidArgumentError
 from onyo.lib.inventory import Inventory
 from onyo.shared_arguments import shared_arg_message
 
@@ -92,6 +93,7 @@ args_new = {
     'directory': dict(
         args=('-d', '--directory'),
         metavar='DIRECTORY',
+        action='append',
         help=r"""
             Directory to create new assets in.
 
@@ -162,6 +164,12 @@ def new(args: argparse.Namespace) -> None:
         used with the ``--clone`` or ``--template`` flags.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
+    if isinstance(args.directory, list):
+        if len(args.directory) > 1:
+            raise InvalidArgumentError("-d/--directory:  must be given only once")
+        else:
+            args.directory = args.directory[0]
+
     if args.template:
         template = Path(args.template)
         if not template.is_absolute():

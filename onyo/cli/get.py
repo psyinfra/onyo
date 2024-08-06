@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import onyo_get
+from onyo.lib.exceptions import InvalidArgumentError
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 
@@ -130,8 +131,7 @@ def get(args: argparse.Namespace) -> None:
     By default, the results are sorted by ``path``.
     """
     if args.sort_ascending and args.sort_descending:
-        raise ValueError('--sort-ascending (-s) and --sort-descending (-S) cannot be '
-                         'used together')
+        raise InvalidArgumentError('-s/--sort-ascending and -S/--sort-descending are mutually exclusive')
     sort = 'descending' if args.sort_descending else 'ascending'
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 

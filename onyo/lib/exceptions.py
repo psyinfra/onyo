@@ -17,6 +17,10 @@ class OnyoInvalidFilterError(Exception):
     r"""Raise if filters are invalidly defined"""
 
 
+class InvalidArgumentError(Exception):
+    r"""Raised a (CLI-) command is invalidly called beyond what's covered by argparse."""
+
+
 class InventoryOperationError(Exception):
     r"""Thrown if an inventory operation cannot be executed."""
 
