@@ -9,44 +9,44 @@ from typing import TYPE_CHECKING
 from onyo.lib.differs import (
     differ_new_assets,
     differ_new_directories,
-    differ_rename_directories,
     differ_modify_assets,
     differ_move_assets,
-    differ_remove_assets,
-    differ_rename_assets,
-    differ_remove_directories,
     differ_move_directories,
+    differ_remove_assets,
+    differ_remove_directories,
+    differ_rename_assets,
+    differ_rename_directories,
 )
 from onyo.lib.exceptions import (
-    NotADirError,
-    NotAnAssetError,
-    NoopError,
     InvalidInventoryOperationError,
     InventoryDirNotEmpty,
+    NoopError,
+    NotADirError,
+    NotAnAssetError,
 )
 from onyo.lib.executors import (
+    exec_modify_assets,
+    exec_move_assets,
+    exec_move_directories,
     exec_new_assets,
     exec_new_directories,
-    exec_modify_assets,
     exec_remove_assets,
-    exec_move_assets,
-    exec_rename_assets,
     exec_remove_directories,
+    exec_rename_assets,
     exec_rename_directories,
-    exec_move_directories,
     generic_executor,
 )
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.recorders import (
-    record_new_assets,
-    record_new_directories,
-    record_rename_assets,
     record_modify_assets,
     record_move_assets,
+    record_move_directories,
+    record_new_assets,
+    record_new_directories,
     record_remove_assets,
     record_remove_directories,
+    record_rename_assets,
     record_rename_directories,
-    record_move_directories
 )
 from onyo.lib.utils import deduplicate
 from onyo.lib.ui import ui
@@ -127,15 +127,15 @@ class Inventory(object):
 
     @property
     def root(self):
-        r"""Path to root inventory directory"""
+        r"""Path to root inventory directory."""
         return self.repo.git.root
 
     def reset(self) -> None:
-        r"""throw away pending operations"""
+        r"""Discard pending operations."""
         self.operations = []
 
     def commit(self, message: str) -> None:
-        r"""Execute and git-commit pending operations"""
+        r"""Execute and git-commit pending operations."""
         # get user message + generate appendix from operations
         # does order matter for execution? Prob.
         # ^  Nope. Fail on conflicts.
@@ -173,12 +173,12 @@ class Inventory(object):
             yield from operation.diff()
 
     def operations_pending(self) -> bool:
-        r"""Returns whether there's something to commit"""
+        r"""Returns whether there's something to commit."""
         # Note: Seems superfluous now (operations is a list rather than dict of lists)
         return bool(self.operations)
 
     def _get_pending_asset_names(self) -> list[str]:
-        r"""List of asset names that are targets of pending operations
+        r"""List of asset names that are targets of pending operations.
 
         This is extracting paths that would exist if the currently
         pending operations were executed, in order to provide the
@@ -204,9 +204,9 @@ class Inventory(object):
         return names
 
     def _get_pending_dirs(self) -> list[Path]:
-        r"""Gets inventory dirs that would come into existence due to pending operations.
+        r"""Get inventory dirs that would come into existence due to pending operations.
 
-        Extracts paths to inventory dirs, that are the anticipated results of pending
+        Extract paths to inventory dirs, that are the anticipated results of pending
         moves and creations.
 
         Notes
@@ -265,7 +265,7 @@ class Inventory(object):
     #
 
     def _add_operation(self, name: str, operands: tuple) -> InventoryOperation:
-        r"""Internal convenience helper to register an operation"""
+        r"""Internal convenience helper to register an operation."""
         op = InventoryOperation(operator=OPERATIONS_MAPPING[name],
                                 operands=operands,
                                 repo=self.repo)
@@ -597,7 +597,7 @@ class Inventory(object):
         return assets
 
     def asset_paths_available(self, assets: dict | list[dict]) -> None:
-        r"""Test whether path(s) used by `assets` are available in the inventory.
+        r"""Test whether path used by `assets` are available in the inventory.
 
         Availability not only requires the path to not yet exist, but also the filename to be unique.
 
@@ -641,10 +641,10 @@ class Inventory(object):
     def get_faux_serials(self,
                          length: int = 6,
                          num: int = 1) -> set[str]:
-        r"""
-        Generate a unique faux serial and verify that it is not used by any
-        other asset in the repository. The length of the faux serial must be 4
-        or greater.
+        r"""Generate a unique faux serial.
+
+        Generate a faux serial and verify that it is not used by any other asset
+        in the repository. The length of the faux serial must be 4 or greater.
 
         Returns a set of unique faux serials.
         """

@@ -119,7 +119,7 @@ asset_contents = [
 def test_unset(repo: OnyoRepo,
                asset: str,
                key: str) -> None:
-    r"""Test that `onyo unset KEY <asset>` removes keys from of assets."""
+    r"""Test that `onyo unset KEY --asset <asset>` removes keys from of assets."""
     ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--asset', asset],
                          capture_output=True, text=True)
 
@@ -141,7 +141,7 @@ def test_unset(repo: OnyoRepo,
 def test_unset_interactive(repo: OnyoRepo,
                            asset: str,
                            key: str) -> None:
-    r"""Test that `onyo unset KEY <asset>` removes keys from of assets."""
+    r"""Test that `onyo unset KEY --asset <asset>` removes keys from of assets."""
     ret = subprocess.run(['onyo', 'unset', '--keys', key, '--asset', asset], input='y',
                          capture_output=True, text=True)
 
@@ -287,7 +287,7 @@ def test_unset_message_flag(repo: OnyoRepo,
     ["num", "type"]])
 def test_unset_error_unset_name_fields(repo: OnyoRepo,
                                        name_field: list[str]) -> None:
-    r"""Test that `onyo unset KEY <asset>` throws the correct error without printing the usual
+    r"""Test that `onyo unset KEY --asset <asset>` raises the correct error without printing the usual
     information (e.g. diff output), when called with a KEY that is a name field (type, make, model
     or/and serial number), not a content field.
     """
