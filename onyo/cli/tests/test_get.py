@@ -474,11 +474,9 @@ def test_get_sort_error(repo: OnyoRepo) -> None:
     """
     cmd = ['onyo', 'get', '-s', '-S']
     ret = subprocess.run(cmd, capture_output=True, text=True)
-    msg = (
-        '--sort-ascending (-s) and --sort-descending (-S) cannot be used '
-        'together')
+    msg = "-s/--sort-ascending and -S/--sort-descending are mutually exclusive"
     assert msg in ret.stderr
-    assert ret.returncode == 1
+    assert ret.returncode == 2
 
 
 @pytest.mark.parametrize('assets', [[

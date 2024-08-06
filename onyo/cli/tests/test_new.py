@@ -703,6 +703,14 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     assert "Asset keys specified twice:" in ret.stderr and "group" in ret.stderr
     assert ret.returncode == 1
 
+    # error on -d/--directory given multiple times
+    ret = subprocess.run(['onyo', 'new', '--keys', 'make=some', 'model=other', 'type=different',
+                          'serial=faux', '-d', 'some/where', '-d', 'else/where'],
+                         capture_output=True, text=True)
+    assert not ret.stdout
+    assert "-d/--directory" in ret.stderr
+    assert ret.returncode == 2
+
     # verify that the repository is in a clean state
     assert repo.git.is_clean_worktree()
 

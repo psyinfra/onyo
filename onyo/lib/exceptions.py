@@ -17,6 +17,10 @@ class OnyoInvalidFilterError(Exception):
     r"""Raised if filters are invalidly defined."""
 
 
+class InvalidArgumentError(Exception):
+    r"""Raised a (CLI-) command is invalidly called beyond what's covered by argparse."""
+
+
 class InventoryOperationError(Exception):
     r"""Raised if an inventory operation cannot be executed."""
 
@@ -26,7 +30,7 @@ class InvalidInventoryOperationError(InventoryOperationError):
 
 
 class InventoryDirNotEmpty(InvalidInventoryOperationError):
-    r"""Thrown if an inventory directory needs to be empty to perform an operation but isn't."""
+    r"""Raised if an inventory directory needs to be empty to perform an operation but is not."""
 
 
 class PendingInventoryOperationError(InventoryOperationError):

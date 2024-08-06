@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import rich
 
 from onyo import cli
+from onyo.lib.exceptions import InvalidArgumentError
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
@@ -535,6 +536,12 @@ def main() -> None:
         os.chdir(args.opdir)
         try:
             args.run(args)
+        except InvalidArgumentError as e:
+            # special treatment for this error b/c it's meant to capture
+            # malformed calls, that aren't covered by argparse itself.
+            # Same style of reporting as any other argparse error:
+            subcmds._name_parser_map[args.cmd].print_usage(file=sys.stderr)
+            parser.error(str(e))
         except Exception as e:
             # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
             #       non-zero here, in order to have this generic last catcher.
