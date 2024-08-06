@@ -30,7 +30,7 @@ class InvalidInventoryOperationError(InventoryOperationError):
 
 
 class InventoryDirNotEmpty(InvalidInventoryOperationError):
-    r"""Thrown if an inventory directory needs to be empty to perform an operation but isn't."""
+    r"""Raised if an inventory directory needs to be empty to perform an operation but is not."""
 
 
 class PendingInventoryOperationError(InventoryOperationError):
