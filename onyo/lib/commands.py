@@ -300,28 +300,55 @@ def _edit_asset(inventory: Inventory,
             if queue_length < len(inventory.operations):
                 inventory.operations = inventory.operations[:queue_length]
             ui.error(e)
-            # TODO: This kind of phrasing the question is bad.
-            #       Have a different category of questions in `UI` instead,
-            if ui.request_user_response("Cancel command (y) or continue editing asset (n)? "):
+            response = ui.request_user_response("Continue (e)diting asset, (s)kip asset or (a)bort command)?",
+                                                default='a',  # non-interactive has to fail
+                                                answers=[('edit', ['e', 'E', 'edit']),
+                                                         ('skip', ['s', 'S', 'skip']),
+                                                         ('abort', ['a', 'A', 'abort'])
+                                                         ])
+            if response == 'edit':
+                continue
+            elif response == 'skip':
+                return dict()
+            elif response == 'abort':
                 # Error message was already passed to ui. Raise a different exception instead.
                 # TODO: Own exception class for that purpose? Can we have no message at all?
                 #       -> Make possible in main.py
                 raise ValueError("Command canceled.") from e
             else:
-                continue
+                # This shouldn't be possible
+                raise RuntimeError(f"Unexpected response: {response}")
+
         # ### show diff and ask for confirmation
         if operations:
             ui.print("Effective changes:")
             for op in operations:
                 for line in op.diff():
                     ui.print(line)
-        if ui.request_user_response("Accept changes? (y/n) "):
-            # TODO: We'd want a three-way question: "accept", "skip this asset (discard)" and "continue editing".
+        response = ui.request_user_response(
+            "Accept changes? (y)es / continue (e)diting / (s)kip asset / (a)bort command",
+            default='yes',
+            answers=[('accept', ['y', 'Y', 'yes']),
+                     ('edit', ['e', 'E', 'edit']),
+                     ('skip', ['s', 'S', 'skip']),
+                     ('abort', ['a', 'A', 'abort'])
+                     ]
+        )
+        if response == 'accept':
             break
         else:
             # remove possibly added operations from the queue:
             if queue_length < len(inventory.operations):
                 inventory.operations = inventory.operations[:queue_length]
+        if response == 'edit':
+            continue
+        elif response == 'skip':
+            return dict()
+        elif response == 'abort':
+            raise KeyboardInterrupt
+        else:
+            # This shouldn't be possible
+            raise RuntimeError(f"Unexpected response: {response}")
     tmp_path.unlink()
     return asset
 

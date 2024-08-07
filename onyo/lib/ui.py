@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import traceback
+from typing import Any
 
 from rich.console import Console
 
@@ -190,29 +191,47 @@ class UI(object):
             print(*args, **kwargs)
 
     def request_user_response(self,
-                              question: str) -> bool:
+                              question: str,
+                              default: str = 'yes',
+                              answers: list[tuple] | None = None) -> Any:
         r"""Print `question` and read a response from `stdin`.
 
         Returns True when user answers yes, False when no, and asks again if the
         input is neither.
 
-        If the UI is set to `yes=True` returns automatically True, without
+        If the UI is set to `yes=True` the `default` answer is assumed without
         asking the user.
 
         Parameters
         ----------
-        question
-            A string asking the question to which the user should respond.
+        question: str
+            The question to which the user should respond. This is appended by an indication of
+            what is the default response (just hit enter).
+        default: str
+            Define a default answer. This is answer is assumed when `self.yes` is set
+            (non-interactive mode) or when the response was empty, i.e. user just hit enter.
+        answers: list of tuple
+            Defined ways to answer the question and what to return accordingly.
+            First element of a tuple is the return value, second element a list of strings.
+            If the user's response matches any of these strings, the return value is returned.
+            If the user's response doesn't match any, the question is repeated.
+            By default, this function poses a yes-no question, where 'y,'Y','yes' are returned
+            as `True`, and 'n', 'N', 'no' as `False`.
         """
-        if self.yes:
-            return True
-
+        # TODO: When use of rich is streamlined, we'd probably want to change how the default
+        #       and possible ways to respond are indicated.
+        answers = answers or [(True, ['y', 'Y', 'yes']),
+                              (False, ['n', 'N', 'no'])]
+        question += f"[Default: {default}]"
         while True:
-            answer = input(question)
-            if answer in ['y', 'Y', 'yes']:
-                return True
-            elif answer in ['n', 'N', 'no']:
-                return False
+            if self.yes:
+                answer = default
+            else:
+                answer = input(question) or default  # empty answer (hit return) gives the default answer
+            for response, options in answers:
+                if answer in options:
+                    return response
+            self.log_debug(f"Invalid user response: {answer}. Retry.")
 
     def rich_print(self, *args, **kwargs) -> None:
         r"""Refactoring helper to print via the `rich` package.

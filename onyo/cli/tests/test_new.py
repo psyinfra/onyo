@@ -389,6 +389,24 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
     asset = Path(f"{directory}/laptop_apple_macbookpro.0")
     key_values = asset_spec + ["mode=keys"]
 
+    # skip asset when asked for confirmation of the edited changes:
+    ret = subprocess.run(['onyo', 'new', '--edit',
+                          '--template', template, '--directory', directory, '--keys'] + key_values,
+                         input='s',
+                         capture_output=True, text=True)
+    assert 'No new assets created.' in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # abort command when asked for confirmation of the edited changes:
+    ret = subprocess.run(['onyo', 'new', '--edit',
+                          '--template', template, '--directory', directory, '--keys'] + key_values,
+                         input='a',
+                         capture_output=True, text=True)
+    assert "Accept changes?" in ret.stdout
+    assert "interrupted" in ret.stderr
+    assert ret.returncode == 1
+
     # create asset with --edit, --template and --keys
     ret = subprocess.run(['onyo', '--yes', 'new', '--edit',
                           '--template', template, '--directory', directory, '--keys'] + key_values,
