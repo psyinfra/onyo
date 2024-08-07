@@ -130,6 +130,15 @@ def test_edit_with_user_response(repo: OnyoRepo) -> None:
     """
     os.environ['EDITOR'] = "printf 'key: user_response' >>"
 
+    # abort command
+    input_string = 'a'
+    ret = subprocess.run(['onyo', 'edit', *repo.asset_paths],
+                         input=input_string, capture_output=True, text=True)
+    assert "Accept changes" in ret.stdout
+    assert "Save changes?" not in ret.stdout  # we don't get to the final confirmation
+    assert "interrupted" in ret.stderr
+    assert ret.returncode == 1
+
     # test edit for a list of assets all at once
     input_string = '\n'.join(
         'y' for i in range(len(repo.asset_paths) + 1))  # confirm per asset + summary
