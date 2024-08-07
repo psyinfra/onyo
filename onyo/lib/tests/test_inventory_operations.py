@@ -87,6 +87,10 @@ def test_add_asset(repo: OnyoRepo) -> None:
     asset.update(dict(model=""))
     pytest.raises(ValueError, inventory.add_asset, asset)
 
+    # required keys must not be None
+    asset.update(dict(model=None))  # pyre-ignore[6]
+    pytest.raises(ValueError, inventory.add_asset, asset)
+
     # To be added Asset requires a path:
     asset = dict(a_key='a_value')
     pytest.raises(ValueError, inventory.add_asset, asset)
@@ -227,7 +231,10 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     new_asset.update(asset_changes)
 
     # required keys must not be empty
-    pytest.raises(ValueError, inventory.add_asset, asset)
+    pytest.raises(ValueError, inventory.modify_asset, asset, new_asset)
+    # required keys must not be None
+    new_asset.update(model=None)  # pyre-ignore[6]
+    pytest.raises(ValueError, inventory.modify_asset, asset, new_asset)
 
     new_asset.update(dict(model="CORRECTED-MODEL"))  # implies rename w/ default name config
 
