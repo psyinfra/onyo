@@ -283,6 +283,7 @@ class Inventory(object):
             # TODO: RF this into something that gets a faux serial at a time. This needs to be done
             #       accounting for pending operations in the Inventory.
             asset['serial'] = self.get_faux_serials(num=1).pop()
+        self.raise_required_key_empty(asset)
         name = self.generate_asset_name(asset)
 
         if asset.get('is_asset_directory', False):
@@ -304,8 +305,6 @@ class Inventory(object):
             raise ValueError(f"{str(path)} is not a valid asset path.")
         if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
             raise ValueError(f"Asset name '{name}' already exists in inventory")
-        if self._required_key_empty(asset):
-            raise ValueError("Required asset keys must not have empty values.")
 
         if asset.get('is_asset_directory', False):
             if self.repo.is_inventory_dir(path):
@@ -418,6 +417,7 @@ class Inventory(object):
             # TODO: RF this into something that gets a faux serial at a time. This needs to be done
             #       accounting for pending operations in the Inventory.
             new_asset['serial'] = self.get_faux_serials(num=1).pop()
+        self.raise_required_key_empty(asset)
         name = self.generate_asset_name(asset)
         new_asset['path'] = path.parent / name
 
@@ -431,8 +431,6 @@ class Inventory(object):
                 raise ValueError(f"{str(new_asset['path'])} is not a valid asset path.")
             if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
                 raise ValueError(f"Asset name '{name}' already exists in inventory")
-        if self._required_key_empty(new_asset):
-            raise ValueError("Required asset keys must not have empty values.")
 
         if asset == new_asset:
             raise NoopError
@@ -623,15 +621,9 @@ class Inventory(object):
                 raise ValueError(f"Asset name '{path.name}' already exists in inventory.")
 
     def generate_asset_name(self, asset: dict) -> str:
-
         config_str = self.repo.get_config("onyo.assets.filename")
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.filename'.")
-        # TODO: Problem: Empty string could be a valid value for some keys. But not for the required name fields?!
-        #       -> doesn't raise, because that's not something `format` would stumble upon.
-
-        # TODO: Enforce non-empty!
-
         try:
             name = config_str.format(**asset)  # TODO: Only pass non-pseudo keys?! What if there is no config?
         except KeyError as e:
@@ -671,7 +663,7 @@ class Inventory(object):
 
         return faux_serials
 
-    def _required_key_empty(self, asset: dict) -> bool:
+    def raise_required_key_empty(self, asset: dict) -> None:
         r"""Whether `asset` has an empty value for a required key.
 
         Validation helper.
@@ -683,4 +675,7 @@ class Inventory(object):
         required is anticipated. This would need to account for those
         as well.
         """
-        return any(not str(v) for k, v in asset.items() if k in self.repo.get_asset_name_keys())
+        if any(v is None or not str(v)
+               for k, v in asset.items()
+               if k in self.repo.get_asset_name_keys()):
+            raise ValueError("Required asset keys must not have empty values.")
