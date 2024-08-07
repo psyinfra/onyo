@@ -745,19 +745,18 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
     table = prepared_tsvs / "error_incomplete_rows.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
-    pytest.skip("TODO: 'Missing' fields, but unique asset names -> Feature or Bug?")
 
     assert not ret.stdout
-    assert "The fields 'type', 'make', 'model', 'serial' and 'directory' are required" in ret.stderr
+    assert "Required asset keys (type, make, model, serial) must not have empty values" in ret.stderr
     assert ret.returncode == 1
 
     # <TSV> has necessary columns but contains no assets
     table = prepared_tsvs / "error_empty_columns.tsv"
     ret = subprocess.run(['onyo', 'new', "--tsv", table],
                          capture_output=True, text=True)
-    assert not ret.stdout
-    assert "No new assets given." in ret.stderr
-    assert ret.returncode == 1
+    assert "No new assets created." in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
 
     # verify that the repository is in a clean state
     assert repo.git.is_clean_worktree()

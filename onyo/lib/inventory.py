@@ -678,4 +678,5 @@ class Inventory(object):
         if any(v is None or not str(v)
                for k, v in asset.items()
                if k in self.repo.get_asset_name_keys()):
-            raise ValueError("Required asset keys must not have empty values.")
+            raise ValueError(f"Required asset keys ({', '.join(self.repo.get_asset_name_keys())})"
+                             f" must not have empty values.")
