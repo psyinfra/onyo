@@ -54,7 +54,7 @@ def config(args: argparse.Namespace) -> None:
 
     Onyo configuration options:
 
-      * ``onyo.assets.filename``: The format for asset names on the
+      * ``onyo.assets.name-format``: The format for asset names on the
         filesystem. (default: "{type}_{make}_{model}.{serial}")
       * ``onyo.core.editor``: The editor to use for subcommands such as ``edit``
         and ``new``. If unset, it will fallback to the environmental variable

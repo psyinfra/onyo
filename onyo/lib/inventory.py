@@ -388,7 +388,7 @@ class Inventory(object):
         )
         if name and name != generated_name:
             raise ValueError(f"Renaming asset {path.name} to {name} is invalid."
-                             f"Config 'onyo.assets.filename' suggests '{generated_name}' as its name.")
+                             f"Config 'onyo.assets.name-format' suggests '{generated_name}' as its name.")
         if not name:
             name = generated_name
         if path.name == name:
@@ -607,9 +607,9 @@ class Inventory(object):
                 raise ValueError(f"Asset name '{path.name}' already exists in inventory.")
 
     def generate_asset_name(self, asset: dict) -> str:
-        config_str = self.repo.get_config("onyo.assets.filename")
+        config_str = self.repo.get_config("onyo.assets.name-format")
         if not config_str:
-            raise ValueError("Missing config 'onyo.assets.filename'.")
+            raise ValueError("Missing config 'onyo.assets.name-format'.")
         try:
             name = config_str.format(**asset)  # TODO: Only pass non-pseudo keys?! What if there is no config?
         except KeyError as e:

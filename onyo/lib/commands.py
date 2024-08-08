@@ -767,8 +767,8 @@ def onyo_new(inventory: Inventory,
 
     keys
         List of dictionaries with key/value pairs that will be set in the newly
-        created assets. The keys used in the ``onyo.assets.filename`` config
-        ``.onyo/config`` (e.g. ``filename = "{type}_{make}_{model}.{serial}"``)
+        created assets. The keys used in the ``onyo.assets.name-format`` config
+        ``.onyo/config`` (e.g. ``name-format = "{type}_{make}_{model}.{serial}"``)
         are used in the asset name and therefore a required.
 
     edit

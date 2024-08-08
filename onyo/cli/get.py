@@ -118,7 +118,7 @@ def get(args: argparse.Namespace) -> None:
     Return values of the requested **KEY**\ s for matching assets.
 
     If no **KEY**\ s are given, the path and all keys in the asset name are
-    printed (see ``onyo.assets.filename``). If no **PATH**\ s are given, the
+    printed (see ``onyo.assets.name-format``). If no **PATH**\ s are given, the
     current working directory is used.
 
     In addition to keys in asset contents, **PSEUDO-KEYS** can be queried and

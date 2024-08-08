@@ -134,7 +134,7 @@ class OnyoRepo(object):
         r"""Get a list of keys required for generating asset names
 
         This is extracting names of used keys from the
-        ``onyo.assets.filename`` config, which is supposed to be
+        ``onyo.assets.name-format`` config, which is supposed to be
         a python format string.
 
         Notes
@@ -165,7 +165,7 @@ class OnyoRepo(object):
         # Regex for finding key references in a python format string
         # (see notes above):
         search_regex = r"\{(\w+)"
-        config_str = self.get_config("onyo.assets.filename")
+        config_str = self.get_config("onyo.assets.name-format")
         return re.findall(search_regex, config_str) if config_str else []
 
     def get_editor(self) -> str:

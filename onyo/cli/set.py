@@ -22,7 +22,7 @@ args_set = {
         action='store_true',
         help=r"""
             Allow setting **KEY**\ s that are part of the asset name.
-            (see the ``onyo.assets.filename`` configuration option)
+            (see the ``onyo.assets.name-format`` configuration option)
         """
     ),
 

@@ -57,7 +57,7 @@ def unset(args: argparse.Namespace) -> None:
     r"""
     Remove **KEY**\ s from assets.
 
-    Keys that are used in asset names (see the ``onyo.assets.filename``
+    Keys that are used in asset names (see the ``onyo.assets.name-format``
     configuration option) cannot be unset.
 
     The contents of all modified assets are checked for validity before
