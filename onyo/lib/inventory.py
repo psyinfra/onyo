@@ -277,12 +277,13 @@ class Inventory(object):
         operations = []
         path = None
 
+        self.raise_empty_keys(asset)
         # ### generate stuff - TODO: function - reuse in modify_asset
         if asset.get('serial') == 'faux':
             # TODO: RF this into something that gets a faux serial at a time. This needs to be done
             #       accounting for pending operations in the Inventory.
             asset['serial'] = self.get_faux_serials(num=1).pop()
-        self.raise_required_key_empty(asset)
+        self.raise_required_key_empty_value(asset)
         name = self.generate_asset_name(asset)
 
         if asset.get('is_asset_directory', False):
@@ -411,12 +412,13 @@ class Inventory(object):
         if 'path' in new_asset:
             raise ValueError("Illegal key 'path' in new asset.")  # TODO: Figure better message (or change upstairs)
 
+        self.raise_empty_keys(new_asset)
         # ### generate stuff - TODO: function - reuse in add_asset
         if new_asset.get('serial') == 'faux':
             # TODO: RF this into something that gets a faux serial at a time. This needs to be done
             #       accounting for pending operations in the Inventory.
             new_asset['serial'] = self.get_faux_serials(num=1).pop()
-        self.raise_required_key_empty(new_asset)
+        self.raise_required_key_empty_value(new_asset)
         # We keep the old path - if it needs to change, this will be done by a rename operation down the road
         new_asset['path'] = path
 
@@ -647,7 +649,7 @@ class Inventory(object):
 
         return faux_serials
 
-    def raise_required_key_empty(self, asset: dict) -> None:
+    def raise_required_key_empty_value(self, asset: dict) -> None:
         r"""Whether `asset` has an empty value for a required key.
 
         Validation helper.
@@ -659,8 +661,16 @@ class Inventory(object):
         required is anticipated. This would need to account for those
         as well.
         """
-        if any(v is None or not str(v)
+        if any(v is None or not str(v).strip()
                for k, v in asset.items()
                if k in self.repo.get_asset_name_keys()):
             raise ValueError(f"Required asset keys ({', '.join(self.repo.get_asset_name_keys())})"
                              f" must not have empty values.")
+
+    def raise_empty_keys(self, asset: dict) -> None:
+        r"""Whether `asset` has empty keys.
+
+        Validation helper
+        """
+        if any(not k or not str(k).strip() for k in asset.keys()):
+            raise ValueError("Keys are not allowed to be empty or None-values.")

@@ -1005,8 +1005,6 @@ def onyo_set(inventory: Inventory,
         raise ValueError("At least one asset must be specified.")
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
-    if any(not k or not k.strip() for k in keys.keys()):
-        raise ValueError("Keys are not allowed to be empty or None-values.")
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
 
