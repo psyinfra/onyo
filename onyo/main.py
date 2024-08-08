@@ -6,6 +6,7 @@ import sys
 import textwrap
 from argparse import ArgumentParser, PARSER, RawTextHelpFormatter
 from pathlib import Path
+from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
 import rich
@@ -542,6 +543,13 @@ def main() -> None:
             # Same style of reporting as any other argparse error:
             subcmds._name_parser_map[args.cmd].print_usage(file=sys.stderr)
             parser.error(str(e))
+        except CalledProcessError as e:
+            # CalledProcessError itself is not informative to the user.
+            # As far as there was something useful in that process' stdout/stderr
+            # we usually let it through. If not, it should result in a dedicated exception,
+            # that we can treat here accordingly.
+            ui.log_debug(str(e))
+            sys.exit(e.returncode)
         except Exception as e:
             # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
             #       non-zero here, in order to have this generic last catcher.

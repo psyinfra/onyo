@@ -148,7 +148,7 @@ def new(args: argparse.Namespace) -> None:
       4) ``--edit`` (i.e. manual user input)
 
     The **KEY**\ s that comprise the asset filename are required (configured by
-    ``onyo.assets.filename``).
+    ``onyo.assets.name-format``).
 
     The contents of all new assets are checked for validity before committing.
 

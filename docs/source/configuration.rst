@@ -39,8 +39,9 @@ Options
 ``onyo.new.template``
     The default template to use with ``onyo new``. (default: "empty")
 
-``onyo.assets.filename``
+``onyo.assets.name-format``
     The name scheme for asset files and asset directories in the repository.
+    Python format string that will be filled in by an asset's content.
     (default: "{type}_{make}_{model}.{serial}")
 
 ``onyo.repo.version``

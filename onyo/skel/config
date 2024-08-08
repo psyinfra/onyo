@@ -4,6 +4,6 @@
 [onyo "new"]
 	template = empty
 [onyo "assets"]
-	filename = "{type}_{make}_{model}.{serial}"
+	name-format = "{type}_{make}_{model}.{serial}"
 [onyo "repo"]
-	version = 1
+	version = 2

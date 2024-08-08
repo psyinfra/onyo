@@ -17,3 +17,10 @@ be part of asset content.
 UNSET_VALUE = '<unset>'
 r"""String to represent keys that are not set.
 """
+
+KNOWN_REPO_VERSIONS = ['1', '2']
+r"""Onyo repository versions that this version of onyo knows.
+
+Needed to realize when onyo runs on a repo that was created by a newer version.
+(Or a user messed it up).
+"""
