@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .consts import KNOWN_REPO_VERSIONS
 from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
 from .git import GitRepo
 from .ui import ui
@@ -85,10 +86,9 @@ class OnyoRepo(object):
             # TODO: Remove path?
             self._init(path)
         else:
-            if not self.is_valid_onyo_repo():
-                raise OnyoInvalidRepoError(f"'{path}' is not a valid Onyo Repository.")
-
-        ui.log_debug(f"Onyo repo found at '{self.git.root}'")
+            self.validate_onyo_repo()
+        self.version = self.git.get_config('onyo.repo.version', self.git.root / self.ONYO_CONFIG)
+        ui.log_debug(f"Onyo repo (version {self.version}) found at '{self.git.root}'")
 
         # caches
         self._asset_paths: list[Path] | None = None
@@ -118,6 +118,10 @@ class OnyoRepo(object):
         ValueError
           If `location` is unknown.
         """
+        # repo version shim
+        if self.version == '1' and name == 'onyo.assets.name-format':
+            name = 'onyo.assets.filename'
+
         loc = self.ONYO_CONFIG if location == 'onyo' else location
         return self.git.set_config(name=name, value=value, location=loc)
 
@@ -128,6 +132,10 @@ class OnyoRepo(object):
         This is considering regular git-config locations and checks
         `OnyoRepo.ONYO_CONFIG` as fallback.
         """
+        # repo version shim
+        if self.version == '1' and name == 'onyo.assets.name-format':
+            name = 'onyo.assets.filename'
+
         return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
 
     def get_asset_name_keys(self) -> list[str]:
@@ -267,14 +275,14 @@ class OnyoRepo(object):
             self._asset_paths = self.get_asset_paths()
         return self._asset_paths
 
-    def is_valid_onyo_repo(self) -> bool:
+    def validate_onyo_repo(self) -> None:
         r"""Assert whether this is a properly set up onyo repository and has a fully
         populated `.onyo/` directory.
 
-        Returns
-        -------
-        bool
-            True when the repository is complete and valid, otherwise False.
+        Raises
+        ------
+        OnyoInvalidRepoError
+            If validation failed
         """
         files = ['config',
                  OnyoRepo.ANCHOR_FILE_NAME,
@@ -283,14 +291,22 @@ class OnyoRepo(object):
 
         # has expected .onyo structure
         if not all(x.is_file() for x in [self.dot_onyo / f for f in files]):
-            return False
+            # TODO: Make fsck fix that and hint here
+            raise OnyoInvalidRepoError(f"'{self.dot_onyo}' does not have expected structure.")
 
+        # TODO: This should be ensured to run before and at the level of `GitRepo` instead.
+        #       In fact it currently does run before, since the only spot we call `validate_onyo_repo`
+        #       from is `__init__`, where the git part is checked first.
         # is a git repository
         if subprocess.run(["git", "rev-parse"],
                           cwd=self.git.root,
                           stdout=subprocess.DEVNULL).returncode != 0:
-            return False
-        return True
+            raise OnyoInvalidRepoError(f"'{self.git.root} is not a git repository")
+
+        # has a known repo version
+        version = self.git.get_config('onyo.repo.version', self.git.root / self.ONYO_CONFIG)
+        if version not in KNOWN_REPO_VERSIONS:
+            raise OnyoInvalidRepoError(f"Unknown onyo repository version '{version}'")
 
     def _init(self,
               path: Path) -> None:

@@ -28,8 +28,8 @@ def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
         new_repo.dot_onyo / new_repo.TEMPLATE_DIR.name / OnyoRepo.ANCHOR_FILE_NAME,
         new_repo.dot_onyo / 'validation' / OnyoRepo.ANCHOR_FILE_NAME,
     ]])
-    new_repo.git.is_clean_worktree()
-    new_repo.is_valid_onyo_repo()
+    assert new_repo.git.is_clean_worktree()
+    new_repo.validate_onyo_repo()
     # a newly initialized repository has just one commit; requesting older ones is not possible
     assert new_repo.git.get_hexsha()
     pytest.raises(ValueError,

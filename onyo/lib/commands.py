@@ -205,6 +205,15 @@ def onyo_config(inventory: Inventory,
     from onyo.lib.command_utils import allowed_config_args
 
     allowed_config_args(config_args)
+    # repo version shim
+    try:
+        v2_cfg = config_args.index("onyo.assets.name-format")
+    except ValueError:
+        # not found is fine
+        v2_cfg = None
+    if v2_cfg is not None and inventory.repo.version == '1':
+        config_args = config_args[:v2_cfg] + ['onyo.assets.filename'] + config_args[v2_cfg + 1:]
+    # end repo version shim
     subprocess.run(["git", 'config', '-f', str(inventory.repo.ONYO_CONFIG)] +
                    config_args, cwd=inventory.repo.git.root, check=True)
 
