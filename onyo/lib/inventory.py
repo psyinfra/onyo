@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -278,12 +277,13 @@ class Inventory(object):
         operations = []
         path = None
 
+        self.raise_empty_keys(asset)
         # ### generate stuff - TODO: function - reuse in modify_asset
         if asset.get('serial') == 'faux':
             # TODO: RF this into something that gets a faux serial at a time. This needs to be done
             #       accounting for pending operations in the Inventory.
             asset['serial'] = self.get_faux_serials(num=1).pop()
-        self.raise_required_key_empty(asset)
+        self.raise_required_key_empty_value(asset)
         name = self.generate_asset_name(asset)
 
         if asset.get('is_asset_directory', False):
@@ -388,7 +388,7 @@ class Inventory(object):
         )
         if name and name != generated_name:
             raise ValueError(f"Renaming asset {path.name} to {name} is invalid."
-                             f"Config 'onyo.assets.filename' suggests '{generated_name}' as its name")
+                             f"Config 'onyo.assets.filename' suggests '{generated_name}' as its name.")
         if not name:
             name = generated_name
         if path.name == name:
@@ -412,32 +412,18 @@ class Inventory(object):
         if 'path' in new_asset:
             raise ValueError("Illegal key 'path' in new asset.")  # TODO: Figure better message (or change upstairs)
 
+        self.raise_empty_keys(new_asset)
         # ### generate stuff - TODO: function - reuse in add_asset
         if new_asset.get('serial') == 'faux':
             # TODO: RF this into something that gets a faux serial at a time. This needs to be done
             #       accounting for pending operations in the Inventory.
             new_asset['serial'] = self.get_faux_serials(num=1).pop()
-        self.raise_required_key_empty(asset)
-        name = self.generate_asset_name(asset)
-        new_asset['path'] = path.parent / name
-
-        if new_asset['path'] != path:
-            # ### validate - TODO: function - reuse in add_asset
-            if self.repo.is_asset_path(new_asset['path']):
-                raise ValueError(f"Asset {new_asset['path']} already exists.")
-                # Note: We may want to reconsider this case.
-                # Shouldn't there be a way to write files (or asset dirs) directly and then add them as new assets?
-            if not self.repo.is_inventory_path(new_asset['path']):
-                raise ValueError(f"{str(new_asset['path'])} is not a valid asset path.")
-            if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
-                raise ValueError(f"Asset name '{name}' already exists in inventory")
+        self.raise_required_key_empty_value(new_asset)
+        # We keep the old path - if it needs to change, this will be done by a rename operation down the road
+        new_asset['path'] = path
 
         if asset == new_asset:
             raise NoopError
-
-        # Note, that paths for modify + rename can't be in same dict/CommentedMap object.
-        modified_asset = copy.deepcopy(new_asset)
-        modified_asset['path'] = path
 
         # If a change in is_asset_directory is implied, do this first:
         if asset.get("is_asset_directory", False) != new_asset.get("is_asset_directory", False):
@@ -450,8 +436,8 @@ class Inventory(object):
                    for k in [a for a in asset.keys()] + [b for b in new_asset.keys()]
                    if k != "is_asset_directory"):
                 return operations
-        operations.append(self._add_operation('modify_assets', (asset, modified_asset)))
-        # Modified_asset has the same 'path' at this point, regardless of potential renaming.
+        operations.append(self._add_operation('modify_assets', (asset, new_asset)))
+        # new_asset has the same 'path' at this point, regardless of potential renaming.
         # We modify the content in place and only then perform a potential rename.
         # Otherwise, we'd move the old asset and write the modified one to the old place or
         # write an entirely new one w/o a git-trackable relation to the old one.
@@ -663,7 +649,7 @@ class Inventory(object):
 
         return faux_serials
 
-    def raise_required_key_empty(self, asset: dict) -> None:
+    def raise_required_key_empty_value(self, asset: dict) -> None:
         r"""Whether `asset` has an empty value for a required key.
 
         Validation helper.
@@ -675,8 +661,16 @@ class Inventory(object):
         required is anticipated. This would need to account for those
         as well.
         """
-        if any(v is None or not str(v)
+        if any(v is None or not str(v).strip()
                for k, v in asset.items()
                if k in self.repo.get_asset_name_keys()):
             raise ValueError(f"Required asset keys ({', '.join(self.repo.get_asset_name_keys())})"
                              f" must not have empty values.")
+
+    def raise_empty_keys(self, asset: dict) -> None:
+        r"""Whether `asset` has empty keys.
+
+        Validation helper
+        """
+        if any(not k or not str(k).strip() for k in asset.keys()):
+            raise ValueError("Keys are not allowed to be empty or None-values.")

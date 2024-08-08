@@ -267,6 +267,8 @@ def _edit_asset(inventory: Inventory,
     # them when loading edited file from disc. This is relevant, when
     # `operation` uses them (`Inventory.add_asset`)
     reserved_keys = {k: v for k, v in asset.items() if k in RESERVED_KEYS}
+    disallowed_keys = RESERVED_KEYS + PSEUDO_KEYS
+    disallowed_keys.remove("is_asset_directory")
 
     tmp_path = get_temp_file()
     write_asset_file(tmp_path, asset)
@@ -288,6 +290,14 @@ def _edit_asset(inventory: Inventory,
         operations = None
         try:
             asset = get_asset_content(tmp_path)
+            if 'is_asset_directory' in asset.keys():
+                # special case
+                # 'is_asset_directory' currently is the only modifiable, reserved key.
+                # TODO: This may either need a separate category or RESERVED_KEYS to
+                #       become a more structured thing than a plain list.
+                reserved_keys['is_asset_directory'] = asset['is_asset_directory']
+            if any(k in disallowed_keys for k in asset.keys()):
+                raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
             # When reading from file, we don't get reserved keys back, since they are not
             # part of the file content. We do need the object from reading the file to be
             # the basis, though, to get comment roundtrip from ruamel.
@@ -995,12 +1005,9 @@ def onyo_set(inventory: Inventory,
         raise ValueError("At least one asset must be specified.")
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
-    if any(not k or not k.strip() for k in keys.keys()):
-        raise ValueError("Keys are not allowed to be empty or None-values.")
     if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
         raise ValueError("Can't change asset name keys without --rename.")
 
-    # TODO: Remove is_asset_directory from RESERVED_KEYS altogether?
     disallowed_keys = RESERVED_KEYS + PSEUDO_KEYS
     disallowed_keys.remove("is_asset_directory")
     if any(k in disallowed_keys for k in keys.keys()):
