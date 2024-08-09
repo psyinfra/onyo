@@ -77,13 +77,15 @@ repository.
   - tools used by ``onyo history``.
     The values can be updated with e.g.:
 
-    - ``onyo config history.interactive "tig --follow"``
-    - ``onyo config history.non-interactive "git --no-pager log --follow"``
+    - ``onyo config onyo.history.interactive "tig --follow"``
+    - ``onyo config onyo.history.non-interactive "git --no-pager log --follow"``
 
   - default template to use with ``onyo new --path <asset>``
     The standard template can be updated with e.g.:
 
-    - ``onyo config template.default empty``
+    - ``onyo config onyo.new.template empty``
+
+  - see also: :doc:`configuration`.
 
 - ``.onyo/templates/`` contains:
 
@@ -101,7 +103,7 @@ valid YAML syntax.
 
 The default template that gets used when ``onyo new`` is called is
 ``.onyo/templates/empty``. It can be updated with
-``onyo config template.default empty``.
+``onyo config onyo.new.template empty``.
 
 For examples, see the section "Templates" in :doc:`examples`.
 
