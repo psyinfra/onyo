@@ -72,8 +72,8 @@ case "$1" in
         DEMO_DIR=$1
         [ -e "$DEMO_DIR" ] || mkdir -v "$DEMO_DIR"
         [ -d "$DEMO_DIR" ] || Fatal "'$DEMO_DIR' must be a directory."
-        [ -e "${DEMO_DIR}/.onyo" ] && Fatal "'$DEMO_DIR' cannot be an onyo repo"
-        [ -e "${DEMO_DIR}/.git" ] && Fatal "'$DEMO_DIR' cannot be a git repo"
+        [ -e "${DEMO_DIR}/.onyo" ] && Fatal "'$DEMO_DIR' must not be an existing onyo repo"
+        [ -e "${DEMO_DIR}/.git" ] && Fatal "'$DEMO_DIR' must not be an existing git repo"
         ;;
 esac
 
