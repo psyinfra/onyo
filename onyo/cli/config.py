@@ -57,8 +57,9 @@ def config(args: argparse.Namespace) -> None:
       * ``onyo.assets.name-format``: The format for asset names on the
         filesystem. (default: "{type}_{make}_{model}.{serial}")
       * ``onyo.core.editor``: The editor to use for subcommands such as ``edit``
-        and ``new``. If unset, it will fallback to the environmental variable
-        ``EDITOR`` and lastly ``nano``. (default: unset)
+        and ``new``. If unset, it will fallback to ``core.editor`` of  ``git``,
+        then the environmental variable ``EDITOR`` and lastly ``nano``.
+        (default: unset)
       * ``onyo.history.interactive``: The interactive command to use for
         ``onyo history``. (default: "tig --follow")
       * ``onyo.history.non-interactive``: The non-interactive command for

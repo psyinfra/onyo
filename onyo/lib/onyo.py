@@ -181,15 +181,20 @@ class OnyoRepo(object):
         return re.findall(search_regex, config_str) if config_str else []
 
     def get_editor(self) -> str:
-        r"""Returns the editor, progressing through git, onyo, $EDITOR, and finally
+        r"""Returns the editor, progressing through onyo, git, $EDITOR, and finally
         fallback to "nano".
         """
-        # onyo config and git config
+        # onyo config setting (from onyo and git config files)
         editor = self.get_config('onyo.core.editor')
+
+        # git config
+        if not editor:
+            ui.log_debug("onyo.core.editor is not set.")
+            editor = self.get_config('core.editor')
 
         # $EDITOR environment variable
         if not editor:
-            ui.log_debug("onyo.core.editor is not set.")
+            ui.log_debug("core.editor is not set.")
             editor = os.environ.get('EDITOR')
 
         # fallback to nano

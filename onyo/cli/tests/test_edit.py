@@ -17,15 +17,25 @@ assets = [['laptop_apple_macbookpro.0', "type: laptop\nmake: apple\nmodel: macbo
 
 
 @pytest.mark.parametrize('variant', ['local', 'onyo'])
-def test_get_editor_git(repo: OnyoRepo, variant: str) -> None:
+def test_get_editor_onyo(repo: OnyoRepo, variant: str) -> None:
     r"""
-    Get the editor from git or onyo configs.
+    Get the editor from onyo configuration.
     """
     repo.set_config('onyo.core.editor', variant, location=variant)
 
     # test
     editor = repo.get_editor()
     assert editor == variant
+
+
+def test_get_editor_git(repo: OnyoRepo) -> None:
+    r"""
+    Get the editor from git configuration
+    """
+    repo.set_config('core.editor', 'git-edit', location='local')
+    assert "git-edit" in (repo.git.root / '.git' / 'config').read_text()
+    editor = repo.get_editor()
+    assert editor == "git-edit"
 
 
 def test_get_editor_envvar(repo: OnyoRepo) -> None:

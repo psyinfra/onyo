@@ -25,7 +25,8 @@ Options
 
 ``onyo.core.editor``
     The editor to use for commands such as ``edit`` and ``new``. If unset, it
-    will fallback to the environmental variable ``EDITOR`` and lastly ``nano``.
+    will fallback to ``core.editor`` configuration of ``git`` it self, then to
+    the environmental variable ``EDITOR`` and lastly ``nano``.
     (default: unset)
 
 ``onyo.history.interactive``
