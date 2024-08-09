@@ -44,6 +44,7 @@ def edit(args: argparse.Namespace) -> None:
     The editor is selected by (in order):
 
       * ``onyo.core.editor`` configuration option
+      * ``core.editor`` configuration option (git)
       * ``EDITOR`` environment variable
       * ``nano`` (as a final fallback)
 
