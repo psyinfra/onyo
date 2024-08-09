@@ -8,7 +8,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .consts import KNOWN_REPO_VERSIONS
-from .exceptions import OnyoInvalidRepoError, OnyoProtectedPathError
+from .exceptions import (
+    NotAnAssetError,
+    OnyoInvalidRepoError,
+    OnyoProtectedPathError
+)
 from .git import GitRepo
 from .ui import ui
 from .utils import get_asset_content, write_asset_file
@@ -600,14 +604,19 @@ class OnyoRepo(object):
           content of the YAML file and teh asset's pseudo-keys.
         """
         if not self.is_asset_path(path):
-            raise ValueError(f"{path} is not an asset path")
-        if self.is_inventory_dir(path):
-            # It's an asset and an inventory dir -> asset dir
-            a = get_asset_content(path / self.ASSET_DIR_FILE_NAME)
-            a['is_asset_directory'] = True
-        else:
-            a = get_asset_content(path)
-            a['is_asset_directory'] = False
+            raise NotAnAssetError(f"{path} is not an asset path")
+        try:
+            if self.is_inventory_dir(path):
+                # It's an asset and an inventory dir -> asset dir
+                a = get_asset_content(path / self.ASSET_DIR_FILE_NAME)
+                a['is_asset_directory'] = True
+            else:
+                a = get_asset_content(path)
+                a['is_asset_directory'] = False
+        except NotAnAssetError as e:
+            raise NotAnAssetError(f"{str(e)}{os.linesep}"
+                                  f"If {path} is not meant to be an asset, consider putting it into"
+                                  f" '{self.IGNORE_FILE_NAME}'") from e
         # Add pseudo-keys:
         a['path'] = path
         a['directory'] = path.parent

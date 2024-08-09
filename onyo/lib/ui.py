@@ -76,6 +76,10 @@ class UI(object):
         self.stderr_console = Console(stderr=True, highlight=False)
         self.stdout_console = Console(stderr=False, highlight=False)
 
+        # count reported errors; this allows to assess whether errors occurred
+        # even when no exception bubbles up.
+        self.error_count: int = 0
+
     def set_debug(self,
                   debug: bool = False) -> None:
         r"""Toggle debug mode.
@@ -138,6 +142,7 @@ class UI(object):
             Specify the string at the end of prints.
             Per default, prints end with a line break.
         """
+        self.error_count += 1
         if not self.quiet:
             print(f"ERROR: {error}", file=sys.stderr, end=end)
         if isinstance(error, Exception):

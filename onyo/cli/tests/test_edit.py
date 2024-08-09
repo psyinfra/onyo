@@ -292,16 +292,27 @@ def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
 def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
     r"""
     Test that Onyo detects yaml-errors, and responds correctly if the user
-    answers the "cancel edit?" dialog with 'y' to discard the changes
+    answers the "abort command?" dialog with 'a' to discard the changes
     """
     os.environ['EDITOR'] = "printf 'key: YAML: ERROR' >>"
 
     # Change the asset to invalid yaml, and respond 'y' to "cancel edit" dialog
     ret = subprocess.run(['onyo', 'edit', asset],
-                         input='y',
+                         input='a',
                          capture_output=True, text=True)
     assert ret.returncode == 1
-    assert "has invalid YAML syntax" in ret.stderr
+    assert "Invalid YAML" in ret.stderr  # YAML error reported
+
+    # Verify that the changes are not written in to the file, and that the
+    # repository stays in a clean state
+    assert 'YAML: ERROR' not in Path(asset).read_text()
+    assert repo.git.is_clean_worktree()
+
+    # same test, but this time use `--yes` to issue the default answer (despite not being "yes")
+    ret = subprocess.run(['onyo', '--yes', 'edit', asset],
+                         capture_output=True, text=True)
+    assert ret.returncode == 1
+    assert "Invalid YAML" in ret.stderr  # YAML error reported
 
     # Verify that the changes are not written in to the file, and that the
     # repository stays in a clean state
