@@ -537,7 +537,12 @@ class Inventory(object):
         Generator of dict
            All matching assets in the inventory.
         """
-        return (self.get_asset(p) for p in self.repo.get_asset_paths(subtrees=paths, depth=depth))
+        for p in self.repo.get_asset_paths(subtrees=paths, depth=depth):
+            try:
+                yield self.get_asset(p)
+            except NotAnAssetError as e:
+                # report the error, but proceed
+                ui.error(e)
 
     def get_asset_from_template(self, template: Path | str | None) -> dict:
         # TODO: Possibly join with get_asset (path optional)

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import copy
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ruamel.yaml import YAML, scanner  # pyre-ignore[21]
+from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
+from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
 
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
@@ -78,10 +81,17 @@ def get_asset_content(asset_file: Path) -> dict[str, bool | float | int | str | 
     contents = dict()
     try:
         contents = yaml.load(asset_file)
-    except scanner.ScannerError as e:  # pyre-ignore[66]
-        ui.error(f"{asset_file} has invalid YAML syntax: {str(e)}")
+    except YAMLError as e:  # pyre-ignore[66]
+        # Remove ruaml usage pointer (see github issue 436)
+        if hasattr(e, 'note') and isinstance(e.note, str) and "suppress this check" in e.note:
+            e.note = ""
+        raise NotAnAssetError(f"Invalid YAML in {asset_file}:{os.linesep}{str(e)}") from e
     if contents is None:
         return dict()
+    if not isinstance(contents, (dict, CommentedMap)):
+        # For example: a simple text file may technically be valid YAML,
+        # but we may get a string instead of dict.
+        raise NotAnAssetError(f"{asset_file} does not appear to be an asset.")
     return contents
 
 

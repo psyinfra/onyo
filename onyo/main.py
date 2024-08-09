@@ -561,6 +561,10 @@ def main() -> None:
             sys.exit(1)
         finally:
             os.chdir(old_cwd)
+        if ui.error_count > 0:
+            # We may have reported errors while being able to proceed (hence no exception bubbled up).
+            # That's fine, but still exit non-zero.
+            sys.exit(1)
     else:
         parser.print_help()
         sys.exit(1)
