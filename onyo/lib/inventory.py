@@ -339,7 +339,9 @@ class Inventory(object):
         operations.append(self._add_operation('new_directories', (path,)))
         operations.extend([self._add_operation('new_directories', (p,))
                            for p in path.parents
-                           if self.root in p.parents and not self.repo.is_inventory_dir(p)])
+                           if self.root in p.parents and
+                           not self.repo.is_inventory_dir(p) and
+                           p not in self._get_pending_dirs()])
         return operations
 
     def remove_asset(self, asset: dict | Path) -> list[InventoryOperation]:
