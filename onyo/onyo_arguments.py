@@ -1,13 +1,28 @@
+import sys
 from pathlib import Path
 
 from onyo._version import __version__
+from onyo.lib.ui import ui
+
+
+def get_cwd() -> Path:
+    # This avoids dumping a traceback to the user,
+    # if CWD doesn't exist.
+    # A bit hacky, b/c this would happen early on where
+    # we are not a general exception handler yet.
+    try:
+        return Path.cwd()
+    except FileNotFoundError as e:
+        ui.error(e)
+        sys.exit(1)
+
 
 args_onyo = {
     'opdir': dict(
         args=('-C', '--onyopath'),
         metavar='DIR',
         required=False,
-        default=Path.cwd(),
+        default=get_cwd(),
         help=r"""
             Run Onyo from **DIR** instead of the current working directory.
         """
