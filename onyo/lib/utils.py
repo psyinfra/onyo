@@ -169,3 +169,53 @@ def write_asset_file(path: Path,
         A dictionary of content to write to the path.
     """
     path.open('w').write(dict_to_asset_yaml(asset))
+
+
+def is_equal_assets_dict(a: Dict, b: Dict) -> bool:
+    r"""Whether two asset dictionaries have the same content.
+
+    This accounts for comments in YAML.
+    For this to return `True`, both assets need to
+    be equal not only in terms of their key-value pairs,
+    but also in terms of annotated comments.
+    """
+    # TODO: This may become part of (thin) Asset class instead,
+    # if there are more reasons to have such a class.
+    if not isinstance(a, CommentedMap) and not isinstance(b, CommentedMap):
+        return a == b
+    if dict(a) != dict(b):
+        # not accounting for comments yet
+        return False
+
+    # Note, that ruamel does appear to implement `__eq__` and `__contains__` for the relevant objects.
+    # However, it all breaks when comparing across files, b/c the `start_mark` attribute of a `CommentToken`
+    # is a `FileMark` (when the YAML was read from file, ofc) which holds the path. So, comparison is only
+    # ever equal if both `CommentedMap` are pointing to the same file.
+    # Hence, we need our own comparison, that ignores the path.
+    from ruamel.yaml.comments import Comment, comment_attrib  # pyre-ignore[21] pyre doesn't find a comments module
+    from ruamel.yaml import CommentToken
+    a_comment = getattr(a, comment_attrib, Comment())
+    b_comment = getattr(b, comment_attrib, Comment())
+
+    def contains_all_comments(container: Comment, comment: Comment) -> bool:  # pyre-ignore[11] - see `Comment` import
+        for a_key, a_values in comment.items.items():
+            try:
+                b_values = container.items.get(a_key)
+            except KeyError:
+                # `a` has an annotation at a key that's not in `b`'s annotations
+                return False
+            if not b_values:
+                return False
+            if len(a_values) != len(b_values):
+                # Not sure whether this is necessary (may be a defined, fixed length),
+                # but better be safe.
+                return False
+            for a_v, b_v in zip(a_values, b_values):
+                if type(a_v) is not type(b_v):
+                    return False
+                if isinstance(a_v, CommentToken) and \
+                        (a_v.value, a_v.start_mark.line, a_v.start_mark.column) != \
+                        (b_v.value, b_v.start_mark.line, b_v.start_mark.column):
+                    return False
+        return True
+    return contains_all_comments(b_comment, a_comment) and contains_all_comments(a_comment, b_comment)

@@ -96,17 +96,34 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
     Test that for different paths it is possible to call `onyo edit` on a single
     asset file.
     """
-    os.environ['EDITOR'] = "printf 'key: single_asset' >>"
+    edit_str = "key: single_asset"
+    os.environ['EDITOR'] = f"printf '{edit_str}' >>"
 
     # test `onyo edit` on a single asset
     ret = subprocess.run(['onyo', '--yes', 'edit', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "+key: single_asset" in ret.stdout
+    assert f"+{edit_str}" in ret.stdout
     assert not ret.stderr
 
     # verify the changes were actually written and the repo is in a clean state:
-    assert 'key: single_asset' in Path.read_text(Path(asset))
+    assert edit_str in Path.read_text(Path(asset))
+    assert repo.git.is_clean_worktree()
+
+    # add a comment
+    comment_str = edit_str + " # a comment"
+    os.environ['EDITOR'] = f"sed -i \"s/{edit_str}/{comment_str}/g\" "
+
+    # test `onyo edit` on a single asset
+    ret = subprocess.run(['onyo', '--yes', 'edit', asset],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert f"+{comment_str}" in ret.stdout
+    assert f"-{edit_str}" in ret.stdout
+    assert not ret.stderr
+
+    # verify the changes were actually written and the repo is in a clean state:
+    assert comment_str in Path.read_text(Path(asset))
     assert repo.git.is_clean_worktree()
 
 
