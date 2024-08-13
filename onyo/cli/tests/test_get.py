@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from onyo.lib.consts import (
+    SORT_ASCENDING,
+    SORT_DESCENDING,
+)
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.command_utils import fill_unset, natural_sort
 
@@ -15,6 +19,7 @@ if TYPE_CHECKING:
         Any,
         Generator,
     )
+    from onyo.lib.consts import sort_t
 
 asset_contents = [
     ('laptop_apple_macbookpro.1', {'num': 8,
@@ -84,17 +89,30 @@ asset_contents = [
                          'type': 'a13bc',
                          'make': 'foo',
                          'model': 'bar',
-                         'serial': '1'}),
+                         'serial': '1',
+                         'str': 'abc',
+                         'id': 1}),
     ('a2cd_foo_bar.2', {'num': 'num-16',
                         'type': 'a2cd',
                         'make': 'foo',
                         'model': 'bar',
-                        'serial': '2'}),
+                        'serial': '2',
+                        'str': 'def',
+                        'id': 2}),
     ('a36ab_foo_bar.3', {'num': 'num-20',
                          'type': 'a36ab',
                          'make': 'foo',
                          'model': 'bar',
-                         'serial': '3'}),
+                         'serial': '3',
+                         'str': 'ghi',
+                         'id': 3}),
+    ('a36ab_afoo_bar.4', {'num': 'num-20',
+                          'type': 'a36ab',
+                          'make': 'afoo',
+                          'model': 'bar',
+                          'serial': '4',
+                          'str': 'jkl',
+                          'id': 4}),
 ]
 
 
@@ -140,11 +158,9 @@ def test_get_defaults(repo: OnyoRepo) -> None:
     [], ['make', 'serial'], ['num', 'str', 'bool']])
 @pytest.mark.parametrize('paths', [['.'], ['one/two', 'abc/def']])
 @pytest.mark.parametrize('machine_readable', ['-H', None])
-@pytest.mark.parametrize('sort', ['-s', None])
 def test_get_all(
         repo: OnyoRepo, matches: list[str], depth: str, keys: list[str],
-        paths: list[str], machine_readable: str | None,
-        sort: str | None) -> None:
+        paths: list[str], machine_readable: str | None) -> None:
     r"""
     Test `onyo get` with a combination of arguments.
     """
@@ -153,7 +169,6 @@ def test_get_all(
     cmd += ['--keys', *keys + ["path"]] if keys else []
     cmd += ['--match', *matches] if matches else []
     cmd += [machine_readable] if machine_readable else []
-    cmd += [sort] if sort else []
     ret = subprocess.run(cmd, capture_output=True, text=True)
     output = [output.split('\t') for output in ret.stdout.split('\n')][:-1]
     init_paths = set(Path(path) for path in paths)
@@ -436,71 +451,62 @@ def test_get_path_error(repo: OnyoRepo, path: str) -> None:
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
                                               if t[0] in ['a13bc_foo_bar.1',
                                                           'a2cd_foo_bar.2',
-                                                          'a36ab_foo_bar.3']]))
-@pytest.mark.parametrize('sort', ['-s', '-S', None])
-@pytest.mark.parametrize('keys,expected', [
-    (['type'], ['a2cd', 'a13bc', 'a36ab']),
-    (['num'], ['num-3', 'num-16', 'num-20']),
-    (['unset', 'type'], ['a2cd', 'a13bc', 'a36ab']),
-    ([], ['a2cd', 'a13bc', 'a36ab'])])
+                                                          'a36ab_foo_bar.3',
+                                                          'a36ab_afoo_bar.4']]))
+@pytest.mark.parametrize('sort,expected_order', [
+    (['-s', 'make',
+      '-s', 'num'], [4, 1, 2, 3]),
+    (['-S', 'make',
+      '-s', 'type'], [2, 1, 3, 4])
+])
 def test_get_sort(
-        repo: OnyoRepo, sort: str | None, keys: list[str],
-        expected: list[str]) -> None:
+        repo: OnyoRepo, sort: list[str],
+        expected_order: list[int]) -> None:
     r"""
-    Test that `onyo get --keys x y z` with `-s` (ascending) or `-S`
-    (descending)  retrieves assets in the expected 'natural sorted' order.
+    Test the `-s` (ascending) and `-S` (descending)
+    sorting options for `onyo get`.
     """
+    # Note: This test has fewer test cases than `test_natural_sort`
+    #       below. This is b/c here we are testing CLI and rely on
+    #       reading assets from a repository. That implies we
+    #       don't know the original order of assets and thus testing
+    #       sorting that doesn't touch some elements gets wild.
+    #       However, this really only needs to test that the options
+    #       work as expected and result in the right call to actual
+    #       sorting, which is tested separately.
     cmd = ['onyo', 'get', '-H']
-    cmd += ['--keys', *keys] if keys else []
-    cmd += [sort] if sort else []
+    cmd += ['--keys', 'id']
+    cmd += sort
     ret = subprocess.run(cmd, capture_output=True, text=True)
-    output = [output.split('\t') for output in ret.stdout.split('\n')][:-1]
-
-    for i, key in enumerate(keys or ['type']):
-        if key == 'unset':  # nothing to be sorted
-            continue
-
-        assert [line[i if sort else -1] for line in output] == \
-               list(reversed(expected)) if sort == '-S' else expected
-
-    assert not ret.stderr
     assert ret.returncode == 0
+    assert not ret.stderr
+    result = [int(line) for line in ret.stdout.splitlines()]
+    assert result == expected_order
 
 
-def test_get_sort_error(repo: OnyoRepo) -> None:
-    r"""
-    Test that when using -s and -S simultaneously the appropriate error is
-    returned.
-    """
-    cmd = ['onyo', 'get', '-s', '-S']
-    ret = subprocess.run(cmd, capture_output=True, text=True)
-    msg = "-s/--sort-ascending and -S/--sort-descending are mutually exclusive"
-    assert msg in ret.stderr
-    assert ret.returncode == 2
-
-
-@pytest.mark.parametrize('assets', [[
-    {'num': 'num-20', 'str': 'abc', 'id': '1', 'path': Path('a13bc_foo_bar.1')},
-    {'num': 'num-3', 'str': 'def', 'id': '2', 'path': Path('a2cd_foo_bar.2')},
-    {'num': 'num-16', 'str': 'ghi', 'id': '3', 'path': Path('a36ab_foo_bar.3')}]])
-@pytest.mark.parametrize('keys', [None, ['num'], ['str', 'num']])
-@pytest.mark.parametrize('reverse', [True, False])
-def test_natural_sort(
-        assets: list[dict], keys: list | None,
-        reverse: bool) -> None:
+@pytest.mark.parametrize('keys,expected', [
+    ({'num': SORT_ASCENDING}, [1, 2, 3, 4]),
+    ({'num': SORT_DESCENDING}, [3, 4, 2, 1]),  # no difference for 3,4 -> order is stable
+    ({'str': SORT_ASCENDING}, [1, 2, 3, 4]),
+    ({'str': SORT_DESCENDING}, [4, 3, 2, 1]),
+    ({'type': SORT_ASCENDING}, [2, 1, 3, 4]),
+    ({'type': SORT_DESCENDING}, [3, 4, 1, 2]),  # no difference for 3,4 -> order is stable
+    ({'model': SORT_ASCENDING}, [1, 2, 3, 4]),  # for 'model' all assets are equal -> order is stable
+    ({'model': SORT_DESCENDING}, [1, 2, 3, 4]),  # same
+    ({'make': SORT_ASCENDING,
+      'num': SORT_ASCENDING}, [4, 1, 2, 3]),
+    ({'make': SORT_DESCENDING,
+      'type': SORT_ASCENDING}, [2, 1, 3, 4])
+])
+def test_natural_sort(keys: dict[str, sort_t], expected: list[int]) -> None:
     r"""Test implementation of natural sorting algorithm"""
-    sorted_assets = natural_sort(assets, keys=keys, reverse=reverse)
-    ids = [data.get('id') for data in sorted_assets]
-
-    if reverse:
-        ids = list(reversed(ids))
-
-    if keys is None:
-        assert ids == ['2', '1', '3']
-    elif keys[0] == 'num':
-        assert ids == ['2', '3', '1']
-    elif keys[0] == 'str':
-        assert ids == ['1', '2', '3']
+    assets = [t[1] for t in asset_contents
+              if t[0] in ['a13bc_foo_bar.1',
+                          'a2cd_foo_bar.2',
+                          'a36ab_foo_bar.3',
+                          'a36ab_afoo_bar.4']]
+    sorted_assets = natural_sort(assets, keys=keys)
+    assert expected == [data.get('id') for data in sorted_assets]
 
 
 @pytest.mark.parametrize('assets', [[

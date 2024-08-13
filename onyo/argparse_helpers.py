@@ -166,3 +166,43 @@ class StoreSingleKeyValuePairs(argparse.Action):
             results[k] = cvt(v)
 
         setattr(namespace, self.dest, results)
+
+
+class StoreSortOption(argparse.Action):
+
+    def __init__(self,
+                 option_strings: Sequence[str],
+                 dest: str,
+                 **kwargs) -> None:
+        r"""
+        Parameters
+        ----------
+        option_strings
+        dest
+        **kwargs
+        """
+        # This is a hack.
+        # We want sorting options where -s and -S take keys (to sort by) while
+        # capitalization determines whether it's ascending or descending order.
+        # Both are supposed to be intermixable.
+        # For a proper specification and help for both options, they need to be
+        # defined separately. But if we want to keep order in the intermixed case,
+        # they need to be stored into the same object to maintain order.
+        # Our way of specifying `dest` as the key in a dict defining the options
+        # per command, prevents that, though.
+        # With this hack we ignore the generated `dest` and set it to a fixed 'sort'.
+        if 'default' in kwargs.keys():
+            # We can't deal with defaults while accounting for two different
+            # arguments, b/c we don't know when to discard the default.
+            raise ValueError("'default' must not be used with `StoreSortOption`")
+        for option in option_strings:
+            if option.startswith('--sort-'):
+                self._sorting = option[7:]
+        super().__init__(option_strings, "sort", **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        partial_dict = {k: self._sorting for k in values}
+        items = getattr(namespace, self.dest, None)
+        items = dict() if items is None else items
+        items.update(partial_dict)
+        setattr(namespace, self.dest, items)

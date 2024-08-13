@@ -6,12 +6,17 @@ import shutil
 import sys
 from typing import TYPE_CHECKING
 
-from .consts import UNSET_VALUE
-
+from .consts import (
+    SORT_DESCENDING,
+    UNSET_VALUE,
+)
 if TYPE_CHECKING:
-    from typing import Generator
+    from typing import (
+        Generator,
+    )
 
     from .onyo import OnyoRepo
+    from .consts import sort_t
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
@@ -75,8 +80,7 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
 
 
 def natural_sort(assets: list[dict],
-                 keys: list[str] | None = None,
-                 reverse: bool = False) -> list[dict]:
+                 keys: dict[str, sort_t]) -> list[dict]:
     r"""Sort an asset list by a list of ``keys``.
 
     Parameters
@@ -84,21 +88,20 @@ def natural_sort(assets: list[dict],
     assets
         Assets to sort.
     keys
-        Keys to sort ``assets`` by. Default: ``['path']``.
+        Keys to sort ``assets`` by.
     reverse
         Whether to sort in reverse order.
     """
-    keys = keys or ['path']
 
     def sort_order(x, k):
         return [int(s) if s.isdigit() else s.lower()
                 for s in re.split('([0-9]+)', str(x[k]))]
 
-    for key in reversed(keys):
+    for key in reversed(keys.keys()):
         assets = sorted(
             assets,
             key=lambda x: sort_order(x, key),
-            reverse=reverse)
+            reverse=keys[key] == SORT_DESCENDING)
 
     return assets
 

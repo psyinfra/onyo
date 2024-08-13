@@ -15,7 +15,12 @@ from rich import box
 from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't find Table
 
 from onyo.lib.command_utils import fill_unset, natural_sort
-from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.consts import (
+    PSEUDO_KEYS,
+    RESERVED_KEYS,
+    SORT_ASCENDING,
+    SORT_DESCENDING,
+)
 from onyo.lib.exceptions import (
     NotADirError,
     NotAnAssetError,
@@ -34,9 +39,9 @@ if TYPE_CHECKING:
         Callable,
         Dict,
         Generator,
-        Literal,
     )
     from onyo.lib.onyo import OnyoRepo
+    from onyo.lib.consts import sort_t
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -434,7 +439,7 @@ def onyo_get(inventory: Inventory,
              machine_readable: bool = False,
              match: list[Callable[[dict], bool]] | None = None,
              keys: list[str] | None = None,
-             sort: Literal['ascending', 'descending'] = 'ascending') -> list[dict]:
+             sort: dict[str, sort_t] | None = None) -> list[dict]:
     r"""Query the repository for information about assets.
 
     Parameters
@@ -468,9 +473,12 @@ def onyo_get(inventory: Inventory,
       If no `keys` are given then the asset name keys and `path` are used.
       Keys may be repeated.
     sort
-      How to sort the results by `keys`. Possible values are
-      'ascending' and 'descending'. Default: 'ascending'.
+      How to sort the results. This is a dictionary, where the keys
+      are the asset keys to sort by (in order of appearances in the
+      `sort` dictionary). Possible values are
+      `onyo.lib.consts.SORT_ASCENDING` and `onyo.lib.consts.SORT_DESCENDING`.
       If other values are specified an error is raised.
+      Default: `{'path': SORT_ASCENDING}`.
 
     Raises
     ------
@@ -496,8 +504,8 @@ def onyo_get(inventory: Inventory,
         err_str = '\n'.join([str(x) for x in invalid_paths])
         raise ValueError(f"The following paths are not part of the inventory:\n{err_str}")
 
-    allowed_sorting = ['ascending', 'descending']
-    if sort not in allowed_sorting:
+    allowed_sorting = [SORT_ASCENDING, SORT_DESCENDING]
+    if sort and not all(v in allowed_sorting for k, v in sort.items()):
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
     selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['path']
@@ -512,9 +520,8 @@ def onyo_get(inventory: Inventory,
 
     results = natural_sort(
         assets=results,
-        # Note: This intentionally checks for explicitly given `keys`:
-        keys=selected_keys if keys else ['path'],
-        reverse=sort == 'descending')
+        # pyre can't tell SORT_ASCENDING is not an arbitrary string but matches the Literal declaration:
+        keys=sort or {'path': SORT_ASCENDING})  # pyre-ignore[6]
 
     # filter output for `keys` only
     results = [{k: v for k, v in r.items() if k in selected_keys} for r in results]

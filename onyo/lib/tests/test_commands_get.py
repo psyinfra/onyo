@@ -212,13 +212,13 @@ def test_onyo_get_sorting(inventory: Inventory,
 
     # call `onyo_get()` with sort=ascending
     onyo_get(inventory,
-             sort="ascending",
+             sort={get_key: "ascending", "path": "ascending"},
              keys=[get_key, "path"])
     ascending_output = capsys.readouterr().out
 
     # call `onyo_get()` with sort=descending
     onyo_get(inventory,
-             sort="descending",
+             sort={get_key: "descending", "path": "descending"},
              keys=[get_key, "path"])
     descending_output = capsys.readouterr().out
 
@@ -235,7 +235,7 @@ def test_onyo_get_sorting(inventory: Inventory,
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  sort="ILLEGAL",
+                  sort={get_key: "ILLEGAL"},
                   keys=[get_key, "path"])
 
 
