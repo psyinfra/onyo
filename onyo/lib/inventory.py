@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from typing import (
         Callable,
         Generator,
+        Iterable,
         Literal,
     )
 
@@ -522,7 +523,8 @@ class Inventory(object):
         return self.repo.get_asset_content(path)
 
     def get_assets(self,
-                   paths: list[Path] | None = None,
+                   include: Iterable[Path] | None = None,
+                   exclude: Iterable[Path] | Path | None = None,
                    depth: int = 0) -> Generator[dict, None, None]:
         r"""Yield all assets under `paths` up to `depth` directory levels.
 
@@ -531,8 +533,11 @@ class Inventory(object):
 
         Parameters
         ----------
-        paths
+        include
           Paths to look for assets under. Defaults to the root of the inventory.
+        exclude
+          Paths to exclude, meaning that assets underneath any of these are not
+          being returned. Defaults to `None`.
         depth
           Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
@@ -542,7 +547,7 @@ class Inventory(object):
         Generator of dict
            All matching assets in the inventory.
         """
-        for p in self.repo.get_asset_paths(subtrees=paths, depth=depth):
+        for p in self.repo.get_asset_paths(include=include, exclude=exclude, depth=depth):
             try:
                 yield self.get_asset(p)
             except NotAnAssetError as e:
@@ -554,7 +559,8 @@ class Inventory(object):
         return self.repo.get_template(template)
 
     def get_assets_by_query(self,
-                            paths: list[Path] | None = None,
+                            include: list[Path] | None = None,
+                            exclude: list[Path] | Path | None = None,
                             depth: int | None = 0,
                             match: list[Callable[[dict], bool]] | None = None) -> Generator | filter:
         r"""Get assets matching paths and filters.
@@ -565,9 +571,12 @@ class Inventory(object):
 
         Parameters
         ----------
-        paths
+        include
           Paths to look for assets under. Defaults to the root of
           the inventory. Passed to `self.get_assets`.
+        exclude
+          Paths to exclude, meaning that assets underneath any of these are not
+          being returned. Defaults to `None`. Passed to `self.get_assets`.
         depth
           Number of levels to descend into. Must be greater or equal 0.
           If 0, descend recursively without limit. Defaults to 0.
@@ -583,7 +592,7 @@ class Inventory(object):
           for which all `filters` returned `True`.
         """
         depth = 0 if depth is None else depth
-        assets = self.get_assets(paths=paths, depth=depth)
+        assets = self.get_assets(include=include, exclude=exclude, depth=depth)
         if match:
             # Remove assets that do not match all filters
             for f in match:

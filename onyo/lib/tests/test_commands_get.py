@@ -16,13 +16,13 @@ def test_onyo_get_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  paths=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"])
+                  include=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"])
 
     # get outside the repository
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  paths=[(inventory.root / "..")])
+                  include=[(inventory.root / "..")])
 
     # get with negative depth value
     pytest.raises(ValueError,
@@ -34,19 +34,19 @@ def test_onyo_get_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  paths=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME])
+                  include=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME])
 
     # get on .git/
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  paths=[inventory.root / ".git"])
+                  include=[inventory.root / ".git"])
 
     # get on .onyo/
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  paths=[inventory.root / ".onyo"])
+                  include=[inventory.root / ".onyo"])
 
 
 @pytest.mark.repo_contents(
@@ -65,7 +65,7 @@ def test_onyo_get_empty_keys(inventory: Inventory,
     # call `onyo_get()` requesting a key that does not exist
     assert missing_key not in Path.read_text(asset_path1)
     onyo_get(inventory,
-             paths=[asset_path1],
+             include=[asset_path1],
              keys=[missing_key, "path"])
 
     # verify output
@@ -76,7 +76,7 @@ def test_onyo_get_empty_keys(inventory: Inventory,
     # call `onyo_get()` requesting a key that exists, but has no value set
     assert empty_key in Path.read_text(asset_path2)
     onyo_get(inventory,
-             paths=[asset_path2],
+             include=[asset_path2],
              keys=[empty_key, "path"])
 
     # verify output
@@ -92,7 +92,7 @@ def test_onyo_get_on_empty_directory(inventory: Inventory) -> None:
 
     # `onyo_get()` on a directory without assets does not error
     onyo_get(inventory,
-             paths=[dir_path])
+             include=[dir_path])
 
 
 @pytest.mark.ui({'yes': True})
@@ -127,7 +127,7 @@ def test_onyo_get_name_keys(inventory: Inventory,
 
     # call `onyo_get()` without keys specified
     onyo_get(inventory,
-             paths=[asset_path])
+             include=[asset_path])
 
     # verify output
     output = capsys.readouterr().out
@@ -148,8 +148,8 @@ def test_onyo_get_errors_before_get(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  paths=[asset_path,
-                         non_existing_asset_path])
+                  include=[asset_path,
+                           non_existing_asset_path])
 
 
 @pytest.mark.ui({'yes': True})
@@ -161,7 +161,7 @@ def test_onyo_get_simple(inventory: Inventory,
 
     # get a value in an asset
     onyo_get(inventory,
-             paths=[asset_path],
+             include=[asset_path],
              keys=[get_key, "path"])
 
     # verify output
@@ -180,14 +180,14 @@ def test_onyo_get_machine_readable(inventory: Inventory,
 
     # call `onyo_get()` without machine readable mode
     onyo_get(inventory,
-             paths=[asset_path],
+             include=[asset_path],
              keys=[get_key, "path"])
 
     standard_output = capsys.readouterr().out
 
     # call `onyo_get()` in machine readable mode
     onyo_get(inventory,
-             paths=[asset_path],
+             include=[asset_path],
              keys=[get_key, "path"],
              machine_readable=True)
 
@@ -249,7 +249,7 @@ def test_onyo_get_on_directory(inventory: Inventory,
 
     # call `onyo_get()` on a directory
     onyo_get(inventory,
-             paths=[dir_path],
+             include=[dir_path],
              keys=[get_key, "path"])
 
     # verify output contains the asset inside the directory
@@ -275,7 +275,7 @@ def test_onyo_get_match(inventory: Inventory,
 
     # get a value just in the matching asset, but specify both paths
     onyo_get(inventory,
-             paths=[asset_path1, asset_path2],
+             include=[asset_path1, asset_path2],
              match=matches,  # pyre-ignore[6]
              keys=[get_key, "path"])
 
@@ -320,8 +320,8 @@ def test_onyo_get_multiple(inventory: Inventory,
 
     # get a value in multiple assets at once
     onyo_get(inventory,
-             paths=[asset_path1,
-                    asset_path2],
+             include=[asset_path1,
+                      asset_path2],
              keys=[get_key, "path"])
 
     # verify output contains all assets and "path" as default key
@@ -335,17 +335,26 @@ def test_onyo_get_multiple(inventory: Inventory,
 @pytest.mark.repo_contents(
     ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
-def test_onyo_get_depth(inventory: Inventory,
-                        capsys) -> None:
-    r"""`onyo_get()` with depth selects the correct assets."""
+def test_onyo_get_limited(inventory: Inventory,
+                          capsys) -> None:
+    r"""`onyo_get()` with limits (--exclude/--depth) selects the correct assets."""
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
 
     # get a value using depth
     onyo_get(inventory,
-             paths=[inventory.root],
+             include=[inventory.root],
              depth=1)
 
+    # verify output contains all assets and "path" as default key
+    output = capsys.readouterr().out
+    assert asset_path1.name not in output
+    assert asset_path2.name in output
+    assert "path" in output
+
+    # exclude subtree rather than limiting depth
+    onyo_get(inventory,
+             exclude=asset_path1.parent)
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
     assert asset_path1.name not in output
@@ -360,7 +369,7 @@ def test_onyo_get_depth_zero(inventory: Inventory,
                              capsys) -> None:
     r"""Calling `onyo_get(depth=0)` is legal and selects all assets from all subpaths."""
     onyo_get(inventory,
-             paths=[inventory.root],
+             include=[inventory.root],
              depth=0)
 
     # verify output contains all assets and "path" as default key
@@ -393,9 +402,9 @@ def test_onyo_get_allows_duplicates(inventory: Inventory,
     times does not error, but displays information just once."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
-    # call `onyo_get()` with `paths` containing duplicates
+    # call `onyo_get()` with `include` containing duplicates
     onyo_get(inventory,
-             paths=[asset_path, asset_path, asset_path])
+             include=[asset_path, asset_path, asset_path])
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out

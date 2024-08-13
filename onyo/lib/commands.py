@@ -428,7 +428,8 @@ def onyo_edit(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_get(inventory: Inventory,
-             paths: list[Path] | None = None,
+             include: list[Path] | None = None,
+             exclude: list[Path] | Path | None = None,
              depth: int = 0,
              machine_readable: bool = False,
              match: list[Callable[[dict], bool]] | None = None,
@@ -440,10 +441,15 @@ def onyo_get(inventory: Inventory,
     ----------
     inventory
       The inventory to query.
-    paths
+    include
       Limits the query to assets underneath these paths.
       Paths can be assets and directories.
       If no paths are specified, the inventory root is used as default.
+    exclude
+      Paths to exclude, meaning that assets underneath any of these are not
+      being returned. Defaults to `None`. Note, that `depth` only applies to
+      `include`, not to `exclude`. `depth` and `exclude` are different ways
+      of limiting the results.
     depth
       Number of levels to descend into. Must be greater or equal 0.
       If 0, descend recursively without limit.
@@ -459,8 +465,7 @@ def onyo_get(inventory: Inventory,
       this list.
     keys
       Defines what key-value pairs of an asset a result is composed of.
-      If no `keys` are given the keys then the asset name keys and
-      `path` are used.
+      If no `keys` are given then the asset name keys and `path` are used.
       Keys may be repeated.
     sort
       How to sort the results by `keys`. Possible values are
@@ -481,11 +486,11 @@ def onyo_get(inventory: Inventory,
     selected_keys = keys.copy() if keys else None
 
     # TODO: JSON output? Is this done somewhere?
-    paths = paths or [inventory.root]
+    include = include or [inventory.root]
 
     # validate path arguments
     invalid_paths = set(p
-                        for p in paths  # pyre-ignore[16]  `paths` not Optional anymore here
+                        for p in include  # pyre-ignore[16]  `paths` not Optional anymore here
                         if not (inventory.repo.is_inventory_dir(p) or inventory.repo.is_asset_path(p)))
     if invalid_paths:
         err_str = '\n'.join([str(x) for x in invalid_paths])
@@ -496,7 +501,8 @@ def onyo_get(inventory: Inventory,
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
     selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['path']
-    results = inventory.get_assets_by_query(paths=paths,
+    results = inventory.get_assets_by_query(include=include,
+                                            exclude=exclude,
                                             depth=depth,
                                             match=match)
     results = list(fill_unset(results, selected_keys))

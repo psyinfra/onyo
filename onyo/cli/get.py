@@ -61,12 +61,31 @@ args_get = {
         """
     ),
 
+    'include': dict(
+        args=('-i', '--include'),
+        metavar='INCLUDE',
+        nargs='+',
+        help=r"""
+            Assets or directories to query.
+        """
+    ),
+
+    'exclude': dict(
+        args=('-x', '--exclude'),
+        metavar='EXCLUDE',
+        nargs='+',
+        help=r"""
+            Assets or directories to exclude from the query.
+            Note, that **DEPTH** does not apply to excluded paths.
+        """
+    ),
+
     'path': dict(
         args=('-p', '--path'),
         metavar='PATH',
         nargs='+',
         help=r"""
-            Assets or directories to query.
+            Deprecated. Alias for ``--include``.
         """
     ),
 
@@ -133,13 +152,19 @@ def get(args: argparse.Namespace) -> None:
     if args.sort_ascending and args.sort_descending:
         raise InvalidArgumentError('-s/--sort-ascending and -S/--sort-descending are mutually exclusive')
     sort = 'descending' if args.sort_descending else 'ascending'
+    includes = args.path if args.path else []
+    includes += args.include if args.include else []
+    includes = [Path(p).resolve() for p in includes] if includes else [Path.cwd()]
+    excludes = [Path(p).resolve() for p in args.exclude] if args.exclude else None
+
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 
-    paths = [Path(p).resolve() for p in args.path] if args.path else [Path.cwd()]
     filters = [Filter(f).match for f in args.match] if args.match else None
+
     onyo_get(inventory=inventory,
              sort=sort,
-             paths=paths,
+             include=includes,
+             exclude=excludes,
              depth=args.depth,
              machine_readable=args.machine_readable,
              # Type annotation for callables as filters, somehow

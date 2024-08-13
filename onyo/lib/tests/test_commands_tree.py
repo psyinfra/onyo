@@ -54,7 +54,7 @@ def test_onyo_tree_single(inventory: Inventory,
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
-    for path in inventory.repo.get_asset_paths(subtrees=[directory_path]):
+    for path in inventory.repo.get_asset_paths(include=[directory_path]):
         assert all([part in tree_output for part in path.parts])
     assert inventory.repo.git.is_clean_worktree()
 
@@ -71,7 +71,7 @@ def test_onyo_tree_multiple_paths(inventory: Inventory,
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
-    for path in inventory.repo.get_asset_paths(subtrees=[dir_path, inventory.root]):
+    for path in inventory.repo.get_asset_paths(include=[dir_path, inventory.root]):
         assert all([part in tree_output for part in path.parts])
     assert inventory.repo.git.is_clean_worktree()
 
@@ -88,7 +88,7 @@ def test_onyo_tree_relative_single(inventory: Inventory,
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
-    for path in inventory.repo.get_asset_paths(subtrees=[directory_path]):
+    for path in inventory.repo.get_asset_paths(include=[directory_path]):
         assert all([part in tree_output for part in path.relative_to(inventory.root).parts])
     assert inventory.repo.git.is_clean_worktree()
 
@@ -125,7 +125,7 @@ def test_onyo_tree_with_same_dir_twice(inventory: Inventory,
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
-    for path in inventory.repo.get_asset_paths(subtrees=[directory_path]):
+    for path in inventory.repo.get_asset_paths(include=[directory_path]):
         assert all([part in tree_output for part in path.parts])
     assert tree_output.count(str(directory_path)) == 2
     assert inventory.repo.git.is_clean_worktree()
