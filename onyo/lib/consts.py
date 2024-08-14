@@ -1,3 +1,9 @@
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Literal
+    sort_t = Literal['ascending', 'descending']
+
+
 PSEUDO_KEYS = ['path']
 r"""Key names that are addressable but not in asset content.
 
@@ -24,3 +30,6 @@ r"""Onyo repository versions that this version of onyo knows.
 Needed to realize when onyo runs on a repo that was created by a newer version.
 (Or a user messed it up).
 """
+
+SORT_ASCENDING = 'ascending'
+SORT_DESCENDING = 'descending'

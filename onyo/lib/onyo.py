@@ -557,15 +557,20 @@ class OnyoRepo(object):
         return True
 
     def get_asset_paths(self,
-                        subtrees: Iterable[Path] | None = None,
-                        depth: int = 0) -> List[Path]:
+                        include: Iterable[Path] | None = None,
+                        exclude: Iterable[Path] | Path | None = None,
+                        depth: int = 0
+                        ) -> List[Path]:
         r"""Select all assets in the repository that are relative to the given
         `subtrees` descending at most `depth` directories.
 
         Parameters
         ----------
-        subtrees
+        include
           Paths to look for assets under. Defaults to the root of the inventory.
+        exclude
+          Paths to exclude, meaning that assets underneath any of these are not
+          being returned. Defaults to `None`.
         depth
           Number of levels to descend into. Must be greater equal 0.
           If 0, descend recursively without limit. Defaults to 0.
@@ -578,13 +583,17 @@ class OnyoRepo(object):
         if depth < 0:
             raise ValueError(f"depth must be greater or equal 0, but is '{depth}'")
         # Note: The if-else here doesn't change result, but utilizes `GitRepo`'s cache:
-        files = self.git.get_subtrees(subtrees) if subtrees else self.git.files
+        files = self.git.get_subtrees(include) if include else self.git.files
         if depth:
-            roots = subtrees if subtrees else [self.git.root]
+            roots = include if include else [self.git.root]
             files = [f
                      for f in files
                      for r in roots
                      if r in f.parents and len(f.parents) - len(r.parents) <= depth]
+
+        if exclude:
+            exclude = [exclude] if isinstance(exclude, Path) else exclude
+            files = [f for f in files if all(f != p and p not in f.parents for p in exclude)]
 
         # This only checks for `is_inventory_path`, since we already
         # know it's a committed file:

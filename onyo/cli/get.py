@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from onyo.argparse_helpers import StoreSortOption
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import onyo_get
-from onyo.lib.exceptions import InvalidArgumentError
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 
@@ -61,30 +61,61 @@ args_get = {
         """
     ),
 
-    'path': dict(
-        args=('-p', '--path'),
-        metavar='PATH',
+    'include': dict(
+        args=('-i', '--include'),
+        metavar='INCLUDE',
         nargs='+',
         help=r"""
             Assets or directories to query.
         """
     ),
 
+    'exclude': dict(
+        args=('-x', '--exclude'),
+        metavar='EXCLUDE',
+        nargs='+',
+        help=r"""
+            Assets or directories to exclude from the query.
+            Note, that **DEPTH** does not apply to excluded paths.
+        """
+    ),
+
+    'path': dict(
+        args=('-p', '--path'),
+        metavar='PATH',
+        nargs='+',
+        help=r"""
+            Deprecated. Alias for ``--include``.
+        """
+    ),
+
     'sort_ascending': dict(
         args=('-s', '--sort-ascending'),
-        action='store_true',
-        default=False,
+        metavar='SORT_KEY',
+        action=StoreSortOption,
+        nargs='+',
         help=r"""
-            Sort output in ascending order (excludes ``--sort-descending``).
+            Sort output by **SORT-KEY** in ascending order.
+            Can be given multiple times. Sorting by multiple **SORT-KEY** will be done in order
+            (earlier given keys take precedence over subsequent keys).
+            This can be intermixed with ``-s/--sort-descending``.
+            Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
+            overrule what ws specified before.
         """
     ),
 
     'sort_descending': dict(
         args=('-S', '--sort-descending'),
-        action='store_true',
-        default=False,
+        metavar='SORT_KEY',
+        action=StoreSortOption,
+        nargs='+',
         help=r"""
-            Sort output in descending order (excludes ``--sort-ascending``).
+            Sort output by **SORT-KEY** in descending order.
+            Can be given multiple times. Sorting by multiple **SORT-KEY** will be done in order
+            (earlier given keys take precedence over subsequent keys).
+            This can be intermixed with ``-s/--sort-ascending``.
+            Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
+            overrule what ws specified before.
         """
     ),
 }
@@ -130,16 +161,19 @@ def get(args: argparse.Namespace) -> None:
 
     By default, the results are sorted by ``path``.
     """
-    if args.sort_ascending and args.sort_descending:
-        raise InvalidArgumentError('-s/--sort-ascending and -S/--sort-descending are mutually exclusive')
-    sort = 'descending' if args.sort_descending else 'ascending'
+    includes = args.path if args.path else []
+    includes += args.include if args.include else []
+    includes = [Path(p).resolve() for p in includes] if includes else [Path.cwd()]
+    excludes = [Path(p).resolve() for p in args.exclude] if args.exclude else None
+
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 
-    paths = [Path(p).resolve() for p in args.path] if args.path else [Path.cwd()]
     filters = [Filter(f).match for f in args.match] if args.match else None
+
     onyo_get(inventory=inventory,
-             sort=sort,
-             paths=paths,
+             sort=args.sort,
+             include=includes,
+             exclude=excludes,
              depth=args.depth,
              machine_readable=args.machine_readable,
              # Type annotation for callables as filters, somehow
