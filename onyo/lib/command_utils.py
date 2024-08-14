@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import re
 import shutil
 import sys
 from typing import TYPE_CHECKING
@@ -92,16 +91,15 @@ def natural_sort(assets: list[dict],
     reverse
         Whether to sort in reverse order.
     """
-
-    def sort_order(x, k):
-        return [int(s) if s.isdigit() else s.lower()
-                for s in re.split('([0-9]+)', str(x[k]))]
+    import natsort
 
     for key in reversed(keys.keys()):
-        assets = sorted(
-            assets,
-            key=lambda x: sort_order(x, key),
-            reverse=keys[key] == SORT_DESCENDING)
+        alg = natsort.ns.IGNORECASE | natsort.ns.INT
+        if key == 'path':
+            alg |= natsort.ns.PATH
+        assets = sorted(assets,
+                        key=natsort.natsort_keygen(key=lambda x: x.get(key), alg=alg),
+                        reverse=keys[key] == SORT_DESCENDING)
 
     return assets
 

@@ -20,6 +20,8 @@ classifiers = [
 dependencies = [
     "ruamel.yaml",
     "rich",
+    "natsort",
+    "fastnumbers"  # not strictly neccessary, but makes natsort's number parsing faster
 ]
 dynamic = ["version"]
 

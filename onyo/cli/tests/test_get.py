@@ -508,6 +508,18 @@ def test_natural_sort(keys: dict[str, sort_t], expected: list[int]) -> None:
     sorted_assets = natural_sort(assets, keys=keys)
     assert expected == [data.get('id') for data in sorted_assets]
 
+    # explicitly check path sorting:
+    assets = [{'path': Path('folder/file (1).txt')},
+              {'path': Path('folder/file.txt')},
+              {'path': Path('folder (1)/file.txt')},
+              {'path': Path('folder (10)/file.txt')}]
+    sorted_assets = natural_sort(assets, {'path': SORT_ASCENDING})  # pyre-ignore[6]
+    expectation = ['folder/file.txt',
+                   'folder/file (1).txt',
+                   'folder (1)/file.txt',
+                   'folder (10)/file.txt']
+    assert expectation == [str(a.get('path')) for a in sorted_assets]
+
 
 @pytest.mark.parametrize('assets', [[
     {'num': 'num-20', 'str': 'abc', 'path': Path('a13bc_foo_bar.1')},
