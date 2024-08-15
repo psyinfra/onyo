@@ -14,7 +14,11 @@ from functools import wraps
 from rich import box
 from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't find Table
 
-from onyo.lib.command_utils import fill_unset, natural_sort
+from onyo.lib.command_utils import (
+    fill_unset,
+    natural_sort,
+    print_diff,
+)
 from onyo.lib.consts import (
     PSEUDO_KEYS,
     RESERVED_KEYS,
@@ -347,8 +351,7 @@ def _edit_asset(inventory: Inventory,
         if operations:
             ui.print("Effective changes:")
             for op in operations:
-                for line in op.diff():
-                    ui.print(line)
+                print_diff(op)
         response = ui.request_user_response(
             "Accept changes? (y)es / continue (e)diting / (s)kip asset / (a)bort command",
             default='yes',
@@ -589,8 +592,7 @@ def onyo_mkdir(inventory: Inventory,
         inventory.add_directory(d)
     if inventory.operations_pending():
         ui.print('The following directories will be created:')
-        for line in inventory.diff():
-            ui.print(line)
+        print_diff(inventory)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -709,8 +711,7 @@ def onyo_mv(inventory: Inventory,
 
     if inventory.operations_pending():
         ui.print("The following will be {}:".format("moved" if subject == "mv" else "renamed"))
-        for line in inventory.diff():
-            ui.print(line)
+        print_diff(inventory)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -914,8 +915,7 @@ def onyo_new(inventory: Inventory,
             # Note: If `edit` was given, the diffs where already confirmed per asset.
             #       Don't ask again.
             ui.print("The following will be created:")
-            for line in inventory.diff():
-                ui.print(line)
+            print_diff(inventory)
         if edit or ui.request_user_response("Create assets? (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -971,8 +971,7 @@ def onyo_rm(inventory: Inventory,
 
     if inventory.operations_pending():
         ui.print('The following will be deleted:')
-        for line in inventory.diff():
-            ui.print(line)
+        print_diff(inventory)
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -1053,9 +1052,7 @@ def onyo_set(inventory: Inventory,
     if inventory.operations_pending():
         # display changes
         ui.print("The following assets will be changed:")
-        for line in inventory.diff():
-            ui.print(line)
-
+        print_diff(inventory)
         if ui.request_user_response("Update assets? (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -1204,8 +1201,7 @@ def onyo_unset(inventory: Inventory,
     if inventory.operations_pending():
         # display changes
         ui.print("The following assets will be changed:")
-        for line in inventory.diff():
-            ui.print(line)
+        print_diff(inventory)
 
         if ui.request_user_response("Update assets? (y/n) "):
             if not message:

@@ -73,8 +73,8 @@ class UI(object):
         else:
             self.logger.setLevel(logging.INFO)
 
-        self.stderr_console = Console(stderr=True, highlight=False)
-        self.stdout_console = Console(stderr=False, highlight=False)
+        self.stderr_console = Console(stderr=True, highlight=False, soft_wrap=True)
+        self.stdout_console = Console(stderr=False, highlight=False, soft_wrap=True)
 
         # count reported errors; this allows to assess whether errors occurred
         # even when no exception bubbles up.
@@ -252,9 +252,10 @@ class UI(object):
         The stderr option should consequently be replaced by `print`'s
         standard `file` option.
         """
-        stderr = kwargs.pop('stderr') if 'stderr' in kwargs.keys() else False
-        console = self.stderr_console if stderr else self.stdout_console
-        console.print(*args, **kwargs)
+        if not self.quiet:
+            stderr = kwargs.pop('stderr') if 'stderr' in kwargs.keys() else False
+            console = self.stderr_console if stderr else self.stdout_console
+            console.print(*args, **kwargs)
 
 
 # create a shared UI object to import by classes/commands

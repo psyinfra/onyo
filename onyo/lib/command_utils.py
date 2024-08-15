@@ -9,6 +9,11 @@ from .consts import (
     SORT_DESCENDING,
     UNSET_VALUE,
 )
+from .inventory import (
+    Inventory,
+    InventoryOperation,
+)
+from .ui import ui
 if TYPE_CHECKING:
     from typing import (
         Generator,
@@ -143,3 +148,19 @@ def get_history_cmd(interactive: bool,
                          f"The program '{history_program}' was not found. Exiting.")
 
     return history_cmd
+
+
+def print_diff(diffable: Inventory | InventoryOperation) -> None:
+    # This isn't nice yet. We need to consolidate `UI` to deal with that.
+    # However, that requires figuring how to deal with issues, when
+    # capturing output in tests and rich not realizing that.
+    for line in diffable.diff():
+        if line.startswith('+'):
+            style = "green"
+        elif line.startswith('-'):
+            style = "red"
+        elif line.startswith('@'):
+            style = "bold"
+        else:
+            style = ""
+        ui.rich_print(line, style=style)
