@@ -176,7 +176,7 @@ class OnyoRepo(object):
         import re
         # Regex for finding key references in a python format string
         # (see notes above):
-        search_regex = r"\{(\w+)"
+        search_regex = r"\{([\w\.]+)"  # TODO: temp. fix to include `.`. Revert with full dict support
         config_str = self.get_config("onyo.assets.name-format")
         return re.findall(search_regex, config_str) if config_str else []
 

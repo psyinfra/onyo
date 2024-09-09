@@ -629,8 +629,16 @@ class Inventory(object):
         config_str = self.repo.get_config("onyo.assets.name-format")
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.name-format'.")
+
+        # Replace key references so that the same dot notation as in CLI works, while actual
+        # format-language features using the dot work as well.
+        # Example: config string: "{some.more:.3}"
+        #          results in : "{asset[some.more]:.3}"
+        for name in self.repo.get_asset_name_keys():
+            config_str = config_str.replace(f"{{{name}", f"{{asset[{name}]")
+
         try:
-            name = config_str.format(**asset)  # TODO: Only pass non-pseudo keys?! What if there is no config?
+            name = config_str.format(asset=asset)  # TODO: Only pass non-pseudo keys?! What if there is no config?
         except KeyError as e:
             raise ValueError(f"Asset missing value for required field {str(e)}.") from e
         return name
