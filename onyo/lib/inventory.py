@@ -630,6 +630,7 @@ class Inventory(object):
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.name-format'.")
 
+        # TODO: Enforce non-empty!
         # Replace key references so that the same dot notation as in CLI works, while actual
         # format-language features using the dot work as well.
         # Example: config string: "{some.more:.3}"
