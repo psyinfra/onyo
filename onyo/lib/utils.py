@@ -3,10 +3,12 @@ from __future__ import annotations
 import copy
 import os
 from pathlib import Path
+from collections import UserDict
 from typing import TYPE_CHECKING
 
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
+from ruamel.yaml.representer import RoundTripRepresenter  # pyre-ignore[21]
 
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 from onyo.lib.exceptions import NotAnAssetError
@@ -16,6 +18,7 @@ if TYPE_CHECKING:
     from typing import (
         Dict,
         Set,
+        Hashable,
     )
 
 
@@ -171,6 +174,23 @@ def write_asset_file(path: Path,
     path.open('w').write(dict_to_asset_yaml(asset))
 
 
+class YAMLDumpWrapper(UserDict):
+    r"""Wrapper class for asset dicts accessing ruamel's representation of data rather than the provided object.
+
+    This works around the issue that something like `serial: 001234` yields a `{'serial': 1234}` but is dumped as
+    `serial: 001234`, which messes up onyo's comparisons for whether there's a modification of an asset.
+    """
+    def __init__(self, d: dict):
+        super().__init__(d)
+
+    def __getitem__(self, item: Hashable):
+        if item not in self.keys():
+            raise KeyError(item)
+        if isinstance(self.data[item], (dict, list, Path)):
+            return self.data[item]
+        return RoundTripRepresenter().represent_data(self.data[item]).value
+
+
 def is_equal_assets_dict(a: Dict, b: Dict) -> bool:
     r"""Whether two asset dictionaries have the same content.
 
@@ -183,7 +203,8 @@ def is_equal_assets_dict(a: Dict, b: Dict) -> bool:
     # if there are more reasons to have such a class.
     if not isinstance(a, CommentedMap) and not isinstance(b, CommentedMap):
         return a == b
-    if dict(a) != dict(b):
+
+    if YAMLDumpWrapper(a) != YAMLDumpWrapper(b):
         # not accounting for comments yet
         return False
 
