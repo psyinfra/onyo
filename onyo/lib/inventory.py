@@ -637,8 +637,11 @@ class Inventory(object):
         for name in self.repo.get_asset_name_keys():
             config_str = config_str.replace(f"{{{name}", f"{{asset[{name}]")
 
+        # Workaround: dump proper representation rather that str() of values in `asset`.
+        # This should probably be integrated in an asset wrapper class instead.
+        from onyo.lib.utils import YAMLDumpWrapper
         try:
-            name = config_str.format(asset=asset)  # TODO: Only pass non-pseudo keys?! What if there is no config?
+            name = config_str.format(asset=YAMLDumpWrapper(asset))  # TODO: Only pass non-pseudo keys?! What if there is no config?
         except KeyError as e:
             raise ValueError(f"Asset missing value for required field {str(e)}.") from e
         return name
