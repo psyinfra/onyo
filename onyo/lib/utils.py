@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import os
+from io import StringIO
 from pathlib import Path
 from collections import UserDict
 from typing import TYPE_CHECKING
@@ -9,6 +10,7 @@ from typing import TYPE_CHECKING
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
 from ruamel.yaml.representer import RoundTripRepresenter  # pyre-ignore[21]
+from ruamel.yaml.dumper import RoundTripDumper  # pyre-ignore[21]
 
 from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
 from onyo.lib.exceptions import NotAnAssetError
@@ -186,9 +188,11 @@ class YAMLDumpWrapper(UserDict):
     def __getitem__(self, item: Hashable):
         if item not in self.keys():
             raise KeyError(item)
-        if isinstance(self.data[item], (dict, list, Path)):
-            return self.data[item]
-        return RoundTripRepresenter().represent_data(self.data[item]).value
+        if isinstance(self.data[item], (dict, list)):
+            return YAMLDumpWrapper(self.data[item])
+        if isinstance(self.data[item], Path):
+            return self.data[item]  # no representer for this
+        return RoundTripRepresenter(dumper=RoundTripDumper(stream=StringIO())).represent_data(self.data[item]).value
 
 
 def is_equal_assets_dict(a: Dict, b: Dict) -> bool:
