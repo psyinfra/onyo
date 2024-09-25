@@ -96,10 +96,14 @@ def natural_sort(assets: list[dict],
     reverse
         Whether to sort in reverse order.
     """
+    import locale
     import natsort
 
+    # set the locale for all categories to the user’s default setting
+    locale.setlocale(locale.LC_ALL, '')
+
     for key in reversed(keys.keys()):
-        alg = natsort.ns.IGNORECASE | natsort.ns.INT
+        alg = natsort.ns.LOCALE | natsort.ns.INT
         if key == 'path':
             alg |= natsort.ns.PATH
         assets = sorted(assets,
