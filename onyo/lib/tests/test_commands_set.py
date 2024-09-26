@@ -112,13 +112,13 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
-    r"""`onyo_set()` must raise an error when requested to set an
-    illegal/reserverd field without `rename=True`."""
+    r"""`onyo_set()` must raise an error when attempting to set an
+    illegal/reserved field."""
     from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    illegal_keys = PSEUDO_KEYS + RESERVED_KEYS + inventory.repo.get_asset_name_keys()
+    illegal_keys = PSEUDO_KEYS + RESERVED_KEYS
     # TODO: Remove is_asset_directory from RESERVED_KEYS altogether?
     illegal_keys.remove("is_asset_directory")
     illegal_fields = [{k: "new_value"} for k in illegal_keys]

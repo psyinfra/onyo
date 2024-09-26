@@ -992,7 +992,6 @@ def onyo_rm(inventory: Inventory,
 def onyo_set(inventory: Inventory,
              keys: Dict[str, str | int | float],
              assets: list[Path],
-             rename: bool = False,
              message: str | None = None) -> str | None:
     r"""Set key-value pairs of assets, and change asset names.
 
@@ -1004,30 +1003,24 @@ def onyo_set(inventory: Inventory,
         Paths to assets for which to set key-value pairs.
     keys
         Key-value pairs that will be set in assets. If keys already exist in an
-        asset their value will be overwritten, if they do not exist the values
+        asset, their value will be overwritten. If they do not exist the values
         are added.
-        If keys are specified which appear in asset names the rename option is
-        needed and changes the file names.
+        Keys that appear in asset names will result in the asset being renamed.
         The key 'is_asset_directory' (bool) can be used to change whether an
         asset is an asset directory.
-    rename
-        Whether to allow changing of keys that are part of the asset name.
-        If False, such a change raises a `ValueError`.
     message
-        An optional string to overwrite Onyo's default commit message.
+        A custom commit message.
 
     Raises
     ------
     ValueError
-        If a given path is invalid or changes are made that would result in
-        renaming an asset, while `rename` is not true, or if `keys` is empty.
+        If a given path is invalid or if `keys` is empty.
     """
+
     if not assets:
         raise ValueError("At least one asset must be specified.")
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
-    if not rename and any(k in inventory.repo.get_asset_name_keys() for k in keys.keys()):
-        raise ValueError("Can't change asset name keys without --rename.")
 
     disallowed_keys = RESERVED_KEYS + PSEUDO_KEYS
     disallowed_keys.remove("is_asset_directory")

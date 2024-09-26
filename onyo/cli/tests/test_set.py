@@ -44,14 +44,6 @@ non_existing_assets: List[List[str]] = [
     ["simple/single_non_existing.asset"],
     [asset_paths[0], "single_non_existing.asset"]]
 
-name_fields = [["type=desktop"],
-               ["make=lenovo"],
-               ["model=thinkpad"],
-               ["serial=1234"],
-               ["type=surface"], ["make=microsoft"], ["model=go"], ["serial=666"],
-               ["key=value"], ["type=server"], ["other=content"], ["serial=777"],
-               ["serial=faux"], ["different=value"]]
-
 
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', asset_paths)
@@ -366,33 +358,8 @@ def test_values_already_set(repo: OnyoRepo,
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', [asset_paths[0]])
-@pytest.mark.parametrize('set_values', name_fields)
-def test_set_update_name_fields(repo: OnyoRepo,
-                                asset: str,
-                                set_values: list[str]) -> None:
-    r"""Test that `onyo set --rename --keys KEY=VALUE --asset <asset>` can
-    successfully change the names of assets, when KEY is
-    type, make, model or/and serial number. Test also, that
-    faux serials can be set and name fields are recognized
-    and can be updated when they are `onyo set` together
-    with a list of content fields.
-    """
-    ret = subprocess.run(['onyo', '--yes', 'set', '--rename', '--keys', *set_values,
-                          '--asset', asset], capture_output=True, text=True)
-
-    # verify output
-    assert "The following assets will be changed:" in ret.stdout
-    assert not ret.stderr
-    assert ret.returncode == 0
-
-    # verify state of repo is clean
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
 def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
-    r"""Test that `onyo set --rename serial=faux --asset <asset>`
+    r"""Test that `onyo set serial=faux --asset <asset>`
     can successfully update many assets with new faux
     serial numbers in one call.
     """
@@ -400,7 +367,7 @@ def test_update_many_faux_serial_numbers(repo: OnyoRepo) -> None:
     pytest.skip("TODO: faux serials not yet considered outside new. Needs to move (modify_asset)")
     # remember old assets before renaming
     old_asset_names = repo.asset_paths
-    ret = subprocess.run(['onyo', '--yes', 'set', '--rename', '--keys',
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys',
                           'serial=faux', '--asset', *asset_paths], capture_output=True, text=True)
 
     # verify output

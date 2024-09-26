@@ -15,17 +15,6 @@ if TYPE_CHECKING:
     import argparse
 
 args_set = {
-    'rename': dict(
-        args=('-r', '--rename'),
-        required=False,
-        default=False,
-        action='store_true',
-        help=r"""
-            Allow setting **KEY**\ s that are part of the asset name.
-            (see the ``onyo.assets.name-format`` configuration option)
-        """
-    ),
-
     'keys': dict(
         args=('-k', '--keys'),
         required=True,
@@ -65,18 +54,18 @@ Upgrade an asset:
 
     $ onyo set --keys RAM=16GB --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
 
-Change a key used in the asset name (renaming it):
+Change a key used in the asset name (thus renaming it):
 
 .. code:: shell
 
-    $ onyo set --rename --keys type=notebook --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+    $ onyo set --keys type=notebook --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
 
 Change the model name of all "mbp" to "macbookpro":
 
 .. code:: shell
 
     $ onyo get --machine-readable --match model=macbookpro --keys path \
-           | xargs -d "\n" onyo --yes set --rename --keys model=mbp --asset
+           | xargs -d "\n" onyo --yes set --keys model=mbp --asset
 
 Change an Asset File to an Asset Directory:
 
@@ -93,9 +82,6 @@ def set(args: argparse.Namespace) -> None:
     **KEY** names can be any valid YAML key-name. If a key is not present in an
     asset, it is added and set appropriately.
 
-    Setting **KEY**\ s that are used in the asset name requires the ``--rename``
-    flag.
-
     In addition to keys in asset contents, some PSEUDO-KEYS can be set:
 
       * ``is_asset_directory``: boolean to control whether the asset is an
@@ -111,5 +97,4 @@ def set(args: argparse.Namespace) -> None:
     onyo_set(inventory=inventory,
              assets=assets,
              keys=args.keys,
-             rename=args.rename,
              message='\n\n'.join(m for m in args.message) if args.message else None)

@@ -140,7 +140,6 @@ _onyo() {
             set)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-r --rename)'{-r,--rename}'[allow assigning values to keys that would result in renaming asset filenames]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in assets; multiple pairs can be given (key=value key2=value2)]:*-*:KEYS: '
                     '(-a --asset)'{-a,--asset}'[assets to set KEY=VALUE in]:*-*::ASSET:_files -W "$(_onyo_dir)"'
                     '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
