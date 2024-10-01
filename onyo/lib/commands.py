@@ -516,6 +516,13 @@ def onyo_get(inventory: Inventory,
                                             exclude=exclude,
                                             depth=depth,
                                             match=match)
+
+    # Problem: We may fill in stuff, that changes the structure. This approach did not consider nested dicts.
+    # "normally" shouldn't occur but theoretically could lead to trouble with several filters and assets where some
+    # have a defined 'key' with an unstructured value and we look for 'key.some'. Now, such an asset would get
+    # 'key.some' set to UNSET_VALUE, thereby overwriting its original value with a dict {'some': UNSET_VALUE}.
+    # This would only affect the output (which would need to want to print 'key' while looking for 'key.some' to match),
+    # so very unlikely to be a real-world issue, but definitely not a good thing.
     results = list(fill_unset(results, selected_keys))
     # convert paths for output
     for r in results:
@@ -527,7 +534,11 @@ def onyo_get(inventory: Inventory,
         keys=sort or {'path': SORT_ASCENDING})  # pyre-ignore[6]
 
     # filter output for `keys` only
-    results = [{k: v for k, v in r.items() if k in selected_keys} for r in results]
+    # TODO: This line was changed to use keys() instead of items(), because
+    #       of a workaround in our inventory. We have the 'model' as well as 'model.name'.
+    #       This now leads to an error when we iterate over all content ('model' is not a dictionary).
+    #       This should probably be resolved in validation (and fixed in our inventory).
+    results = [{k: r[k] for k in r.keys() if k in selected_keys} for r in results]
 
     if machine_readable:
         sep = '\t'  # column separator

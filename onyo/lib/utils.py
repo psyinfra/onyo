@@ -5,7 +5,7 @@ import os
 from collections import UserDict
 from io import StringIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator, Any
 
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 
 
 # The real issue is recursive update(). Where do we need to do this?
-
 
 class DotNotationWrapper(UserDict):
 
@@ -69,6 +68,24 @@ class DotNotationWrapper(UserDict):
     # TODO: Validation: No dots in keys.
 
     #  Could be a wrapper that's only used where this would come in. Directly assign target to self.data
+
+    def _keys(self) -> Generator:  # pyre-ignore[15]
+        """Recursively yield all keys from nested dicts in dot notation.
+        """
+        # TODO: To be aligned w/ `Mapping.keys()`, we'd need to return a `KeysView` instead. -> pyre
+        # Note: Overwriting this has an implication for `update()` as well,
+        #       hence DotNotationWrapper.update({"recursive.key": "some"}) does in fact update the nested dict.
+        # Note: non-string keys are generally a problem for this class, but here we'd outright fail.
+        def recursive_keys(d: dict):
+            for k in d.keys():
+                if hasattr(d[k], "keys"):
+                    yield from (k + "." + sk for sk in recursive_keys(d[k]))
+                else:
+                    # YAML technically allows for other types than string to be a key.
+                    # For the purpose of dot notation access, that doesn't make sense, though.
+                    # We can't have a key 'some.1.more', where 1 remains an integer.
+                    yield str(k)
+        yield from recursive_keys(self.data)
 
     def __getitem__(self, key):
         if isinstance(key, str):
@@ -129,25 +146,10 @@ class DotNotationWrapper(UserDict):
     def __contains__(self, key: object) -> bool:
         # Overwrite b/c super's `__contains__` delegates to self.data instead,
         # which does not know about the dot notation.
-        return key in self.keys()
+        return key in self._keys()
 
-    def keys(self) -> Generator:  # pyre-ignore[15]
-        """Recursively yield all keys from nested dicts in dot notation.
-        """
-        # TODO: To be aligned w/ `Mapping.keys()`, we'd need to return a `KeysView` instead. -> pyre
-        # Note: Overwriting this has an implication for `update()` as well,
-        #       hence DotNotationWrapper.update({"recursive.key": "some"}) does in fact update the nested dict.
-        # Note: non-string keys are generally a problem for this class, but here we'd outright fail.
-        def recursive_keys(d: dict):
-            for k in d.keys():
-                if hasattr(d[k], "keys"):
-                    yield from (k + "." + sk for sk in recursive_keys(d[k]))
-                else:
-                    yield k
-        yield from recursive_keys(self.data)
-
-    def __iter__(self):
-        return self.keys()
+    def __iter__(self) -> Generator:
+        return self._keys()
 
 
 def deduplicate(sequence: list | None) -> list | None:
@@ -184,6 +186,8 @@ def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
     d
         Dictionary to strip of reserved-keys and convert to a YAML string.
     """
+    if isinstance(d, DotNotationWrapper):
+        d = d.data
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
     for k in PSEUDO_KEYS + RESERVED_KEYS:

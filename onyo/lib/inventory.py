@@ -359,7 +359,7 @@ class Inventory(object):
         return [self._add_operation('remove_assets', (asset,))]
 
     def move_asset(self, src: Path | dict, dst: Path) -> list[InventoryOperation]:
-        if isinstance(src, dict):
+        if not isinstance(src, Path):
             src = Path(src.get('path'))
         if not self.repo.is_asset_path(src):
             raise NotAnAssetError(f"No such asset: {src}.")
@@ -379,7 +379,7 @@ class Inventory(object):
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
         #       separate operation already.
 
-        path = Path(asset.get('path')) if isinstance(asset, dict) else asset
+        path = asset if isinstance(asset, Path) else Path(asset.get('path'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
 
@@ -389,8 +389,8 @@ class Inventory(object):
         #             registered modify operations. It's easier to not force compliance here, but simply let
         #             modify_asset generate the name and pass it.
         generated_name = self.generate_asset_name(
-            asset if isinstance(asset, dict)
-            else self.repo.get_asset_content(path)
+            self.repo.get_asset_content(path)
+            if isinstance(asset, Path) else asset
         )
         if name and name != generated_name:
             raise ValueError(f"Renaming asset {path.name} to {name} is invalid."
@@ -409,7 +409,7 @@ class Inventory(object):
 
     def modify_asset(self, asset: dict | Path, new_asset: dict) -> list[InventoryOperation]:
         operations = []
-        path = Path(asset.get('path')) if isinstance(asset, dict) else asset
+        path = asset if isinstance(asset, Path) else Path(asset.get('path'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
         asset = self.repo.get_asset_content(path) if isinstance(asset, Path) else asset
@@ -520,7 +520,10 @@ class Inventory(object):
 
     def get_asset(self, path: Path):
         # read and return Asset
-        return self.repo.get_asset_content(path)
+
+        # move wrapping to get_asset_content helper? Prob. not. wrong abstraction layer
+        from .utils import DotNotationWrapper
+        return DotNotationWrapper(self.repo.get_asset_content(path))
 
     def get_assets(self,
                    include: Iterable[Path] | None = None,
@@ -556,7 +559,8 @@ class Inventory(object):
 
     def get_asset_from_template(self, template: Path | str | None) -> dict:
         # TODO: Possibly join with get_asset (path optional)
-        return self.repo.get_template(template)
+        from .utils import DotNotationWrapper
+        return DotNotationWrapper(self.repo.get_template(template))
 
     def get_assets_by_query(self,
                             include: list[Path] | None = None,
@@ -640,9 +644,12 @@ class Inventory(object):
 
         # Workaround: dump proper representation rather that str() of values in `asset`.
         # This should probably be integrated in an asset wrapper class instead.
-        from onyo.lib.utils import YAMLDumpWrapper
+        # TODO: This is ugly.
+        #       - check where `asset` comes from in new/edit and why it's not a DotNotationWrapper already
+        #       - fuse with YAMLDumpWrapper?! as is applying both doesn't work!
+        from onyo.lib.utils import YAMLDumpWrapper, DotNotationWrapper
         try:
-            name = config_str.format(asset=YAMLDumpWrapper(asset))  # TODO: Only pass non-pseudo keys?! What if there is no config?
+            name = config_str.format(asset=YAMLDumpWrapper(DotNotationWrapper(asset)))  # TODO: Only pass non-pseudo keys?! What if there is no config?
         except KeyError as e:
             raise ValueError(f"Asset missing value for required field {str(e)}.") from e
         return name
@@ -703,5 +710,7 @@ class Inventory(object):
 
         Validation helper
         """
-        if any(not k or not str(k).strip() for k in asset.keys()):
+        if any(not k or not str(k).strip() or k == 'None' for k in asset.keys()):
+            # Note, that DotNotationWrapper.keys() delivers strings (and has to).
+            # Hence, `None` as a key would show up here as 'None'.
             raise ValueError("Keys are not allowed to be empty or None-values.")

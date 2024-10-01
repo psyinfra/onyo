@@ -80,7 +80,14 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
         Keys to create if not present in an asset, and set with ``UNSET_VALUE``.
     """
     for asset in assets:
-        yield {k: UNSET_VALUE for k in keys} | asset
+        # TODO:
+        # This was yield {k: UNSET_VALUE for k in keys} | asset
+        # but we need to modify the incoming DotNotationWrappers, rather than generating plain dicts.
+        # However, something similar is probably possible and would perform better.
+        for k in keys:
+            if k not in asset:
+                asset[k] = UNSET_VALUE
+        yield asset
 
 
 def natural_sort(assets: list[dict],
