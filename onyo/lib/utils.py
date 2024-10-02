@@ -31,51 +31,23 @@ if TYPE_CHECKING:
     _VT = TypeVar("_VT")  # Value type.
 
 
-# The real issue is recursive update(). Where do we need to do this?
-
 class DotNotationWrapper(UserDict):
 
-    #self, arg: Any = None, /, ** kwargs: Any) -> None:
-    def __init__(self, __dict: Mapping[_KT, _VT] | None = ..., **kwargs: _VT) -> None:
+    def __init__(self, __dict: Mapping[_KT, _VT] | None = None, **kwargs: _VT) -> None:
         if __dict and isinstance(__dict, dict):
             super().__init__()
-            # If we have any sort of existing dict, we want to wrap it maintaining the original object (and class).
-            # TODO: Double-Check whether testing for `dict` is sufficient here. Most important: ruamel's `CommentedMap`!
-
-            # Note: Currently would modify wrapped dict w/ kwargs.
-            #       Would need deepcopy to prevent this, but this contradicts the idea of wrapping.
+            # If we have any sort of existing dict, we want to wrap it, maintaining the original object (and class).
+            # Note: Currently would modify wrapped dict w/ kwargs if both are given.
+            #       Would need deepcopy to prevent this, but this kinda contradicts the idea of wrapping.
             self.data = __dict
             self.update(**kwargs)
         else:
             # Resort to `UserDict` behavior if we have any sort of sequence or just `kwargs`.
             super().__init__(__dict, **kwargs)
 
-    # TODO: Maybe the "dot notation" can be its own wrapper. Would be used by CLI (argparse Action) and TSVs.
-    #       This approach would also involve an argparse Action for matching expressions -> remove `str` from
-    #       onyo_get, only Filter/callable.
-    #       OTOH: Not using it in python interface removes the implied key name restriction fom python usage.
-    #       So, probably not a good idea.
-    #       But: Above mentioned Actions probably still need to be implemented/reworked and utilize this.
-    # TODO: Regardless of dot notation: This would ideally take care of converting to YAML (bidirectional),
-    #       basic validation, read-only/lazy keys (candidate: "last-modified" pseudo-key)
-    #       However, this would lead to the "issue", that it needs to be bound to an `Inventory`.
-    #       - if this is an asset, keys that are always available but read-only and on-demand may not need storing;
-    #         either they are auto-added somewhere, or injected here by overwriting -> this would then imply to include
-    #         an overwrite for `__len__`.
-    # NOTE: Nested OnyoDict as suggested in __getitem__ would imply: This is NOT an asset.
-    #       IOW: Speaks for two layers. One for the dot notation, one for asset.
-
-    # TODO: Validation: No dots in keys.
-
-    #  Could be a wrapper that's only used where this would come in. Directly assign target to self.data
-
     def _keys(self) -> Generator:  # pyre-ignore[15]
         """Recursively yield all keys from nested dicts in dot notation.
         """
-        # TODO: To be aligned w/ `Mapping.keys()`, we'd need to return a `KeysView` instead. -> pyre
-        # Note: Overwriting this has an implication for `update()` as well,
-        #       hence DotNotationWrapper.update({"recursive.key": "some"}) does in fact update the nested dict.
-        # Note: non-string keys are generally a problem for this class, but here we'd outright fail.
         def recursive_keys(d: dict):
             for k in d.keys():
                 if hasattr(d[k], "keys"):
@@ -93,16 +65,11 @@ class DotNotationWrapper(UserDict):
             effective_dict = self.data
             if len(parts) > 1:
                 for lvl in range(len(parts) - 1):
-                    # TODO: Do we have/enforce nested OnyoDicts?
-                    #       -> super.__getitem__ instead
-                    #       -> would otherwise consider `__missing__` only at the topmost level
-                    #          (see UserDict implementation)
                     try:
                         effective_dict = effective_dict[parts[lvl]]
                     except KeyError as e:
                         raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
                     except TypeError as e:
-                        breakpoint()
                         raise TypeError(f"'{'.'.join(parts[:lvl])}' is not a dictionary.") from e
             try:
                 return effective_dict[parts[-1]]
@@ -144,12 +111,13 @@ class DotNotationWrapper(UserDict):
             super().__delitem__(key)
 
     def __contains__(self, key: object) -> bool:
-        # Overwrite b/c super's `__contains__` delegates to self.data instead,
-        # which does not know about the dot notation.
         return key in self._keys()
 
     def __iter__(self) -> Generator:
         return self._keys()
+
+    def __len__(self):
+        return len(list(self._keys()))
 
 
 def deduplicate(sequence: list | None) -> list | None:
@@ -186,7 +154,9 @@ def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
     d
         Dictionary to strip of reserved-keys and convert to a YAML string.
     """
-    if isinstance(d, DotNotationWrapper):
+    if isinstance(d, DotNotationWrapper):  # That may be too early.
+                                           # Fine as long as PSEUDO_KEYS and RESERVED_KEYS checked below,
+                                           # are toplevel keys.
         d = d.data
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)

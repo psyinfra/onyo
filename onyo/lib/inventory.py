@@ -389,7 +389,7 @@ class Inventory(object):
         #             registered modify operations. It's easier to not force compliance here, but simply let
         #             modify_asset generate the name and pass it.
         generated_name = self.generate_asset_name(
-            self.repo.get_asset_content(path)
+            self.get_asset(path)
             if isinstance(asset, Path) else asset
         )
         if name and name != generated_name:
@@ -412,7 +412,7 @@ class Inventory(object):
         path = asset if isinstance(asset, Path) else Path(asset.get('path'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
-        asset = self.repo.get_asset_content(path) if isinstance(asset, Path) else asset
+        asset = self.get_asset(path) if isinstance(asset, Path) else asset
 
         # Raise on 'path' key in `new_asset`. It needs to be generated:
         if 'path' in new_asset:
@@ -427,8 +427,9 @@ class Inventory(object):
         self.raise_required_key_empty_value(new_asset)
         # We keep the old path - if it needs to change, this will be done by a rename operation down the road
         new_asset['path'] = path
-
-        if is_equal_assets_dict(asset, new_asset):
+        from .utils import DotNotationWrapper
+        if is_equal_assets_dict(asset.data if isinstance(asset, DotNotationWrapper) else asset,
+                                new_asset.data if isinstance(new_asset, DotNotationWrapper) else new_asset):
             raise NoopError
 
         # If a change in is_asset_directory is implied, do this first:
@@ -634,7 +635,6 @@ class Inventory(object):
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.name-format'.")
 
-        # TODO: Enforce non-empty!
         # Replace key references so that the same dot notation as in CLI works, while actual
         # format-language features using the dot work as well.
         # Example: config string: "{some.more:.3}"
@@ -644,12 +644,9 @@ class Inventory(object):
 
         # Workaround: dump proper representation rather that str() of values in `asset`.
         # This should probably be integrated in an asset wrapper class instead.
-        # TODO: This is ugly.
-        #       - check where `asset` comes from in new/edit and why it's not a DotNotationWrapper already
-        #       - fuse with YAMLDumpWrapper?! as is applying both doesn't work!
-        from onyo.lib.utils import YAMLDumpWrapper, DotNotationWrapper
+        from onyo.lib.utils import YAMLDumpWrapper
         try:
-            name = config_str.format(asset=YAMLDumpWrapper(DotNotationWrapper(asset)))  # TODO: Only pass non-pseudo keys?! What if there is no config?
+            name = config_str.format(asset=YAMLDumpWrapper(asset))  # TODO: Only pass non-pseudo keys?!
         except KeyError as e:
             raise ValueError(f"Asset missing value for required field {str(e)}.") from e
         return name

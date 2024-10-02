@@ -2,7 +2,7 @@ import pytest
 from onyo.lib.utils import DotNotationWrapper
 
 
-def test_getshit():
+def test_get_values():
 
     d = {'some': 'value',
          'nested': {
@@ -37,10 +37,10 @@ def test_getshit():
         dne = wrapper['nested.deep.key.invalid']
     assert exc_info.match("'nested.deep.key' is not a dictionary.")
 
-    # TODO: Turn above TypeErrors in `KeyError(full-key) from TypeError(as above) from TypeError(str indices, etc ...)`
+    # TODO: Turn above TypeErrors in `KeyError(full-key) from TypeError(as above) from TypeError(str indices, etc ...)`?
 
 
-def test_setshit():
+def test_set_values():
 
     d = {'some': 'value',
          'nested': {
@@ -63,10 +63,20 @@ def test_setshit():
     assert wrapper.get('nested.deep.newkey') == 2
     assert d['nested']['deep']['newkey'] == 2
 
-    # TODO: update()
+    # update from regular dict
+    updater = {'regular': 'dict', 'some': 'different'}
+    wrapper.update(updater)
+    assert wrapper['regular'] == 'dict'
+    assert wrapper['some'] == 'different'
+
+    # update from another wrapped dict should allow for "recursive update":
+    updater = {'nested': {'one': 3}}
+    wrapper.update(DotNotationWrapper(updater))
+    assert wrapper['nested.one'] == updater['nested']['one']
+    assert wrapper['nested.two'] == '2'
 
 
-def test_magic():
+def test_magic_methods():
 
     d = {'some': 'value',
          'nested': {
@@ -87,14 +97,23 @@ def test_magic():
     assert all(k in wrapper for k in dot_keys)
     assert all(k in dot_keys for k in wrapper)
 
+    # .values()
+    values = [v for v in wrapper.values()]
+    assert len(keys) == len(values)
+    assert all(wrapper[k] in values for k in keys)
+    assert all(v in [wrapper[k] for k in keys] for v in values)
 
-# What of these do we actually need now?
-# Would any of that be a problem later?
-# What about **dict? How does it work? items()?
-# __delitem__
-# __len__
-# __iter__
-# __copy__
-# copy()
-# values()
-# items()
+    # .items()
+    assert all(k in keys and v in values for k, v in wrapper.items())
+    assert all(t in zip(keys, values) for t in wrapper.items())
+
+    # len
+    assert len(wrapper) == len(keys)
+
+    # del
+    del wrapper['nested.one']
+    assert wrapper['nested.two'] == '2'
+    with pytest.raises(KeyError):
+        dne = wrapper['nested.one']
+
+    # TODO: What about various ways of copying?
