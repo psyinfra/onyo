@@ -120,7 +120,7 @@ _onyo() {
             new)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-t --template -c --clone)'{-t,--template}'[template to seed the new assets]:TEMPLATE:_files -W "$(_template_dir)" -g "*(.)"'
+                    '(-t --template -c --clone)'{-t,--template}'[template to seed the new assets]:TEMPLATE:_files -W "$(_template_dir)"'
                     '(-c --clone -t --template)'{-c,--clone}'[asset path to clone from]:CLONE:_files -W "$(_onyo_dir)"'
                     '(-e --edit)'{-e,--edit}'[open new assets in an editor before creation]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in the new assets]:*-*:KEYS: '
@@ -202,17 +202,8 @@ _onyo() {
     }
 
     _template_dir() {
-        DIR=$(_onyo_dir)
-
-        while [[ "$DIR" != '/' ]] ; do
-            TEMPLATE_DIR="${DIR}/.onyo/templates"
-            if [[ -d "$TEMPLATE_DIR" ]] ; then
-                printf "$TEMPLATE_DIR"
-                return
-            else
-                DIR=$(dirname "$DIR")
-            fi
-        done
+        ONYO_DIR=$(_onyo_dir)
+        printf "${ONYO_DIR}/.onyo/templates"
     }
 
     return ret
