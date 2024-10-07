@@ -66,6 +66,7 @@ def dict_to_asset_yaml(d: Dict[str, bool | float | int | str | Path]) -> str:
 
     from io import StringIO
     yaml = YAML(typ='rt')
+    yaml.explicit_start = True
     s = StringIO()
     yaml.dump(content,
               s)
