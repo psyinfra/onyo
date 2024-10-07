@@ -104,7 +104,7 @@ def get_temp_file() -> Path:
     r"""Create and return the Path of a new temporary file.
     """
     from tempfile import mkstemp
-    fd, tmp_path = mkstemp(prefix='onyo_', text=True)
+    fd, tmp_path = mkstemp(prefix='onyo_', suffix='.yaml', text=True)
     return Path(tmp_path)
 
 
