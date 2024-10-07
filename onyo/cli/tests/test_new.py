@@ -683,7 +683,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     r"""
     Onyo should inform the user with specific error messages when arguments are
     either missing or conflicting:
-    - error if `onyo new` gets neither table nor asset names
+    - error if `onyo new` without key/values, TSV, or template/clone
     - error if `onyo new` with table and assets in CLI
     - error if both `--template` and 'template' column in tsv header are given
     - error if both `KEY=VALUE` and a column named `KEY` is given
@@ -694,7 +694,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     # error if `onyo new` gets neither table nor asset names
     ret = subprocess.run(['onyo', 'new'], capture_output=True, text=True)
     assert not ret.stdout
-    assert "Either key-value pairs or a tsv file must be given." in ret.stderr
+    assert "Key-value pairs, a TSV, or a template/clone-target must be given." in ret.stderr
     assert ret.returncode == 1
 
     # error if `onyo new` is called with TSV and assets in CLI

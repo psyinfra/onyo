@@ -810,8 +810,8 @@ def onyo_new(inventory: Inventory,
     from copy import deepcopy
 
     keys = keys or []
-    if not tsv and not keys and not edit:
-        raise ValueError("Either key-value pairs or a tsv file must be given.")
+    if not any([tsv, keys, edit, template, clone]):
+        raise ValueError("Key-value pairs, a TSV, or a template/clone-target must be given.")
     if template and clone:
         raise ValueError("'template' and 'clone' options are mutually exclusive.")
     # Try to get editor early in case it's bound to fail;
