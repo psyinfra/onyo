@@ -205,16 +205,6 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     asset_content = inventory.repo.get_asset_content(expected_path)
     assert asset_content['key'] == 'value'
 
-    # missing required fields:
-    specs = [{'template': 'empty'}]
-
-    # Note, that when starting from an empty template, appending a
-    # "key: value" to the file doesn't work, b/c the empty YAML
-    # document is "{}" not "". Hence, appending would lead to a
-    # YAML parser error.
-    monkeypatch.setenv('EDITOR', "printf 'key: value' >")
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
-
     # file already exists:
     edit_str = f"model: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
@@ -229,6 +219,24 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     specs = [{'template': 'empty'}]
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
     assert inventory.repo.git.is_clean_worktree()
+
+    # missing required fields:
+    specs = [{'template': 'empty'}]
+    monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
+    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
+
+    # content should be exactly as expected
+    # (empty files used to serialize to '{}')
+    edit_str = f"model: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: 8675309{os.linesep}"
+    monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
+    specs = [{'template': 'empty'}]
+    onyo_new(inventory,
+             keys=specs,  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             directory=directory,
+             edit=True)
+    expected_content = '---\n' + edit_str
+    expected_path = directory / "TYPE_MAKER_MODEL.8675309"
+    assert expected_content == expected_path.read_text()
 
 
 @pytest.mark.ui({'yes': True})

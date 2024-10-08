@@ -64,6 +64,12 @@ def dict_to_asset_yaml(d: Dict[str, bool | float | int | str | Path]) -> str:
         if k in content.keys():
             del content[k]
 
+    # Empty dicts are serialized to '{}', and I was unable to find any input
+    # ('', None, etc) that would serialize to nothing. Hardcoding, though ugly,
+    # seems to be the only option.
+    if not content:
+        return '---\n'
+
     from io import StringIO
     yaml = YAML(typ='rt')
     yaml.explicit_start = True
