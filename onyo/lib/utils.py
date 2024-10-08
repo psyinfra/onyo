@@ -66,6 +66,7 @@ def dict_to_asset_yaml(d: Dict[str, bool | float | int | str | Path]) -> str:
 
     from io import StringIO
     yaml = YAML(typ='rt')
+    yaml.explicit_start = True
     s = StringIO()
     yaml.dump(content,
               s)
@@ -104,7 +105,7 @@ def get_temp_file() -> Path:
     r"""Create and return the Path of a new temporary file.
     """
     from tempfile import mkstemp
-    fd, tmp_path = mkstemp(prefix='onyo_', text=True)
+    fd, tmp_path = mkstemp(prefix='onyo_', suffix='.yaml', text=True)
     return Path(tmp_path)
 
 
