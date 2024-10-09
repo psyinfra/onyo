@@ -5,7 +5,7 @@ import os
 from collections import UserDict
 from io import StringIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterator, Any
+from typing import TYPE_CHECKING
 
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
@@ -45,7 +45,7 @@ class DotNotationWrapper(UserDict):
             # Resort to `UserDict` behavior if we have any sort of sequence or just `kwargs`.
             super().__init__(__dict, **kwargs)
 
-    def _keys(self) -> Generator:  # pyre-ignore[15]
+    def _keys(self) -> Generator[str, None, None]:
         """Recursively yield all keys from nested dicts in dot notation.
         """
         def recursive_keys(d: dict):
@@ -110,10 +110,10 @@ class DotNotationWrapper(UserDict):
         else:
             super().__delitem__(key)
 
-    def __contains__(self, key: object) -> bool:
+    def __contains__(self, key):
         return key in self._keys()
 
-    def __iter__(self) -> Generator:
+    def __iter__(self):
         return self._keys()
 
     def __len__(self):
@@ -139,7 +139,7 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
+def dict_to_asset_yaml(d: Dict[str, Any] | UserDict[str, Any]) -> str:
     r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
@@ -154,9 +154,7 @@ def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
     d
         Dictionary to strip of reserved-keys and convert to a YAML string.
     """
-    if isinstance(d, DotNotationWrapper):  # That may be too early.
-                                           # Fine as long as PSEUDO_KEYS and RESERVED_KEYS checked below,
-                                           # are toplevel keys.
+    if isinstance(d, DotNotationWrapper):
         d = d.data
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
@@ -268,7 +266,7 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
 
 
 def write_asset_file(path: Path,
-                     asset: Dict[str, bool | float | int | str | Path]) -> None:
+                     asset: Dict[str, Any] | UserDict[str, Any]) -> None:
     r"""Write content to an asset file.
 
     All ``RESERVED_KEYS`` will be stripped from the content before writing.
@@ -309,9 +307,26 @@ def is_equal_assets_dict(a: Dict, b: Dict) -> bool:
     For this to return `True`, both assets need to
     be equal not only in terms of their key-value pairs,
     but also in terms of annotated comments.
+
+    This also accounts for nested dicts recursively.
     """
     # TODO: This may become part of (thin) Asset class instead,
     # if there are more reasons to have such a class.
+    if isinstance(a, DotNotationWrapper):
+        a = a.data
+    if isinstance(b, DotNotationWrapper):
+        b = b.data
+
+    # Need to recurse into nested dicts!
+    for k, v in a.items():
+        if isinstance(v, (dict, UserDict)):
+            try:
+                eq_ = is_equal_assets_dict(a[k], b[k])
+            except (KeyError, TypeError):
+                eq_ = False
+            if not eq_:
+                return False
+
     if not isinstance(a, CommentedMap) and not isinstance(b, CommentedMap):
         return a == b
 

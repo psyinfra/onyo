@@ -39,6 +39,7 @@ from onyo.lib.ui import ui
 from onyo.lib.utils import deduplicate, write_asset_file
 
 if TYPE_CHECKING:
+    from collections import UserDict
     from typing import (
         Callable,
         Dict,
@@ -239,9 +240,9 @@ def onyo_config(inventory: Inventory,
 
 
 def _edit_asset(inventory: Inventory,
-                asset: dict,
+                asset: dict | UserDict,
                 operation: Callable,
-                editor: str | None) -> dict:
+                editor: str | None) -> dict | UserDict:
     r"""Edit `asset` via configured editor and a temporary asset file.
 
     Utility function for `onyo_edit` and `onyo_new(edit=True)`.

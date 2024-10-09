@@ -49,6 +49,7 @@ from onyo.lib.recorders import (
 )
 from onyo.lib.utils import (
     deduplicate,
+    DotNotationWrapper,
     is_equal_assets_dict,
 )
 from onyo.lib.ui import ui
@@ -427,9 +428,7 @@ class Inventory(object):
         self.raise_required_key_empty_value(new_asset)
         # We keep the old path - if it needs to change, this will be done by a rename operation down the road
         new_asset['path'] = path
-        from .utils import DotNotationWrapper
-        if is_equal_assets_dict(asset.data if isinstance(asset, DotNotationWrapper) else asset,
-                                new_asset.data if isinstance(new_asset, DotNotationWrapper) else new_asset):
+        if is_equal_assets_dict(asset, new_asset):
             raise NoopError
 
         # If a change in is_asset_directory is implied, do this first:
@@ -558,9 +557,8 @@ class Inventory(object):
                 # report the error, but proceed
                 ui.error(e)
 
-    def get_asset_from_template(self, template: Path | str | None) -> dict:
+    def get_asset_from_template(self, template: Path | str | None) -> DotNotationWrapper:
         # TODO: Possibly join with get_asset (path optional)
-        from .utils import DotNotationWrapper
         return DotNotationWrapper(self.repo.get_template(template))
 
     def get_assets_by_query(self,
