@@ -18,6 +18,7 @@ from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     from typing import (
+        Any,
         Dict,
         Set,
         Hashable,
@@ -43,7 +44,7 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict[str, bool | float | int | str | Path]) -> str:
+def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
     r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
