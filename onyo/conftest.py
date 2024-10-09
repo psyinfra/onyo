@@ -142,7 +142,8 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
 
     # initialize repo
     repo_ = OnyoRepo(repo_path, init=True)
-
+    repo_.set_config("onyo.assets.name-format", "{type}_{make}_{model.name}.{serial}")
+    repo_.git.commit(repo_.git.root / repo_.ONYO_CONFIG, message="Asset name config w/ dot")
     # collect files to populate the repo
     m = request.node.get_closest_marker('repo_files')
     if m:

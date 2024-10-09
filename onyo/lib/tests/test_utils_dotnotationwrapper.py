@@ -5,10 +5,9 @@ from onyo.lib.utils import DotNotationWrapper
 def test_get_values():
 
     d = {'some': 'value',
-         'nested': {
-             'one': 1,
-             'two': '2',
-             'deep': {'key': 'value'}
+         'nested': {'one': 1,
+                    'two': '2',
+                    'deep': {'key': 'value'}
                     }
          }
 
@@ -19,22 +18,22 @@ def test_get_values():
     assert wrapper['nested.deep'] == d['nested']['deep']
     assert wrapper['nested.deep.key'] == d['nested']['deep']['key']
     with pytest.raises(KeyError) as exc_info:
-        dne = wrapper["nope"]
+        dne = wrapper["nope"]  # noqa: F841
     assert exc_info.match("nope")
     with pytest.raises(TypeError) as exc_info:
-        dne = wrapper['some.nope']
+        dne = wrapper['some.nope']  # noqa: F841
     assert exc_info.match("'some' is not a dictionary.")
     with pytest.raises(KeyError) as exc_info:
-        dne = wrapper['nested.nope']
+        dne = wrapper['nested.nope']  # noqa: F841
     assert exc_info.match("nested.nope")
     with pytest.raises(TypeError) as exc_info:
-        dne = wrapper['nested.one.more']
+        dne = wrapper['nested.one.more']  # noqa: F841
     assert exc_info.match("'nested.one' is not a dictionary.")
     with pytest.raises(KeyError) as exc_info:
-        dne = wrapper['nested.deep.dne']
+        dne = wrapper['nested.deep.dne']  # noqa: F841
     assert exc_info.match("nested.deep.dne")
     with pytest.raises(TypeError) as exc_info:
-        dne = wrapper['nested.deep.key.invalid']
+        dne = wrapper['nested.deep.key.invalid']  # noqa: F841
     assert exc_info.match("'nested.deep.key' is not a dictionary.")
 
     # TODO: Turn above TypeErrors in `KeyError(full-key) from TypeError(as above) from TypeError(str indices, etc ...)`?
@@ -43,10 +42,9 @@ def test_get_values():
 def test_set_values():
 
     d = {'some': 'value',
-         'nested': {
-             'one': 1,
-             'two': '2',
-             'deep': {'key': 'value'}
+         'nested': {'one': 1,
+                    'two': '2',
+                    'deep': {'key': 'value'}
                     }
          }
 
@@ -79,10 +77,9 @@ def test_set_values():
 def test_magic_methods():
 
     d = {'some': 'value',
-         'nested': {
-             'one': 1,
-             'two': '2',
-             'deep': {'key': 'value'}
+         'nested': {'one': 1,
+                    'two': '2',
+                    'deep': {'key': 'value'}
                     }
          }
     dot_keys = ['some', 'nested.one', 'nested.two', 'nested.deep.key']
@@ -114,6 +111,6 @@ def test_magic_methods():
     del wrapper['nested.one']
     assert wrapper['nested.two'] == '2'
     with pytest.raises(KeyError):
-        dne = wrapper['nested.one']
+        dne = wrapper['nested.one']  # noqa: F841
 
     # TODO: What about various ways of copying?
