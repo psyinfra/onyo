@@ -18,6 +18,7 @@ from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     from typing import (
+        Any,
         Dict,
         Set,
         Hashable,
@@ -43,7 +44,7 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict[str, bool | float | int | str | Path]) -> str:
+def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
     r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
@@ -63,6 +64,12 @@ def dict_to_asset_yaml(d: Dict[str, bool | float | int | str | Path]) -> str:
     for k in PSEUDO_KEYS + RESERVED_KEYS:
         if k in content.keys():
             del content[k]
+
+    # Empty dicts are serialized to '{}', and I was unable to find any input
+    # ('', None, etc) that would serialize to nothing. Hardcoding, though ugly,
+    # seems to be the only option.
+    if not content:
+        return '---\n'
 
     from io import StringIO
     yaml = YAML(typ='rt')
