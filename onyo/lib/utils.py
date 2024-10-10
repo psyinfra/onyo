@@ -32,6 +32,24 @@ if TYPE_CHECKING:
 
 
 class DotNotationWrapper(UserDict):
+    """Dictionary wrapper for providing access to nested dictionaries within via hierarchical keys.
+
+    This class wraps a dictionary (available from the attribute `.data`) in order to access by
+    hierarchical keys that separate layers by a dot. In other words, it provides a view on the
+    flattened dictionary:
+
+    > d = {'key': 'value', 'nested': {'key': 'another value'}}
+    > wrapper = DotNotationWrapper(d)
+    > wrapper['nested.key']
+    'another value'
+    > list(wrapper.keys())
+    ['key', 'nested.key']
+
+    That implies that iteration considers the flattened view only. In the example above the key `nested`
+    (and its value - the dictionary) will not be yielded when using `wrapper.keys()`, `wrapper.values()`,
+    `wrapper.items()`. Whenever the python standard behavior is needed, the underlying dictionary is available
+    from the `.data` attribute.
+    """
 
     def __init__(self, __dict: Mapping[_KT, _VT] | None = None, **kwargs: _VT) -> None:
         if __dict and isinstance(__dict, dict):
@@ -47,6 +65,8 @@ class DotNotationWrapper(UserDict):
 
     def _keys(self) -> Generator[str, None, None]:
         """Recursively yield all keys from nested dicts in dot notation.
+
+        Note, that this forces the returned keys to be strings no matter their original type.
         """
         def recursive_keys(d: dict):
             for k in d.keys():
