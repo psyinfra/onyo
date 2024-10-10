@@ -1,4 +1,4 @@
-directory	serial	model	template	make	type
+directory	serial	model.name	template	make	type
 simple	0	macbookpro	laptop.example	apple	laptop
 overlap/one	1	macbookpro	laptop.example	apple	laptop
 overlap/one	faux	m a c b o o k p r o	empty	a p p l e	l a p t o p

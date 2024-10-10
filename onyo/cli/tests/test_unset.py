@@ -18,15 +18,9 @@ if TYPE_CHECKING:
 def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
     r"""Convert content dictionary to a plain-text string."""
+    from onyo.lib.utils import dict_to_asset_yaml
     for file, raw_contents in raw_assets:
-        contents = ''
-        for k, v in raw_contents.items():
-            if isinstance(v, str):
-                v = f"'{v}'"
-            elif isinstance(v, bool):
-                v = str(v).lower()
-            contents += f'{k}: {v}\n'
-        yield [file, contents]
+        yield [file, dict_to_asset_yaml(raw_contents)]
 
 
 asset_contents = [
@@ -35,87 +29,101 @@ asset_contents = [
                                    'bool': True,
                                    'type': 'laptop',
                                    'make': 'apple',
-                                   'model': 'macbookpro',
-                                   'serial': '1'}),
+                                   'model': {'name': 'macbookpro'},
+                                   'serial': '1',
+                                   'remove': {'this': 'by dot'}}),
     ('one/laptop_dell_precision.2', {'num': '16',
                                      'str': 'bar',
                                      'bool': False,
                                      'type': 'laptop',
                                      'make': 'dell',
-                                     'model': 'precision',
-                                     'serial': '2'}),
+                                     'model': {'name': 'precision'},
+                                     'serial': '2',
+                                     'remove': {'this': 'by dot'}}),
     ('one/two/headphones_apple_pro.3', {'num': '8',
                                         'str': 'bar',
                                         'bool': 'True',
                                         'type': 'headphones',
                                         'make': 'apple',
-                                        'model': 'pro',
-                                        'serial': '3'}),
+                                        'model': {'name': 'pro'},
+                                        'serial': '3',
+                                        'remove': {'this': 'by dot'}}),
     ('abc/def/monitor_dell_pro.4', {'str': 'foo=bar',
                                     'type': 'monitor',
                                     'make': 'dell',
-                                    'model': 'pro',
-                                    'serial': '4'}),
+                                    'model': {'name': 'pro'},
+                                    'serial': '4',
+                                    'remove': {'this': 'by dot'}}),
     ('laptop_dell_precision.2', {'num': '16',
                                  'str': 'bar',
                                  'bool': False,
                                  'type': 'laptop',
                                  'make': 'dell',
-                                 'model': 'precision',
-                                 'serial': '2'}),
+                                 'model': {'name': 'precision'},
+                                 'serial': '2',
+                                 'remove': {'this': 'by dot'}}),
     ('headphones_apple_pro.3', {'num': '8',
                                 'str': 'bar',
                                 'bool': 'True',
                                 'type': 'headphones',
                                 'make': 'apple',
-                                'model': 'pro',
-                                'serial': '3'}),
+                                'model': {'name': 'pro'},
+                                'serial': '3',
+                                'remove': {'this': 'by dot'}}),
     ('monitor_dell_pro.4', {'str': 'foo=bar',
                             'type': 'monitor',
                             'make': 'dell',
-                            'model': 'pro',
-                            'serial': '4'}),
+                            'model': {'name': 'pro'},
+                            'serial': '4',
+                            'remove': {'this': 'by dot'}}),
     ('headphones_dell_pro.4', {'num': '10GB',
                                'str': 'bar',
                                'type': 'headphones',
                                'make': 'dell',
-                               'model': 'pro',
-                               'serial': '4'}),
+                               'model': {'name': 'pro'},
+                               'serial': '4',
+                               'remove': {'this': 'by dot'}}),
     ('one/two/three/headphones_apple_pro.4', {'num': '10GB',
                                               'type': 'headphones',
                                               'make': 'apple',
-                                              'model': 'pro',
-                                              'serial': '4'}),
+                                              'model': {'name': 'pro'},
+                                              'serial': '4',
+                                              'remove': {'this': 'by dot'}}),
     ('one/two/three/four/headphones_apple_pro.5', {'num': '10GB',
                                                    'type': 'headphones',
                                                    'make': 'apple',
-                                                   'model': 'pro',
-                                                   'serial': '5'}),
+                                                   'model': {'name': 'pro'},
+                                                   'serial': '5',
+                                                   'remove': {'this': 'by dot'}}),
     ('another/dir/headphones_apple_pro.5', {'type': 'headphones',
                                             'make': 'apple',
-                                            'model': 'pro',
-                                            'serial': '5'}),
+                                            'model': {'name': 'pro'},
+                                            'serial': '5',
+                                            'remove': {'this': 'by dot'}}),
     ('a13bc_foo_bar.1', {'num': 'num-3',
                          'type': 'a13bc',
                          'make': 'foo',
-                         'model': 'bar',
-                         'serial': '1'}),
+                         'model': {'name': 'bar'},
+                         'serial': '1',
+                         'remove': {'this': 'by dot'}}),
     ('a2cd_foo_bar.2', {'num': 'num-16',
                         'type': 'a2cd',
                         'make': 'foo',
-                        'model': 'bar',
-                        'serial': '2'}),
+                        'model': {'name': 'bar'},
+                        'serial': '2',
+                        'remove': {'this': 'by dot'}}),
     ('a36ab_foo_bar.3', {'num': 'num-20',
                          'type': 'a36ab',
                          'make': 'foo',
-                         'model': 'bar',
-                         'serial': '3'}),
+                         'model': {'name': 'bar'},
+                         'serial': '3',
+                         'remove': {'this': 'by dot'}}),
 ]
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
 @pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
-@pytest.mark.parametrize('key', ['num'])
+@pytest.mark.parametrize('key', ['num', 'remove.this', 'remove'])
 def test_unset(repo: OnyoRepo,
                asset: str,
                key: str) -> None:
@@ -126,18 +134,27 @@ def test_unset(repo: OnyoRepo,
     # verify output
     assert "Modified assets:" in ret.stdout
     assert asset in ret.stdout
-    assert f"-{key}" in ret.stdout
+    k_diff = f"-  {key.split('.')[-1]}" if '.' in key else f"-{key}"
+    assert k_diff in ret.stdout
+    if key == 'remove':
+        # Special case: Unset a dictionary as a whole.
+        # Keys underneath are also removed.
+        assert "-  this: by dot" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify changes, and the repository clean
-    assert key not in Path(asset).read_text()
+    assert key.split('.')[-1] not in Path(asset).read_text()
+    if key == 'remove':
+        # Special case: Unset a dictionary as a whole.
+        # Keys underneath are also removed.
+        assert "this:" not in Path(asset).read_text()
     assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
 @pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
-@pytest.mark.parametrize('key', ['num'])
+@pytest.mark.parametrize('key', ['num', 'remove.this'])
 def test_unset_interactive(repo: OnyoRepo,
                            asset: str,
                            key: str) -> None:
@@ -149,12 +166,13 @@ def test_unset_interactive(repo: OnyoRepo,
     assert "Modified assets:" in ret.stdout
     assert "Update assets? (y/n) " in ret.stdout
     assert asset in ret.stdout
-    assert f"-{key}" in ret.stdout
+    k_diff = f"-  {key.split('.')[-1]}" if '.' in key else f"-{key}"
+    assert k_diff in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
     # verify changes, and the repository clean
-    assert key not in Path(asset).read_text()
+    assert key.split('.')[-1] not in Path(asset).read_text()
     assert repo.git.is_clean_worktree()
 
 
@@ -178,7 +196,7 @@ def test_unset_key_does_not_exist(repo: OnyoRepo,
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
-@pytest.mark.parametrize('key', ['num'])
+@pytest.mark.parametrize('key', ['num', 'remove.this'])
 def test_unset_multiple_assets(repo: OnyoRepo,
                                key: str) -> None:
     r"""Test that `onyo unset --keys KEY --asset ASSET [ASSET2 ...]` removes keys from of assets."""
@@ -197,7 +215,7 @@ def test_unset_multiple_assets(repo: OnyoRepo,
 
     # verify changes, and the repository clean
     for asset in assets:
-        assert key not in asset.read_text()
+        assert key.split('.')[-1] not in asset.read_text()
     assert repo.git.is_clean_worktree()
 
 
@@ -206,7 +224,7 @@ def test_unset_multiple_assets(repo: OnyoRepo,
     ["single_non_existing.asset"],
     ["simple/single_non_existing.asset"],
     [asset_contents[0][0], "single_non_existing.asset"]])
-@pytest.mark.parametrize('key', ['num'])
+@pytest.mark.parametrize('key', ['num', 'remove.this'])
 def test_unset_error_non_existing_assets(repo: OnyoRepo,
                                          no_assets: list[str],
                                          key: str) -> None:
@@ -222,7 +240,7 @@ def test_unset_error_non_existing_assets(repo: OnyoRepo,
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
-@pytest.mark.parametrize('key', ['num'])
+@pytest.mark.parametrize('key', ['num', 'remove.this'])
 def test_unset_without_path(repo: OnyoRepo,
                             key: str) -> None:
     r"""Test that `onyo unset --keys KEY` without a given path selects all assets recursively."""
@@ -282,7 +300,7 @@ def test_unset_message_flag(repo: OnyoRepo,
 @pytest.mark.parametrize('name_field', [
     ["type"],
     ["make"],
-    ["model"],
+    ["model.name"],
     ["serial"],
     ["num", "type"]])
 def test_unset_error_unset_name_fields(repo: OnyoRepo,
