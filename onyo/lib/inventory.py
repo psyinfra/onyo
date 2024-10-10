@@ -145,31 +145,41 @@ class Inventory(object):
         from os import linesep
         paths_to_commit = []
         paths_to_stage = []
-        commit_msg = message + f"{linesep}{linesep}--- Inventory Operations ---{linesep}"
-        operations_record = dict()
+        commit_msg = message + f"{linesep}{linesep}"
 
         try:
             for operation in self.operations:
                 to_commit, to_stage = operation.execute()
                 paths_to_commit.extend(to_commit)
                 paths_to_stage.extend(to_stage)
-                record_snippets = operation.operator.recorder(repo=self.repo, operands=operation.operands)
-                for k, v in record_snippets.items():
-                    if k not in operations_record:
-                        operations_record[k] = v
-                    else:
-                        operations_record[k].extend(v)
 
-            for title, snippets in operations_record.items():
-                # Note, for pyre exception: `deduplicate` returns None,
-                # if None was passed to it. This should never happen here.
-                commit_msg += title + ''.join(
-                    sorted(line for line in deduplicate(snippets)))  # pyre-ignore[16]
+            commit_msg += self.operations_summary()
 
             # TODO: Actually: staging (only new) should be done in execute. committing is then unified
             self.repo.commit(set(paths_to_commit + paths_to_stage).difference(self._ignore_for_commit), commit_msg)
         finally:
             self.reset()
+
+    def operations_summary(self) -> str:
+        from os import linesep
+        summary = f"--- Inventory Operations ---{linesep}"
+        operations_record = dict()
+
+        for operation in self.operations:
+            record_snippets = operation.operator.recorder(repo=self.repo, operands=operation.operands)
+            for k, v in record_snippets.items():
+                if k not in operations_record:
+                    operations_record[k] = v
+                else:
+                    operations_record[k].extend(v)
+
+        for title, snippets in operations_record.items():
+            # Note, for pyre exception: `deduplicate` returns None,
+            # if None was passed to it. This should never happen here.
+            summary += title + ''.join(
+                sorted(line for line in deduplicate(snippets)))  # pyre-ignore[16]
+
+        return summary
 
     def diff(self) -> Generator[str, None, None]:
         for operation in self.operations:
