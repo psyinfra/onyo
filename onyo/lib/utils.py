@@ -287,7 +287,7 @@ class YAMLDumpWrapper(UserDict):
     This works around the issue that something like `serial: 001234` yields a `{'serial': 1234}` but is dumped as
     `serial: 001234`, which messes up onyo's comparisons for whether there's a modification of an asset.
     """
-    def __init__(self, d: dict):
+    def __init__(self, d: dict | UserDict):
         super().__init__(d)
 
     def __getitem__(self, item: Hashable):
@@ -300,7 +300,7 @@ class YAMLDumpWrapper(UserDict):
         return RoundTripRepresenter(dumper=RoundTripDumper(stream=StringIO())).represent_data(self.data[item]).value
 
 
-def is_equal_assets_dict(a: Dict, b: Dict) -> bool:
+def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
     r"""Whether two asset dictionaries have the same content.
 
     This accounts for comments in YAML.

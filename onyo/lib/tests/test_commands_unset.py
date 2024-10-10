@@ -71,7 +71,7 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
     illegal_fields = ["type",
                       "make",
-                      "model",
+                      "model.name",
                       "serial"]
 
     # unset on illegal fields
@@ -83,7 +83,7 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
                       keys=[illegal],
                       message="some subject\n\nAnd a body")
         # name fields are still in the asset
-        assert illegal in asset_path.read_text()
+        assert all(f"{subkey}:" in asset_path.read_text() for subkey in illegal.split('.'))
 
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
@@ -168,7 +168,7 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_multiple(inventory: Inventory) -> None:
     """Modify multiple assets in a single call and with one commit."""
@@ -220,7 +220,7 @@ def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nother_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nother_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
     """Calling `onyo_unset()` on a non-existing key does not error."""
@@ -281,7 +281,7 @@ def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
     inventory.add_asset(dict(some_key="some_value",
                              type="TYPE",
                              make="MAKER",
-                             model="MODEL",
+                             model=dict(name="MODEL"),
                              serial="SERIAL2",
                              other=1,
                              directory=inventory.root,

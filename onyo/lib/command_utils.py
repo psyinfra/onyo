@@ -86,7 +86,13 @@ def fill_unset(assets: Generator[dict | UserDict, None, None] | filter,
         # However, something similar is probably possible and would perform better.
         for k in keys:
             if k not in asset:
-                asset[k] = UNSET_VALUE
+                try:
+                    asset[k] = UNSET_VALUE
+                except TypeError as e:
+                    print(e, file=sys.stderr)
+                    print(f"Key: {k}")
+                    print(f"asset: {asset}")
+                    raise
         yield asset
 
 

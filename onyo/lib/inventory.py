@@ -61,6 +61,7 @@ if TYPE_CHECKING:
         Iterable,
         Literal,
     )
+    from collections import UserDict
 
 
 @dataclass
@@ -276,7 +277,7 @@ class Inventory(object):
         self.operations.append(op)
         return op
 
-    def add_asset(self, asset: dict) -> list[InventoryOperation]:
+    def add_asset(self, asset: dict | UserDict) -> list[InventoryOperation]:
         # TODO: what if I call this with a modified (possibly moved) asset?
         # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or rest")
         operations = []
@@ -349,7 +350,7 @@ class Inventory(object):
                            p not in self._get_pending_dirs()])
         return operations
 
-    def remove_asset(self, asset: dict | Path) -> list[InventoryOperation]:
+    def remove_asset(self, asset: dict | UserDict | Path) -> list[InventoryOperation]:
         path = asset if isinstance(asset, Path) else asset.get('path')
         if path in self._get_pending_removals(mode='assets'):
             ui.log_debug(f"{path} already queued for removal.")
@@ -359,7 +360,7 @@ class Inventory(object):
             raise NotAnAssetError(f"No such asset: {path}")
         return [self._add_operation('remove_assets', (asset,))]
 
-    def move_asset(self, src: Path | dict, dst: Path) -> list[InventoryOperation]:
+    def move_asset(self, src: Path | dict | UserDict, dst: Path) -> list[InventoryOperation]:
         if not isinstance(src, Path):
             src = Path(src.get('path'))
         if not self.repo.is_asset_path(src):
@@ -374,7 +375,7 @@ class Inventory(object):
 
         return [self._add_operation('move_assets', (src, dst))]
 
-    def rename_asset(self, asset: dict | Path, name: str | None = None) -> list[InventoryOperation]:
+    def rename_asset(self, asset: dict | UserDict | Path, name: str | None = None) -> list[InventoryOperation]:
         # ??? Do we need that? On the command level it's only accessible via modify_asset.
         # But: A config change is sufficient to make it not actually an asset modification.
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
@@ -408,7 +409,7 @@ class Inventory(object):
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
         return [self._add_operation('rename_assets', (path, destination))]
 
-    def modify_asset(self, asset: dict | Path, new_asset: dict) -> list[InventoryOperation]:
+    def modify_asset(self, asset: dict | UserDict | Path, new_asset: dict | UserDict) -> list[InventoryOperation]:
         operations = []
         path = asset if isinstance(asset, Path) else Path(asset.get('path'))
         if not self.repo.is_asset_path(path):
@@ -628,10 +629,15 @@ class Inventory(object):
             if path.name in [p.name for p in self.repo.asset_paths]:
                 raise ValueError(f"Asset name '{path.name}' already exists in inventory.")
 
-    def generate_asset_name(self, asset: dict) -> str:
+    def generate_asset_name(self, asset: dict | UserDict) -> str:
         config_str = self.repo.get_config("onyo.assets.name-format")
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.name-format'.")
+
+        if not isinstance(asset, DotNotationWrapper):
+            # We allow dot-notation for nested dicts in the name config.
+            # Therefore, we need to make sure, the asset is wrapped accordingly here.
+            asset = DotNotationWrapper(asset)
 
         # Replace key references so that the same dot notation as in CLI works, while actual
         # format-language features using the dot work as well.
@@ -682,7 +688,7 @@ class Inventory(object):
 
         return faux_serials
 
-    def raise_required_key_empty_value(self, asset: dict) -> None:
+    def raise_required_key_empty_value(self, asset: dict | UserDict) -> None:
         r"""Whether `asset` has an empty value for a required key.
 
         Validation helper.
@@ -700,7 +706,7 @@ class Inventory(object):
             raise ValueError(f"Required asset keys ({', '.join(self.repo.get_asset_name_keys())})"
                              f" must not have empty values.")
 
-    def raise_empty_keys(self, asset: dict) -> None:
+    def raise_empty_keys(self, asset: dict | UserDict) -> None:
         r"""Whether `asset` has empty keys.
 
         Validation helper
