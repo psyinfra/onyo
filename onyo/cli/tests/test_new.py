@@ -35,7 +35,7 @@ def test_new(repo: OnyoRepo, directory: str) -> None:
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert file_ in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -57,7 +57,7 @@ def test_new_interactive(repo: OnyoRepo) -> None:
                          input='y', capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
     assert file_ in ret.stdout
     assert not ret.stderr
@@ -80,7 +80,7 @@ def test_new_top_level(repo: OnyoRepo) -> None:
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert file_ in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -109,7 +109,7 @@ def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert str(file_) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -140,7 +140,7 @@ def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert "just another path/laptop_apple_macbookpro.0" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -163,7 +163,7 @@ def test_folder_creation_with_new(repo: OnyoRepo, directory: str) -> None:
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -193,8 +193,9 @@ def test_with_faux_serial_number(repo: OnyoRepo) -> None:
     ret = subprocess.run(cmd, capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
-    assert ret.stdout.count(filename_prefix) == len(assets)
+    assert "New assets:" in ret.stdout
+    # file names are printed twice (diff and operations summary)
+    assert ret.stdout.count(filename_prefix) == len(assets) * 2
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -217,7 +218,7 @@ def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     for asset in assets:
         assert asset in ret.stdout
     assert not ret.stderr
@@ -242,7 +243,7 @@ def test_yes_flag(repo: OnyoRepo, directory: str) -> None:
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -273,7 +274,7 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
         capture_output=True, text=True)
 
     # verify output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -337,7 +338,7 @@ def test_discard_changes(repo: OnyoRepo, directory: str) -> None:
                          input='n', capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert "Create assets? (y/n) " in ret.stdout
     assert asset in ret.stdout
     assert 'No new assets created.' in ret.stdout
@@ -449,7 +450,7 @@ def test_new_with_keys_overwrite_template(repo: OnyoRepo, directory: str) -> Non
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert str(asset) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -486,7 +487,7 @@ def test_with_special_characters(
                          capture_output=True, text=True)
 
     # verify correct output
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert asset in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -579,7 +580,7 @@ def test_tsv(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', '--yes', 'new', "--tsv", table_path],
                          capture_output=True, text=True)
     assert not ret.stderr
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert ret.returncode == 0
 
     # verify that the new assets exist and the repository is in a clean state
@@ -599,7 +600,7 @@ def test_tsv_with_value_columns(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', '--yes', 'new', '--tsv', table_path],
                          capture_output=True, text=True)
 
-    assert "The following will be created:" in ret.stdout
+    assert "New assets:" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 

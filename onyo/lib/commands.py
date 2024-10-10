@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import logging
 import subprocess
+from os import linesep
 from pathlib import Path
 from typing import (
     ParamSpec,
@@ -591,8 +592,9 @@ def onyo_mkdir(inventory: Inventory,
         # explicit duplicates would make auto-generating message subject more complicated ATM
         inventory.add_directory(d)
     if inventory.operations_pending():
-        ui.print('The following directories will be created:')
-        print_diff(inventory)
+        # display changes
+        ui.print(inventory.operations_summary())
+
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -710,8 +712,9 @@ def onyo_mv(inventory: Inventory,
         raise ValueError("Can only move into an existing directory/asset, or rename a single directory.")
 
     if inventory.operations_pending():
-        ui.print("The following will be {}:".format("moved" if subject == "mv" else "renamed"))
-        print_diff(inventory)
+        # display changes
+        ui.print(inventory.operations_summary())
+
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -911,11 +914,12 @@ def onyo_new(inventory: Inventory,
             inventory.add_asset(asset)
 
     if inventory.operations_pending():
+        # display changes
         if not edit:
-            # Note: If `edit` was given, the diffs where already confirmed per asset.
-            #       Don't ask again.
-            ui.print("The following will be created:")
+            # If `edit` was given, per-asset diffs were already approved. Don't ask again.
             print_diff(inventory)
+        ui.print(linesep + inventory.operations_summary())
+
         if edit or ui.request_user_response("Create assets? (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -970,8 +974,9 @@ def onyo_rm(inventory: Inventory,
                 raise InventoryDirNotEmpty(f"{str(e)}\nDid you forget '--recursive'?") from e
 
     if inventory.operations_pending():
-        ui.print('The following will be deleted:')
-        print_diff(inventory)
+        # display changes
+        ui.print(inventory.operations_summary())
+
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -1044,8 +1049,9 @@ def onyo_set(inventory: Inventory,
 
     if inventory.operations_pending():
         # display changes
-        ui.print("The following assets will be changed:")
         print_diff(inventory)
+        ui.print(linesep + inventory.operations_summary())
+
         if ui.request_user_response("Update assets? (y/n) "):
             if not message:
                 operation_paths = sorted(deduplicate([
@@ -1193,8 +1199,8 @@ def onyo_unset(inventory: Inventory,
 
     if inventory.operations_pending():
         # display changes
-        ui.print("The following assets will be changed:")
         print_diff(inventory)
+        ui.print(linesep + inventory.operations_summary())
 
         if ui.request_user_response("Update assets? (y/n) "):
             if not message:

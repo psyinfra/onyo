@@ -36,7 +36,7 @@ def test_rm(repo: OnyoRepo, asset: str) -> None:
     ret = subprocess.run(['onyo', '--yes', 'rm', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "The following will be deleted:" in ret.stdout
+    assert "Removed assets:" in ret.stdout
     assert not ret.stderr
 
     # verify deleting was successful and the repository is in a clean state
@@ -53,7 +53,7 @@ def test_rm_multiple_inputs(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', '--yes', 'rm', *assets],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "The following will be deleted:" in ret.stdout
+    assert "Removed assets:" in ret.stdout
     assert not ret.stderr
 
     # verify deleting was successful and the repository is in a clean state
@@ -72,7 +72,7 @@ def test_rm_single_dirs_with_files(repo: OnyoRepo, directory: str) -> None:
     ret = subprocess.run(['onyo', '--yes', 'rm', '--recursive', directory],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "The following will be deleted:" in ret.stdout
+    assert "Removed directories:" in ret.stdout
     assert not ret.stderr
 
     # verify deleting was successful and the repository is in a clean state
@@ -89,7 +89,7 @@ def test_rm_multiple_directories(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', '--yes', 'rm', '--recursive', *directories[1:]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "The following will be deleted:" in ret.stdout
+    assert "Removed directories:" in ret.stdout
     assert not ret.stderr
 
     # verify deleting was successful and the repository is in a clean state
@@ -107,7 +107,7 @@ def test_rm_empty_directories(repo: OnyoRepo) -> None:
     ret = subprocess.run(['onyo', '--yes', 'rm', *directories[1:]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert "The following will be deleted:" in ret.stdout
+    assert "Removed directories:" in ret.stdout
     assert not ret.stderr
 
     # verify deleting was successful and the repository is in a clean state

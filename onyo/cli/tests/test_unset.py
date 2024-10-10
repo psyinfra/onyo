@@ -124,7 +124,7 @@ def test_unset(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert asset in ret.stdout
     assert f"-{key}" in ret.stdout
     assert not ret.stderr
@@ -146,7 +146,7 @@ def test_unset_interactive(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert "Update assets? (y/n) " in ret.stdout
     assert asset in ret.stdout
     assert f"-{key}" in ret.stdout
@@ -189,7 +189,7 @@ def test_unset_multiple_assets(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     for asset in [a.relative_to(repo.git.root) for a in assets]:
         assert str(asset) in ret.stdout
     assert not ret.stderr

@@ -56,7 +56,7 @@ def test_set(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -78,7 +78,7 @@ def test_set_interactive(repo: OnyoRepo,
                          input='y', capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert "Update assets? (y/n) " in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert not ret.stderr
@@ -102,7 +102,7 @@ def test_set_multiple_assets(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -159,7 +159,7 @@ def test_set_discard_changes_single_assets(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output for just dot, should be all in onyo root, but not recursive
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert "No assets updated." in ret.stdout
     assert not ret.stderr
@@ -207,7 +207,7 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_1.replace("=", ": ") in ret.stdout
     assert set_1.replace("=", ": ") in Path.read_text(Path(asset))
@@ -220,7 +220,7 @@ def test_add_new_key_to_existing_content(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_2.replace("=", ": ") in ret.stdout
     assert not ret.stderr
@@ -250,7 +250,7 @@ def test_set_overwrite_key(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_value.replace("=", ": ") in ret.stdout
     assert set_value.replace("=", ": ") in Path.read_text(Path(asset))
@@ -263,7 +263,7 @@ def test_set_overwrite_key(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert f"-{set_value}".replace("=", ": ") in ret.stdout
     assert f"+{set_value_2}".replace("=", ": ") in ret.stdout
@@ -289,7 +289,7 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert set_values.replace("=", ": ") in Path.read_text(Path(asset))
     assert not ret.stderr
@@ -302,7 +302,7 @@ def test_setting_new_values_if_some_values_already_set(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     assert not ret.stderr
     assert ret.returncode == 0
@@ -337,7 +337,7 @@ def test_values_already_set(repo: OnyoRepo,
                          capture_output=True, text=True)
 
     # verify output
-    assert "The following assets will be changed:" in ret.stdout
+    assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
     for value in set_values:
         assert value.replace("=", ": ") in Path.read_text(Path(asset))
