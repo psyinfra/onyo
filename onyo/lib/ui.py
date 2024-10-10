@@ -227,7 +227,7 @@ class UI(object):
         #       and possible ways to respond are indicated.
         answers = answers or [(True, ['y', 'Y', 'yes']),
                               (False, ['n', 'N', 'no'])]
-        question += f"[Default: {default}]"
+        question += f"[Default: {default}] "
         while True:
             if self.yes:
                 answer = default

@@ -329,7 +329,7 @@ def _edit_asset(inventory: Inventory,
             if queue_length < len(inventory.operations):
                 inventory.operations = inventory.operations[:queue_length]
             ui.error(e)
-            response = ui.request_user_response("Continue (e)diting asset, (s)kip asset or (a)bort command)?",
+            response = ui.request_user_response("Continue (e)diting asset, (s)kip asset or (a)bort command)? ",
                                                 default='a',  # non-interactive has to fail
                                                 answers=[('edit', ['e', 'E', 'edit']),
                                                          ('skip', ['s', 'S', 'skip']),
@@ -354,7 +354,7 @@ def _edit_asset(inventory: Inventory,
             for op in operations:
                 print_diff(op)
         response = ui.request_user_response(
-            "Accept changes? (y)es / continue (e)diting / (s)kip asset / (a)bort command",
+            "Accept changes? (y)es / continue (e)diting / (s)kip asset / (a)bort command ",
             default='yes',
             answers=[('accept', ['y', 'Y', 'yes']),
                      ('edit', ['e', 'E', 'edit']),
