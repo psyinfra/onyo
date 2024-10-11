@@ -159,7 +159,7 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
+def dict_to_asset_yaml(d: Dict[str, Any] | UserDict[str, Any]) -> str:
     r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
@@ -174,6 +174,8 @@ def dict_to_asset_yaml(d: Dict[str, Any]) -> str:
     d
         Dictionary to strip of reserved-keys and convert to a YAML string.
     """
+    if isinstance(d, DotNotationWrapper):
+        d = d.data
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
     for k in PSEUDO_KEYS + RESERVED_KEYS:
@@ -284,7 +286,7 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
 
 
 def write_asset_file(path: Path,
-                     asset: Dict[str, bool | float | int | str | Path]) -> None:
+                     asset: Dict[str, Any] | UserDict[str, Any]) -> None:
     r"""Write content to an asset file.
 
     All ``RESERVED_KEYS`` will be stripped from the content before writing.
@@ -305,7 +307,7 @@ class YAMLDumpWrapper(UserDict):
     This works around the issue that something like `serial: 001234` yields a `{'serial': 1234}` but is dumped as
     `serial: 001234`, which messes up onyo's comparisons for whether there's a modification of an asset.
     """
-    def __init__(self, d: dict):
+    def __init__(self, d: dict | UserDict):
         super().__init__(d)
 
     def __getitem__(self, item: Hashable):
