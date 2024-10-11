@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import copy
 import os
+from collections import UserDict
 from io import StringIO
 from pathlib import Path
-from collections import UserDict
 from typing import TYPE_CHECKING
 
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
@@ -19,9 +19,126 @@ from onyo.lib.ui import ui
 if TYPE_CHECKING:
     from typing import (
         Dict,
-        Set,
+        Generator,
         Hashable,
+        Mapping,
+        Set,
+        TypeVar,
     )
+
+    _KT = TypeVar("_KT")  # Key type.
+    _VT = TypeVar("_VT")  # Value type.
+
+
+class DotNotationWrapper(UserDict):
+    """Dictionary wrapper for providing access to nested dictionaries within via hierarchical keys.
+
+    This class wraps a dictionary (available from the attribute .data) to allow traversing
+    multidimensional dictionaries using a dot as the delimiter. In other words, it provides a view on the
+    flattened dictionary:
+
+    > d = {'key': 'value', 'nested': {'key': 'another value'}}
+    > wrapper = DotNotationWrapper(d)
+    > wrapper['nested.key']
+    'another value'
+    > list(wrapper.keys())
+    ['key', 'nested.key']
+
+    Iteration only considers the flattened view, and keys that contain dictionaries will not be yielded when using
+    `wrapper.keys()`, `wrapper.values()`, and `wrapper.items()`. Whenever the python standard behavior is needed, the
+    underlying dictionary is available from the `.data` attribute.
+    """
+
+    def __init__(self, __dict: Mapping[_KT, _VT] | None = None, **kwargs: _VT) -> None:
+        if __dict and isinstance(__dict, dict):
+            super().__init__()
+            # If we have any sort of existing dict, we want to wrap it, maintaining the original object (and class).
+            # Note: Currently would modify wrapped dict w/ kwargs if both are given.
+            #       Would need deepcopy to prevent this, but this kinda contradicts the idea of wrapping.
+            self.data = __dict
+            self.update(**kwargs)
+        else:
+            # Resort to `UserDict` behavior if we have any sort of sequence or just `kwargs`.
+            super().__init__(__dict, **kwargs)
+
+    def _keys(self) -> Generator[str, None, None]:
+        """Recursively yield all keys from nested dicts in dot notation.
+
+        Note, that this forces the returned keys to be strings no matter their original type.
+        """
+        def recursive_keys(d: dict):
+            for k in d.keys():
+                if hasattr(d[k], "keys"):
+                    yield from (k + "." + sk for sk in recursive_keys(d[k]))
+                else:
+                    # For the purpose of dot notation access, key types other than string don't make sense.
+                    # One can't have a key 'some.1.more', where 1 remains an integer.
+                    yield str(k)
+        yield from recursive_keys(self.data)
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            parts = key.split('.')
+            effective_dict = self.data
+            if len(parts) > 1:
+                for lvl in range(len(parts) - 1):
+                    try:
+                        effective_dict = effective_dict[parts[lvl]]
+                    except KeyError as e:
+                        raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
+                    except TypeError as e:
+                        raise TypeError(f"'{'.'.join(parts[:lvl])}' is not a dictionary.") from e
+            try:
+                return effective_dict[parts[-1]]
+            except KeyError as e:
+                raise KeyError(f"'{key}'") from e
+            except TypeError as e:
+                raise TypeError(f"'{'.'.join(parts[:-1])}' is not a dictionary.") from e
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, item):
+        if isinstance(key, str):
+            parts = key.split('.')
+            effective_dict = self.data
+            if len(parts) > 1:
+                for lvl in range(len(parts) - 1):
+                    try:
+                        effective_dict = effective_dict[parts[lvl]]
+                    except KeyError:
+                        # nested dict doesn't exist yet
+                        effective_dict[parts[lvl]] = dict()
+                        effective_dict = effective_dict[parts[lvl]]
+
+            effective_dict[parts[-1]] = item
+        else:
+            super().__setitem__(key, item)
+
+    def __delitem__(self, key):
+        if isinstance(key, str):
+            parts = key.split('.')
+            effective_dict = self.data
+            if len(parts) > 1:
+                for lvl in range(len(parts) - 1):
+                    try:
+                        effective_dict = effective_dict[parts[lvl]]
+                    except KeyError as e:
+                        raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
+            del effective_dict[parts[-1]]
+        else:
+            super().__delitem__(key)
+
+    def __contains__(self, key):
+        """Whether `key` is in self.
+
+        Note, that this is `True` for intermediate keys (dicts), although `self.__iter__` wouldn't yield them.
+        """
+        return key in self._keys() or key in self.data
+
+    def __iter__(self):
+        return self._keys()
+
+    def __len__(self):
+        return len(list(self._keys()))
 
 
 def deduplicate(sequence: list | None) -> list | None:
@@ -202,16 +319,33 @@ class YAMLDumpWrapper(UserDict):
         return RoundTripRepresenter(dumper=RoundTripDumper(stream=StringIO())).represent_data(self.data[item]).value
 
 
-def is_equal_assets_dict(a: Dict, b: Dict) -> bool:
+def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
     r"""Whether two asset dictionaries have the same content.
 
     This accounts for comments in YAML.
     For this to return `True`, both assets need to
     be equal not only in terms of their key-value pairs,
     but also in terms of annotated comments.
+
+    This also accounts for nested dicts recursively.
     """
     # TODO: This may become part of (thin) Asset class instead,
     # if there are more reasons to have such a class.
+    if isinstance(a, DotNotationWrapper):
+        a = a.data
+    if isinstance(b, DotNotationWrapper):
+        b = b.data
+
+    # Need to recurse into nested dicts!
+    for k, v in a.items():
+        if isinstance(v, (dict, UserDict)):
+            try:
+                eq_ = is_equal_assets_dict(a[k], b[k])
+            except (KeyError, TypeError):
+                eq_ = False
+            if not eq_:
+                return False
+
     if not isinstance(a, CommentedMap) and not isinstance(b, CommentedMap):
         return a == b
 
