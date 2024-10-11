@@ -101,7 +101,7 @@ def test_onyo_get_reserved_keys(inventory: Inventory,
     r"""`onyo_get()` allows to specify all reserved keys to query
     and display information for."""
     from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
-    reserved = ["type", "make", "model", "serial"] + PSEUDO_KEYS + RESERVED_KEYS
+    reserved = ["type", "make", "model.name", "serial"] + PSEUDO_KEYS + RESERVED_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
     # get on reserved fields
@@ -123,7 +123,7 @@ def test_onyo_get_name_keys(inventory: Inventory,
     r"""If no keys are specified when calling `onyo_get()`
     the name keys are printed by default."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    name_keys = ["type", "make", "model", "serial"]
+    name_keys = ["type", "make", "model.name", "serial"]
 
     # call `onyo_get()` without keys specified
     onyo_get(inventory,
@@ -131,9 +131,17 @@ def test_onyo_get_name_keys(inventory: Inventory,
 
     # verify output
     output = capsys.readouterr().out
-    assert asset_path.name in output
     for name_key in name_keys:
         assert name_key in output
+    # We can't easily test the asset path showing up w/o the machine_readable flag,
+    # because of wrapping in the generated table. The path may have a line break plus
+    # indentation within. Hence, test the column headers in the table output, but the
+    # correct asset path in machine readable output:
+    onyo_get(inventory,
+             include=[asset_path],
+             machine_readable=True)
+    output = capsys.readouterr().out
+    assert asset_path.name in output
 
 
 @pytest.mark.ui({'yes': True})
@@ -200,7 +208,7 @@ def test_onyo_get_machine_readable(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_sorting(inventory: Inventory,
                           capsys) -> None:
@@ -259,7 +267,7 @@ def test_onyo_get_on_directory(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_match(inventory: Inventory,
                         capsys) -> None:
@@ -287,7 +295,7 @@ def test_onyo_get_match(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_no_matches(inventory: Inventory,
                              capsys) -> None:
@@ -309,7 +317,7 @@ def test_onyo_get_no_matches(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_multiple(inventory: Inventory,
                            capsys) -> None:
@@ -333,7 +341,7 @@ def test_onyo_get_multiple(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_limited(inventory: Inventory,
                           capsys) -> None:
@@ -363,36 +371,35 @@ def test_onyo_get_limited(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_depth_zero(inventory: Inventory,
                              capsys) -> None:
     r"""Calling `onyo_get(depth=0)` is legal and selects all assets from all subpaths."""
     onyo_get(inventory,
              include=[inventory.root],
-             depth=0)
+             depth=0,
+             machine_readable=True)
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
     for asset in inventory.repo.get_asset_paths():
         assert asset.name in output
-    assert "path" in output
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_default_inventory_root(inventory: Inventory,
                                          capsys) -> None:
     r"""Calling `onyo_get()` without path uses inventory.root as default
     and selects all assets of the inventory."""
-    onyo_get(inventory)
+    onyo_get(inventory, machine_readable=True)
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
     for asset in inventory.repo.get_asset_paths():
         assert asset.name in output
-    assert "path" in output
 
 
 @pytest.mark.ui({'yes': True})
@@ -404,7 +411,8 @@ def test_onyo_get_allows_duplicates(inventory: Inventory,
 
     # call `onyo_get()` with `include` containing duplicates
     onyo_get(inventory,
-             include=[asset_path, asset_path, asset_path])
+             include=[asset_path, asset_path, asset_path],
+             machine_readable=True)
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
@@ -416,7 +424,7 @@ def test_onyo_get_asset_dir(inventory: Inventory,
     inventory.add_asset(dict(some_key="some_value",
                              type="TYPE",
                              make="MAKER",
-                             model="MODEL",
+                             model=dict(name="MODEL"),
                              serial="SERIAL2",
                              other=1,
                              directory=inventory.root,
