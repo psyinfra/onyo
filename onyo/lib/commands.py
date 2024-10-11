@@ -741,7 +741,7 @@ def onyo_new(inventory: Inventory,
              template: Path | str | None = None,
              clone: Path | None = None,
              tsv: Path | None = None,
-             keys: list[Dict[str, str | int | float]] | None = None,
+             keys: list[Dict] | None = None,
              edit: bool = False,
              message: str | None = None) -> None:
     r"""Create new assets and add them to the inventory.
@@ -995,7 +995,7 @@ def onyo_rm(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_set(inventory: Inventory,
-             keys: Dict[str, str | int | float],
+             keys: Dict,
              assets: list[Path],
              message: str | None = None) -> str | None:
     r"""Set key-value pairs of assets, and change asset names.

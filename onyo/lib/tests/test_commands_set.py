@@ -176,7 +176,7 @@ def test_onyo_set_simple(inventory: Inventory) -> None:
     # set a value in an asset
     onyo_set(inventory,
              assets=[asset_path],
-             keys=key_value,  # pyre-ignore[6]
+             keys=key_value,
              message="some subject\n\nAnd a body")
 
     # check content
@@ -203,7 +203,7 @@ def test_onyo_set_already_set(inventory: Inventory) -> None:
     # set a value in an asset
     onyo_set(inventory,
              assets=[asset_path],
-             keys=key_value,  # pyre-ignore[6]
+             keys=key_value,
              message="some subject\n\nAnd a body")
 
     # check content is unchanged
@@ -230,7 +230,7 @@ def test_onyo_set_overwrite_existing_value(inventory: Inventory) -> None:
     # set a value in an asset
     onyo_set(inventory,
              assets=[asset_path],
-             keys=new_key_value,  # pyre-ignore[6]
+             keys=new_key_value,
              message="some subject\n\nAnd a body")
 
     # check content
@@ -264,7 +264,7 @@ def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
     # set a value in an asset
     onyo_set(inventory,
              assets=[asset_path],
-             keys=new_key_values,  # pyre-ignore[6]
+             keys=new_key_values,
              message="some subject\n\nAnd a body")
 
     # check content
@@ -292,7 +292,7 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
     onyo_set(inventory,
              assets=[asset_path1,
                      asset_path2],
-             keys=key_value,  # pyre-ignore[6]
+             keys=key_value,
              message="some subject\n\nAnd a body")
 
     # check contents
@@ -317,7 +317,7 @@ def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
     # call `onyo_set()` with `paths` containing duplicates
     onyo_set(inventory,
              assets=[asset_path, asset_path, asset_path],
-             keys=key_value,  # pyre-ignore[6]
+             keys=key_value,
              message="some subject\n\nAnd a body")
 
     # check content
