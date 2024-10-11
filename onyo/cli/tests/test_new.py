@@ -21,7 +21,7 @@ directories = ['simple',
 # Just a dummy asset specification for reuse throughout this file, represented as
 # the respective part of the keys given to the `onyo new` call.
 # TODO: This should probably become some kind of decorator/fixture/parametrization.
-asset_spec = ['type=laptop', 'make=apple', 'model=macbookpro', 'serial=0']
+asset_spec = ['type=laptop', 'make=apple', 'model.name=macbookpro', 'serial=0']
 
 
 @pytest.mark.repo_dirs(*directories)
@@ -187,7 +187,7 @@ def test_with_faux_serial_number(repo: OnyoRepo) -> None:
 
     num = 10
     assets = [[f"directory={d}", "serial=faux"] for d in directories for i in range(num)]
-    cmd = ['onyo', '--yes', 'new', '--keys', 'type=laptop', 'make=apple', 'model=macbookpro']
+    cmd = ['onyo', '--yes', 'new', '--keys', 'type=laptop', 'make=apple', 'model.name=macbookpro']
     for a in assets:
         cmd += a
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -211,7 +211,7 @@ def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
     """
     assets = [f'{directory}/laptop_apple_macbookpro.{i}'
               for i, directory in enumerate(directories)]
-    keys = ['--keys', 'type=laptop', 'make=apple', 'model=macbookpro']
+    keys = ['--keys', 'type=laptop', 'make=apple', 'model.name=macbookpro']
     for i, directory in enumerate(directories):
         keys += [f'directory={directory}', f'serial={i}']
     ret = subprocess.run(['onyo', '--yes', 'new'] + keys,
@@ -482,7 +482,7 @@ def test_with_special_characters(
     """
     asset = f'{directory}/{variant[0]}_{variant[1]}_{variant[2]}.{variant[3]}'
     keys = [f"type={variant[0]}", f"make={variant[1]}",
-            f"model={variant[2]}", f"serial={variant[3]}"]
+            f"model.name={variant[2]}", f"serial={variant[3]}"]
     ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + keys,
                          capture_output=True, text=True)
 
@@ -723,7 +723,7 @@ def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
     assert ret.returncode == 1
 
     # error on -d/--directory given multiple times
-    ret = subprocess.run(['onyo', 'new', '--keys', 'make=some', 'model=other', 'type=different',
+    ret = subprocess.run(['onyo', 'new', '--keys', 'make=some', 'model.name=other', 'type=different',
                           'serial=faux', '-d', 'some/where', '-d', 'else/where'],
                          capture_output=True, text=True)
     assert not ret.stdout
@@ -766,7 +766,7 @@ def test_tsv_errors(repo: OnyoRepo) -> None:
                          capture_output=True, text=True)
 
     assert not ret.stdout
-    assert "Required asset keys (type, make, model, serial) must not have empty values" in ret.stderr
+    assert "Required asset keys (type, make, model.name, serial) must not have empty values" in ret.stderr
     assert ret.returncode == 1
 
     # <TSV> has necessary columns but contains no assets

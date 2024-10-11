@@ -61,6 +61,8 @@ class Filter:
                 asset[self.key] is None or asset[self.key] == ''):
             return True
         elif self.key not in asset.keys() or self.value == UNSET_VALUE:
+            # Note: This is weird.
+            # That 'or' is actually an XOR considering the AND of the same conditions before
             return False
 
         # equivalence and regex match

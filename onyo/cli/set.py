@@ -29,6 +29,9 @@ args_set = {
             ```
             $ onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --asset ...
             ```
+
+            Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+            ``model.year``, etc.)
         """
     ),
 

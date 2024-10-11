@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from typing import (
         Generator,
     )
-
+    from collections import UserDict
     from .onyo import OnyoRepo
     from .consts import sort_t
 
@@ -62,8 +62,8 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
     return True
 
 
-def fill_unset(assets: Generator[dict, None, None] | filter,
-               keys: list[str]) -> Generator[dict, None, None]:
+def fill_unset(assets: Generator[dict | UserDict, None, None] | filter,
+               keys: list[str]) -> Generator[dict | UserDict, None, None]:
     r"""Fill values for missing ``keys`` in ``assets`` with ``UNSET_VALUE``.
 
     A helper for the ``onyo get`` command.
@@ -80,11 +80,24 @@ def fill_unset(assets: Generator[dict, None, None] | filter,
         Keys to create if not present in an asset, and set with ``UNSET_VALUE``.
     """
     for asset in assets:
-        yield {k: UNSET_VALUE for k in keys} | asset
+        # TODO:
+        # This was yield {k: UNSET_VALUE for k in keys} | asset
+        # but we need to modify the incoming DotNotationWrappers, rather than generating plain dicts.
+        # However, something similar is probably possible and would perform better.
+        for k in keys:
+            if k not in asset:
+                try:
+                    asset[k] = UNSET_VALUE
+                except TypeError as e:
+                    print(e, file=sys.stderr)
+                    print(f"Key: {k}")
+                    print(f"asset: {asset}")
+                    raise
+        yield asset
 
 
-def natural_sort(assets: list[dict],
-                 keys: dict[str, sort_t]) -> list[dict]:
+def natural_sort(assets: list[dict | UserDict],
+                 keys: dict[str, sort_t]) -> list[dict | UserDict]:
     r"""Sort an asset list by a list of ``keys``.
 
     Parameters

@@ -32,6 +32,8 @@ args_get = {
         help=r"""
             **KEY**s to print the values of. Pseudo-keys (information not stored
             in the asset file) are also available for queries.
+            Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+            ``model.year``, etc.)
         """
     ),
 
@@ -53,7 +55,9 @@ args_get = {
         help=r"""
             Criteria to match assets in the form ``KEY=VALUE``, where **VALUE**
             is a python regular expression. Pseudo-keys such as ``path`` can
-            also be used. Special values supported are:
+            also be used. Dictionary subkeys can be addressed using a period
+            (e.g. ``model.name``, ``model.year``, etc.)
+            Special values supported are:
 
               * ``<dict>``
               * ``<list>``

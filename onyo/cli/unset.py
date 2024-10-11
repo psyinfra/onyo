@@ -20,7 +20,10 @@ args_unset = {
         type=str,
         help=r"""
             Keys to unset in assets. Multiple keys can be given
-            (e.g. **key1 key2 key3**).
+            (e.g. **key1 key2 key3**). Dictionary subkeys can be addressed
+            using a period (e.g. ``model.name``, ``model.year``, etc.).
+            Note, that unsetting the last child of a dictionary does not
+            remove the parent dictionary itself.
         """
     ),
 

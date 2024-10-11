@@ -1,7 +1,8 @@
 ---
 type: 
 make: 
-model: 
+model:
+  name:
 serial: 
 RAM: 
 Size: 
