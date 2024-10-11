@@ -51,6 +51,14 @@ class Filter:
     def match(self, asset: dict) -> bool:
         r"""match self on a dictionary"""
         string_types = {'<list>': list, '<dict>': dict}
+        # onyo type representation match
+        if self.value in string_types:
+            return True if isinstance(
+                asset[self.key], string_types[self.value]) else False
+
+        empty_structs = ['[]', '{}']
+        if self.value in empty_structs:
+            return str(asset[self.key]) == self.value
 
         # Check if filter is <unset> and there is no data
         if not asset and self.value == UNSET_VALUE:
@@ -67,10 +75,5 @@ class Filter:
         re_match = self._re_match(str(asset[self.key]), self.value)
         if re_match or asset[self.key] == self.value:
             return True
-
-        # onyo type representation match
-        if self.value in string_types:
-            return True if isinstance(
-                asset[self.key], string_types[self.value]) else False
 
         return False

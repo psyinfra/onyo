@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 class DotNotationWrapper(UserDict):
-    """Dictionary wrapper for providing access to nested dictionaries within via hierarchical keys.
+    """Dictionary wrapper for providing access to nested dictionaries via hierarchical keys.
 
     This class wraps a dictionary (available from the attribute .data) to allow traversing
     multidimensional dictionaries using a dot as the delimiter. In other words, it provides a view on the
@@ -160,7 +160,7 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict) -> str:
+def dict_to_asset_yaml(d: Dict | UserDict) -> str:
     r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
@@ -175,6 +175,8 @@ def dict_to_asset_yaml(d: Dict) -> str:
     d
         Dictionary to strip of reserved-keys and convert to a YAML string.
     """
+    if isinstance(d, DotNotationWrapper):
+        d = d.data
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
     for k in PSEUDO_KEYS + RESERVED_KEYS:
@@ -285,7 +287,7 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
 
 
 def write_asset_file(path: Path,
-                     asset: Dict) -> None:
+                     asset: Dict | UserDict) -> None:
     r"""Write content to an asset file.
 
     All ``RESERVED_KEYS`` will be stripped from the content before writing.
@@ -306,17 +308,20 @@ class YAMLDumpWrapper(UserDict):
     This works around the issue that something like `serial: 001234` yields a `{'serial': 1234}` but is dumped as
     `serial: 001234`, which messes up onyo's comparisons for whether there's a modification of an asset.
     """
-    def __init__(self, d: dict):
+    def __init__(self, d: dict | UserDict):
         super().__init__(d)
 
     def __getitem__(self, item: Hashable):
-        if item not in self.keys():
-            raise KeyError(item)
-        if isinstance(self.data[item], (dict, list)):
-            return YAMLDumpWrapper(self.data[item])
-        if isinstance(self.data[item], Path):
-            return self.data[item]  # no representer for this
-        return RoundTripRepresenter(dumper=RoundTripDumper(stream=StringIO())).represent_data(self.data[item]).value
+        data = self.data[item]  # potentially raises KeyError
+        if isinstance(data, dict) and data:
+            # non-empty dict: recurse
+            return YAMLDumpWrapper(data)
+        if isinstance(data, list) and data:
+            # non-empty list: Implement analogous wrapper
+            raise NotImplementedError
+        if isinstance(data, Path):
+            return data  # no representer for `Path`
+        return RoundTripRepresenter(dumper=RoundTripDumper(stream=StringIO())).represent_data(data).value
 
 
 def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
@@ -329,6 +334,11 @@ def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
 
     This also accounts for nested dicts recursively.
     """
+
+    # Note: Checking types here, because of potential recursive calls.
+    if not isinstance(a, (dict, UserDict)) or not isinstance(b, (dict, UserDict)):
+        return False
+
     # TODO: This may become part of (thin) Asset class instead,
     # if there are more reasons to have such a class.
     if isinstance(a, DotNotationWrapper):
@@ -336,7 +346,7 @@ def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
     if isinstance(b, DotNotationWrapper):
         b = b.data
 
-    # Need to recurse into nested dicts!
+    # Recurse into nested dicts:
     for k, v in a.items():
         if isinstance(v, (dict, UserDict)):
             try:

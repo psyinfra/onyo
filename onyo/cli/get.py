@@ -33,6 +33,8 @@ args_get = {
         help=r"""
             **KEY**s to print the values of. Pseudo-keys (information not stored
             in the asset file) are also available for queries.
+            Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+            ``model.year``, etc.)
         """
     ),
 
@@ -54,7 +56,9 @@ args_get = {
         help=r"""
             Criteria to match assets in the form ``KEY=VALUE``, where **VALUE**
             is a python regular expression. Pseudo-keys such as ``path`` can
-            also be used. Special values supported are:
+            also be used. Dictionary subkeys can be addressed using a period
+            (e.g. ``model.name``, ``model.year``, etc.)
+            Special values supported are:
 
               * ``<dict>``
               * ``<list>``
@@ -96,12 +100,14 @@ args_get = {
         action=StoreSortOption,
         nargs='+',
         help=r"""
-            Sort output by **SORT-KEY** in ascending order.
+            Sort matches by **SORT-KEY** in ascending order.
             Can be given multiple times. Sorting by multiple **SORT-KEY** will be done in order
             (earlier given keys take precedence over subsequent keys).
             This can be intermixed with ``-s/--sort-descending``.
             Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
-            overrule what ws specified before.
+            overrule what was specified before.
+            This sorts the matching assets rather than the output.
+            Therefore, one can sort by keys that are not contained in the output.
         """
     ),
 
@@ -111,12 +117,14 @@ args_get = {
         action=StoreSortOption,
         nargs='+',
         help=r"""
-            Sort output by **SORT-KEY** in descending order.
+            Sort matches by **SORT-KEY** in descending order.
             Can be given multiple times. Sorting by multiple **SORT-KEY** will be done in order
             (earlier given keys take precedence over subsequent keys).
             This can be intermixed with ``-s/--sort-ascending``.
             Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
             overrule what ws specified before.
+            This sorts the matching assets rather than the output.
+            Therefore, one can sort by keys that are not contained in the output.
         """
     ),
 }

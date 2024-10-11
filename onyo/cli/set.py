@@ -29,6 +29,9 @@ args_set = {
             ```
             $ onyo set --keys title='Bob Bozniffiq: Saint of the Awkward' --asset ...
             ```
+
+            Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+            ``model.year``, etc.)
         """
     ),
 
@@ -92,9 +95,18 @@ def set(args: argparse.Namespace) -> None:
     unmodified.
     """
 
+    # Note: Replacing special symbols here, that are pointless in the python interface (`onyo_set()`).
+    #       Could be done by StoreSingleKeyValuePairs instead, since it's currently only used by `set`.
+    #       But we may need it elsewhere, so don't blow its scope.
+    symbols_mapping = {'{}': dict(),
+                       '<dict>': dict(),
+                       '[]': list(),
+                       '<list>': list()}
+    keys = {k: symbols_mapping[v] if v in symbols_mapping else v
+            for k, v in args.keys.items()}
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     assets = [Path(a).resolve() for a in args.asset]
     onyo_set(inventory=inventory,
              assets=assets,
-             keys=args.keys,
+             keys=keys,
              message='\n\n'.join(m for m in args.message) if args.message else None)

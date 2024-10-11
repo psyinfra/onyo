@@ -12,7 +12,8 @@ from onyo.lib.consts import (
     SORT_DESCENDING,
 )
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.command_utils import fill_unset, natural_sort
+from onyo.lib.command_utils import natural_sort
+
 
 if TYPE_CHECKING:
     from typing import (
@@ -530,27 +531,3 @@ def test_natural_sort(keys: dict[str, sort_t], expected: list[int]) -> None:
                    'folder (1)/file.txt',
                    'folder (10)/file.txt']
     assert expectation == [str(a.get('path')) for a in sorted_assets]
-
-
-@pytest.mark.parametrize('assets', [[
-    {'num': 'num-20', 'str': 'abc', 'path': Path('a13bc_foo_bar.1')},
-    {'num': 'num-3', 'path': Path('a2cd_foo_bar.2')},
-    {'str': 'ghi', 'path': Path('a36ab_foo_bar.3')}]])
-@pytest.mark.parametrize('keys', [[
-    'type', 'make', 'model', 'serial', 'num', 'str', 'id']])
-def test_fill_unset(
-        assets: list[dict], keys: list[str]) -> None:
-    r"""
-    Test that the `fill_unset()` function fills unset keys with the value
-    `'<unset>'`
-    """
-    unset_value = '<unset>'
-    filled = list(fill_unset((a for a in assets), keys=keys))
-    for i, data in enumerate(filled):
-        assert isinstance(data['path'], Path)
-        assert data['path'] == assets[i]['path']
-        for k, v in data.items():
-            assert v == assets[i].get(k, unset_value)
-
-    assert filled[1]['str'] == unset_value
-    assert filled[2]['num'] == unset_value

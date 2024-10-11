@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from .consts import (
     SORT_DESCENDING,
-    UNSET_VALUE,
 )
 from .inventory import (
     Inventory,
@@ -15,10 +14,7 @@ from .inventory import (
 )
 from .ui import ui
 if TYPE_CHECKING:
-    from typing import (
-        Generator,
-    )
-
+    from collections import UserDict
     from .onyo import OnyoRepo
     from .consts import sort_t
 
@@ -62,29 +58,8 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
     return True
 
 
-def fill_unset(assets: Generator[dict, None, None] | filter,
-               keys: list[str]) -> Generator[dict, None, None]:
-    r"""Fill values for missing ``keys`` in ``assets`` with ``UNSET_VALUE``.
-
-    A helper for the ``onyo get`` command.
-
-    See Also
-    --------
-    onyo.lib.consts.UNSET_VALUE
-
-    Parameters
-    ----------
-    assets
-        Asset dictionaries to fill.
-    keys
-        Keys to create if not present in an asset, and set with ``UNSET_VALUE``.
-    """
-    for asset in assets:
-        yield {k: UNSET_VALUE for k in keys} | asset
-
-
-def natural_sort(assets: list[dict],
-                 keys: dict[str, sort_t]) -> list[dict]:
+def natural_sort(assets: list[dict | UserDict],
+                 keys: dict[str, sort_t]) -> list[dict | UserDict]:
     r"""Sort an asset list by a list of ``keys``.
 
     Parameters

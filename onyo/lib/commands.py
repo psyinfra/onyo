@@ -16,7 +16,6 @@ from rich import box
 from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't find Table
 
 from onyo.lib.command_utils import (
-    fill_unset,
     natural_sort,
     print_diff,
 )
@@ -40,10 +39,12 @@ from onyo.lib.ui import ui
 from onyo.lib.utils import deduplicate, write_asset_file
 
 if TYPE_CHECKING:
+    from collections import UserDict
     from typing import (
         Callable,
         Dict,
         Generator,
+        Iterable,
     )
     from onyo.lib.onyo import OnyoRepo
     from onyo.lib.consts import sort_t
@@ -240,9 +241,9 @@ def onyo_config(inventory: Inventory,
 
 
 def _edit_asset(inventory: Inventory,
-                asset: dict,
+                asset: dict | UserDict,
                 operation: Callable,
-                editor: str | None) -> dict:
+                editor: str | None) -> dict | UserDict:
     r"""Edit `asset` via configured editor and a temporary asset file.
 
     Utility function for `onyo_edit` and `onyo_new(edit=True)`.
@@ -277,7 +278,7 @@ def _edit_asset(inventory: Inventory,
     """
     from shlex import quote
     from onyo.lib.consts import RESERVED_KEYS
-    from onyo.lib.utils import get_temp_file, get_asset_content
+    from onyo.lib.utils import DotNotationWrapper, get_temp_file, get_asset_content
 
     if not editor:
         editor = inventory.repo.get_editor()
@@ -308,7 +309,7 @@ def _edit_asset(inventory: Inventory,
         subprocess.run(f'{editor} {quote(str(tmp_path))}', check=True, shell=True)
         operations = None
         try:
-            asset = get_asset_content(tmp_path)
+            asset = DotNotationWrapper(get_asset_content(tmp_path))
             if 'is_asset_directory' in asset.keys():
                 # special case
                 # 'is_asset_directory' currently is the only modifiable, reserved key.
@@ -483,6 +484,8 @@ def onyo_get(inventory: Inventory,
       `onyo.lib.consts.SORT_ASCENDING` and `onyo.lib.consts.SORT_DESCENDING`.
       If other values are specified an error is raised.
       Default: `{'path': SORT_ASCENDING}`.
+      Note, that this sorts the matching assets rather than the output.
+      Therefore, one can sort by keys that are not contained in the output.
 
     Raises
     ------
@@ -494,10 +497,9 @@ def onyo_get(inventory: Inventory,
     list of dict
       A dictionary per matching asset as defined by `keys`.
     """
+    from .consts import TYPE_SYMBOL_MAPPING, UNSET_VALUE
 
     selected_keys = keys.copy() if keys else None
-
-    # TODO: JSON output? Is this done somewhere?
     include = include or [inventory.root]
 
     # validate path arguments
@@ -513,22 +515,39 @@ def onyo_get(inventory: Inventory,
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
     selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['path']
-    results = inventory.get_assets_by_query(include=include,
-                                            exclude=exclude,
-                                            depth=depth,
-                                            match=match)
-    results = list(fill_unset(results, selected_keys))
-    # convert paths for output
+    results = list(inventory.get_assets_by_query(include=include,
+                                                 exclude=exclude,
+                                                 depth=depth,
+                                                 # pyre's complaint boils down to "Dict" not being "Dict | UserDict".
+                                                 # This is useless nonsense.
+                                                 match=match))  # pyre-ignore[6]
+
+    # convert paths for sorting and printing
     for r in results:
         r['path'] = r['path'].relative_to(inventory.root)
 
+    # Note: Sorting is done before any further filtering/replacing. Therefore, one can sort by keys that aren't actually
+    #       in the output of the command. This behavior is utilized in tests.
     results = natural_sort(
         assets=results,
         # pyre can't tell SORT_ASCENDING is not an arbitrary string but matches the Literal declaration:
         keys=sort or {'path': SORT_ASCENDING})  # pyre-ignore[6]
 
-    # filter output for `keys` only
-    results = [{k: v for k, v in r.items() if k in selected_keys} for r in results]
+    # Filter results for `selected_keys` first in order to not iterate over irrelevant parts of the assets in subsequent
+    # replacements.
+    results = [{k: r[k] if k in r and r[k] not in [None, ""] else UNSET_VALUE
+                for k in selected_keys}
+               for r in results]
+    # Note: We now have a list of regular dicts forming the output rather than a list of assets.
+    #       Hence, this is a flattened view containing keys with literal dots.
+
+    # Replace structures with an indication of type.
+    # Instead of outputting `{}`, `[]` or even `{some: {other: value}}`, just print `<dict>`/`<list>`.
+    # If information on content is wanted, the respective `keys` should be specified instead.
+    for symbol in TYPE_SYMBOL_MAPPING:
+        results = [{k: symbol if isinstance(v, TYPE_SYMBOL_MAPPING[symbol]) else v
+                    for k, v in r.items()}
+                   for r in results]
 
     if machine_readable:
         sep = '\t'  # column separator
@@ -741,7 +760,7 @@ def onyo_new(inventory: Inventory,
              template: Path | str | None = None,
              clone: Path | None = None,
              tsv: Path | None = None,
-             keys: list[Dict] | None = None,
+             keys: list[Dict | UserDict] | None = None,
              edit: bool = False,
              message: str | None = None) -> None:
     r"""Create new assets and add them to the inventory.
@@ -995,7 +1014,7 @@ def onyo_rm(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_set(inventory: Inventory,
-             keys: Dict,
+             keys: dict | UserDict,
              assets: list[Path],
              message: str | None = None) -> str | None:
     r"""Set key-value pairs of assets, and change asset names.
@@ -1146,7 +1165,7 @@ def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
 
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
-               keys: list[str],
+               keys: Iterable[str],
                assets: list[Path],
                message: str | None = None) -> None:
     r"""Remove keys from assets.
