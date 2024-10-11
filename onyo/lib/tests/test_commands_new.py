@@ -66,7 +66,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
     onyo_new(inventory,
              directory=inventory.root / "empty",
-             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             keys=specs)
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
 
@@ -97,7 +97,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
                   keys=specs)
     # w/o `directory` everything is fine:
     onyo_new(inventory,
-             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             keys=specs)
     # another commit added
     assert inventory.repo.git.get_hexsha('HEAD~2') == old_hexsha
 
@@ -132,7 +132,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
               'template': 'laptop.example',
               'serial': '1234'}]
     onyo_new(inventory,
-             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             keys=specs)
     # another commit added
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
     expected_path = inventory.root / f"{specs[0]['type']}_{specs[0]['make']}_{specs[0]['model']}.{specs[0]['serial']}"
@@ -164,7 +164,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 
     onyo_new(inventory,
              directory=new_directory,
-             keys=specs)  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             keys=specs)
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
@@ -196,7 +196,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
               'type': 'TYPE',
               'serial': 'totally_random'}]
     onyo_new(inventory,
-             keys=specs,  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             keys=specs,
              directory=directory,
              edit=True)
     expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
@@ -231,7 +231,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
     onyo_new(inventory,
-             keys=specs,  # pyre-ignore[6] How is that not fitting `List[Dict[str, int | float | str]]`?
+             keys=specs,
              directory=directory,
              edit=True)
     expected_content = '---\n' + edit_str

@@ -13,6 +13,35 @@ _onyo() {
     local -a fullwords
     fullwords=("${words[@]}")
 
+    # load _git, so that _git-config is available for onyo config completion
+    whence -v _git-config > /dev/null || _git
+
+    _onyo_dir() {
+        #setopt local_options xtrace
+        local REPO=$PWD
+
+        # check if -C or --onyopath is used
+        for i in {1..$#fullwords} ; do
+            if [[ "$fullwords[$i]" == "-C" ]] || [[ "$fullwords[$i]" == "--onyopath" ]] ; then
+                # Hack to unescape any '\ ' from path.
+                # Sadly, printf %b does not work here, since it only interprets
+                # format controls, not escaping.
+                ONYOPATH=$(printf '%b' "$fullwords[$i+1]" | sed 's/\\ / /g')
+                REPO=$(realpath "$ONYOPATH")
+
+                [[ -d "$REPO" ]] || printf '"%s" is not a valid directory!\n' "$REPO" >&2
+                break
+            fi
+        done
+
+        printf "$REPO"
+    }
+
+    _template_dir() {
+        ONYO_DIR=$(_onyo_dir)
+        printf "${ONYO_DIR}/.onyo/templates"
+    }
+
     local -a args subcommands
     args=( )
     toplevel_flags=(
@@ -176,35 +205,6 @@ _onyo() {
         _arguments -s -S $args && ret=0
         ;;
     esac
-
-    # load _git, so that _git-config is available for onyo config completion
-    whence -v _git-config > /dev/null || _git
-
-    _onyo_dir() {
-        #setopt local_options xtrace
-        local REPO=$PWD
-
-        # check if -C or --onyopath is used
-        for i in {1..$#fullwords} ; do
-            if [[ "$fullwords[$i]" == "-C" ]] || [[ "$fullwords[$i]" == "--onyopath" ]] ; then
-                # Hack to unescape any '\ ' from path.
-                # Sadly, printf %b does not work here, since it only interprets
-                # format controls, not escaping.
-                ONYOPATH=$(printf '%b' "$fullwords[$i+1]" | sed 's/\\ / /g')
-                REPO=$(realpath "$ONYOPATH")
-
-                [[ -d "$REPO" ]] || printf '"%s" is not a valid directory!\n' "$REPO" >&2
-                break
-            fi
-        done
-
-        printf "$REPO"
-    }
-
-    _template_dir() {
-        ONYO_DIR=$(_onyo_dir)
-        printf "${ONYO_DIR}/.onyo/templates"
-    }
 
     return ret
 }
