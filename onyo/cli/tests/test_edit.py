@@ -6,13 +6,14 @@ import pytest
 
 from onyo.lib.onyo import OnyoRepo
 
-assets = [['laptop_apple_macbookpro.0', "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 0"],
+assets = [['laptop_apple_macbookpro.0',
+           "type: laptop\nmake: apple\nmodel:\n  name: macbookpro\nserial: 0"],
           ['simple/laptop_apple_macbookpro.1',
-           "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 1"],
+           "type: laptop\nmake: apple\nmodel:\n  name: macbookpro\nserial: 1"],
           ['s p a/c e s/laptop_apple_macbookpro.2',
-           "type: laptop\nmake: apple\nmodel: macbookpro\nserial: 2"],
+           "type: laptop\nmake: apple\nmodel:\n  name: macbookpro\nserial: 2"],
           ['very/very/very/deep/spe\"c_ial\\ch_ar\'ac.teஞrs',
-           "type: spe\"c\nmake: ial\\ch\nmodel: ar\'ac\nserial: teஞrs"],
+           "type: spe\"c\nmake: ial\\ch\nmodel:\n  name: ar\'ac\nserial: teஞrs"],
           ]
 
 
@@ -96,14 +97,14 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
     Test that for different paths it is possible to call `onyo edit` on a single
     asset file.
     """
-    edit_str = "key: single_asset"
+    edit_str = "key: single_asset\nnested:\n  some: value"
     os.environ['EDITOR'] = f"printf '{edit_str}' >>"
 
     # test `onyo edit` on a single asset
     ret = subprocess.run(['onyo', '--yes', 'edit', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
-    assert f"+{edit_str}" in ret.stdout
+    assert all(f"+{line}" in ret.stdout for line in edit_str.splitlines())
     assert not ret.stderr
 
     # verify the changes were actually written and the repo is in a clean state:
@@ -111,15 +112,15 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
     assert repo.git.is_clean_worktree()
 
     # add a comment
-    comment_str = edit_str + " # a comment"
-    os.environ['EDITOR'] = f"sed -i \"s/{edit_str}/{comment_str}/g\" "
+    comment_str = edit_str.splitlines()[-1] + " # a comment"
+    os.environ['EDITOR'] = f"sed -i \"s/{edit_str.splitlines()[-1]}/{comment_str}/g\" "
 
     # test `onyo edit` on a single asset
     ret = subprocess.run(['onyo', '--yes', 'edit', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert f"+{comment_str}" in ret.stdout
-    assert f"-{edit_str}" in ret.stdout
+    assert f"-{edit_str.splitlines()[-1]}" in ret.stdout
     assert not ret.stderr
 
     # verify the changes were actually written and the repo is in a clean state:

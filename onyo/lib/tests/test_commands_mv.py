@@ -232,7 +232,7 @@ def test_onyo_mv_into_asset(inventory: Inventory) -> None:
     asset = dict(some_key="some_value",
                  type="TYPE",
                  make="MAKE",
-                 model="MODEL",
+                 model=dict(name="MODEL"),
                  serial="SERIAL2",
                  other=1,
                  directory=inventory.root)
@@ -261,7 +261,7 @@ def test_onyo_mv_asset_dir(inventory: Inventory) -> None:
     asset_dir = dict(some_key="some_value",
                      type="TYPE",
                      make="MAKE",
-                     model="MODEL",
+                     model=dict(name="MODEL"),
                      serial="SERIAL2",
                      is_asset_directory=True,
                      directory=inventory.root)

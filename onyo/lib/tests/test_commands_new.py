@@ -7,6 +7,7 @@ import pytest
 import onyo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.utils import DotNotationWrapper
 from ..commands import onyo_new
 
 # TODO: Derive path from installed package resources (and don't place it within a specific test location):
@@ -55,14 +56,15 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
 
     Each successful call of `onyo_new()` must add one commit.
     """
-    specs = [{'type': 'a type',
-              'make': 'I made it',
-              'model': 'a model',
-              'serial': '002'},
-             {'type': 'a type',
-              'make': 'I made it',
-              'model': 'a model',
-              'serial': '003'}]
+    specs = [DotNotationWrapper({'type': 'a type',
+                                 'make': 'I made it',
+                                 'model': {'name': 'a model'},
+                                 'serial': '002'}),
+             DotNotationWrapper({'type': 'a type',
+                                 'make': 'I made it',
+                                 'model': {'name': 'a model'},
+                                 'serial': '003'})
+             ]
     old_hexsha = inventory.repo.git.get_hexsha()
     onyo_new(inventory,
              directory=inventory.root / "empty",
@@ -71,7 +73,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
 
     for s in specs:
-        p = inventory.root / "empty" / f"{s['type']}_{s['make']}_{s['model']}.{s['serial']}"
+        p = inventory.root / "empty" / f"{s['type']}_{s['make']}_{s['model.name']}.{s['serial']}"
         assert inventory.repo.is_asset_path(p)
         assert p in inventory.repo.git.files
         new_asset = inventory.get_asset(p)
@@ -79,16 +81,17 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         assert all(new_asset[k] == s[k] for k in s.keys())
 
     # faux serial and 'directory' key
-    specs = [{'type': 'A',
-              'make': 'faux',
-              'model': 'serial',
-              'directory': 'brandnew',
-              'serial': 'faux'},
-             {'type': 'Another',
-              'make': 'faux',
-              'model': 'serial',
-              'directory': 'completely/elsewhere',
-              'serial': 'faux'}]
+    specs = [DotNotationWrapper({'type': 'A',
+                                 'make': 'faux',
+                                 'model': {'name': 'serial'},
+                                 'directory': 'brandnew',
+                                 'serial': 'faux'}),
+             DotNotationWrapper({'type': 'Another',
+                                 'make': 'faux',
+                                 'model': {'name': 'serial'},
+                                 'directory': 'completely/elsewhere',
+                                 'serial': 'faux'})
+             ]
     # 'directory' is in conflict with `directory` being given:
     pytest.raises(ValueError,
                   onyo_new,
@@ -108,7 +111,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
                  ]
         assert len(files) == 1
         # expected filename (except serial):
-        assert files[0].name.startswith(f"{s['type']}_{s['make']}_{s['model']}.")
+        assert files[0].name.startswith(f"{s['type']}_{s['make']}_{s['model.name']}.")
         assert inventory.repo.is_asset_path(files[0])
         assert files[0] in inventory.repo.git.files
         new_asset = inventory.get_asset(files[0])
@@ -126,19 +129,19 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     # use templates and `directory`'s default - CWD.
     # Attention: CWD being inventory.root relies on current implementation of
     # the repo fixture, which the inventory fixture builds upon.
-    specs = [{'type': 'flavor',
-              'make': 'manufacturer',
-              'model': 'exquisite',
-              'template': 'laptop.example',
-              'serial': '1234'}]
+    specs = [DotNotationWrapper({'type': 'flavor',
+                                 'make': 'manufacturer',
+                                 'model': {'name': 'exquisite'},
+                                 'template': 'laptop.example',
+                                 'serial': '1234'})]
     onyo_new(inventory,
              keys=specs)  # pyre-ignore[6]
     # another commit added
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
-    expected_path = inventory.root / f"{specs[0]['type']}_{specs[0]['make']}_{specs[0]['model']}.{specs[0]['serial']}"
+    expected_path = inventory.root / f"{specs[0]['type']}_{specs[0]['make']}_{specs[0]['model.name']}.{specs[0]['serial']}"
     assert inventory.repo.is_asset_path(expected_path)
     assert expected_path in inventory.repo.git.files
-    asset_content = inventory.repo.get_asset_content(expected_path)
+    asset_content = inventory.get_asset(expected_path)
     # check for template keys:
     # (Note: key must be there - no `KeyError`; but content is `None`)
     for k in ['RAM', 'Size', 'USB']:
@@ -153,11 +156,11 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
     """
     specs = [{'type': 'a type',
               'make': 'I made it',
-              'model': 'a model',
+              'model': {'name': 'a model'},
               'serial': '002'},
              {'type': 'a type',
               'make': 'I made it',
-              'model': 'a model',
+              'model': {'name': 'a model'},
               'serial': '003'}]
     new_directory = inventory.root / "does" / "not" / "yet" / "exist"
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -176,7 +179,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 
     # new assets are added
     for s in specs:
-        p = new_directory / f"{s['type']}_{s['make']}_{s['model']}.{s['serial']}"
+        p = new_directory / inventory.generate_asset_name(s)
         assert inventory.repo.is_asset_path(p)
         assert p in inventory.repo.git.files
         new_asset = inventory.get_asset(p)
@@ -191,7 +194,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
 
     specs = [{'template': 'empty',
-              'model': 'MODEL',
+              'model': {'name': 'MODEL'},
               'make': 'MAKER',
               'type': 'TYPE',
               'serial': 'totally_random'}]
@@ -202,11 +205,11 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
     assert inventory.repo.is_asset_path(expected_path)
     assert expected_path in inventory.repo.git.files
-    asset_content = inventory.repo.get_asset_content(expected_path)
+    asset_content = inventory.get_asset(expected_path)
     assert asset_content['key'] == 'value'
 
     # file already exists:
-    edit_str = f"model: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}"
+    edit_str = f"model:{os.linesep}  name: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty',
               'serial': 'totally_random'}]
@@ -214,7 +217,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
 
     # asset already exists (but elsewhere - see fixture):
-    edit_str = f"model: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: SERIAL{os.linesep}"
+    edit_str = f"model:{os.linesep}  name: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: SERIAL{os.linesep}"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
@@ -227,7 +230,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
 
     # content should be exactly as expected
     # (empty files used to serialize to '{}')
-    edit_str = f"model: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: 8675309{os.linesep}"
+    edit_str = f"model:\n  name: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: 8675309{os.linesep}"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
     onyo_new(inventory,
@@ -282,7 +285,7 @@ def test_onyo_new_asset_dir(inventory: Inventory) -> None:
     onyo_new(inventory,
              keys=[{"type": "a",
                     "make": "b",
-                    "model": "c",
+                    "model": {"name": "c"},
                     "serial": "1",
                     "is_asset_directory": True}])
     assert inventory.repo.is_asset_dir(new_asset_dir)

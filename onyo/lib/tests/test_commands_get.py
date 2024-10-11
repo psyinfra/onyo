@@ -81,7 +81,7 @@ def test_onyo_get_empty_keys(inventory: Inventory,
 
     # verify output
     output2 = capsys.readouterr().out
-    assert UNSET_VALUE not in output2
+    assert UNSET_VALUE in output2
     assert asset_path2.name in output2
 
 
@@ -101,7 +101,7 @@ def test_onyo_get_reserved_keys(inventory: Inventory,
     r"""`onyo_get()` allows to specify all reserved keys to query
     and display information for."""
     from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
-    reserved = ["type", "make", "model", "serial"] + PSEUDO_KEYS + RESERVED_KEYS
+    reserved = ["type", "make", "model.name", "serial"] + PSEUDO_KEYS + RESERVED_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
     # get on reserved fields
@@ -123,7 +123,7 @@ def test_onyo_get_name_keys(inventory: Inventory,
     r"""If no keys are specified when calling `onyo_get()`
     the name keys are printed by default."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    name_keys = ["type", "make", "model", "serial"]
+    name_keys = ["type", "make", "model.name", "serial"]
 
     # call `onyo_get()` without keys specified
     onyo_get(inventory,
@@ -131,9 +131,17 @@ def test_onyo_get_name_keys(inventory: Inventory,
 
     # verify output
     output = capsys.readouterr().out
-    assert asset_path.name in output
     for name_key in name_keys:
         assert name_key in output
+    # We can't easily test the asset path showing up w/o the machine_readable flag,
+    # because of wrapping in the generated table. The path may have a line break plus
+    # indentation within. Hence, test the column headers in the table output, but the
+    # correct asset path in machine readable output:
+    onyo_get(inventory,
+             include=[asset_path],
+             machine_readable=True)
+    output = capsys.readouterr().out
+    assert asset_path.name in output
 
 
 @pytest.mark.ui({'yes': True})
@@ -200,7 +208,7 @@ def test_onyo_get_machine_readable(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_sorting(inventory: Inventory,
                           capsys) -> None:
@@ -259,7 +267,7 @@ def test_onyo_get_on_directory(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_match(inventory: Inventory,
                         capsys) -> None:
@@ -287,7 +295,7 @@ def test_onyo_get_match(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_no_matches(inventory: Inventory,
                              capsys) -> None:
@@ -309,7 +317,7 @@ def test_onyo_get_no_matches(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_multiple(inventory: Inventory,
                            capsys) -> None:
@@ -333,7 +341,7 @@ def test_onyo_get_multiple(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_limited(inventory: Inventory,
                           capsys) -> None:
@@ -363,36 +371,35 @@ def test_onyo_get_limited(inventory: Inventory,
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_depth_zero(inventory: Inventory,
                              capsys) -> None:
     r"""Calling `onyo_get(depth=0)` is legal and selects all assets from all subpaths."""
     onyo_get(inventory,
              include=[inventory.root],
-             depth=0)
+             depth=0,
+             machine_readable=True)
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
     for asset in inventory.repo.get_asset_paths():
         assert asset.name in output
-    assert "path" in output
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_default_inventory_root(inventory: Inventory,
                                          capsys) -> None:
     r"""Calling `onyo_get()` without path uses inventory.root as default
     and selects all assets of the inventory."""
-    onyo_get(inventory)
+    onyo_get(inventory, machine_readable=True)
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
     for asset in inventory.repo.get_asset_paths():
         assert asset.name in output
-    assert "path" in output
 
 
 @pytest.mark.ui({'yes': True})
@@ -404,7 +411,8 @@ def test_onyo_get_allows_duplicates(inventory: Inventory,
 
     # call `onyo_get()` with `include` containing duplicates
     onyo_get(inventory,
-             include=[asset_path, asset_path, asset_path])
+             include=[asset_path, asset_path, asset_path],
+             machine_readable=True)
 
     # verify output contains all assets and "path" as default key
     output = capsys.readouterr().out
@@ -416,7 +424,7 @@ def test_onyo_get_asset_dir(inventory: Inventory,
     inventory.add_asset(dict(some_key="some_value",
                              type="TYPE",
                              make="MAKER",
-                             model="MODEL",
+                             model=dict(name="MODEL"),
                              serial="SERIAL2",
                              other=1,
                              directory=inventory.root,
@@ -434,3 +442,143 @@ def test_onyo_get_is_asset_dir(inventory: Inventory,
                                capsys) -> None:
     onyo_get(inventory, keys=["path", "is_asset_directory"])
     assert str(False) in capsys.readouterr().out
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_get_type_matching(inventory: Inventory,
+                                capsys) -> None:
+    r"""`onyo_get()` allows matching types instead of values."""
+    inventory.add_asset(dict(some_key=dict(),
+                             type="TYPE",
+                             make="MAKE",
+                             model=dict(name="MODEL"),
+                             serial="SERIAL1",
+                             subdict=dict(),
+                             directory=inventory.root)
+                        )
+    inventory.add_asset(dict(some_key=dict(some="value"),
+                             type="TYPE",
+                             make="MAKE",
+                             model=dict(name="MODEL"),
+                             serial="SERIAL2",
+                             directory=inventory.root)
+                        )
+    inventory.commit("Add assets w/ dicts")
+    asset1_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL1"
+    asset2_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
+    matches = [Filter("some_key=<dict>").match]
+    onyo_get(inventory,
+             include=[inventory.root],
+             match=matches,  # pyre-ignore[6]
+             keys=["path"])
+
+    # verify output contains matching asset
+    output = capsys.readouterr().out
+    assert asset1_path.name in output
+    assert asset2_path.name in output
+
+    # non-matching type filter:
+    matches = [Filter("model=<list>").match]
+    onyo_get(inventory,
+             include=[inventory.root],
+             match=matches,  # pyre-ignore[6]
+             keys=["path"])
+    # verify output does not contain the previously matching asset
+    output = capsys.readouterr().out
+    assert asset1_path.name not in output
+    assert asset2_path.name not in output
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_get_match_empty_dict(inventory: Inventory,
+                                   capsys) -> None:
+    r"""onyo_get can match `{}` (empty dict)"""
+    inventory.add_asset(dict(some_key=dict(),
+                             type="TYPE",
+                             make="MAKER",
+                             model=dict(name="MODEL"),
+                             serial="SERIAL2",
+                             directory=inventory.root)
+                        )
+    inventory.add_asset(dict(some_key=dict(notempty="some"),
+                             type="TYPE",
+                             make="MAKER",
+                             model=dict(name="MODEL"),
+                             serial="SERIAL3",
+                             directory=inventory.root)
+                        )
+    inventory.commit("test assets w/ dicts and lists")
+
+    onyo_get(inventory,
+             match=[Filter("some_key={}").match],
+             keys=["path", "some_key"])
+    output = capsys.readouterr().out
+    assert "SERIAL2" in output
+    assert "SERIAL3" not in output
+
+    assert "<unset>" not in output
+    assert "<dict>" in output
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_get_match_empty_list(inventory: Inventory,
+                                   capsys) -> None:
+    r"""onyo_get can match `[]` (empty list)"""
+    inventory.add_asset(dict(some_key=list(),
+                             type="TYPE",
+                             make="MAKER",
+                             model=dict(name="MODEL"),
+                             serial="SERIAL2",
+                             directory=inventory.root,
+                             is_asset_directory=True)
+                        )
+    inventory.add_asset(dict(some_key=[1, 2],
+                             type="TYPE",
+                             make="MAKER",
+                             model=dict(name="MODEL"),
+                             serial="SERIAL3",
+                             directory=inventory.root,
+                             is_asset_directory=True)
+                        )
+    inventory.commit("test assets w/ dicts and lists")
+
+    onyo_get(inventory,
+             match=[Filter("some_key=[]").match],
+             keys=["path", "some_key"])
+    output = capsys.readouterr().out
+    assert "SERIAL2" in output
+    assert "SERIAL3" not in output
+
+    assert "<unset>" not in output
+    assert "<list>" in output
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_get_unset_values(inventory: Inventory,
+                               capsys) -> None:
+    """`get` does return `<unset>` value"""
+    from onyo.lib.consts import UNSET_VALUE
+    asset = dict(type="TYPE",
+                 make="MAKE",
+                 model=dict(name="MODEL"),
+                 serial="SERIAL2",
+                 directory=inventory.root)
+    test_pairs = dict(novalue=None,
+                      emptystring="")
+    asset.update(**test_pairs)
+    inventory.add_asset(asset)
+    inventory.commit("add asset w/ empty values")
+    asset1_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    asset2_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
+
+    onyo_get(inventory,
+             keys=["path", "novalue", "emptystring"],
+             machine_readable=True)
+    output = capsys.readouterr().out
+
+    # asset1 is brought in by fixture and doesn't have the keys we print,
+    # asset2 has those keys, but they have values that are supposed to be UNSET_VALUE.
+    expected_lines = [f"{str(p.relative_to(inventory.root))}\t{UNSET_VALUE}\t{UNSET_VALUE}"
+                      for p in [asset1_path, asset2_path]]
+    assert expected_lines[0] in output.splitlines()
+    assert expected_lines[1] in output.splitlines()

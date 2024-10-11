@@ -13,6 +13,7 @@ from _pytest.mark.structures import MarkDecorator
 from onyo.lib.git import GitRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.utils import DotNotationWrapper
 
 if TYPE_CHECKING:
     from typing import (
@@ -142,7 +143,8 @@ def repo(tmp_path: Path, monkeypatch, request) -> Generator[OnyoRepo, None, None
 
     # initialize repo
     repo_ = OnyoRepo(repo_path, init=True)
-
+    repo_.set_config("onyo.assets.name-format", "{type}_{make}_{model.name}.{serial}")
+    repo_.git.commit(repo_.git.root / repo_.ONYO_CONFIG, message="Asset name config w/ dot")
     # collect files to populate the repo
     m = request.node.get_closest_marker('repo_files')
     if m:
@@ -194,14 +196,15 @@ def inventory(repo) -> Generator:
     # TODO: This is currently not in line with `repo`, where files and dirs are defined differently.
     #       Paths to created items should be delivered somehow.
     inventory = Inventory(repo=repo)
-    inventory.add_asset(dict(some_key="some_value",
-                             type="TYPE",
-                             make="MAKER",
-                             model="MODEL",
-                             serial="SERIAL",
-                             other=1,
-                             directory=repo.git.root / "somewhere" / "nested")
-                        )
+    inventory.add_asset(DotNotationWrapper(
+        dict(some_key="some_value",
+             type="TYPE",
+             make="MAKER",
+             model=dict(name="MODEL"),
+             serial="SERIAL",
+             other=1,
+             directory=repo.git.root / "somewhere" / "nested"))
+    )
     inventory.add_directory(repo.git.root / 'empty')
     inventory.add_directory(repo.git.root / 'different' / 'place')
     inventory.commit("First asset added")
