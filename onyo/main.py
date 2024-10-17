@@ -535,6 +535,10 @@ def main() -> None:
     if subcmd_index:
         old_cwd = Path.cwd()
         os.chdir(args.opdir)
+        # normally exit 1 on error. `get` is a special case. Exit with 2 on
+        # error to mimic `grep`'s behavior.
+        error_returncode = 2 if args.cmd == 'get' else 1
+
         try:
             args.run(args)
         except InvalidArgumentError as e:
@@ -554,7 +558,7 @@ def main() -> None:
             # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
             #       non-zero here, in order to have this generic last catcher.
             ui.error(e)
-            code = e.returncode if hasattr(e, 'returncode') else 1  # pyre-ignore
+            code = e.returncode if hasattr(e, 'returncode') else error_returncode  # pyre-ignore
             sys.exit(code)
         except KeyboardInterrupt:
             ui.error("User interrupted.")
@@ -564,7 +568,7 @@ def main() -> None:
         if ui.error_count > 0:
             # We may have reported errors while being able to proceed (hence no exception bubbled up).
             # That's fine, but still exit non-zero.
-            sys.exit(1)
+            sys.exit(error_returncode)
     else:
         parser.print_help()
         sys.exit(1)

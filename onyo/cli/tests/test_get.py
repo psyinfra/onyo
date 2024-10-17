@@ -162,7 +162,8 @@ def test_get_all(
         repo: OnyoRepo, matches: list[str], depth: str, keys: list[str],
         paths: list[str], machine_readable: str | None) -> None:
     r"""
-    Test `onyo get` with a combination of arguments.
+    Test `onyo get` with a combination of valid arguments to ensure no error
+    occurs.
     """
     keys = keys if keys else repo.get_asset_name_keys()
     cmd = ['onyo', 'get', '--path', *paths, '--depth', depth]
@@ -187,7 +188,9 @@ def test_get_all(
                 assert any(init_paths & set(Path(line[-1]).parents))
 
     assert not ret.stderr
-    assert ret.returncode == 0
+    # exit of 0 means results found and 1 no results found
+    # exit of 2 means error
+    assert ret.returncode in [0, 1]
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
@@ -227,7 +230,11 @@ def test_get_filter(
 
     assert len(output) == expected
     assert not ret.stderr
-    assert ret.returncode == 0
+    if expected > 0:
+        assert ret.returncode == 0
+    else:
+        # no results should exit with 1
+        assert ret.returncode == 1
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
@@ -262,7 +269,11 @@ def test_get_filter_regex(
 
     assert len(output) == expected
     assert not ret.stderr
-    assert ret.returncode == 0
+    if expected > 0:
+        assert ret.returncode == 0
+    else:
+        # no results should exit with 1
+        assert ret.returncode == 1
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
@@ -282,7 +293,7 @@ def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
 
     assert ret.stderr
     assert not ret.stdout
-    assert ret.returncode == 1
+    assert ret.returncode == 2
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
@@ -372,7 +383,7 @@ def test_get_depth_error(repo: OnyoRepo) -> None:
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.stderr
     assert "depth must be greater or equal 0, but is '-1'" in ret.stderr
-    assert ret.returncode == 1
+    assert ret.returncode == 2
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
@@ -445,7 +456,7 @@ def test_get_path_error(repo: OnyoRepo, path: str) -> None:
     cmd = ['onyo', 'get', '--path', path, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert f"The following paths are not part of the inventory:\n{repo.git.root / path}" in ret.stderr
-    assert ret.returncode == 1
+    assert ret.returncode == 2
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
