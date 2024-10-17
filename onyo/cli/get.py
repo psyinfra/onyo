@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -121,6 +122,13 @@ args_get = {
 }
 
 epilog_get = r"""
+.. rubric:: Exit Status
+
+The exit status is ``0`` if at least one result is found, ``1`` if there are no
+results, and ``2`` if an error occurred.
+
+These exit values match those of ``grep``.
+
 .. rubric:: Examples
 
 List all assets belonging to a user:
@@ -170,14 +178,17 @@ def get(args: argparse.Namespace) -> None:
 
     filters = [Filter(f).match for f in args.match] if args.match else None
 
-    onyo_get(inventory=inventory,
-             sort=args.sort,
-             include=includes,
-             exclude=excludes,
-             depth=args.depth,
-             machine_readable=args.machine_readable,
-             # Type annotation for callables as filters, somehow
-             # doesn't work with the bound method `Filter.match`.
-             # Not clear, what's the problem.
-             match=filters,  # pyre-ignore[6]
-             keys=args.keys)
+    results = onyo_get(inventory=inventory,
+                       sort=args.sort,
+                       include=includes,
+                       exclude=excludes,
+                       depth=args.depth,
+                       machine_readable=args.machine_readable,
+                       # Type annotation for callables as filters, somehow
+                       # doesn't work with the bound method `Filter.match`.
+                       # Not clear, what's the problem.
+                       match=filters,  # pyre-ignore[6]
+                       keys=args.keys)
+
+    if not results:
+        sys.exit(1)
