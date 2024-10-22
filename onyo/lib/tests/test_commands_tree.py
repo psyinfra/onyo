@@ -16,27 +16,27 @@ def test_onyo_tree_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_tree,
                   inventory,
-                  dirs=[(str(asset_path), asset_path)])
+                  paths=[(str(asset_path), asset_path)])
 
     # non-existing dir
     pytest.raises(ValueError,
                   onyo_tree,
                   inventory,
-                  dirs=[(str(dir_path / "doesnotexist"), dir_path / "doesnotexist")])
+                  paths=[(str(dir_path / "doesnotexist"), dir_path / "doesnotexist")])
 
     # existing dir, but outside of onyo repository
     pytest.raises(ValueError,
                   onyo_tree,
                   inventory,
-                  dirs=[(str(inventory.root / ".."), inventory.root / "..")])
+                  paths=[(str(inventory.root / ".."), inventory.root / "..")])
 
     # one of many paths invalid
     pytest.raises(ValueError,
                   onyo_tree,
                   inventory,
-                  dirs=[(str(inventory.root / "somewhere" / "nested"), inventory.root / "somewhere" / "nested"),
-                        (str(inventory.root / "doesnotexist"), inventory.root / "doesnotexist"),
-                        (str(dir_path), dir_path)])
+                  paths=[(str(inventory.root / "somewhere" / "nested"), inventory.root / "somewhere" / "nested"),
+                         (str(inventory.root / "doesnotexist"), inventory.root / "doesnotexist"),
+                         (str(dir_path), dir_path)])
 
     # no error scenario leaves the git worktree unclean
     assert inventory.repo.git.is_clean_worktree()
@@ -50,7 +50,7 @@ def test_onyo_tree_single(inventory: Inventory,
 
     # move an asset and a dir to the same destination
     onyo_tree(inventory,
-              dirs=[(str(directory_path), directory_path)])
+              paths=[(str(directory_path), directory_path)])
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
@@ -60,14 +60,41 @@ def test_onyo_tree_single(inventory: Inventory,
 
 
 @pytest.mark.ui({'yes': True})
+def test_onyo_tree_dirs_only(inventory: Inventory,
+                             capsys) -> None:
+    r"""Display a tree w/o any files"""
+    inventory.add_asset(dict(type="atype",
+                             make="someone",
+                             model=dict(name="fancy"),
+                             serial="faux",
+                             directory=inventory.root,
+                             is_asset_directory=True))
+    inventory.commit("Add an asset dir to make sure it's not excluded.")
+    onyo_tree(inventory,
+              paths=[(str(inventory.root), inventory.root)],
+              dirs_only=True)
+    tree_output = capsys.readouterr().out
+    for path in inventory.root.rglob('*'):
+        if not path.is_dir() or any(p.startswith('.') for p in path.parts):
+            # If it's not a dir it shouldn't be displayed.
+            # Note: Any part of a file path including the file's name
+            # may show up somewhere in the output as a dir.
+            # In the test case, however, this is only applying to `.onyo/templates/empty`
+            # and `empty/`. Hence, should be protected against b/c of the leading dot.
+            assert not all([part in tree_output for part in path.parts])
+        else:
+            assert all([part in tree_output for part in path.parts])
+
+
+@pytest.mark.ui({'yes': True})
 def test_onyo_tree_multiple_paths(inventory: Inventory,
                                   capsys) -> None:
     r"""Display multiple trees with one call."""
     dir_path = inventory.root / 'somewhere' / 'nested'
 
     onyo_tree(inventory,
-              dirs=[(str(dir_path), dir_path),
-                    (str(inventory.root), inventory.root)])
+              paths=[(str(dir_path), dir_path),
+                     (str(inventory.root), inventory.root)])
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
@@ -84,7 +111,7 @@ def test_onyo_tree_relative_single(inventory: Inventory,
 
     # move an asset and a dir to the same destination
     onyo_tree(inventory,
-              dirs=[("somewhere/nested", directory_path)])
+              paths=[("somewhere/nested", directory_path)])
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out
@@ -103,9 +130,9 @@ def test_onyo_tree_errors_before_showing_trees(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_tree,
                   inventory,
-                  dirs=[(str(directory_path), directory_path),
-                        (str(non_existing_path), non_existing_path),
-                        (str(inventory.root), inventory.root)])
+                  paths=[(str(directory_path), directory_path),
+                         (str(non_existing_path), non_existing_path),
+                         (str(inventory.root), inventory.root)])
     assert inventory.repo.git.is_clean_worktree()
 
 
@@ -119,9 +146,9 @@ def test_onyo_tree_with_same_dir_twice(inventory: Inventory,
 
     # call onyo_tree() with `directory_path` twice in `paths`.
     onyo_tree(inventory,
-              dirs=[(str(directory_path), directory_path),
-                    (str(inventory.root), inventory.root),
-                    (str(directory_path), directory_path)])
+              paths=[(str(directory_path), directory_path),
+                     (str(inventory.root), inventory.root),
+                     (str(directory_path), directory_path)])
 
     # verify assets and paths are in output
     tree_output = capsys.readouterr().out

@@ -12,12 +12,19 @@ if TYPE_CHECKING:
 
 args_tree = {
     'directory': dict(
-        metavar='DIR',
+        metavar='DIRECTORY',
         nargs='*',
         help=r"""
             Directories to list.
         """
-    )
+    ),
+    'dirs_only': dict(
+        args=("-d", "--dirs-only"),
+        action="store_true",
+        help=r"""
+            Print only directories.
+        """
+    ),
 }
 
 epilog_tree = r"""
@@ -47,4 +54,5 @@ def tree(args: argparse.Namespace) -> None:
     dirs = dirs if dirs else [('.', Path.cwd())]
 
     onyo_tree(inventory,
-              dirs)
+              paths=dirs,
+              dirs_only=args.dirs_only)

@@ -1089,7 +1089,8 @@ def onyo_set(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_tree(inventory: Inventory,
-              dirs: list[tuple[str, Path]]) -> None:
+              paths: list[tuple[str, Path]],
+              dirs_only: bool = False) -> None:
     r"""Print the directory tree of paths.
 
     Parameters
@@ -1097,7 +1098,7 @@ def onyo_tree(inventory: Inventory,
     inventory
         The inventory in which the directories to display are located.
 
-    dirs
+    paths
         A list of tuples containing (str, Path) of directories to build a tree
         of.
 
@@ -1105,24 +1106,26 @@ def onyo_tree(inventory: Inventory,
         requested. This way, regardless of how the user requested a path
         (relative, absolute, subdir, etc), it is always printed "correctly".
 
+    dirs_only
+        Print only directories.
     Raises
     ------
     ValueError
         If paths are invalid.
     """
     # sanitize the paths
-    non_inventory_dirs = [desc for (desc, p) in dirs if not inventory.repo.is_inventory_dir(p)]
+    non_inventory_dirs = [desc for (desc, p) in paths if not inventory.repo.is_inventory_dir(p)]
     if non_inventory_dirs:
         raise ValueError("The following paths are not inventory directories: %s" %
                          '\n'.join(non_inventory_dirs))
 
-    for (desc, p) in dirs:
+    for (desc, p) in paths:
         ui.rich_print(f'[bold][sandy_brown]{desc}[/sandy_brown][/bold]')
-        for line in _tree(p):
+        for line in _tree(p, dirs_only=dirs_only):
             ui.rich_print(line)
 
 
-def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
+def _tree(dir_path: Path, prefix: str = '', dirs_only: bool = False) -> Generator[str, None, None]:
     r"""Yield lines that assemble tree-like output, stylized by rich.
 
     Parameters
@@ -1132,6 +1135,8 @@ def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
     prefix
         Lines should be prefixed with this string. In practice, only useful by
         ``_tree`` itself recursing into directories.
+    dirs_only
+        Yield only directories.
     """
     space = '    '
     pipe =  '│   '  # noqa: E222
@@ -1141,6 +1146,9 @@ def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
     # get and sort the children
     children = sorted(list(dir_path.iterdir()))
     for path in children:
+        path_is_dir = path.is_dir()  # don't stat the same path multiple times
+        if dirs_only and not path_is_dir:
+            continue
         # ignore hidden files/dirs
         if path.name[0] == '.':
             continue
@@ -1152,15 +1160,15 @@ def _tree(dir_path: Path, prefix: str = '') -> Generator[str, None, None]:
 
         # colorize directories
         path_name = path.name
-        if path.is_dir():
+        if path_is_dir:
             path_name = f'[bold][sandy_brown]{path.name}[/sandy_brown][/bold]'
 
         yield f'{prefix}{child_prefix}{path_name}'
 
         # descend into directories
-        if path.is_dir():
+        if path_is_dir:
             next_prefix_level = pipe if child_prefix == tee else space
-            yield from _tree(path, prefix=prefix + next_prefix_level)
+            yield from _tree(path, prefix=prefix + next_prefix_level, dirs_only=dirs_only)
 
 
 @raise_on_inventory_state
