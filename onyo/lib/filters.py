@@ -50,30 +50,26 @@ class Filter:
 
     def match(self, asset: dict) -> bool:
         r"""match self on a dictionary"""
-        string_types = {'<list>': list, '<dict>': dict}
-        # onyo type representation match
-        if self.value in string_types:
-            return True if isinstance(
-                asset[self.key], string_types[self.value]) else False
-
-        empty_structs = ['[]', '{}']
-        if self.value in empty_structs:
-            return str(asset[self.key]) == self.value
-
-        # Check if filter is <unset> and there is no data
-        if not asset and self.value == UNSET_VALUE:
-            return True
-        elif self.key not in asset.keys() and self.value == UNSET_VALUE:
-            return True
-        elif self.key in asset.keys() and self.value == UNSET_VALUE and (
-                asset[self.key] is None or asset[self.key] == ''):
-            return True
-        elif self.key not in asset.keys() or self.value == UNSET_VALUE:
+        if self.value == UNSET_VALUE:
+            # match if:
+            #   - key is not present or
+            #   - value is `None` or an empty string
+            return self.key not in asset or asset[self.key] in [None, '']
+        if self.key not in asset:
+            # we can't match anything other than UNSET_VALUE, if key is not present
             return False
 
-        # equivalence and regex match
-        re_match = self._re_match(str(asset[self.key]), self.value)
-        if re_match or asset[self.key] == self.value:
-            return True
+        asset_value = asset[self.key]
 
-        return False
+        # onyo type representation match
+        string_types = {'<list>': list, '<dict>': dict}
+        if self.value in string_types:
+            return isinstance(asset_value, string_types[self.value])
+
+        # match literal empty structure representations
+        empty_structs = ['[]', '{}']
+        if self.value in empty_structs:
+            return str(asset_value) == self.value
+
+        # equivalence and regex match
+        return asset_value == self.value or self._re_match(str(asset_value), self.value)
