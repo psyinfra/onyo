@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import os
 from collections import UserDict
 from io import StringIO
 from pathlib import Path
@@ -220,7 +219,7 @@ def get_asset_content(asset_file: Path) -> dict[str, bool | float | int | str | 
         # Remove ruaml usage pointer (see github issue 436)
         if hasattr(e, 'note') and isinstance(e.note, str) and "suppress this check" in e.note:
             e.note = ""
-        raise NotAnAssetError(f"Invalid YAML in {asset_file}:{os.linesep}{str(e)}") from e
+        raise NotAnAssetError(f"Invalid YAML in {asset_file}:\n{str(e)}") from e
     if contents is None:
         return dict()
     if not isinstance(contents, (dict, CommentedMap)):

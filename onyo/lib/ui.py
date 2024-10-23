@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 import traceback
 from typing import Any
@@ -128,7 +127,7 @@ class UI(object):
 
     def error(self,
               error: str | Exception,
-              end: str = os.linesep) -> None:
+              end: str = '\n') -> None:
         r"""Print an error message, if the `UI` is not set to quiet mode.
 
         Parameters

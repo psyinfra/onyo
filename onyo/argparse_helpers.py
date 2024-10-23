@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -67,9 +66,11 @@ class StoreMultipleKeyValuePairs(argparse.Action):
 
         key_counts = {k: len(v) for k, v in key_lists.items()}
         key_max_count = max(key_counts.values())
+        # Python < 3.12 does not support backslashes in f-strings
+        linesep = '\n'
         if any([True for k, c in key_counts.items() if 1 < c < key_max_count]):
-            parser.error(f"All keys given multiple times must be given the same number of times:{os.linesep}"
-                         f"{f'{os.linesep}'.join(['{}: {}'.format(k, c) for k, c in key_counts.items() if 1 < c])}")
+            parser.error(f"All keys given multiple times must be given the same number of times:\n"
+                         f"{f'{linesep}'.join(['{}: {}'.format(k, c) for k, c in key_counts.items() if 1 < c])}")
 
         def cvt(v: str) -> int | float | str | bool:
             if v.lower() == "true":
@@ -160,7 +161,7 @@ class StoreSingleKeyValuePairs(argparse.Action):
         results = dict()
         for k, v in pairs:
             if k in results:
-                parser.error(f"Duplicate key '{k}' found.{os.linesep}"
+                parser.error(f"Duplicate key '{k}' found.\n"
                              f"Keys must not be given multiple times.")
 
             results[k] = cvt(v)
