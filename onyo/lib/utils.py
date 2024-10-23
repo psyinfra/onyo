@@ -132,7 +132,11 @@ class DotNotationWrapper(UserDict):
 
         Note, that this is `True` for intermediate keys (dicts), although `self.__iter__` wouldn't yield them.
         """
-        return key in self._keys() or key in self.data
+        try:
+            self.__getitem__(key)
+            return True
+        except KeyError:
+            return False
 
     def __iter__(self):
         return self._keys()
