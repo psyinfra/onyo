@@ -8,6 +8,169 @@ Changes listed here will be part of the next release.
 
 --------------------------------------------------------------------------------
 
+0.5.0 (2024.10.24)
+******************
+
+This release is by far the most substantial in Onyo's brief history. It includes
+over a year of development and a significant rearchitecting of Onyo. Pretty much
+everything has been changed or improved one way or another.
+
+The highlights are:
+
+Behavior
+--------
+
+- All changes are performed in memory or temporary files before being accepted
+  by the user. Changes are not longer staged in-repo and (potentially) rolled
+  back.
+- An Inventory Operations Summary is generated and included in the commit
+  message and alongside the diff when prompting the user for review.
+- Asset names are now user-definable via the ``onyo.assets.name-format``
+  configuration.
+- All keys are included in the asset content. Asset names no longer contain
+  unique data.
+- Diffs are colorized.
+- Comments in assets and templates are preserved.
+- git's ``core.editor`` is now also considered when selecting an editor.
+- All assets start with YAML's (optional) opening header ``---``. This can be
+  useful when using ``cat`` on multiple assets, and still yields a valid YAML
+  stream.
+- Editors are more likely to use YAML syntax highlighting due to the YAML header
+  (``---``) and temporary files ending with ``.yaml``.
+
+
+API
+---
+
+- Main entry point now is an ``Inventory`` object. All operations are available
+  as methods of this class. Operations are prepared in-memory and are written
+  upon ``Inventory.commit()``. All command implementations are build on top of
+  this.
+- Implementations of Onyo commands are available from ``lib.commands.onyo_*``.
+- ``Repo()`` is now split into ``OnyoRepo()`` and ``GitRepo()``
+
+  - Loads of non-repo-related functionality has been split out into separate
+    utilities.
+
+
+Command Changes
+---------------
+
+- ``--dry-run`` is removed from all commands. All diffs are done in memory and
+  the user is prompted before applying.
+- ``-m, --message`` can be passed multiple times, each generating its own
+  paragraph (matching git's behavior)
+- ``onyo edit`` now prompts for "yes, edit, skip, abort" rather than just "yes,
+  no".
+- ``onyo get`` no longer always returns the ``path`` key. Only the keys
+  specified by ``--keys`` are returned.
+- ``onyo get``'s return codes now match ``grep``'s (0 for results, 1 for none
+  found, 2 for error).
+- ``onyo mkdir`` no longer errors when the target directory exists
+- ``onyo new`` can now ``-c, --clone`` from an existing asset (i.e.  use an
+  asset as a template).
+- ``onyo new --path`` is renamed to ``--directory``.
+- ``onyo rm``'s ``--asset`` and ``--dir`` flags are removed.
+- ``onyo rm`` is no longer recursive by default, and has a ``--recursive`` flag.
+- ``onyo set --rename`` has been removed. Keys that are used in the asset name
+  are not considered any more special than other keys.
+- ``onyo tree`` now has a ``-d, --dirs-only`` flag.
+
+
+Pseudo Keys
+-----------
+
+Two new pseudo keys have been introduced:
+
+- ``directory``: the parent directory of an asset. Can be queried with ``get``
+  or set with ``onyo new`` either in ``--keys`` or TSV file.
+- ``is_asset_directory``: see Asset Directories section
+
+
+Nested Dictionaries
+-------------------
+
+Onyo now supports referencing nested dictionaries using a "dot notation" (e.g.
+``model.name``). This allows much, much more structure to the data in assets.
+
+
+Asset Directories
+-----------------
+
+Assets can now also be a directory (with the actual content in a hidden file in
+the dir). This allows assets to contain assets, such as a server with many hard
+drives, network adapters, etc.
+
+All commands have been updated to work with asset directories.
+
+``onyo mkdir`` on an existing asset file will convert it into an asset
+directory.
+
+The ``is_asset_directory`` Pseudo Key has been added to query with ``onyo get``
+and can also be controlled with ``onyo set`` and ``onyo new``.
+
+
+Filtering
+---------
+
+Filtering has been completely overhauled. It has been removed from all commands
+(``set`` and ``unset``) except for ``get``. Now, output from ``get`` (notably
+the ``path`` key) should be piped into other commands. ``onyo set`` and ``onyo
+unset`` have renamed ``--path`` to ``--asset`` to accept a list of assets to
+operate on.
+
+Meanwhile, ``onyo get``'s filtering has been improved. ``--filter`` is now
+renamed ``--match`` and supports Python regular expressions.
+
+Directories can be included or excluded with ``--include`` or ``--exclude``.
+
+Output can be sorted with the ``--sort-ascending`` and ``--sort-descending``
+flags. Output can be sorted by multiple keys. Matching and sorting can be
+performed on keys that are not included in the output.
+
+
+Tab Completion
+--------------
+
+Tab completion help text is now greatly improved. It has been reduced from
+paragraphs of help text (which was of little use and could even break the shell
+at times) to terse, useful summaries.
+
+Mutually exclusive flags are no longer suggested.
+
+Many assorted bugs fixed with ``onyo --onyopath`` and spaces in the repo path.
+
+
+Documentation
+-------------
+
+Significant improvements have been made to the help text content, layout, and
+highlighting.
+
+Docstrings now use the NumPy format and have seen much improvement. More work is
+to come in future releases.
+
+ReadTheDocs now renders docstrings for the Python API.
+
+Other content in ReadTheDocs has received some small cleanup and improvements,
+but comparatively less than help text and docstrings. Major improvements will
+come in a later release.
+
+
+Installation
+------------
+The Python version required by Onyo is bumped from 3.9 to 3.11.
+
+The dependency on ``tree`` has been dropped.
+
+
+Authors
+-------
+-  Ben Poldrack (`@bpoldrack <https://github.com/bpoldrack>`__)
+-  Alex Waite (`@aqw <https://github.com/aqw>`__)
+-  Tobias Kadelka (`@TobiasKadelka <https://github.com/TobiasKadelka>`__)
+
+
 0.4.0 (2023.04.17)
 ******************
 

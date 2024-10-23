@@ -57,8 +57,8 @@ args_get = {
             Criteria to match assets in the form ``KEY=VALUE``, where **VALUE**
             is a python regular expression. Pseudo-keys such as ``path`` can
             also be used. Dictionary subkeys can be addressed using a period
-            (e.g. ``model.name``, ``model.year``, etc.)
-            Special values supported are:
+            (e.g. ``model.name``, ``model.year``, etc.) One can match keys that
+            are not in the output. Special values supported are:
 
               * ``<dict>``
               * ``<list>``
@@ -106,8 +106,7 @@ args_get = {
             This can be intermixed with ``-s/--sort-descending``.
             Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
             overrule what was specified before.
-            This sorts the matching assets rather than the output.
-            Therefore, one can sort by keys that are not contained in the output.
+            One can sort by keys that are not in the output.
         """
     ),
 
@@ -122,9 +121,8 @@ args_get = {
             (earlier given keys take precedence over subsequent keys).
             This can be intermixed with ``-s/--sort-ascending``.
             Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
-            overrule what ws specified before.
-            This sorts the matching assets rather than the output.
-            Therefore, one can sort by keys that are not contained in the output.
+            overrule what was specified before.
+            One can sort by keys that are not in the output.
         """
     ),
 }
