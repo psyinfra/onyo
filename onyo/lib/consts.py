@@ -1,3 +1,4 @@
+from collections import UserDict
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Literal
@@ -33,3 +34,8 @@ Needed to realize when onyo runs on a repo that was created by a newer version.
 
 SORT_ASCENDING = 'ascending'
 SORT_DESCENDING = 'descending'
+
+TYPE_SYMBOL_MAPPING = {"<dict>": (dict, UserDict),
+                       "<list>": list}
+r"""Mapping of symbols for use w/ type matching (`onyo_get`) and simplified output.
+"""

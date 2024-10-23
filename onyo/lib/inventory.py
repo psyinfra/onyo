@@ -49,6 +49,7 @@ from onyo.lib.recorders import (
 )
 from onyo.lib.utils import (
     deduplicate,
+    DotNotationWrapper,
     is_equal_assets_dict,
 )
 from onyo.lib.ui import ui
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
         Iterable,
         Literal,
     )
+    from collections import UserDict
 
 
 @dataclass
@@ -285,7 +287,7 @@ class Inventory(object):
         self.operations.append(op)
         return op
 
-    def add_asset(self, asset: dict) -> list[InventoryOperation]:
+    def add_asset(self, asset: dict | UserDict) -> list[InventoryOperation]:
         # TODO: what if I call this with a modified (possibly moved) asset?
         # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or rest")
         operations = []
@@ -358,7 +360,7 @@ class Inventory(object):
                            p not in self._get_pending_dirs()])
         return operations
 
-    def remove_asset(self, asset: dict | Path) -> list[InventoryOperation]:
+    def remove_asset(self, asset: dict | UserDict | Path) -> list[InventoryOperation]:
         path = asset if isinstance(asset, Path) else asset.get('path')
         if path in self._get_pending_removals(mode='assets'):
             ui.log_debug(f"{path} already queued for removal.")
@@ -368,8 +370,8 @@ class Inventory(object):
             raise NotAnAssetError(f"No such asset: {path}")
         return [self._add_operation('remove_assets', (asset,))]
 
-    def move_asset(self, src: Path | dict, dst: Path) -> list[InventoryOperation]:
-        if isinstance(src, dict):
+    def move_asset(self, src: Path | dict | UserDict, dst: Path) -> list[InventoryOperation]:
+        if not isinstance(src, Path):
             src = Path(src.get('path'))
         if not self.repo.is_asset_path(src):
             raise NotAnAssetError(f"No such asset: {src}.")
@@ -383,13 +385,13 @@ class Inventory(object):
 
         return [self._add_operation('move_assets', (src, dst))]
 
-    def rename_asset(self, asset: dict | Path, name: str | None = None) -> list[InventoryOperation]:
+    def rename_asset(self, asset: dict | UserDict | Path, name: str | None = None) -> list[InventoryOperation]:
         # ??? Do we need that? On the command level it's only accessible via modify_asset.
         # But: A config change is sufficient to make it not actually an asset modification.
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
         #       separate operation already.
 
-        path = Path(asset.get('path')) if isinstance(asset, dict) else asset
+        path = asset if isinstance(asset, Path) else Path(asset.get('path'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
 
@@ -399,8 +401,8 @@ class Inventory(object):
         #             registered modify operations. It's easier to not force compliance here, but simply let
         #             modify_asset generate the name and pass it.
         generated_name = self.generate_asset_name(
-            asset if isinstance(asset, dict)
-            else self.repo.get_asset_content(path)
+            self.get_asset(path)
+            if isinstance(asset, Path) else asset
         )
         if name and name != generated_name:
             raise ValueError(f"Renaming asset {path.name} to {name} is invalid."
@@ -417,12 +419,12 @@ class Inventory(object):
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
         return [self._add_operation('rename_assets', (path, destination))]
 
-    def modify_asset(self, asset: dict | Path, new_asset: dict) -> list[InventoryOperation]:
+    def modify_asset(self, asset: dict | UserDict | Path, new_asset: dict | UserDict) -> list[InventoryOperation]:
         operations = []
-        path = Path(asset.get('path')) if isinstance(asset, dict) else asset
+        path = asset if isinstance(asset, Path) else Path(asset.get('path'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
-        asset = self.repo.get_asset_content(path) if isinstance(asset, Path) else asset
+        asset = self.get_asset(path) if isinstance(asset, Path) else asset
 
         # Raise on 'path' key in `new_asset`. It needs to be generated:
         if 'path' in new_asset:
@@ -437,7 +439,6 @@ class Inventory(object):
         self.raise_required_key_empty_value(new_asset)
         # We keep the old path - if it needs to change, this will be done by a rename operation down the road
         new_asset['path'] = path
-
         if is_equal_assets_dict(asset, new_asset):
             raise NoopError
 
@@ -528,14 +529,15 @@ class Inventory(object):
     # non-operation methods
     #
 
-    def get_asset(self, path: Path):
+    def get_asset(self, path: Path) -> UserDict:
         # read and return Asset
-        return self.repo.get_asset_content(path)
+        from .utils import DotNotationWrapper
+        return DotNotationWrapper(self.repo.get_asset_content(path))
 
     def get_assets(self,
                    include: Iterable[Path] | None = None,
                    exclude: Iterable[Path] | Path | None = None,
-                   depth: int = 0) -> Generator[dict, None, None]:
+                   depth: int = 0) -> Generator[UserDict, None, None]:
         r"""Yield all assets under `paths` up to `depth` directory levels.
 
         Generator, because it needs to read file content. This allows to act upon
@@ -564,15 +566,15 @@ class Inventory(object):
                 # report the error, but proceed
                 ui.error(e)
 
-    def get_asset_from_template(self, template: Path | str | None) -> dict:
+    def get_asset_from_template(self, template: Path | str | None) -> DotNotationWrapper:
         # TODO: Possibly join with get_asset (path optional)
-        return self.repo.get_template(template)
+        return DotNotationWrapper(self.repo.get_template(template))
 
     def get_assets_by_query(self,
                             include: list[Path] | None = None,
                             exclude: list[Path] | Path | None = None,
                             depth: int | None = 0,
-                            match: list[Callable[[dict], bool]] | None = None) -> Generator | filter:
+                            match: list[Callable[[dict | UserDict], bool]] | None = None) -> Generator | filter:
         r"""Get assets matching paths and filters.
 
         Convenience to run the builtin `filter` on all assets retrieved by
@@ -635,10 +637,15 @@ class Inventory(object):
             if path.name in [p.name for p in self.repo.asset_paths]:
                 raise ValueError(f"Asset name '{path.name}' already exists in inventory.")
 
-    def generate_asset_name(self, asset: dict) -> str:
+    def generate_asset_name(self, asset: dict | UserDict) -> str:
         config_str = self.repo.get_config("onyo.assets.name-format")
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.name-format'.")
+
+        if not isinstance(asset, DotNotationWrapper):
+            # We allow dot-notation for nested dicts in the name config.
+            # Therefore, we need to make sure, the asset is wrapped accordingly here.
+            asset = DotNotationWrapper(asset)
 
         # Replace key references so that the same dot notation as in CLI works, while actual
         # format-language features using the dot work as well.
@@ -651,7 +658,7 @@ class Inventory(object):
         # This should probably be integrated in an asset wrapper class instead.
         from onyo.lib.utils import YAMLDumpWrapper
         try:
-            name = config_str.format(asset=YAMLDumpWrapper(asset))  # TODO: Only pass non-pseudo keys?! What if there is no config?
+            name = config_str.format(asset=YAMLDumpWrapper(asset))  # TODO: Only pass non-pseudo keys?!
         except KeyError as e:
             raise ValueError(f"Asset missing value for required field {str(e)}.") from e
         return name
@@ -689,7 +696,7 @@ class Inventory(object):
 
         return faux_serials
 
-    def raise_required_key_empty_value(self, asset: dict) -> None:
+    def raise_required_key_empty_value(self, asset: dict | UserDict) -> None:
         r"""Whether `asset` has an empty value for a required key.
 
         Validation helper.
@@ -707,10 +714,12 @@ class Inventory(object):
             raise ValueError(f"Required asset keys ({', '.join(self.repo.get_asset_name_keys())})"
                              f" must not have empty values.")
 
-    def raise_empty_keys(self, asset: dict) -> None:
+    def raise_empty_keys(self, asset: dict | UserDict) -> None:
         r"""Whether `asset` has empty keys.
 
         Validation helper
         """
-        if any(not k or not str(k).strip() for k in asset.keys()):
+        if any(not k or not str(k).strip() or k == 'None' for k in asset.keys()):
+            # Note, that DotNotationWrapper.keys() delivers strings (and has to).
+            # Hence, `None` as a key would show up here as 'None'.
             raise ValueError("Keys are not allowed to be empty or None-values.")

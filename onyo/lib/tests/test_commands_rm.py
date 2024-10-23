@@ -220,7 +220,7 @@ def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
     inventory.add_asset(dict(some_key="some_value",
                              type="TYPE",
                              make="MAKE",
-                             model="MODEL",
+                             model=dict(name="MODEL"),
                              serial="SERIAL2",
                              other=1,
                              directory=inventory.root,

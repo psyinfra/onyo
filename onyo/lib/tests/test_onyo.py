@@ -157,7 +157,7 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
         # specify path as absolute, relative to template dir and relative to CWD (repo root):
         for given_path in [path, path.name, path.relative_to(onyorepo.git.root)]:
             template = onyorepo.get_template(path.name)
-            assert isinstance(template, dict)
+            assert isinstance(template, dict)  # allow wrapper?
             if path.name != 'empty':  # TODO: Make issue about removing `empty` file. That's pointless.
                 assert template != dict()  # TODO: compare content
             else:

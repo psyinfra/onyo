@@ -71,7 +71,7 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
     illegal_fields = ["type",
                       "make",
-                      "model",
+                      "model.name",
                       "serial"]
 
     # unset on illegal fields
@@ -83,7 +83,7 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
                       keys=[illegal],
                       message="some subject\n\nAnd a body")
         # name fields are still in the asset
-        assert illegal in asset_path.read_text()
+        assert all(f"{subkey}:" in asset_path.read_text() for subkey in illegal.split('.'))
 
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
@@ -168,7 +168,7 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nsome_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nsome_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_multiple(inventory: Inventory) -> None:
     """Modify multiple assets in a single call and with one commit."""
@@ -220,7 +220,7 @@ def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nother_key: value"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nother_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
     """Calling `onyo_unset()` on a non-existing key does not error."""
@@ -281,7 +281,7 @@ def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
     inventory.add_asset(dict(some_key="some_value",
                              type="TYPE",
                              make="MAKER",
-                             model="MODEL",
+                             model=dict(name="MODEL"),
                              serial="SERIAL2",
                              other=1,
                              directory=inventory.root,
@@ -299,3 +299,36 @@ def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert 'other' not in inventory.get_asset(asset_dir)
     assert 'some_key' not in inventory.get_asset(asset_dir)
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_unset_empty(inventory: Inventory) -> None:
+    """`unset` does work on empty dicts and lists, and None values"""
+    # Note: This is making sure onyo does not confuse an "empty value",
+    #       w/ the key not being present.
+
+    asset = dict(type="TYPE",
+                 make="MAKE",
+                 model=dict(name="MODEL"),
+                 serial="SERIAL2",
+                 directory=inventory.root)
+    test_pairs = dict(emptydict=dict(),
+                      emptylist=list(),
+                      novalue=None,
+                      emptystring="")
+    asset.update(**test_pairs)
+    inventory.add_asset(asset)
+    inventory.commit("add asset w/ empty values")
+    old_hexsha = inventory.repo.git.get_hexsha()
+    asset_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
+    asset_written = inventory.get_asset(asset_path)
+
+    assert all(asset_written[k] == v for k, v in test_pairs.items())
+
+    onyo_unset(inventory,
+               assets=[asset_path],
+               keys=test_pairs.keys())
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    asset_written = inventory.get_asset(asset_path)
+    assert all(k not in asset_written.keys() for k in test_pairs.keys())

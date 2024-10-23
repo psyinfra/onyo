@@ -279,7 +279,7 @@ def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
 
 
 @pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test"])
+    ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_multiple(inventory: Inventory) -> None:
     r"""Modify multiple assets in a single call and with one commit."""
@@ -334,7 +334,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
     inventory.add_asset(dict(some_key="some_value",
                              type="TYPE",
                              make="MAKER",
-                             model="MODEL",
+                             model=dict(name="MODEL"),
                              serial="SERIAL2",
                              other=1,
                              directory=inventory.root,
@@ -370,3 +370,15 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
     assert inventory.repo.is_asset_dir(asset_dir)
     assert inventory.get_asset(asset_dir)["some_key"] == "some_value"
+
+
+@pytest.mark.ui({'yes': True})
+def test_set_empty_dictlist(inventory: Inventory) -> None:
+    r"""`onyo_set` can set empty dicts and lists as values"""
+    asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
+    onyo_set(inventory, assets=[asset_path], keys={"new_key": dict()})
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.get_asset(asset_path)["new_key"] == dict()
+    onyo_set(inventory, assets=[asset_path], keys={"new_key": list()})
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.get_asset(asset_path)["new_key"] == list()

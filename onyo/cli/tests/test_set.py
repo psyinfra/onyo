@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING
 import pytest
 
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.utils import (
+    dict_to_asset_yaml,
+    DotNotationWrapper,
+)
 
 if TYPE_CHECKING:
     from typing import List
@@ -18,26 +22,28 @@ directories = ['.',
                'r/e/c/u/r/s/i/v/e',
                'very/very/very/deep'
                ]
-asset_specs = [{'type': 'laptop',
-                'make': 'apple',
-                'model': 'macbookpro'},
-               {'type': 'lap top',
-                'make': 'ap ple',
-                'model': 'mac book pro'}
+asset_specs = [DotNotationWrapper({'type': 'laptop',
+                                   'make': 'apple',
+                                   'model': {'name': 'macbookpro'}}),
+               DotNotationWrapper({'type': 'lap top',
+                                   'make': 'ap ple',
+                                   'model': {'name': 'mac book pro'}})
                ]
 
 assets = []
 for i, d in enumerate(directories):
     for spec in asset_specs:
         spec['serial'] = str(i)
-        name = f"{spec['type']}_{spec['make']}_{spec['model']}.{spec['serial']}"
-        content = "\n".join(f"{key}: {value}" for key, value in spec.items())
+        name = f"{spec['type']}_{spec['make']}_{spec['model.name']}.{spec['serial']}"
+        content = dict_to_asset_yaml(spec)
         assets.append([f"{d}/{name}", content])
 
 asset_paths = [a[0] for a in assets]
 
 values = [["mode=single"],
-          ["mode=double"], ["key=space bar"]]
+          ["mode=double"],
+          ["key=space bar"],
+          ["nested.key=something"]]
 
 non_existing_assets: List[List[str]] = [
     ["single_non_existing.asset"],
@@ -62,8 +68,14 @@ def test_set(repo: OnyoRepo,
     assert ret.returncode == 0
 
     # verify changes, and the repository clean
+    file_content = Path.read_text(Path(asset))
     for value in set_values:
-        assert value.replace("=", ": ") in Path.read_text(Path(asset))
+        k, v = value.split('=')
+        if '.' in k:
+            assert f"{k.split('.')[0]}:" in file_content
+            assert f"{k.split('.')[1]}: {v}" in file_content
+        else:
+            assert f"{k}: {v}" in file_content
     assert repo.git.is_clean_worktree()
 
 
@@ -85,8 +97,14 @@ def test_set_interactive(repo: OnyoRepo,
     assert ret.returncode == 0
 
     # verify changes, and the repository clean
+    file_content = Path.read_text(Path(asset))
     for value in set_values:
-        assert value.replace("=", ": ") in Path.read_text(Path(asset))
+        k, v = value.split('=')
+        if '.' in k:
+            assert f"{k.split('.')[0]}:" in file_content
+            assert f"{k.split('.')[1]}: {v}" in file_content
+        else:
+            assert f"{k}: {v}" in file_content
     assert repo.git.is_clean_worktree()
 
 
@@ -109,8 +127,14 @@ def test_set_multiple_assets(repo: OnyoRepo,
     # verify that all assets are in output and updated, and the repository clean
     for asset in asset_paths:
         assert str(Path(asset)) in ret.stdout
+        file_content = Path.read_text(Path(asset))
         for value in set_values:
-            assert value.replace("=", ": ") in Path.read_text(Path(asset))
+            k, v = value.split('=')
+            if '.' in k:
+                assert f"{k.split('.')[0]}:" in file_content
+                assert f"{k.split('.')[1]}: {v}" in file_content
+            else:
+                assert f"{k}: {v}" in file_content
     assert repo.git.is_clean_worktree()
 
 
@@ -166,9 +190,17 @@ def test_set_discard_changes_single_assets(repo: OnyoRepo,
     assert ret.returncode == 0
 
     # verify that changes are in output, but not written into the asset
+    file_content = Path.read_text(Path(asset))
     for value in set_values:
-        assert f"+{value.replace('=', ': ')}" in ret.stdout
-        assert value.replace("=", ": ") not in Path.read_text(Path(asset))
+        k, v = value.split('=')
+        if '.' in k:
+            assert f"+{k.split('.')[0]}:" in ret.stdout
+            assert f"{k.split('.')[0]}:" not in file_content
+            assert f"+  {k.split('.')[1]}: {v}" in ret.stdout
+            assert f"{k.split('.')[1]}: {v}" not in file_content
+        else:
+            assert f"+{k}: {v}" in ret.stdout
+            assert f"{k}: {v}" not in file_content
     assert repo.git.is_clean_worktree()
 
 
@@ -339,8 +371,15 @@ def test_values_already_set(repo: OnyoRepo,
     # verify output
     assert "Modified assets:" in ret.stdout
     assert str(Path(asset)) in ret.stdout
+    file_content = Path.read_text(Path(asset))
     for value in set_values:
-        assert value.replace("=", ": ") in Path.read_text(Path(asset))
+        k, v = value.split('=')
+        if '.' in k:
+            assert f"{k.split('.')[0]}:" in file_content
+            assert f"{k.split('.')[1]}: {v}" in file_content
+        else:
+            assert f"{k}: {v}" in file_content
+
     assert not ret.stderr
     assert ret.returncode == 0
 
@@ -401,7 +440,7 @@ def test_duplicate_keys(repo: OnyoRepo,
     r"""Test that `onyo set` fails, if the same key is given multiple times."""
 
     ret = subprocess.run(['onyo', '--yes', 'set', '--keys',
-                          *set_values, 'dup_key=1', 'dup_key=2', '--asset', asset],
+                          *set_values, 'dup.key=1', 'dup.key=2', '--asset', asset],
                          capture_output=True, text=True)
 
     # verify output
@@ -411,3 +450,44 @@ def test_duplicate_keys(repo: OnyoRepo,
 
     # verify state of repo is clean
     assert repo.git.is_clean_worktree()
+
+
+@pytest.mark.repo_contents(assets[0])
+@pytest.mark.parametrize('asset', [asset_paths[0]])
+def test_set_empty_dictlist(repo: OnyoRepo, asset: str) -> None:
+    r"""Test special symbols {}, <dict>, [], <list> to set empty dicts/lists."""
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys',
+                          'new.dict={}', 'new.list=[]', '--asset', asset],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    assert "new:" in ret.stdout
+    assert "dict: {}" in ret.stdout
+    assert "list: []" in ret.stdout
+    ret = subprocess.run(['onyo', 'get', '--keys', 'path', '--match', 'new.dict={}', 'new.list=[]'],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    assert Path(asset).name in ret.stdout
+
+    # now use `<dict>` and `<list>` instead and swap keys in order to overwrite:
+    ret = subprocess.run(['onyo', '--yes', 'set', '--keys',
+                          'new.dict=<list>', 'new.list=<dict>', '--asset', asset],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    assert "new:" in ret.stdout
+    assert "dict: []" in ret.stdout
+    assert "list: {}" in ret.stdout
+
+    # we swapped the keys, so old matching criterion should NOT work:
+    ret = subprocess.run(['onyo', 'get', '--keys', 'path', '--match', 'new.dict={}', 'new.list=[]'],
+                         capture_output=True, text=True)
+    assert ret.returncode == 1
+
+    # correct query
+    ret = subprocess.run(['onyo', 'get', '--keys', 'path', '--match', 'new.dict=[]', 'new.list={}'],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    assert Path(asset).name in ret.stdout

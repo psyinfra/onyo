@@ -7,28 +7,28 @@ from onyo.lib.onyo import OnyoRepo
 
 prefilled_assets = [
     ['warehouse/monitor_dell_PH123.86JZho',
-     "type: 'monitor'\nmake: 'dell'\nmodel: 'PH123'\nserial: '86JZho'\n"
+     "type: 'monitor'\nmake: 'dell'\nmodel:\n  name: 'PH123'\nserial: '86JZho'\n"
      "display: 22.0\nfzj_inventory: '45FZ18'\n"],
     ['warehouse/monitor_dell_NoIdea.S0M3',
-     "type: 'monitor'\nmake: 'dell'\nmodel: 'NoIdea'\nserial: 'S0M3'\n"
+     "type: 'monitor'\nmake: 'dell'\nmodel:\n  name: 'NoIdea'\nserial: 'S0M3'\n"
      "display: 27.0\n"],
     ['warehouse/laptop_apple_macbook.oiw629',
-     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: 'oiw629'\n"
+     "type: 'laptop'\nmake: 'apple'\nmodel:\n  name: 'macbook'\nserial: 'oiw629'\n"
      "RAM: '8GB'\ndisplay: 13.3\nUSB_A: 2\nfzj_inventory: '28FZ34'\nbuild-date: '20160501'\n"],
     ['warehouse/laptop_apple_macbook.9r32he',
-     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: '9r32he'\n"
+     "type: 'laptop'\nmake: 'apple'\nmodel:\n  name: 'macbook'\nserial: '9r32he'\n"
      "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '28FJ34'\nbuild-date: '20180501'\n"],
     ['somegroup/userA/laptop_apple_macbook.9r5qlk',
-     "type: 'laptop'\nmake: 'apple'\nmodel: 'macbook'\nserial: '9r5qlk'\n"
+     "type: 'laptop'\nmake: 'apple'\nmodel:\n  name: 'macbook'\nserial: '9r5qlk'\n"
      "RAM: '8GB'\ndisplay: 15.0\nhostname: 'first.host'\n"],
     ['somegroup/userB/laptop_lenovo_thinkpad.owh8e2',
-     "type: 'laptop'\nmake: 'lenovo'\nmodel: 'thinkpad'\nserial: 'owh8e2'\n"
+     "type: 'laptop'\nmake: 'lenovo'\nmodel:\n  name: 'thinkpad'\nserial: 'owh8e2'\n"
      "RAM: '8GB'\ndisplay: 14.6\nfzj_inventory: '13BH9F'\n"],
     ['warehouse/laptop_lenovo_thinkpad.iu7h6d',
-     "type: 'laptop'\nmake: 'lenovo'\nmodel: 'thinkpad'\nserial: 'iu7h6d'\n"
+     "type: 'laptop'\nmake: 'lenovo'\nmodel:\n  name: 'thinkpad'\nserial: 'iu7h6d'\n"
      "RAM: '8GB'\ndisplay: 13.3\nfzj_inventory: '63AH90'\n"],
     ['warehouse/laptop_microsoft_surface.oq782j',
-     "type: 'laptop'\nmake: 'microsoft'\nmodel: 'surface'\nserial: 'oq782j'\n"
+     "type: 'laptop'\nmake: 'microsoft'\nmodel:\n  name: 'surface'\nserial: 'oq782j'\n"
      "RAM: '8GB'\ndisplay: 12.4\nfzj_inventory: '73CDA45'\ntouchscreen: 'yes'\n"]]
 
 preset_dirs = ['retired', 'lost']
@@ -66,7 +66,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     # 2d. Assign newly purchased laptop to user
     laptop = member / "lenovo_thinkpad_laptop.123"
     cmd = ['onyo', '--yes', 'new', '--directory', str(member), '--message', "New purchase: ThinkPad",
-           '--keys', 'memory=8GB', 'model=laptop', 'type=lenovo', 'make=thinkpad', 'serial=123']
+           '--keys', 'memory=8GB', 'model.name=laptop', 'type=lenovo', 'make=thinkpad', 'serial=123']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # 2e. That was completely wrong data entry. Essentially all the wrong keys.
@@ -76,7 +76,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
 
     cmd = ['onyo', '--yes', 'new', '--directory', str(member), '--message', "New purchase: ThinkPad",
-           '--keys', 'RAM=8GB', 'build-date=20160310', 'type=laptop', 'make=lenovo', 'model=thinkpad', 'serial=SN123Z']
+           '--keys', 'RAM=8GB', 'build-date=20160310', 'type=laptop', 'make=lenovo', 'model.name=thinkpad', 'serial=SN123Z']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
 
@@ -165,7 +165,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert "somegroup/userA/laptop_apple_macbook.9r5qlk" in output_lines[0]
 
     # 4. Find an asset bases on pseudo keys (particular laptop model)
-    cmd = ['onyo', 'get', '--machine-readable', '--match', 'type=laptop', 'model=macbook']
+    cmd = ['onyo', 'get', '--machine-readable', '--match', 'type=laptop', 'model.name=macbook']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # We set up the repo with 3 macbooks

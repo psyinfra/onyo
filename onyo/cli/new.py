@@ -77,6 +77,9 @@ args_new = {
             ```
             $ onyo new --keys type=laptop make=apple model=macbookpro serial={1,2,3} --directory shelf/
             ```
+
+            Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+            ``model.year``, etc.)
         """
     ),
 

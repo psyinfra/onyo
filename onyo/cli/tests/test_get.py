@@ -12,7 +12,8 @@ from onyo.lib.consts import (
     SORT_DESCENDING,
 )
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.command_utils import fill_unset, natural_sort
+from onyo.lib.command_utils import natural_sort
+from onyo.lib.utils import DotNotationWrapper
 
 if TYPE_CHECKING:
     from typing import (
@@ -27,89 +28,89 @@ asset_contents = [
                                    'bool': True,
                                    'type': 'laptop',
                                    'make': 'apple',
-                                   'model': 'macbookpro',
+                                   'model': {'name': 'macbookpro'},
                                    'serial': '1'}),
     ('one/laptop_dell_precision.2', {'num': '16',
                                      'str': 'bar',
                                      'bool': False,
                                      'type': 'laptop',
                                      'make': 'dell',
-                                     'model': 'precision',
+                                     'model': {'name': 'precision'},
                                      'serial': '2'}),
     ('one/two/headphones_apple_pro.3', {'num': '8',
                                         'str': 'bar',
                                         'bool': 'True',
                                         'type': 'headphones',
                                         'make': 'apple',
-                                        'model': 'pro',
+                                        'model': {'name': 'pro'},
                                         'serial': '3'}),
     ('abc/def/monitor_dell_pro.4', {'str': 'foo=bar',
                                     'type': 'monitor',
                                     'make': 'dell',
-                                    'model': 'pro',
+                                    'model': {'name': 'pro'},
                                     'serial': '4'}),
     ('laptop_dell_precision.2', {'num': '16',
                                  'str': 'bar',
                                  'bool': False,
                                  'type': 'laptop',
                                  'make': 'dell',
-                                 'model': 'precision',
+                                 'model': {'name': 'precision'},
                                  'serial': '2'}),
     ('headphones_apple_pro.3', {'num': '8',
                                 'str': 'bar',
                                 'bool': 'True',
                                 'type': 'headphones',
                                 'make': 'apple',
-                                'model': 'pro',
+                                'model': {'name': 'pro'},
                                 'serial': '3'}),
     ('monitor_dell_pro.4', {'str': 'foo=bar',
                             'type': 'monitor',
                             'make': 'dell',
-                            'model': 'pro',
+                            'model': {'name': 'pro'},
                             'serial': '4'}),
     ('headphones_dell_pro.4', {'num': '10GB',
                                'str': 'bar',
                                'type': 'headphones',
                                'make': 'dell',
-                               'model': 'pro',
+                               'model': {'name': 'pro'},
                                'serial': '4'}),
     ('one/two/three/headphones_apple_pro.4', {'type': 'headphones',
                                               'make': 'apple',
-                                              'model': 'pro',
+                                              'model': {'name': 'pro'},
                                               'serial': '4'}),
     ('one/two/three/four/headphones_apple_pro.5', {'type': 'headphones',
                                                    'make': 'apple',
-                                                   'model': 'pro',
+                                                   'model': {'name': 'pro'},
                                                    'serial': '5'}),
     ('another/dir/headphones_apple_pro.5', {'type': 'headphones',
                                             'make': 'apple',
-                                            'model': 'pro',
+                                            'model': {'name': 'pro'},
                                             'serial': '5'}),
     ('a13bc_foo_bar.1', {'num': 'num-3',
                          'type': 'a13bc',
                          'make': 'foo',
-                         'model': 'bar',
+                         'model': {'name': 'bar'},
                          'serial': '1',
                          'str': 'abc',
                          'id': 1}),
     ('a2cd_foo_bar.2', {'num': 'num-16',
                         'type': 'a2cd',
                         'make': 'foo',
-                        'model': 'bar',
+                        'model': {'name': 'bar'},
                         'serial': '2',
                         'str': 'def',
                         'id': 2}),
     ('a36ab_foo_bar.3', {'num': 'num-20',
                          'type': 'a36ab',
                          'make': 'foo',
-                         'model': 'bar',
+                         'model': {'name': 'bar'},
                          'serial': '3',
                          'str': 'ghi',
                          'id': 3}),
     ('a36ab_afoo_bar.4', {'num': 'num-20',
                           'type': 'a36ab',
                           'make': 'afoo',
-                          'model': 'bar',
+                          'model': {'name': 'bar'},
                           'serial': '4',
                           'str': 'jkl',
                           'id': 4}),
@@ -119,15 +120,9 @@ asset_contents = [
 def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
     r"""Convert content dictionary to a plain-text string"""
+    from onyo.lib.utils import dict_to_asset_yaml
     for file, raw_contents in raw_assets:
-        contents = ''
-        for k, v in raw_contents.items():
-            if isinstance(v, str):
-                v = f"'{v}'"
-            elif isinstance(v, bool):
-                v = str(v).lower()
-            contents += f'{k}: {v}\n'
-        yield [file, contents]
+        yield [file, dict_to_asset_yaml(raw_contents)]
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
@@ -138,7 +133,7 @@ def test_get_defaults(repo: OnyoRepo) -> None:
     r"""Test `onyo get` using default values"""
     cmd = ['onyo', 'get']
     ret = subprocess.run(cmd, capture_output=True, text=True)
-    keys = ['type', 'make', 'model', 'serial', 'path']
+    keys = ['type', 'make', 'model.name', 'serial', 'path']
     assert 'laptop_apple_macbookpro.1' in ret.stdout
     assert 'laptop_dell_precision.2' in ret.stdout
     assert 'headphones_apple_pro.3' in ret.stdout
@@ -305,7 +300,7 @@ def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
                                                      'laptop_dell_precision.2',
                                                      'headphones_apple_pro.3']]])
 @pytest.mark.parametrize('keys', [
-    ['type', 'make', 'model', 'serial', 'path'],
+    ['type', 'make', 'model.name', 'serial', 'path'],
     ['unset', 'type', 'unset2', 'make', 'path'],
     ['num', 'str', 'bool', 'path'],
     ['TyPe', 'MAKE', 'moDEL', 'NuM', 'STR', 'path'],
@@ -328,7 +323,7 @@ def test_get_keys(
 
     # Get all the key values and make sure they match
     for line in output:
-        asset = raw_assets[[a[0] for a in raw_assets].index(line[-1])][1]
+        asset = DotNotationWrapper(raw_assets[[a[0] for a in raw_assets].index(line[-1])][1])
 
         for i, key in enumerate(keys):
             if key in PSEUDO_KEYS:
@@ -502,8 +497,8 @@ def test_get_sort(
     ({'str': SORT_DESCENDING}, [4, 3, 2, 1]),
     ({'type': SORT_ASCENDING}, [2, 1, 3, 4]),
     ({'type': SORT_DESCENDING}, [3, 4, 1, 2]),  # no difference for 3,4 -> order is stable
-    ({'model': SORT_ASCENDING}, [1, 2, 3, 4]),  # for 'model' all assets are equal -> order is stable
-    ({'model': SORT_DESCENDING}, [1, 2, 3, 4]),  # same
+    ({'model.name': SORT_ASCENDING}, [1, 2, 3, 4]),  # for 'model.name' all assets are equal -> order is stable
+    ({'model.name': SORT_DESCENDING}, [1, 2, 3, 4]),  # same
     ({'make': SORT_ASCENDING,
       'num': SORT_ASCENDING}, [4, 1, 2, 3]),
     ({'make': SORT_DESCENDING,
@@ -511,12 +506,13 @@ def test_get_sort(
 ])
 def test_natural_sort(keys: dict[str, sort_t], expected: list[int]) -> None:
     r"""Test implementation of natural sorting algorithm"""
-    assets = [t[1] for t in asset_contents
+    assets = [DotNotationWrapper(t[1]) for t in asset_contents
               if t[0] in ['a13bc_foo_bar.1',
                           'a2cd_foo_bar.2',
                           'a36ab_foo_bar.3',
                           'a36ab_afoo_bar.4']]
-    sorted_assets = natural_sort(assets, keys=keys)
+    sorted_assets = natural_sort(assets, keys=keys)  # pyre-ignore[6]
+    # ^ No idea why this is the only place where pyre can't figure that DotNotationWrapper is a UserDict
     assert expected == [data.get('id') for data in sorted_assets]
 
     # explicitly check path sorting:
@@ -530,27 +526,3 @@ def test_natural_sort(keys: dict[str, sort_t], expected: list[int]) -> None:
                    'folder (1)/file.txt',
                    'folder (10)/file.txt']
     assert expectation == [str(a.get('path')) for a in sorted_assets]
-
-
-@pytest.mark.parametrize('assets', [[
-    {'num': 'num-20', 'str': 'abc', 'path': Path('a13bc_foo_bar.1')},
-    {'num': 'num-3', 'path': Path('a2cd_foo_bar.2')},
-    {'str': 'ghi', 'path': Path('a36ab_foo_bar.3')}]])
-@pytest.mark.parametrize('keys', [[
-    'type', 'make', 'model', 'serial', 'num', 'str', 'id']])
-def test_fill_unset(
-        assets: list[dict], keys: list[str]) -> None:
-    r"""
-    Test that the `fill_unset()` function fills unset keys with the value
-    `'<unset>'`
-    """
-    unset_value = '<unset>'
-    filled = list(fill_unset((a for a in assets), keys=keys))
-    for i, data in enumerate(filled):
-        assert isinstance(data['path'], Path)
-        assert data['path'] == assets[i]['path']
-        for k, v in data.items():
-            assert v == assets[i].get(k, unset_value)
-
-    assert filled[1]['str'] == unset_value
-    assert filled[2]['num'] == unset_value
