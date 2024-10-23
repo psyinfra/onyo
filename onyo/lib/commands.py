@@ -472,7 +472,7 @@ def onyo_get(inventory: Inventory,
       passed an asset dictionary and expected to return a `bool`,
       where `True` indicates a match. The result of the query
       consists of all assets that are matched by all callables in
-      this list.
+      this list. One can match keys that are not in the output.
     keys
       Defines what key-value pairs of an asset a result is composed of.
       If no `keys` are given then the asset name keys and `path` are used.
@@ -484,8 +484,7 @@ def onyo_get(inventory: Inventory,
       `onyo.lib.consts.SORT_ASCENDING` and `onyo.lib.consts.SORT_DESCENDING`.
       If other values are specified an error is raised.
       Default: `{'path': SORT_ASCENDING}`.
-      Note, that this sorts the matching assets rather than the output.
-      Therefore, one can sort by keys that are not contained in the output.
+      One can sort by keys that are not in the output.
 
     Raises
     ------
