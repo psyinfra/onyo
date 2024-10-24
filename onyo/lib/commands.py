@@ -171,6 +171,7 @@ def onyo_cat(inventory: Inventory,
         If ``paths`` contains an invalid asset (e.g. content is invalid YAML).
     """
 
+    from rich.syntax import Syntax
     from onyo.lib.onyo import OnyoRepo
     from onyo.lib.utils import validate_yaml
 
@@ -188,7 +189,13 @@ def onyo_cat(inventory: Inventory,
                  for p in paths)
     # open file and print to stdout
     for f in files:
-        ui.print(f.read_text(), end='')
+        asset_text = f.read_text()
+        highlighted_text = Syntax('', 'yaml').highlight(asset_text)
+        # detect and strip when Syntax() ends with a newline that isn't in the input.
+        if not asset_text or asset_text[-1] != '\n':
+            highlighted_text = highlighted_text[0:-1]
+
+        ui.rich_print(highlighted_text, end='')
 
     # TODO: "Full" asset validation. Address when fsck is reworked
     assets_valid = validate_yaml(deduplicate(files))
