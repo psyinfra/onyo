@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import logging
 import subprocess
-from os import linesep
 from pathlib import Path
 from typing import (
     ParamSpec,
@@ -936,7 +935,7 @@ def onyo_new(inventory: Inventory,
         if not edit:
             # If `edit` was given, per-asset diffs were already approved. Don't ask again.
             print_diff(inventory)
-        ui.print(linesep + inventory.operations_summary())
+        ui.print('\n' + inventory.operations_summary())
 
         if edit or ui.request_user_response("Create assets? (y/n) "):
             if not message:
@@ -1068,7 +1067,7 @@ def onyo_set(inventory: Inventory,
     if inventory.operations_pending():
         # display changes
         print_diff(inventory)
-        ui.print(linesep + inventory.operations_summary())
+        ui.print('\n' + inventory.operations_summary())
 
         if ui.request_user_response("Update assets? (y/n) "):
             if not message:
@@ -1226,7 +1225,7 @@ def onyo_unset(inventory: Inventory,
     if inventory.operations_pending():
         # display changes
         print_diff(inventory)
-        ui.print(linesep + inventory.operations_summary())
+        ui.print('\n' + inventory.operations_summary())
 
         if ui.request_user_response("Update assets? (y/n) "):
             if not message:

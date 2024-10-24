@@ -1,4 +1,3 @@
-import os
 import subprocess
 from pathlib import Path
 
@@ -209,7 +208,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     assert asset_content['key'] == 'value'
 
     # file already exists:
-    edit_str = f"model:{os.linesep}  name: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}"
+    edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty',
               'serial': 'totally_random'}]
@@ -217,7 +216,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
 
     # asset already exists (but elsewhere - see fixture):
-    edit_str = f"model:{os.linesep}  name: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: SERIAL{os.linesep}"
+    edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\nserial: SERIAL\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
@@ -230,7 +229,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
 
     # content should be exactly as expected
     # (empty files used to serialize to '{}')
-    edit_str = f"model:\n  name: MODEL{os.linesep}make: MAKER{os.linesep}type: TYPE{os.linesep}serial: 8675309{os.linesep}"
+    edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\nserial: 8675309\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'template': 'empty'}]
     onyo_new(inventory,

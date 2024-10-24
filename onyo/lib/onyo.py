@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -184,6 +183,8 @@ class OnyoRepo(object):
         r"""Returns the editor, progressing through onyo, git, $EDITOR, and finally
         fallback to "nano".
         """
+        from os import environ
+
         # onyo config setting (from onyo and git config files)
         editor = self.get_config('onyo.core.editor')
 
@@ -195,7 +196,7 @@ class OnyoRepo(object):
         # $EDITOR environment variable
         if not editor:
             ui.log_debug("core.editor is not set.")
-            editor = os.environ.get('EDITOR')
+            editor = environ.get('EDITOR')
 
         # fallback to nano
         if not editor:
@@ -628,7 +629,7 @@ class OnyoRepo(object):
                 a = get_asset_content(path)
                 a['is_asset_directory'] = False
         except NotAnAssetError as e:
-            raise NotAnAssetError(f"{str(e)}{os.linesep}"
+            raise NotAnAssetError(f"{str(e)}\n"
                                   f"If {path} is not meant to be an asset, consider putting it into"
                                   f" '{self.IGNORE_FILE_NAME}'") from e
         # Add pseudo-keys:

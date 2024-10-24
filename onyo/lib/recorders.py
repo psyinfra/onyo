@@ -1,4 +1,3 @@
-from os import linesep
 from pathlib import Path
 
 from onyo.lib.onyo import OnyoRepo
@@ -27,7 +26,7 @@ from onyo.lib.onyo import OnyoRepo
 
 def record_item(repo: OnyoRepo, item: Path | dict) -> str:
     path = item if isinstance(item, Path) else item['path']
-    return f"- {path.relative_to(repo.git.root).as_posix()}{linesep}"
+    return f"- {path.relative_to(repo.git.root).as_posix()}\n"
 
 
 def record_move(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
@@ -36,7 +35,7 @@ def record_move(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
     src_path = src if isinstance(src, Path) else src['path']
     dst_path = (dst / src_path.name).relative_to(repo.git.root).as_posix()
     src_path = src_path.relative_to(repo.git.root).as_posix()
-    return f"- {src_path} -> {dst_path}{linesep}"
+    return f"- {src_path} -> {dst_path}\n"
 
 
 def record_rename(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
@@ -44,52 +43,52 @@ def record_rename(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
     src_path = src if isinstance(src, Path) else src['path']
     src_path = src_path.relative_to(repo.git.root).as_posix()
     dst_path = dst.relative_to(repo.git.root).as_posix()
-    return f"- {src_path} -> {dst_path}{linesep}"
+    return f"- {src_path} -> {dst_path}\n"
 
 
 def record_new_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"New assets:{linesep}": [record_item(repo, operands[0])]}
+    return {"New assets:\n": [record_item(repo, operands[0])]}
 
 
 def record_new_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"New directories:{linesep}": [record_item(repo, operands[0])]}
+    return {"New directories:\n": [record_item(repo, operands[0])]}
 
 
 def record_remove_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"Removed assets:{linesep}": [record_item(repo, operands[0])]}
+    return {"Removed assets:\n": [record_item(repo, operands[0])]}
 
 
 def record_remove_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"Removed directories:{linesep}": [record_item(repo, operands[0])]}
+    return {"Removed directories:\n": [record_item(repo, operands[0])]}
 
 
 def record_move_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    records = {f"Moved assets:{linesep}": [record_move(repo, operands[0], operands[1])]}
+    records = {"Moved assets:\n": [record_move(repo, operands[0], operands[1])]}
     if repo.is_asset_dir(operands[0]):
         # In case of an asset dir, we need to record an operation for both aspects
-        records.update({f"Moved directories:{linesep}": [record_move(repo, operands[0], operands[1])]})
+        records.update({"Moved directories:\n": [record_move(repo, operands[0], operands[1])]})
     return records
 
 
 def record_move_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    records = {f"Moved directories:{linesep}": [record_move(repo, operands[0], operands[1])]}
+    records = {"Moved directories:\n": [record_move(repo, operands[0], operands[1])]}
     if repo.is_asset_dir(operands[0]):
         # In case of an asset dir, we need to record an operation for both aspects
-        records.update({f"Moved assets:{linesep}": [record_move(repo, operands[0], operands[1])]})
+        records.update({"Moved assets:\n": [record_move(repo, operands[0], operands[1])]})
     return records
 
 
 def record_rename_directories(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"Renamed directories:{linesep}": [record_rename(repo, operands[0], operands[1])]}
+    return {"Renamed directories:\n": [record_rename(repo, operands[0], operands[1])]}
 
 
 def record_rename_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    records = {f"Renamed assets:{linesep}": [record_rename(repo, operands[0], operands[1])]}
+    records = {"Renamed assets:\n": [record_rename(repo, operands[0], operands[1])]}
     if repo.is_asset_dir(operands[0]):
         # In case of an asset dir, we need to record an operation for both aspects
-        records.update({f"Renamed directories:{linesep}": [record_rename(repo, operands[0], operands[1])]})
+        records.update({"Renamed directories:\n": [record_rename(repo, operands[0], operands[1])]})
     return records
 
 
 def record_modify_assets(repo: OnyoRepo, operands: tuple) -> dict[str, list[str]]:
-    return {f"Modified assets:{linesep}": [record_item(repo, operands[0])]}
+    return {"Modified assets:\n": [record_item(repo, operands[0])]}

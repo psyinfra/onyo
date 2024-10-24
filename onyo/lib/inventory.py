@@ -144,10 +144,9 @@ class Inventory(object):
         # get user message + generate appendix from operations
         # does order matter for execution? Prob.
         # ^  Nope. Fail on conflicts.
-        from os import linesep
         paths_to_commit = []
         paths_to_stage = []
-        commit_msg = message + f"{linesep}{linesep}"
+        commit_msg = message + "\n\n"
 
         try:
             for operation in self.operations:
@@ -163,8 +162,7 @@ class Inventory(object):
             self.reset()
 
     def operations_summary(self) -> str:
-        from os import linesep
-        summary = f"--- Inventory Operations ---{linesep}"
+        summary = "--- Inventory Operations ---\n"
         operations_record = dict()
 
         for operation in self.operations:
