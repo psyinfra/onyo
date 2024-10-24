@@ -5,6 +5,7 @@ from typing import Any
 
 from rich.console import Console
 
+from onyo.lib.exceptions import UIInputError
 logging.basicConfig()
 log: logging.Logger = logging.getLogger('onyo')
 
@@ -231,7 +232,10 @@ class UI(object):
             if self.yes:
                 answer = default
             else:
-                answer = input(question) or default  # empty answer (hit return) gives the default answer
+                try:
+                    answer = input(question) or default  # empty answer (hit return) gives the default answer
+                except EOFError as e:
+                    raise UIInputError("Failed to read user input.") from e
             for response, options in answers:
                 if answer in options:
                     return response

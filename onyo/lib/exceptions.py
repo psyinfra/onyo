@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 
+class UIInputError(Exception):
+    r"""Raised if UI failed when trying to read input"""
+
+
 class OnyoRepoError(Exception):
     r"""Raised if something is wrong with an Onyo repository."""
 
