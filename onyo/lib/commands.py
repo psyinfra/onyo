@@ -391,7 +391,8 @@ def _edit_asset(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_edit(inventory: Inventory,
               paths: list[Path],
-              message: str | None) -> None:
+              message: str | None,
+              auto_message: bool | None = None) -> None:
     r"""Edit the content of assets.
 
     Parameters
@@ -401,16 +402,20 @@ def onyo_edit(inventory: Inventory,
     paths
         Paths of assets to edit.
     message
-        A custom commit message.
+        Commit message to append to the auto-generated message.
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
 
     Raises
     ------
     ValueError
         If a provided asset is not an asset, or if ``paths`` is empty.
     """
-
     from functools import partial
 
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
     if not paths:
         raise ValueError("At least one asset must be specified.")
 
@@ -426,16 +431,15 @@ def onyo_edit(inventory: Inventory,
 
     if inventory.operations_pending():
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-            if not message:
+            if auto_message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
-                message = inventory.repo.generate_commit_message(
+                message = inventory.repo.generate_auto_message(
                     format_string="edit [{len}]: {operation_paths}",
                     len=len(operation_paths),
-                    operation_paths=operation_paths)
-
+                    operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
 
@@ -578,7 +582,8 @@ def onyo_get(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
-               message: str | None) -> None:
+               message: str | None = None,
+               auto_message: bool | None = None) -> None:
     r"""Create new directories in the inventory.
 
     Intermediate directories will be created as needed (i.e. parent and
@@ -603,13 +608,18 @@ def onyo_mkdir(inventory: Inventory,
     dirs
         Paths to directories which to create.
     message
-        An optional string to overwrite Onyo's default commit message.
+        Commit message to append to the auto-generated message.
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
 
     Raises
     ------
     ValueError
         If `dirs` is empty.
     """
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
     if not dirs:
         raise ValueError("At least one directory path must be specified.")
     for d in deduplicate(dirs):  # pyre-ignore[16]  deduplicate would return None only of `dirs` was None.
@@ -620,15 +630,15 @@ def onyo_mkdir(inventory: Inventory,
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-            if not message:
+            if auto_message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_directories']]))
-                message = inventory.repo.generate_commit_message(
-                    format_string="mkdir [{len}]: {operation_paths}",
+                message = inventory.repo.generate_auto_message(
+                    format_string="mkdir [{len}]: {operation_paths}\n",
                     len=len(operation_paths),
-                    operation_paths=sorted(operation_paths))
+                    operation_paths=sorted(operation_paths)) + (message or "")
             inventory.commit(message=message)
             return
     ui.print('No directories created.')
@@ -672,7 +682,8 @@ def _maybe_rename(inventory: Inventory,
 def onyo_mv(inventory: Inventory,
             source: list[Path] | Path,
             destination: Path,
-            message: str | None = None) -> None:
+            message: str | None = None,
+            auto_message: bool | None = None) -> None:
     r"""Move assets or directories, or rename a directory.
 
     If `destination` is an asset file, turns it into an asset dir first.
@@ -692,13 +703,19 @@ def onyo_mv(inventory: Inventory,
         source directory will be renamed.
 
     message
-        An optional string to overwrite Onyo's default commit message.
+        Commit message to append to the auto-generated message.
+
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
 
     Raises
     ------
     ValueError
         If multiple source paths are specified to be renamed.
     """
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
     sources = [source] if not isinstance(source, list) else source
 
     # If destination exists, it as to be an inventory directory and we are dealing with a move.
@@ -740,7 +757,7 @@ def onyo_mv(inventory: Inventory,
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-            if not message:
+            if auto_message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
@@ -748,12 +765,12 @@ def onyo_mv(inventory: Inventory,
                     op.operator == OPERATIONS_MAPPING['move_assets'] or
                     op.operator == OPERATIONS_MAPPING['move_directories'] or
                     op.operator == OPERATIONS_MAPPING['rename_directories']]))
-                message = inventory.repo.generate_commit_message(
-                    format_string="{prefix} [{len}]: {operation_paths} -> {destination}",
+                message = inventory.repo.generate_auto_message(
+                    format_string="{prefix} [{len}]: {operation_paths} -> {destination}\n",
                     prefix=subject,
                     len=len(operation_paths),
                     operation_paths=operation_paths,
-                    destination=destination.relative_to(inventory.root))
+                    destination=destination.relative_to(inventory.root)) + (message or "")
             inventory.commit(message=message)
             return
     ui.print('Nothing was moved.')
@@ -767,7 +784,8 @@ def onyo_new(inventory: Inventory,
              tsv: Path | None = None,
              keys: list[Dict | UserDict] | None = None,
              edit: bool = False,
-             message: str | None = None) -> None:
+             message: str | None = None,
+             auto_message: bool | None = None) -> None:
     r"""Create new assets and add them to the inventory.
 
     Either keys, tsv or edit must be given.
@@ -826,7 +844,11 @@ def onyo_new(inventory: Inventory,
         changes are saved.
 
     message
-        An optional string to overwrite Onyo's default commit message.
+        Commit message to append to the auto-generated message.
+
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
 
     Raises
     ------
@@ -836,6 +858,8 @@ def onyo_new(inventory: Inventory,
     from onyo.lib.consts import PSEUDO_KEYS
     from copy import deepcopy
 
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
     keys = keys or []
     if not any([tsv, keys, edit, template, clone]):
         raise ValueError("Key-value pairs, a TSV, or a template/clone-target must be given.")
@@ -945,15 +969,15 @@ def onyo_new(inventory: Inventory,
         ui.print('\n' + inventory.operations_summary())
 
         if edit or ui.request_user_response("Create assets? (y/n) "):
-            if not message:
+            if auto_message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_assets']]))
-                message = inventory.repo.generate_commit_message(
-                    format_string="new [{len}]: {operation_paths}",
+                message = inventory.repo.generate_auto_message(
+                    format_string="new [{len}]: {operation_paths}\n",
                     len=len(operation_paths),
-                    operation_paths=operation_paths)
+                    operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
     ui.print('No new assets created.')
@@ -962,8 +986,9 @@ def onyo_new(inventory: Inventory,
 @raise_on_inventory_state
 def onyo_rm(inventory: Inventory,
             paths: list[Path] | Path,
-            message: str | None,
-            recursive: bool = False) -> None:
+            message: str | None = None,
+            recursive: bool = False,
+            auto_message: bool | None = None) -> None:
     r"""Delete assets and/or directories from the inventory.
 
     Parameters
@@ -980,8 +1005,15 @@ def onyo_rm(inventory: Inventory,
         fail on non-empty directories.
 
     message
-        An optional string to overwrite Onyo's default commit message.
+        Commit message to append to the auto-generated message.
+
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+
     """
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
     paths = [paths] if not isinstance(paths, list) else paths
 
     for p in paths:
@@ -1002,16 +1034,16 @@ def onyo_rm(inventory: Inventory,
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
-            if not message:
+            if auto_message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['remove_assets'] or
                     op.operator == OPERATIONS_MAPPING['remove_directories']]))
-                message = inventory.repo.generate_commit_message(
-                    format_string="rm [{len}]: {operation_paths}",
+                message = inventory.repo.generate_auto_message(
+                    format_string="rm [{len}]: {operation_paths}\n",
                     len=len(operation_paths),
-                    operation_paths=operation_paths)
+                    operation_paths=operation_paths) + (message or "")
             inventory.commit(message)
             return
     ui.print('Nothing was deleted.')
@@ -1021,7 +1053,8 @@ def onyo_rm(inventory: Inventory,
 def onyo_set(inventory: Inventory,
              keys: dict | UserDict,
              assets: list[Path],
-             message: str | None = None) -> str | None:
+             message: str | None = None,
+             auto_message: bool | None = None) -> str | None:
     r"""Set key-value pairs of assets, and change asset names.
 
     Parameters
@@ -1038,14 +1071,19 @@ def onyo_set(inventory: Inventory,
         The key 'is_asset_directory' (bool) can be used to change whether an
         asset is an asset directory.
     message
-        A custom commit message.
+        Commit message to append to the auto-generated message.
+
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
 
     Raises
     ------
     ValueError
         If a given path is invalid or if `keys` is empty.
     """
-
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
     if not assets:
         raise ValueError("At least one asset must be specified.")
     if not keys:
@@ -1077,16 +1115,16 @@ def onyo_set(inventory: Inventory,
         ui.print('\n' + inventory.operations_summary())
 
         if ui.request_user_response("Update assets? (y/n) "):
-            if not message:
+            if auto_message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
-                message = inventory.repo.generate_commit_message(
-                    format_string="set [{len}] ({keys}): {operation_paths}",
+                message = inventory.repo.generate_auto_message(
+                    format_string="set [{len}] ({keys}): {operation_paths}\n",
                     len=len(operation_paths),
                     keys=list(keys.keys()),
-                    operation_paths=operation_paths)
+                    operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
     ui.print("No assets updated.")
@@ -1180,7 +1218,8 @@ def _tree(dir_path: Path, prefix: str = '', dirs_only: bool = False) -> Generato
 def onyo_unset(inventory: Inventory,
                keys: Iterable[str],
                assets: list[Path],
-               message: str | None = None) -> None:
+               message: str | None = None,
+               auto_message: bool | None = None) -> None:
     r"""Remove keys from assets.
 
     Parameters
@@ -1195,7 +1234,10 @@ def onyo_unset(inventory: Inventory,
     assets
         Paths to assets for which to unset key-value pairs.
     message
-        An optional string to overwrite Onyo's default commit message.
+        Commit message to append to the auto-generated message.
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
 
     Raises
     ------
@@ -1203,6 +1245,8 @@ def onyo_unset(inventory: Inventory,
         If assets are invalid paths, or `keys` are empty or invalid.
 
     """
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
     if not keys:
         raise ValueError("At least one key must be specified.")
     non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
@@ -1235,17 +1279,17 @@ def onyo_unset(inventory: Inventory,
         ui.print('\n' + inventory.operations_summary())
 
         if ui.request_user_response("Update assets? (y/n) "):
-            if not message:
+            if auto_message:
                 operation_paths = sorted(deduplicate([
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING[
                         'modify_assets']]))
-                message = inventory.repo.generate_commit_message(
-                    format_string="unset [{len}] ({keys}): {operation_paths}",
+                message = inventory.repo.generate_auto_message(
+                    format_string="unset [{len}] ({keys}): {operation_paths}\n",
                     len=len(operation_paths),
                     keys=keys,
-                    operation_paths=operation_paths)
+                    operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
     ui.print("No assets updated.")

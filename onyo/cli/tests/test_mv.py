@@ -79,21 +79,3 @@ def test_mv_interactive(repo: OnyoRepo) -> None:
     assert not Path('subdir/laptop_apple_macbook.abc123').exists()
     assert Path('laptop_apple_macbook.abc123').exists()
     assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_files(*assets)
-@pytest.mark.repo_dirs("destination/")
-@pytest.mark.parametrize('asset', assets)
-def test_mv_message_flag(repo: OnyoRepo, asset: str) -> None:
-    r"""Test that `onyo mv --message msg` overwrites the default commit message with one specified by
-    the user containing different special characters.
-    """
-    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-    ret = subprocess.run(['onyo', '--yes', 'mv', '--message', msg, asset,
-                          "destination/"], capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-
-    # test that the onyo history does contain the user-defined message
-    assert msg in repo.git.get_commit_msg()
-    assert repo.git.is_clean_worktree()

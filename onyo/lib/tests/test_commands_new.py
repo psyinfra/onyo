@@ -7,6 +7,7 @@ import onyo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import DotNotationWrapper
+from . import check_commit_msg
 from ..commands import onyo_new
 
 # TODO: Derive path from installed package resources (and don't place it within a specific test location):
@@ -290,3 +291,20 @@ def test_onyo_new_asset_dir(inventory: Inventory) -> None:
     assert inventory.repo.is_asset_dir(new_asset_dir)
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+
+
+@pytest.mark.ui({'yes': True})
+@pytest.mark.parametrize('message', ["", None, "message with spe\"cial\\char\'acteஞrs"])
+@pytest.mark.parametrize('auto_message', [True, False])
+def test_onyo_new_commit_msg(inventory: Inventory,
+                             message,
+                             auto_message) -> None:
+    onyo_new(inventory,
+             keys=[{"type": "a",
+                    "make": "b",
+                    "model": {"name": "c"},
+                    "serial": "faux"}],
+             message=message,
+             auto_message=auto_message)
+
+    check_commit_msg(inventory, message, auto_message, "new [")

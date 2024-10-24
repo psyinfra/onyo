@@ -206,29 +206,6 @@ def test_set_discard_changes_single_assets(repo: OnyoRepo,
 
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [asset_paths[0]])
-@pytest.mark.parametrize('set_values', [values[0]])
-def test_set_message_flag(repo: OnyoRepo,
-                          asset: str,
-                          set_values: list[str]) -> None:
-    r"""Test that `onyo set --message msg` overwrites the
-    default commit message with one specified by the user
-    containing various special characters.
-    """
-    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-    ret = subprocess.run(['onyo', '--yes', 'set', '--message', msg,
-                          '--keys', *set_values, '--asset', asset],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-
-    # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
-    assert msg in ret.stdout
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', [asset_paths[0]])
 def test_add_new_key_to_existing_content(repo: OnyoRepo,
                                          asset: str) -> None:
     r"""Test that `onyo set KEY=VALUE --asset <asset>` can be called two times with

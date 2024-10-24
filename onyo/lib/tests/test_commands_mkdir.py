@@ -2,6 +2,7 @@ import pytest
 
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from . import check_commit_msg
 from ..commands import onyo_mkdir
 from ..exceptions import NoopError
 
@@ -15,57 +16,49 @@ def test_onyo_mkdir_errors(inventory: Inventory) -> None:
     pytest.raises(NoopError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[dir_path],
-                  message="some subject\n\nAnd a body")
+                  dirs=[dir_path])
 
     # mkdir outside the repository
     pytest.raises(ValueError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[(inventory.root / ".." / "outside").resolve()],
-                  message="some subject\n\nAnd a body")
+                  dirs=[(inventory.root / ".." / "outside").resolve()])
 
     # mkdir with empty list
     pytest.raises(ValueError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[],
-                  message="some subject\n\nAnd a body")
+                  dirs=[])
 
     # mkdir on illegal but non-existing name ".anchor"
     pytest.raises(ValueError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[inventory.root / "subdir" / ".anchor"],
-                  message="some subject\n\nAnd a body")
+                  dirs=[inventory.root / "subdir" / ".anchor"])
 
     # mkdir on illegal but non-existing directory in .git/
     pytest.raises(ValueError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[inventory.root / ".git" / "new-dir"],
-                  message="some subject\n\nAnd a body")
+                  dirs=[inventory.root / ".git" / "new-dir"])
 
     # mkdir is not allowed to create a new .git/ in a subdirectory
     pytest.raises(ValueError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[dir_path / ".git"],
-                  message="some subject\n\nAnd a body")
+                  dirs=[dir_path / ".git"])
 
     # mkdir on illegal but non-existing directory in .onyo/
     pytest.raises(ValueError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[inventory.root / ".onyo" / "new-dir"],
-                  message="some subject\n\nAnd a body")
+                  dirs=[inventory.root / ".onyo" / "new-dir"])
 
     # mkdir is not allowed to create a new .onyo/ in a subdirectory
     pytest.raises(ValueError,
                   onyo_mkdir,
                   inventory,
-                  dirs=[dir_path / ".onyo"],
-                  message="some subject\n\nAnd a body")
+                  dirs=[dir_path / ".onyo"])
 
     # no error scenario leaves the inventory unclean
     assert inventory.repo.git.is_clean_worktree()
@@ -85,8 +78,7 @@ def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
                   onyo_mkdir,
                   inventory,
                   dirs=[dir_path_new,
-                        dir_path_existing],
-                  message="some subject\n\nAnd a body")
+                        dir_path_existing])
 
     # no new directory/anchor was created
     assert not dir_path_new.is_dir()
@@ -98,7 +90,11 @@ def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_mkdir_simple(inventory: Inventory) -> None:
+@pytest.mark.parametrize('message', ["", None, "message with spe\"cial\\char\'acteஞrs"])
+@pytest.mark.parametrize('auto_message', [True, False])
+def test_onyo_mkdir_simple(inventory: Inventory,
+                           message,
+                           auto_message) -> None:
     r"""Create a single new directory."""
     dir_path_new = inventory.root / 'new_dir'
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -106,7 +102,8 @@ def test_onyo_mkdir_simple(inventory: Inventory) -> None:
     # create a new directory
     onyo_mkdir(inventory,
                dirs=[dir_path_new],
-               message="some subject\n\nAnd a body")
+               message=message,
+               auto_message=auto_message)
 
     # directory was created and anchor exists
     assert dir_path_new.is_dir()
@@ -116,6 +113,7 @@ def test_onyo_mkdir_simple(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+    check_commit_msg(inventory, message, auto_message, "mkdir [")
 
 
 @pytest.mark.ui({'yes': True})
@@ -130,8 +128,7 @@ def test_onyo_mkdir_multiple(inventory: Inventory) -> None:
     onyo_mkdir(inventory,
                dirs=[dir_path_new1,
                      dir_path_new2,
-                     dir_path_new3],
-               message="some subject\n\nAnd a body")
+                     dir_path_new3])
 
     # directories were created and anchor exists for 1.
     assert dir_path_new1.is_dir()
@@ -164,8 +161,7 @@ def test_onyo_mkdir_create_multiple_subdirectories(inventory: Inventory) -> None
 
     # call onyo_mkdir with the deepest new directory, and create the other dirs implicitly
     onyo_mkdir(inventory,
-               dirs=[dir_z],
-               message="some subject\n\nAnd a body")
+               dirs=[dir_z])
 
     # directory x was created and anchor exists
     assert dir_x.is_dir()
@@ -199,8 +195,7 @@ def test_onyo_mkdir_add_multiple_subdirectories(inventory: Inventory) -> None:
 
     # call onyo_mkdir with the deepest directory, and add the other dirs implicitly
     onyo_mkdir(inventory,
-               dirs=[dir_z],
-               message="some subject\n\nAnd a body")
+               dirs=[dir_z])
 
     # directory x was added and anchor exists
     assert dir_x.is_dir()
@@ -230,8 +225,7 @@ def test_onyo_mkdir_allows_duplicates(inventory: Inventory) -> None:
 
     # call `onyo_mkdir()` with `dirs` containing duplicates
     onyo_mkdir(inventory,
-               dirs=[dir_path_new, dir_path_new, dir_path_new],
-               message="some subject\n\nAnd a body")
+               dirs=[dir_path_new, dir_path_new, dir_path_new])
 
     # the new directory was created and anchor exists
     assert dir_path_new.is_dir()
@@ -250,8 +244,7 @@ def test_onyo_mkdir_asset(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
 
     onyo_mkdir(inventory,
-               dirs=[asset_path],
-               message="some subject\n\nAnd a body")
+               dirs=[asset_path])
 
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -260,5 +253,4 @@ def test_onyo_mkdir_asset(inventory: Inventory) -> None:
     # re-execution fails:
     with pytest.raises(NoopError, match="already is an inventory directory"):
         onyo_mkdir(inventory,
-                   dirs=[asset_path],
-                   message="some subject\n\nAnd a body")
+                   dirs=[asset_path])

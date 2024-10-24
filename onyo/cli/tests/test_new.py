@@ -308,27 +308,6 @@ def test_error_keys_flag_mismatch_count(repo: OnyoRepo) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_new_message_flag(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new --message msg` overwrites the default commit message
-    with one specified by the user containing different special characters.
-    """
-    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-
-    asset = f'{directory}/laptop_apple_macbookpro.0'
-    ret = subprocess.run(['onyo', '--yes', 'new', '--message', msg, '--directory', directory, '--keys'] + asset_spec,
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-
-    # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I', asset],
-                         capture_output=True, text=True)
-    assert msg in ret.stdout
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.parametrize('directory', directories)
 def test_discard_changes(repo: OnyoRepo, directory: str) -> None:
     r"""
     Test that `onyo new` can discard new assets and the repository stays clean.

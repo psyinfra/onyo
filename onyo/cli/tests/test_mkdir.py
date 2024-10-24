@@ -84,28 +84,6 @@ def test_mkdir_no_response(repo: OnyoRepo) -> None:
     assert repo.git.is_clean_worktree()
 
 
-def test_mkdir_message_flag(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo mkdir --message msg` overwrites the default commit message
-    with one specified by the user containing different special characters.
-    """
-    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-
-    # test `onyo mkdir --message msg`
-    ret = subprocess.run(['onyo', '--yes', 'mkdir', '--message', msg, *directories],
-                         capture_output=True, text=True)
-
-    assert ret.returncode == 0
-    assert not ret.stderr
-    for directory in directories:
-        assert directory in ret.stdout
-
-    # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I', directories[0]], capture_output=True, text=True)
-    assert msg in ret.stdout
-    assert repo.git.is_clean_worktree()
-
-
 def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
     r"""
     Test that `onyo mkdir --yes --quiet <dirs>` creates new directories without

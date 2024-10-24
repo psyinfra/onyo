@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import onyo_mkdir
 from onyo.lib.inventory import Inventory
-from onyo.shared_arguments import shared_arg_message
+from onyo.shared_arguments import (
+    shared_arg_message,
+    shared_arg_no_auto_message,
+)
 
 if TYPE_CHECKING:
     import argparse
@@ -21,6 +24,7 @@ args_mkdir = {
     ),
 
     'message': shared_arg_message,
+    'no_auto_message': shared_arg_no_auto_message,
 }
 
 epilog_mkdir = r"""
@@ -59,4 +63,5 @@ def mkdir(args: argparse.Namespace) -> None:
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     onyo_mkdir(inventory,
                dirs=dirs,
-               message='\n\n'.join(m for m in args.message) if args.message else None)
+               message='\n\n'.join(m for m in args.message) if args.message else None,
+               auto_message=False if args.no_auto_message else None)

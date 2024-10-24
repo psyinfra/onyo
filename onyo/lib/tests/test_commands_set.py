@@ -4,6 +4,7 @@ import pytest
 
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from . import check_commit_msg
 from ..commands import onyo_set
 
 
@@ -18,56 +19,49 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
                   onyo_set,
                   inventory,
                   assets=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"],
-                  keys=key_value,
-                  message="some subject\n\nAnd a body")
+                  keys=key_value)
 
     # set on non-asset
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
                   assets=[inventory.root / "somewhere"],
-                  keys=key_value,
-                  message="some subject\n\nAnd a body")
+                  keys=key_value)
 
     # set outside the repository
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
                   assets=[(inventory.root / "..").resolve()],
-                  keys=key_value,
-                  message="some subject\n\nAnd a body")
+                  keys=key_value)
 
     # set without keys specified
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
                   assets=[asset_path],
-                  keys=[],
-                  message="some subject\n\nAnd a body")
+                  keys=[])
 
     # set on ".anchor"
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
                   assets=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
-                  keys=key_value,
-                  message="some subject\n\nAnd a body")
+                  keys=key_value)
 
     # set on .git/
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
                   assets=[inventory.root / ".git"],
-                  keys=key_value,
-                  message="some subject\n\nAnd a body")
+                  keys=key_value)
 
     # set on .onyo/
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
                   assets=[inventory.root / ".onyo"],
-                  keys=key_value,
-                  message="some subject\n\nAnd a body")
+                  keys=key_value)
 
     # no error scenario leaves the git tree unclean
     assert inventory.repo.git.is_clean_worktree()
@@ -91,8 +85,7 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
                       onyo_set,
                       inventory,
                       assets=[asset_path],
-                      keys=empty,
-                      message="some subject\n\nAnd a body")
+                      keys=empty)
 
     # the above szenarios did not add any commit
     assert inventory.repo.git.get_hexsha() == old_hexsha
@@ -100,8 +93,7 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
     # set a key with an empty value works
     onyo_set(inventory,
              assets=[asset_path],
-             keys={"key": ""},
-             message="some subject\n\nAnd a body")
+             keys={"key": ""})
 
     # check content
     assert "key: ''" in asset_path.read_text()
@@ -129,8 +121,7 @@ def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
                       onyo_set,
                       inventory,
                       assets=[asset_path],
-                      keys=illegal,
-                      message="some subject\n\nAnd a body")
+                      keys=illegal)
 
     # no illegal field was written
     assert "new_value" not in asset_path.read_text()
@@ -155,8 +146,7 @@ def test_onyo_set_errors_before_set(inventory: Inventory) -> None:
                   inventory,
                   assets=[asset_path,
                           non_existing_asset_path],
-                  keys=key_value,
-                  message="some subject\n\nAnd a body")
+                  keys=key_value)
 
     # no new asset was created
     assert not non_existing_asset_path.exists()
@@ -167,7 +157,11 @@ def test_onyo_set_errors_before_set(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_set_simple(inventory: Inventory) -> None:
+@pytest.mark.parametrize('message', ["", None, "message with spe\"cial\\char\'acteஞrs"])
+@pytest.mark.parametrize('auto_message', [True, False])
+def test_onyo_set_simple(inventory: Inventory,
+                         message,
+                         auto_message) -> None:
     r"""`onyo_set()` sets a value in an asset."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
@@ -177,7 +171,8 @@ def test_onyo_set_simple(inventory: Inventory) -> None:
     onyo_set(inventory,
              assets=[asset_path],
              keys=key_value,
-             message="some subject\n\nAnd a body")
+             message=message,
+             auto_message=auto_message)
 
     # check content
     assert "this_key" in inventory.repo.get_asset_content(asset_path).keys()
@@ -186,6 +181,7 @@ def test_onyo_set_simple(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+    check_commit_msg(inventory, message, auto_message, "set [")
 
 
 @pytest.mark.ui({'yes': True})
@@ -203,8 +199,7 @@ def test_onyo_set_already_set(inventory: Inventory) -> None:
     # set a value in an asset
     onyo_set(inventory,
              assets=[asset_path],
-             keys=key_value,
-             message="some subject\n\nAnd a body")
+             keys=key_value)
 
     # check content is unchanged
     assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
@@ -230,8 +225,7 @@ def test_onyo_set_overwrite_existing_value(inventory: Inventory) -> None:
     # set a value in an asset
     onyo_set(inventory,
              assets=[asset_path],
-             keys=new_key_value,
-             message="some subject\n\nAnd a body")
+             keys=new_key_value)
 
     # check content
     assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
@@ -264,8 +258,7 @@ def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
     # set a value in an asset
     onyo_set(inventory,
              assets=[asset_path],
-             keys=new_key_values,
-             message="some subject\n\nAnd a body")
+             keys=new_key_values)
 
     # check content
     assert "some_key" in inventory.repo.get_asset_content(asset_path).keys()
@@ -292,8 +285,7 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
     onyo_set(inventory,
              assets=[asset_path1,
                      asset_path2],
-             keys=key_value,
-             message="some subject\n\nAnd a body")
+             keys=key_value)
 
     # check contents
     assert "this_key" in inventory.repo.get_asset_content(asset_path1).keys()
@@ -317,8 +309,7 @@ def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
     # call `onyo_set()` with `paths` containing duplicates
     onyo_set(inventory,
              assets=[asset_path, asset_path, asset_path],
-             keys=key_value,
-             message="some subject\n\nAnd a body")
+             keys=key_value)
 
     # check content
     assert "this_key" in inventory.repo.get_asset_content(asset_path).keys()

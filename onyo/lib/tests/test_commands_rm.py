@@ -3,6 +3,7 @@ import pytest
 from onyo.lib.exceptions import InvalidInventoryOperationError, InventoryOperationError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from . import check_commit_msg
 from ..commands import onyo_rm
 
 
@@ -13,52 +14,45 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
-                  paths=inventory.root / "TYPE_MAKER_MODEL.SERIAL",
-                  message="some subject\n\nAnd a body")
+                  paths=inventory.root / "TYPE_MAKER_MODEL.SERIAL")
 
     # delete non-existing directory
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
-                  paths=inventory.root / "somewhere" / "non-existing",
-                  message="some subject\n\nAnd a body")
+                  paths=inventory.root / "somewhere" / "non-existing")
 
     # delete .anchor
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
-                  paths=inventory.root / OnyoRepo.ANCHOR_FILE_NAME,
-                  message="some subject\n\nAnd a body")
+                  paths=inventory.root / OnyoRepo.ANCHOR_FILE_NAME)
 
     # delete outside onyo repository
     pytest.raises(InventoryOperationError,
                   onyo_rm,
                   inventory,
-                  paths=inventory.root / "..",
-                  message="some subject\n\nAnd a body")
+                  paths=inventory.root / "..")
 
     # deleting an existing file which is neither an asset nor a directory is illegal
     assert (inventory.root / ".onyo" / "templates" / "laptop.example").is_file()
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
-                  paths=inventory.root / ".onyo" / "templates" / "laptop.example",
-                  message="some subject\n\nAnd a body")
+                  paths=inventory.root / ".onyo" / "templates" / "laptop.example")
 
     # delete inventory root
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
-                  paths=inventory.root,
-                  message="some subject\n\nAnd a body")
+                  paths=inventory.root)
 
     # non-empty dir w/o `recursive`
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / "somewhere",
-                  recursive=False,
-                  message="some subject\n\nAnd a body")
+                  recursive=False)
 
     # no error scenario leaves the git tree unclean
     assert inventory.repo.git.is_clean_worktree()
@@ -77,8 +71,7 @@ def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
     pytest.raises(InvalidInventoryOperationError,
                   onyo_rm,
                   inventory,
-                  paths=[asset_path, inventory.root / "not-existent", destination_path],
-                  message="some subject\n\nAnd a body")
+                  paths=[asset_path, inventory.root / "not-existent", destination_path])
 
     # nothing was deleted and no new commit was created
     assert asset_path.is_file()
@@ -97,8 +90,7 @@ def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
 
     # delete a path through giving it twice with the same name to onyo_rm()
     onyo_rm(inventory,
-            paths=[asset_path, asset_path],
-            message="some subject\n\nAnd a body")
+            paths=[asset_path, asset_path])
 
     # asset file
     assert not asset_path.exists()
@@ -117,7 +109,6 @@ def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
     # the content happens to be listed afterwards anyway.
     onyo_rm(inventory,
             paths=[abc, abcc],
-            message="some subject\n\nAnd a body",
             recursive=True)
     assert not abcc.exists()
     assert not abc.exists()
@@ -127,7 +118,11 @@ def test_onyo_rm_with_same_input_path_twice(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_rm_move_single(inventory: Inventory) -> None:
+@pytest.mark.parametrize('message', ["", None, "message with spe\"cial\\char\'acteஞrs"])
+@pytest.mark.parametrize('auto_message', [True, False])
+def test_onyo_rm_single(inventory: Inventory,
+                        message,
+                        auto_message) -> None:
     r"""Delete a single asset path."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -135,7 +130,8 @@ def test_onyo_rm_move_single(inventory: Inventory) -> None:
     # delete a single asset as path
     onyo_rm(inventory,
             paths=asset_path,
-            message="some subject\n\nAnd a body")
+            message=message,
+            auto_message=auto_message)
 
     # asset was deleted
     assert not asset_path.exists()
@@ -143,6 +139,7 @@ def test_onyo_rm_move_single(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+    check_commit_msg(inventory, message, auto_message, "rm [")
 
 
 @pytest.mark.ui({'yes': True})
@@ -153,8 +150,7 @@ def test_onyo_rm_delete_directory(inventory: Inventory) -> None:
 
     # delete a single asset as path
     onyo_rm(inventory,
-            paths=dir_path,
-            message="some subject\n\nAnd a body")
+            paths=dir_path)
 
     # directory was deleted
     assert not dir_path.exists()
@@ -173,8 +169,7 @@ def test_onyo_rm_list(inventory: Inventory) -> None:
 
     # delete an asset and a dir together in the same call
     onyo_rm(inventory,
-            paths=[asset_path, dir_path],
-            message="some subject\n\nAnd a body")
+            paths=[asset_path, dir_path])
 
     # asset was deleted
     assert not asset_path.exists()
@@ -197,7 +192,6 @@ def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
     # delete a path
     onyo_rm(inventory,
             paths=nested,
-            message="some subject\n\nAnd a body",
             recursive=True)
 
     # "somewhere" NOT deleted
@@ -234,7 +228,6 @@ def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
     # remove w/o recursive set
     onyo_rm(inventory,
             paths=asset_dir,
-            message="Remove asset dir completely",
             recursive=False)
 
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
@@ -246,7 +239,6 @@ def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
     # remove w/ recursive set
     onyo_rm(inventory,
             paths=asset_dir,
-            message="Remove asset aspect",
             recursive=True)
 
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha

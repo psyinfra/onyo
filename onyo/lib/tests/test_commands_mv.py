@@ -2,6 +2,7 @@ import pytest
 
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from . import check_commit_msg
 from ..commands import onyo_mv
 
 
@@ -17,32 +18,28 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   onyo_mv,
                   inventory,
                   source=dir_path,
-                  destination=dir_path,
-                  message="some subject\n\nAnd a body")
+                  destination=dir_path)
 
     # move asset into non-existing directory
     pytest.raises(ValueError,
                   onyo_mv,
                   inventory,
                   source=asset_path,
-                  destination=dir_path / "doesnotexist",
-                  message="some subject\n\nAnd a body")
+                  destination=dir_path / "doesnotexist")
 
     # move dir into non-existing directory
     pytest.raises(ValueError,
                   onyo_mv,
                   inventory,
                   source=inventory.root / "somewhere",
-                  destination=dir_path / "doesnotexist" / "somewhere",
-                  message="some subject\n\nAnd a body")
+                  destination=dir_path / "doesnotexist" / "somewhere")
 
     # rename asset file
     pytest.raises(ValueError,
                   onyo_mv,
                   inventory,
                   source=asset_path,
-                  destination=asset_path.parent / "new_asset_name",
-                  message="some subject\n\nAnd a body")
+                  destination=asset_path.parent / "new_asset_name")
 
     # target already exists
     inventory.add_directory(asset_path.parent / dir_path.name)
@@ -51,24 +48,21 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   onyo_mv,
                   inventory,
                   source=dir_path,
-                  destination=asset_path.parent,
-                  message="some subject\n\nAnd a body")
+                  destination=asset_path.parent)
 
     # source does not exist
     pytest.raises(ValueError,
                   onyo_mv,
                   inventory,
                   source=inventory.root / "not-existent",
-                  destination=dir_path,
-                  message="some subject\n\nAnd a body")
+                  destination=dir_path)
 
     # renaming multiple sources at once is not allowed
     pytest.raises(ValueError,
                   onyo_mv,
                   inventory,
                   source=[dir_path, dir_path2],
-                  destination=inventory.root / "new_name",
-                  message="some subject\n\nAnd a body")
+                  destination=inventory.root / "new_name")
 
     # no error scenario leaves the inventory unclean
     assert inventory.repo.git.is_clean_worktree()
@@ -88,8 +82,7 @@ def test_onyo_mv_errors_before_mv(inventory: Inventory) -> None:
                   onyo_mv,
                   inventory,
                   source=[asset_path, inventory.root / "not-existent"],
-                  destination=destination_path,
-                  message="some subject\n\nAnd a body")
+                  destination=destination_path)
 
     # nothing was moved and no new commit was created
     assert asset_path.is_file()
@@ -110,8 +103,7 @@ def test_onyo_mv_src_to_dest_with_same_name(inventory: Inventory) -> None:
     # move a source dir into a destination dir with the same name
     onyo_mv(inventory,
             source=source_path,
-            destination=destination_path,
-            message="some subject\n\nAnd a body")
+            destination=destination_path)
 
     # source
     assert not source_path.exists()
@@ -127,7 +119,11 @@ def test_onyo_mv_src_to_dest_with_same_name(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_mv_move_simple(inventory: Inventory) -> None:
+@pytest.mark.parametrize('message', ["", None, "message with spe\"cial\\char\'acteஞrs"])
+@pytest.mark.parametrize('auto_message', [True, False])
+def test_onyo_mv_move_simple(inventory: Inventory,
+                             message,
+                             auto_message) -> None:
     r"""Move an asset and a directory in one commit into a destination."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
@@ -138,7 +134,8 @@ def test_onyo_mv_move_simple(inventory: Inventory) -> None:
     onyo_mv(inventory,
             source=[asset_path, dir_path],
             destination=destination_path,
-            message="some subject\n\nAnd a body")
+            message=message,
+            auto_message=auto_message)
 
     # asset was moved
     assert inventory.repo.is_asset_path(destination_path / asset_path.name)
@@ -153,6 +150,7 @@ def test_onyo_mv_move_simple(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+    check_commit_msg(inventory, message, auto_message, "mv [")
 
 
 @pytest.mark.ui({'yes': True})
@@ -169,8 +167,7 @@ def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
 
     onyo_mv(inventory,
             source=src,
-            destination=destination_path,
-            message="some subject\n\nAnd a body")
+            destination=destination_path)
 
     # source is moved
     assert (src / OnyoRepo.ANCHOR_FILE_NAME) not in inventory.repo.git.files
@@ -193,8 +190,7 @@ def test_onyo_mv_rename_directory(inventory: Inventory) -> None:
 
     onyo_mv(inventory,
             source=dir_path,
-            destination=destination_path,
-            message="some subject\n\nAnd a body")
+            destination=destination_path)
 
     # source
     assert not dir_path.exists()
@@ -217,8 +213,7 @@ def test_onyo_mv_and_rename(inventory: Inventory) -> None:
     # rename and move of a directory in one call
     onyo_mv(inventory,
             source=source,
-            destination=destination,
-            message="some subject\n\nAnd a body")
+            destination=destination)
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -245,8 +240,7 @@ def test_onyo_mv_into_asset(inventory: Inventory) -> None:
 
     onyo_mv(inventory,
             source=source,
-            destination=asset_path,
-            message="Move asset into asset to create asset dir")
+            destination=asset_path)
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
     assert not source.exists()

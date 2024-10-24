@@ -181,29 +181,6 @@ def test_edit_with_user_response(repo: OnyoRepo) -> None:
 
 
 @pytest.mark.repo_contents(*assets)
-@pytest.mark.parametrize('asset', [a[0] for a in assets])
-def test_edit_message_flag(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test that `onyo edit --message msg` overwrites the default commit message
-    with one specified by the user containing different special characters.
-    """
-    os.environ['EDITOR'] = "printf 'key: value' >>"
-    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-
-    # test `onyo edit --message msg`
-    ret = subprocess.run(['onyo', '--yes', 'edit', '--message', msg, asset],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-
-    # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I', asset],
-                         capture_output=True, text=True)
-    assert msg in ret.stdout
-    assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_contents(*assets)
 def test_quiet_flag(repo: OnyoRepo) -> None:
     r"""
     Test that `onyo edit --yes --quiet` does not print anything.

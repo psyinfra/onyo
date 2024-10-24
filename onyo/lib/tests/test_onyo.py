@@ -90,7 +90,7 @@ def test_clear_cache(onyorepo) -> None:
     assert asset not in onyorepo.asset_paths
 
 
-def test_Repo_generate_commit_message(onyorepo: OnyoRepo) -> None:
+def test_Repo_generate_auto_message(onyorepo: OnyoRepo) -> None:
     """A generated commit message has to have a header with less then
     80 characters length, and a body with the paths to changed files
     and directories relative to the root of the repository.
@@ -99,7 +99,7 @@ def test_Repo_generate_commit_message(onyorepo: OnyoRepo) -> None:
                 onyorepo.git.root / 'a/new/folder']
 
     # generate a commit message:
-    message = onyorepo.generate_commit_message(
+    message = onyorepo.generate_auto_message(
         format_string='TST [{length}]: {modified}',
         length=len(modified),
         modified=modified)
@@ -227,3 +227,28 @@ def test_onyo_ignore(onyorepo) -> None:
             assert onyorepo.is_onyo_ignored(f)
         else:
             assert not onyorepo.is_onyo_ignored(f)
+
+
+def test_onyo_auto_message(onyorepo, caplog) -> None:
+    """Test configuration onyo.commit.auto-message"""
+
+    # default after repo init: True
+    assert onyorepo.auto_message
+
+    # test various changes to the config:
+    config_to_value = {"false": False,
+                       "FaLSe": False,
+                       "0": False,
+                       "true": True,
+                       "TRue": True,
+                       "1": True
+                       }
+    for cfg, val in config_to_value.items():
+        onyorepo.set_config("onyo.commit.auto-message", cfg)
+        assert onyorepo.auto_message is val
+
+    # invalid config gives warning and uses hardcoded default `True`
+    onyorepo.set_config("onyo.commit.auto-message", "invalid value")
+    assert onyorepo.auto_message
+    assert caplog.text.startswith("WARNING")
+    assert "Invalid config value" in caplog.text
