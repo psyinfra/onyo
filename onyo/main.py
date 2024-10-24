@@ -12,7 +12,10 @@ from typing import TYPE_CHECKING
 import rich
 
 from onyo import cli
-from onyo.lib.exceptions import InvalidArgumentError
+from onyo.lib.exceptions import (
+    InvalidArgumentError,
+    UIInputError,
+)
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
@@ -554,6 +557,9 @@ def main() -> None:
             # that we can treat here accordingly.
             ui.log_debug(str(e))
             sys.exit(e.returncode)
+        except UIInputError as e:
+            ui.error(e)
+            ui.error("Use the --yes switch for non-interactive mode.")
         except Exception as e:
             # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
             #       non-zero here, in order to have this generic last catcher.
