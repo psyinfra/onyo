@@ -151,10 +151,10 @@ def onyo_cat(inventory: Inventory,
              paths: list[Path]) -> None:
     r"""Print the contents of assets.
 
-    The same path can be given multiple times.
+    The same asset can be given multiple times.
 
     If any path is not an asset, nothing is printed.
-    If any asset content is invalid, the content of all assets is still printed.
+    If any asset content is invalid, the contents of all assets are still printed.
 
     Parameters
     ----------
@@ -166,10 +166,10 @@ def onyo_cat(inventory: Inventory,
     Raises
     ------
     ValueError
-        If a provided asset is not an asset, or if ``paths`` is empty.
+        The path is not an asset, or ``paths`` is empty.
 
     InvalidAssetError
-        If ``paths`` contains an invalid asset (e.g. content is invalid YAML).
+        An invalid asset is encountered.
     """
 
     from rich.syntax import Syntax
