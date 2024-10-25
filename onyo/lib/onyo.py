@@ -545,14 +545,11 @@ class OnyoRepo(object):
         difference = anchors_expected.difference(anchors_exist)
 
         if difference:
-            log.warning(
-                'The following .anchor files are missing:\n'
-                '{0}'.format('\n'.join(map(str, difference))))
-            log.warning(
-                "Likely 'mkdir' was used to create the directory. Use "
-                "'onyo mkdir' instead.")
+            ui.log("The following .anchor files are missing:\n"
+                   "{0}\nLikely 'mkdir' was used to create the directory."
+                   "Use 'onyo mkdir' instead.".format('\n'.join(map(str, difference))),
+                   level=logging.WARNING)
             # TODO: Prompt the user if they want Onyo to fix it.
-
             return False
 
         return True
