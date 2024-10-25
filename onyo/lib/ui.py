@@ -61,7 +61,7 @@ class UI(object):
             Activate the yes mode to suppress all interactive requests to the
             user, and instead answers them with yes.
         """
-        # set the the attributes of the UI object
+        # set the attributes of the UI object
         self.quiet = quiet
         self.yes = yes
         self.logger = logging.getLogger('onyo')
