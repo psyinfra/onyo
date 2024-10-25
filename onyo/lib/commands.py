@@ -25,13 +25,14 @@ from onyo.lib.consts import (
     SORT_DESCENDING,
 )
 from onyo.lib.exceptions import (
+    InvalidAssetError,
+    InventoryDirNotEmpty,
     NotADirError,
     NotAnAssetError,
     NoopError,
     OnyoInvalidRepoError,
     OnyoRepoError,
     PendingInventoryOperationError,
-    InventoryDirNotEmpty,
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.ui import ui
@@ -167,7 +168,7 @@ def onyo_cat(inventory: Inventory,
     ValueError
         If a provided asset is not an asset, or if ``paths`` is empty.
 
-    OnyoInvalidRepoError
+    InvalidAssetError
         If ``paths`` contains an invalid asset (e.g. content is invalid YAML).
     """
 
@@ -200,7 +201,7 @@ def onyo_cat(inventory: Inventory,
     # TODO: "Full" asset validation. Address when fsck is reworked
     assets_valid = validate_yaml(deduplicate(files))
     if not assets_valid:
-        raise OnyoInvalidRepoError("Invalid assets")
+        raise InvalidAssetError("Invalid assets")
 
 
 @raise_on_inventory_state

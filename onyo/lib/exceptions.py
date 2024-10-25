@@ -34,6 +34,10 @@ class InvalidArgumentError(Exception):
     r"""Raised a (CLI-) command is invalidly called beyond what's covered by argparse."""
 
 
+class InvalidAssetError(Exception):
+    r"""Raised if an asset is invalid."""
+
+
 class InventoryOperationError(Exception):
     r"""Raised if an inventory operation cannot be executed."""
 

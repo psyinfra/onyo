@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo.lib.exceptions import OnyoInvalidRepoError
+from onyo.lib.exceptions import InvalidAssetError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from ..commands import onyo_cat
@@ -70,7 +70,7 @@ def test_onyo_cat_errors(inventory: Inventory) -> None:
     invalid_path.write_text("key: value\ninvalid")
     inventory.repo.git._git(["add", str(invalid_path)])
     inventory.commit("Invalid file added")
-    pytest.raises(OnyoInvalidRepoError,
+    pytest.raises(InvalidAssetError,
                   onyo_cat,
                   inventory,
                   paths=[invalid_path])
