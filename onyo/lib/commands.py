@@ -576,6 +576,88 @@ def onyo_get(inventory: Inventory,
 
 
 @raise_on_inventory_state
+def onyo_history(inventory: Inventory,
+                 path: Path,
+                 interactive: bool | None = None) -> None:
+    r"""Display the history of a path.
+
+    Only one ``path`` is accepted as that's ``git log --follow``'s limitation.
+
+    Parameters
+    ----------
+    inventory
+        The inventory to display the history of.
+    path
+        Path to display the history of.
+    interactive
+        Force interactive mode on/off. ``None`` autodetects if the TTY is
+        interactive.
+
+    Raises
+    ------
+    ValueError
+        The configuration key is not set or the configured history program
+        cannot be found by ``which``.
+    """
+
+    from shlex import quote
+
+    history_cmd = _get_history_cmd(inventory, interactive)
+    # do not catch exceptions; let them bubble up with their exit codes
+    subprocess.run(f'{history_cmd} {quote(str(path))}', check=True, shell=True)
+
+
+def _get_history_cmd(inventory: Inventory,
+                     interactive: bool | None = None) -> str:
+    r"""Get the command to display history.
+
+    The command is selected according to the (non)interactive mode and
+    verified that it exists.
+
+    A helper for ``onyo_history()``.
+
+    Parameters
+    ----------
+    inventory
+        The inventory from which to get the configured history program.
+    interactive
+        Force interactive mode on/off. ``None`` autodetects if the TTY is
+        interactive.
+
+    Raises
+    ------
+    ValueError
+        The configuration key is either not set or the configured history
+        program cannot be found by ``which``.
+    """
+
+    from shutil import which
+    from sys import stdout
+
+    match interactive:
+        case True:
+            config_name = 'onyo.history.interactive'
+        case False:
+            config_name = 'onyo.history.non-interactive'
+
+        # fallback
+        case _:
+            config_name = 'onyo.history.interactive' if stdout.isatty() else 'onyo.history.non-interactive'
+
+    history_cmd = inventory.repo.get_config(config_name)
+    if not history_cmd:
+        raise ValueError(f"'{config_name}' is unset and is required to display history.\n"
+                         f"Please see 'onyo config --help' for information about how to set it.")
+
+    history_executable = history_cmd.split()[0]
+    if not which(history_executable):
+        raise ValueError(f"'{history_cmd}' acquired from '{config_name}'. "
+                         f"The program '{history_executable}' was not found. Exiting.")
+
+    return history_cmd
+
+
+@raise_on_inventory_state
 def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
                message: str | None) -> None:
