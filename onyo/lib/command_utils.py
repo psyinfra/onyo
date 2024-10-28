@@ -91,12 +91,14 @@ def print_diff(diffable: Inventory | InventoryOperation) -> None:
     # However, that requires figuring how to deal with issues, when
     # capturing output in tests and rich not realizing that.
     for line in diffable.diff():
-        if line.startswith('+'):
-            style = "green"
-        elif line.startswith('-'):
-            style = "red"
-        elif line.startswith('@'):
-            style = "bold"
-        else:
-            style = ""
+        match line[0] if line else '':
+            case '+':
+                style = "green"
+            case '-':
+                style = "red"
+            case '@':
+                style = "bold"
+            case _:
+                style = ""
+
         ui.rich_print(line, style=style)
