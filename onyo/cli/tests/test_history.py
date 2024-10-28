@@ -33,8 +33,8 @@ assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directo
 @pytest.mark.parametrize('asset', assets)
 def test_history_noninteractive(repo: OnyoRepo, asset: str) -> None:
     r"""
-    Test that the default `onyo history -I ASSET` command runs and print to
-    std.out, but not std.err.
+    The default non-interactive history command runs and prints to stdout but
+    not stderr.
     """
     ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
@@ -49,12 +49,11 @@ def test_history_noninteractive(repo: OnyoRepo, asset: str) -> None:
                                    'subdir/does_not_exist.test'])
 def test_history_noninteractive_not_exist(repo: OnyoRepo, asset: str) -> None:
     r"""
-    Test that `onyo history -I ASSET` when called on non-existing assets does
-    correctly print into ret.stderr.
+    Non-existing assets print to stderr and return an error code.
     """
     ret = subprocess.run(['onyo', 'history', '-I', asset],
                          capture_output=True, text=True)
-    assert ret.returncode == 1
+    assert ret.returncode != 0
     assert not ret.stdout
     assert ret.stderr
     fsck(repo)
@@ -68,7 +67,7 @@ def test_history_noninteractive_not_exist(repo: OnyoRepo, asset: str) -> None:
                          )
 def test_history_noninteractive_too_many_args(repo: OnyoRepo, variant: list[str]) -> None:
     r"""
-    Test that `onyo history -I` does not allow multiple input arguments.
+    Multiple input arguments are not allowed.
     """
     ret = subprocess.run(['onyo', 'history', '-I', *variant],
                          capture_output=True, text=True)
@@ -81,10 +80,10 @@ def test_history_noninteractive_too_many_args(repo: OnyoRepo, variant: list[str]
 @pytest.mark.repo_files(assets[0])
 def test_history_interactive_fallback(repo: OnyoRepo) -> None:
     r"""
-    Test `onyo history` does work without the `-I` flag.
+    Without --non-interactive works.
 
-    Note that the interactive mode cannot be tested directly, as onyo detects
-    whether it's connected to a TTY.
+    Interactive mode cannot be tested directly, as onyo detects whether it's
+    connected to a TTY.
     """
     ret = subprocess.run(['onyo', 'history', assets[0]],
                          capture_output=True, text=True)
@@ -97,7 +96,7 @@ def test_history_interactive_fallback(repo: OnyoRepo) -> None:
 @pytest.mark.repo_files(assets[0])
 def test_history_config_unset(repo: OnyoRepo) -> None:
     r"""
-    Test that `onyo history` errors when no tool is configured.
+    Error when no tool is configured.
     """
     # unset config for history tool
     repo.set_config('onyo.history.non-interactive', '')
@@ -119,8 +118,7 @@ def test_history_config_unset(repo: OnyoRepo) -> None:
 @pytest.mark.repo_files(assets[0])
 def test_history_config_invalid(repo: OnyoRepo) -> None:
     r"""
-    Test that `onyo history -I` does error correctly when the history-tool does
-    not exist.
+    Error when the history tool does not exist.
     """
     # set to invalid
     repo.set_config('onyo.history.non-interactive', 'does-not-exist-in-path')
@@ -140,8 +138,7 @@ def test_history_config_invalid(repo: OnyoRepo) -> None:
 @pytest.mark.parametrize('asset', assets)
 def test_history_fake_noninteractive_stdout(repo: OnyoRepo, asset: str) -> None:
     r"""
-    Test that the history tool can be reconfigured, so that `onyo history` can
-    run commands different from the default options.
+    History tool can be reconfigured.
     """
     repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf')
     repo.commit(paths=repo.dot_onyo / 'config',
@@ -160,9 +157,21 @@ def test_history_fake_noninteractive_stdout(repo: OnyoRepo, asset: str) -> None:
 @pytest.mark.parametrize('asset', assets)
 def test_history_fake_noninteractive_stderr(repo: OnyoRepo, asset: str) -> None:
     r"""
-    Test that the history tool can be so reconfigured, that it prints into
-    stderr instead of stdout.
+    The configured tool controls printing to stdout vs stderr.
     """
+    # configure to simply print to stdout
+    repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf >&1')
+    repo.commit(paths=repo.dot_onyo / 'config',
+                message="Update config: 'onyo.history.non-interactive'")
+
+    # test
+    ret = subprocess.run(['onyo', 'history', '-I', asset],
+                         capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    assert Path(ret.stdout).resolve() == Path(asset).resolve()
+
+    # configure to simply print to stderr
     repo.set_config('onyo.history.non-interactive', '/usr/bin/env printf >&2')
     repo.commit(paths=repo.dot_onyo / 'config',
                 message="Update config: 'onyo.history.non-interactive'")
@@ -180,13 +189,12 @@ def test_history_fake_noninteractive_stderr(repo: OnyoRepo, asset: str) -> None:
 @pytest.mark.parametrize('variant',
                          [{'cmd': '/usr/bin/env true', 'retval': 0},
                           {'cmd': '/usr/bin/env false', 'retval': 1},
-                          {'cmd': 'git config --invalid-flag-oopsies',
-                           'retval': 129}
+                          {'cmd': '/usr/bin/sh -c "exit 42"', 'retval': 42},
+                          {'cmd': 'git config --invalid-flag', 'retval': 129},
                           ])
 def test_history_fake_noninteractive_bubble_exit_code(repo: OnyoRepo, variant: dict) -> None:
     r"""
-    Test that `onyo history` does bubble up the different exit codes that the
-    tools configured return.
+    Bubble up exit codes unaltered from history tool.
     """
     repo.set_config('onyo.history.non-interactive', variant['cmd'])
     repo.commit(paths=repo.dot_onyo / 'config',

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging
-import shutil
-import sys
 from typing import TYPE_CHECKING
 
 from .consts import (
@@ -13,9 +11,9 @@ from .inventory import (
     InventoryOperation,
 )
 from .ui import ui
+
 if TYPE_CHECKING:
     from collections import UserDict
-    from .onyo import OnyoRepo
     from .consts import sort_t
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
@@ -88,58 +86,19 @@ def natural_sort(assets: list[dict | UserDict],
     return assets
 
 
-def get_history_cmd(interactive: bool,
-                    repo: OnyoRepo) -> str:
-    r"""Get the command to display history.
-
-    The command is selected according to the (non)interactive mode, and
-    ``which`` verifies that it exists.
-
-    A helper for the ``onyo history`` command.
-
-    Parameters
-    ----------
-    interactive
-        Whether the CLI mode is interactive or not.
-    repo
-        The OnyoRepo to search through for the configuration.
-
-    Raises
-    ------
-    ValueError
-        If the configuration key is either not set or the configured history
-        program cannot be found by ``which``.
-    """
-    history_cmd = None
-    config_name = 'onyo.history.interactive'
-
-    if not interactive or not sys.stdout.isatty():
-        config_name = 'onyo.history.non-interactive'
-
-    history_cmd = repo.get_config(config_name)
-    if not history_cmd:
-        raise ValueError(f"'{config_name}' is unset and is required to display history.\n"
-                         f"Please see 'onyo config --help' for information about how to set it.")
-
-    history_program = history_cmd.split()[0]
-    if not shutil.which(history_program):
-        raise ValueError(f"'{history_cmd}' acquired from '{config_name}'. "
-                         f"The program '{history_program}' was not found. Exiting.")
-
-    return history_cmd
-
-
 def print_diff(diffable: Inventory | InventoryOperation) -> None:
     # This isn't nice yet. We need to consolidate `UI` to deal with that.
     # However, that requires figuring how to deal with issues, when
     # capturing output in tests and rich not realizing that.
     for line in diffable.diff():
-        if line.startswith('+'):
-            style = "green"
-        elif line.startswith('-'):
-            style = "red"
-        elif line.startswith('@'):
-            style = "bold"
-        else:
-            style = ""
+        match line[0] if line else '':
+            case '+':
+                style = "green"
+            case '-':
+                style = "red"
+            case '@':
+                style = "bold"
+            case _:
+                style = ""
+
         ui.rich_print(line, style=style)
