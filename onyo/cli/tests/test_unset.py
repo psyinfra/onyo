@@ -274,27 +274,6 @@ def test_unset_discard_changes_single_assets(repo: OnyoRepo,
     assert repo.git.is_clean_worktree()
 
 
-@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents if "num" in t[1]]))
-@pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" in t[1]])
-@pytest.mark.parametrize('key', ['num'])
-def test_unset_message_flag(repo: OnyoRepo,
-                            asset: str,
-                            key: str) -> None:
-    r"""Test that `onyo unset --message msg` overwrites the default commit message with one specified
-    by the user containing different special characters."""
-    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-    ret = subprocess.run(['onyo', '--yes', 'unset', '--message', msg, '--keys', key,
-                          '--asset', asset],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-
-    # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I'], capture_output=True, text=True)
-    assert msg in ret.stdout
-    assert repo.git.is_clean_worktree()
-
-
 @pytest.mark.repo_contents(*convert_contents(
     [t for t in asset_contents if 'laptop_apple_macbookpro.1' in t[0]]))
 @pytest.mark.parametrize('name_field', [

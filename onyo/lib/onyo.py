@@ -141,6 +141,20 @@ class OnyoRepo(object):
 
         return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
 
+    @property
+    def auto_message(self) -> bool:
+        raw = self.get_config("onyo.commit.auto-message")
+        if raw:
+            from_cfg = raw.strip().lower()
+            if from_cfg in ["true", "1"]:
+                return True
+            if from_cfg in ["false", "0"]:
+                return False
+            ui.log(f"Invalid config value \"{raw}\" for 'onyo.commit.auto-message'. Using default \"true\".",
+                   level=logging.WARNING)
+        # default - applies if config isn't set or has an invalid value
+        return True
+
     def get_asset_name_keys(self) -> list[str]:
         r"""Get a list of keys required for generating asset names
 
@@ -221,9 +235,9 @@ class OnyoRepo(object):
         self.git.clear_cache()
 
     @staticmethod
-    def generate_commit_message(format_string: str,
-                                max_length: int = 80,
-                                **kwargs) -> str:
+    def generate_auto_message(format_string: str,
+                              max_length: int = 80,
+                              **kwargs) -> str:
         r"""Generate a commit message subject.
 
         The function will shorten paths in the resulting string in order to try to fit into
@@ -369,6 +383,13 @@ class OnyoRepo(object):
 
         # populate .onyo dir
         shutil.copytree(skel_dir, self.dot_onyo)
+
+        # set default config if it's not set already
+        if self.git.get_config(name="onyo.commit.auto-message",
+                               file_=self.ONYO_CONFIG) is None:
+            self.git.set_config(name="onyo.commit.auto-message",
+                                value="true",
+                                location=self.ONYO_CONFIG)
 
         # add and commit
         self.commit(self.dot_onyo,
@@ -545,14 +566,11 @@ class OnyoRepo(object):
         difference = anchors_expected.difference(anchors_exist)
 
         if difference:
-            log.warning(
-                'The following .anchor files are missing:\n'
-                '{0}'.format('\n'.join(map(str, difference))))
-            log.warning(
-                "Likely 'mkdir' was used to create the directory. Use "
-                "'onyo mkdir' instead.")
+            ui.log("The following .anchor files are missing:\n"
+                   "{0}\nLikely 'mkdir' was used to create the directory."
+                   "Use 'onyo mkdir' instead.".format('\n'.join(map(str, difference))),
+                   level=logging.WARNING)
             # TODO: Prompt the user if they want Onyo to fix it.
-
             return False
 
         return True

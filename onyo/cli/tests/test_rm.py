@@ -164,22 +164,3 @@ def test_rm_interactive(repo: OnyoRepo, asset: str) -> None:
     # verify deleting was successful and the repository is in a clean state
     assert not Path(asset).exists()
     assert repo.git.is_clean_worktree()
-
-
-@pytest.mark.repo_files(*assets)
-@pytest.mark.parametrize('asset', assets)
-def test_rm_message_flag(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test that `onyo rm --message MESSAGE` overwrites the default commit message
-    with one specified by the user containing different special characters.
-    """
-    msg = "I am here to test the --message flag with spe\"cial\\char\'acteஞrs!"
-    ret = subprocess.run(['onyo', '--yes', 'rm', '--message', msg, asset],
-                         capture_output=True, text=True)
-    assert ret.returncode == 0
-    assert not ret.stderr
-
-    # test that the onyo history does contain the user-defined message
-    ret = subprocess.run(['onyo', 'history', '-I', '.'], capture_output=True, text=True)
-    assert msg in ret.stdout
-    assert repo.git.is_clean_worktree()

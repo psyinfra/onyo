@@ -154,15 +154,18 @@ class UI(object):
             self.logger.debug(''.join(tb.format()))
 
     def log(self,
-            message: str) -> None:
-        r"""Log a message at `logging.INFO` level.
+            message: str,
+            level: int = logging.INFO) -> None:
+        r"""Log a message at `level`.
 
         Parameters
         ----------
         message
             The message to log.
+        level
+            Level to log at.
         """
-        self.logger.info(message)
+        self.logger.log(level=level, msg=message)
 
     def log_debug(self,
                   *args,

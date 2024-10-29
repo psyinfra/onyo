@@ -97,7 +97,8 @@ _onyo() {
             edit)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
+                    '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                     '*:ASSET:_files -W "$(_onyo_dir)"'
                 )
                 ;;
@@ -134,14 +135,16 @@ _onyo() {
             mkdir)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
+                    '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                     '*:DIR:_files -W "$(_onyo_dir)" -/'
                 )
                 ;;
             mv)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
+                    '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                     '*:SOURCE:_files -W "$(_onyo_dir)"'
                     ':DEST:_files -W "$(_onyo_dir)"'
                 )
@@ -155,13 +158,15 @@ _onyo() {
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in the new assets]:*-*:KEYS: '
                     '(-d --directory)'{-d,--directory}'[directory to create new assets in]:DIRECTORY:_files -W "$(_onyo_dir)" -/'
                     '(-tsv --tsv)'{-tsv,--tsv}'[path to a TSV file describing the new assets]:TSV:_files -W "$(_onyo_dir)"'
-                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
+                    '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                 )
                 ;;
             rm)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
+                    '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                     '(-r --recursive)'{-r,--recursive}'[remove directories and their contents]'
                     '*:PATH:_files -W "$(_onyo_dir)"'
                 )
@@ -171,7 +176,8 @@ _onyo() {
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in assets; multiple pairs can be given (key=value key2=value2)]:*-*:KEYS: '
                     '(-a --asset)'{-a,--asset}'[assets to set KEY=VALUE in]:*-*::ASSET:_files -W "$(_onyo_dir)"'
-                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
+                    '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                 )
                 ;;
             shell-completion)
@@ -191,7 +197,8 @@ _onyo() {
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '(-k --keys)'{-k,--keys}'[keys to unset in assets; multiple keys can be given (key key2 key3)]:*-*:KEYS: '
                     '(-a --asset)'{-a,--asset}'[assets to unset values in]:*-*::ASSET:_files -W "$(_onyo_dir)"'
-                    '(-m --message)'{-m,--message}'[use the given MESSAGE as the commit message]:MESSAGE: '
+                    '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
+                    '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                 )
                 ;;
 

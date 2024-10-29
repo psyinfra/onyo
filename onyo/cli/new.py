@@ -8,7 +8,10 @@ from onyo.argparse_helpers import StoreMultipleKeyValuePairs
 from onyo.lib.commands import onyo_new
 from onyo.lib.exceptions import InvalidArgumentError
 from onyo.lib.inventory import Inventory
-from onyo.shared_arguments import shared_arg_message
+from onyo.shared_arguments import (
+    shared_arg_message,
+    shared_arg_no_auto_message,
+)
 
 if TYPE_CHECKING:
     import argparse
@@ -105,6 +108,7 @@ args_new = {
     ),
 
     'message': shared_arg_message,
+    'no_auto_message': shared_arg_no_auto_message,
 }
 
 epilog_new = r"""
@@ -188,4 +192,5 @@ def new(args: argparse.Namespace) -> None:
              tsv=Path(args.tsv).resolve() if args.tsv else None,
              keys=args.keys,
              edit=args.edit,
-             message='\n\n'.join(m for m in args.message) if args.message else None)
+             message='\n\n'.join(m for m in args.message) if args.message else None,
+             auto_message=False if args.no_auto_message else None)

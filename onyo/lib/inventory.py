@@ -139,11 +139,15 @@ class Inventory(object):
         r"""Discard pending operations."""
         self.operations = []
 
-    def commit(self, message: str) -> None:
+    def commit(self, message: str | None) -> None:
         r"""Execute and git-commit pending operations."""
         # get user message + generate appendix from operations
         # does order matter for execution? Prob.
         # ^  Nope. Fail on conflicts.
+        if message is None or not message.strip():
+            # If we got no message insert dummy subject line in order to not
+            # have the operations record's separator line be the subject.
+            message = "[Empty subject]\n"
         paths_to_commit = []
         paths_to_stage = []
         commit_msg = message + "\n\n"

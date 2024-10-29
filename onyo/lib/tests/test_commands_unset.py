@@ -2,6 +2,7 @@ import pytest
 
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from . import check_commit_msg
 from ..commands import onyo_unset
 
 
@@ -16,48 +17,42 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
                   onyo_unset,
                   inventory,
                   assets=[inventory.root / "not-existing" / "TYPE_MAKER_MODEL.SERIAL"],
-                  keys=[key],
-                  message="some subject\n\nAnd a body")
+                  keys=[key])
 
     # unset outside the repository
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
                   assets=[(inventory.root / "..").resolve()],
-                  keys=[key],
-                  message="some subject\n\nAnd a body")
+                  keys=[key])
 
     # unset without keys specified
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
                   assets=[asset_path],
-                  keys=[],
-                  message="some subject\n\nAnd a body")
+                  keys=[])
 
     # unset on ".anchor"
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
                   assets=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
-                  keys=[key],
-                  message="some subject\n\nAnd a body")
+                  keys=[key])
 
     # unset on .git/
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
                   assets=[inventory.root / ".git"],
-                  keys=[key],
-                  message="some subject\n\nAnd a body")
+                  keys=[key])
 
     # unset on .onyo/
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
                   assets=[inventory.root / ".onyo"],
-                  keys=[key],
-                  message="some subject\n\nAnd a body")
+                  keys=[key])
 
     # no error scenario leaves the git worktree unclean
     assert inventory.repo.git.is_clean_worktree()
@@ -80,8 +75,7 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
                       onyo_unset,
                       inventory,
                       assets=[asset_path],
-                      keys=[illegal],
-                      message="some subject\n\nAnd a body")
+                      keys=[illegal])
         # name fields are still in the asset
         assert all(f"{subkey}:" in asset_path.read_text() for subkey in illegal.split('.'))
 
@@ -106,8 +100,7 @@ def test_onyo_unset_illegal_fields(inventory: Inventory) -> None:
                       onyo_unset,
                       inventory,
                       assets=[asset_path],
-                      keys=[illegal],
-                      message="some subject\n\nAnd a body")
+                      keys=[illegal])
 
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
@@ -130,8 +123,7 @@ def test_onyo_unset_errors_before_unset(inventory: Inventory) -> None:
                   inventory,
                   assets=[asset_path,
                           non_existing_asset_path],
-                  keys=[key],
-                  message="some subject\n\nAnd a body")
+                  keys=[key])
 
     # no new asset was created
     assert not non_existing_asset_path.exists()
@@ -144,7 +136,11 @@ def test_onyo_unset_errors_before_unset(inventory: Inventory) -> None:
 
 
 @pytest.mark.ui({'yes': True})
-def test_onyo_unset_simple(inventory: Inventory) -> None:
+@pytest.mark.parametrize('message', ["", None, "message with spe\"cial\\char\'acteஞrs"])
+@pytest.mark.parametrize('auto_message', [True, False])
+def test_onyo_unset_simple(inventory: Inventory,
+                           message,
+                           auto_message) -> None:
     """Unset a key in an asset."""
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key = "some_key"
@@ -157,7 +153,8 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
     onyo_unset(inventory,
                assets=[asset_path],
                keys=[key],
-               message="some subject\n\nAnd a body")
+               message=message,
+               auto_message=auto_message)
 
     # check key was removed
     assert key not in inventory.repo.get_asset_content(asset_path).keys()
@@ -165,6 +162,7 @@ def test_onyo_unset_simple(inventory: Inventory) -> None:
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
+    check_commit_msg(inventory, message, auto_message, "unset [")
 
 
 @pytest.mark.repo_contents(
@@ -185,8 +183,7 @@ def test_onyo_unset_multiple(inventory: Inventory) -> None:
     onyo_unset(inventory,
                assets=[asset_path1,
                        asset_path2],
-               keys=[key],
-               message="some subject\n\nAnd a body")
+               keys=[key])
 
     # check key was removed in both assets
     assert key not in inventory.repo.get_asset_content(asset_path1).keys()
@@ -208,8 +205,7 @@ def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
     # call `onyo_unset()` with asset duplicates
     onyo_unset(inventory,
                assets=[asset_path, asset_path, asset_path],
-               keys=[key],
-               message="some subject\n\nAnd a body")
+               keys=[key])
 
     # check content
     assert key not in inventory.repo.get_asset_content(asset_path).keys()
@@ -233,8 +229,7 @@ def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
     assert other_key not in inventory.repo.get_asset_content(asset_path1).keys()
     onyo_unset(inventory,
                assets=[asset_path1],
-               keys=[other_key],
-               message="some subject\n\nAnd a body")
+               keys=[other_key])
 
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
@@ -245,8 +240,7 @@ def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
     onyo_unset(inventory,
                assets=[asset_path1,
                        asset_path2],
-               keys=[other_key],
-               message="some subject\n\nAnd a body")
+               keys=[other_key])
 
     # the key was removed in asset_path2
     assert other_key not in inventory.repo.get_asset_content(asset_path2).keys()
@@ -266,8 +260,7 @@ def test_onyo_unset_allows_key_duplicates(inventory: Inventory) -> None:
     # call `onyo_unset()` with key duplicates
     onyo_unset(inventory,
                assets=[asset_path],
-               keys=[key, key, key],
-               message="some subject\n\nAnd a body")
+               keys=[key, key, key])
 
     # check content
     assert key not in inventory.repo.get_asset_content(asset_path).keys()
