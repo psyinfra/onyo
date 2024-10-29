@@ -5,6 +5,15 @@ class UIInputError(Exception):
     r"""Raised if UI failed when trying to read input"""
 
 
+class OnyoCLIExitCode(Exception):
+    r"""Raised if the onyo CLI should exit with a specific value."""
+    def __init__(self,
+                 message: str,
+                 returncode: int):
+        self.message = message
+        self.returncode = returncode
+
+
 class OnyoRepoError(Exception):
     r"""Raised if something is wrong with an Onyo repository."""
 
