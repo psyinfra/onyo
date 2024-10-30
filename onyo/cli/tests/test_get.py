@@ -161,7 +161,7 @@ def test_get_all(
     occurs.
     """
     keys = keys if keys else repo.get_asset_name_keys()
-    cmd = ['onyo', 'get', '--path', *paths, '--depth', depth]
+    cmd = ['onyo', 'get', '--include', *paths, '--depth', depth]
     cmd += ['--keys', *keys + ["path"]] if keys else []
     cmd += ['--match', *matches] if matches else []
     cmd += [machine_readable] if machine_readable else []
@@ -406,14 +406,14 @@ def test_get_path_at_depth(
         repo: OnyoRepo, paths: str, depth: str | None,
         expected: int) -> None:
     r"""
-    Test that `onyo get --path x --depth y` retrieves the expected assets by
+    Test that `onyo get --include x --depth y` retrieves the expected assets by
     ensuring that `depth` is assessed relative to the given paths.
 
     A portion of the parameters tests the usage of path with the default
     value of depth, when no depth is specified.
     """
     cmd = ['onyo', 'get', '-H']
-    cmd += ['--path', *paths] if paths else []
+    cmd += ['--include', *paths] if paths else []
     cmd += ['--depth', depth] if depth else []
     ret = subprocess.run(cmd, capture_output=True, text=True)
     output = [output.split('\t') for output in ret.stdout.split('\n')][:-1]
@@ -445,10 +445,10 @@ def test_get_path_at_depth(
     'def/ghi'])
 def test_get_path_error(repo: OnyoRepo, path: str) -> None:
     r"""
-    Test that `onyo get --path x --depth y` returns an exception if an invalid
+    Test that `onyo get --include x --depth y` returns an exception if an invalid
     path is being used
     """
-    cmd = ['onyo', 'get', '--path', path, '-H']
+    cmd = ['onyo', 'get', '--include', path, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert f"The following paths are not part of the inventory:\n{repo.git.root / path}" in ret.stderr
     assert ret.returncode == 2

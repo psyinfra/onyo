@@ -53,7 +53,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert ret.returncode == 0
 
     # 2b. Check the warehouse for a display
-    cmd = ['onyo', 'get', '--path', 'warehouse', '--machine-readable', '--match', 'type=monitor', "display=22.0"]
+    cmd = ['onyo', 'get', '--include', 'warehouse', '--machine-readable', '--match', 'type=monitor', "display=22.0"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     monitor = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -94,7 +94,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 4. Member switches workgroup
     # 4a. Member left display behind -> assign to their former group
-    cmd = ['onyo', 'get', '--machine-readable', '--path', str(member), '--match', 'type=monitor']
+    cmd = ['onyo', 'get', '--machine-readable', '--include', str(member), '--match', 'type=monitor']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     display = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -128,7 +128,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     # 7. Member leaves institute
     # 7a. Retire laptop
-    cmd = ['onyo', 'get', '--machine-readable', '--path', str(member), '--match', "type=laptop"]
+    cmd = ['onyo', 'get', '--machine-readable', '--include', str(member), '--match', "type=laptop"]
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     laptop = Path(ret.stdout.splitlines()[0].split('\t')[-1])
@@ -143,7 +143,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
 
     #  QUERIES
     # 1. What is available in the warehouse?
-    cmd = ['onyo', 'get', '--machine-readable', '--path', 'warehouse']
+    cmd = ['onyo', 'get', '--machine-readable', '--include', 'warehouse']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # warehouse was prefilled with 6 assets. We previously took one display out.
@@ -172,7 +172,7 @@ def test_workflow_cli(repo: OnyoRepo) -> None:
     assert len(ret.stdout.splitlines()) == 3
 
     # 5. Find all lenovo laptops used in a workgroup
-    cmd = ['onyo', 'get', '--machine-readable', '--path', 'somegroup', '--match', 'make=lenovo']
+    cmd = ['onyo', 'get', '--machine-readable', '--include', 'somegroup', '--match', 'make=lenovo']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     # 'somegroup' got an apple and a lenovo from the start;

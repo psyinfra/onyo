@@ -85,15 +85,6 @@ args_get = {
         """
     ),
 
-    'path': dict(
-        args=('-p', '--path'),
-        metavar='PATH',
-        nargs='+',
-        help=r"""
-            Deprecated. Alias for ``--include``.
-        """
-    ),
-
     'sort_ascending': dict(
         args=('-s', '--sort-ascending'),
         metavar='SORT_KEY',
@@ -141,13 +132,13 @@ List all assets belonging to a user:
 
 .. code:: shell
 
-    $ onyo get --path accounting/Bingo\ Bob
+    $ onyo get --include accounting/Bingo\ Bob
 
 List all laptops in the warehouse:
 
 .. code:: shell
 
-    $ onyo get --match type=laptop --path warehouse/
+    $ onyo get --match type=laptop --include warehouse/
 
 Get the path of all laptops of a specific make and model, and print in machine
 parsable format (suitable for piping):
@@ -175,9 +166,7 @@ def get(args: argparse.Namespace) -> None:
 
     By default, the results are sorted by ``path``.
     """
-    includes = args.path if args.path else []
-    includes += args.include if args.include else []
-    includes = [Path(p).resolve() for p in includes] if includes else [Path.cwd()]
+    includes = [Path(p).resolve() for p in args.include] if args.include else [Path.cwd()]
     excludes = [Path(p).resolve() for p in args.exclude] if args.exclude else None
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))

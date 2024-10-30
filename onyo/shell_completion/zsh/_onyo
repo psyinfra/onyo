@@ -116,7 +116,6 @@ _onyo() {
                     '(-M --match)'{-M,--match}'[criteria to match assets in the form '\''KEY=VALUE'\'', where VALUE is a python regular expression]:*-*:MATCH: '
                     '(-i --include)'{-i,--include}'[assets or directories to include in the query]:*-*:PATH:_files -W "$(_onyo_dir)"'
                     '(-e --exclude)'{-e,--exclude}'[assets or directories to exclude from the query]:*-*:PATH:_files -W "$(_onyo_dir)"'
-                    '(-p --path)'{-p,--path}'[assets or directories to search through]:*-*:PATH:_files -W "$(_onyo_dir)"'
                     '(-s --sort-ascending -S --sort-descending)'{-s,--sort-ascending}'[sort output in ascending order]'
                     '(-S --sort-descending -s --sort-ascending)'{-S,--sort-descending}'[sort output in descending order]'
                 )
