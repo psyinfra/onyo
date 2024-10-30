@@ -6,10 +6,8 @@ from onyo.lib.ui import ui
 
 
 def get_cwd() -> Path:
-    # This avoids dumping a traceback to the user,
-    # if CWD doesn't exist.
-    # A bit hacky, b/c this would happen early on where
-    # we are not a general exception handler yet.
+    # HACK: avoid dumping a traceback to the user, if CWD doesn't exist.
+    # Needed early on, before we have a general exception handler.
     try:
         return Path.cwd()
     except FileNotFoundError as e:

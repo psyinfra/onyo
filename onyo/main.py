@@ -14,6 +14,7 @@ import rich
 from onyo import cli
 from onyo.lib.exceptions import (
     InvalidArgumentError,
+    OnyoCLIExitCode,
     UIInputError,
 )
 from onyo.lib.ui import ui
@@ -540,7 +541,11 @@ def main() -> None:
         os.chdir(args.opdir)
         # normally exit 1 on error. `get` is a special case. Exit with 2 on
         # error to mimic `grep`'s behavior.
-        error_returncode = 2 if args.cmd == 'get' else 1
+        cmd_error_codes = {
+            'cat': 2,
+            'get': 2,
+        }
+        error_returncode = cmd_error_codes.get(args.cmd, 1)
 
         try:
             args.run(args)
@@ -556,6 +561,9 @@ def main() -> None:
             # we usually let it through. If not, it should result in a dedicated exception,
             # that we can treat here accordingly.
             ui.log_debug(str(e))
+            sys.exit(e.returncode)
+        except OnyoCLIExitCode as e:
+            ui.log_debug(ui.format_traceback(e))
             sys.exit(e.returncode)
         except UIInputError as e:
             ui.error(e)

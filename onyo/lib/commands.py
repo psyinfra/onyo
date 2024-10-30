@@ -25,13 +25,14 @@ from onyo.lib.consts import (
     SORT_DESCENDING,
 )
 from onyo.lib.exceptions import (
+    InvalidAssetError,
+    InventoryDirNotEmpty,
     NotADirError,
     NotAnAssetError,
     NoopError,
     OnyoInvalidRepoError,
     OnyoRepoError,
     PendingInventoryOperationError,
-    InventoryDirNotEmpty,
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.ui import ui
@@ -150,10 +151,10 @@ def onyo_cat(inventory: Inventory,
              paths: list[Path]) -> None:
     r"""Print the contents of assets.
 
-    The same path can be given multiple times.
+    The same asset can be given multiple times.
 
     If any path is not an asset, nothing is printed.
-    If any asset content is invalid, the content of all assets is still printed.
+    If any asset content is invalid, the contents of all assets are still printed.
 
     Parameters
     ----------
@@ -165,10 +166,10 @@ def onyo_cat(inventory: Inventory,
     Raises
     ------
     ValueError
-        If a provided asset is not an asset, or if ``paths`` is empty.
+        The path is not an asset, or ``paths`` is empty.
 
-    OnyoInvalidRepoError
-        If ``paths`` contains an invalid asset (e.g. content is invalid YAML).
+    InvalidAssetError
+        An invalid asset is encountered.
     """
 
     from rich.syntax import Syntax
@@ -200,7 +201,7 @@ def onyo_cat(inventory: Inventory,
     # TODO: "Full" asset validation. Address when fsck is reworked
     assets_valid = validate_yaml(deduplicate(files))
     if not assets_valid:
-        raise OnyoInvalidRepoError("Invalid assets")
+        raise InvalidAssetError("Invalid assets")
 
 
 @raise_on_inventory_state
@@ -432,7 +433,7 @@ def onyo_edit(inventory: Inventory,
     if inventory.operations_pending():
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if auto_message:
-                operation_paths = sorted(deduplicate([
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
@@ -713,7 +714,7 @@ def onyo_mkdir(inventory: Inventory,
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if auto_message:
-                operation_paths = sorted(deduplicate([
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
                     op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_directories']]))
@@ -840,7 +841,7 @@ def onyo_mv(inventory: Inventory,
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if auto_message:
-                operation_paths = sorted(deduplicate([
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
                     op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['rename_assets'] or
@@ -1052,7 +1053,7 @@ def onyo_new(inventory: Inventory,
 
         if edit or ui.request_user_response("Create assets? (y/n) "):
             if auto_message:
-                operation_paths = sorted(deduplicate([
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_assets']]))
@@ -1117,7 +1118,7 @@ def onyo_rm(inventory: Inventory,
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if auto_message:
-                operation_paths = sorted(deduplicate([
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
                     op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['remove_assets'] or
@@ -1198,7 +1199,7 @@ def onyo_set(inventory: Inventory,
 
         if ui.request_user_response("Update assets? (y/n) "):
             if auto_message:
-                operation_paths = sorted(deduplicate([
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
@@ -1362,7 +1363,7 @@ def onyo_unset(inventory: Inventory,
 
         if ui.request_user_response("Update assets? (y/n) "):
             if auto_message:
-                operation_paths = sorted(deduplicate([
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
                     op.operands[0].get("path").relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING[

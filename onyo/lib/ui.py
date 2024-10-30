@@ -126,32 +126,46 @@ class UI(object):
         """
         self.yes = yes
 
+    def format_traceback(self,
+                         e: Exception) -> str:
+        r"""Format an Exception's traceback suitable for logging.
+
+        Parameters
+        ----------
+        e
+            Exception to extract the traceback from.
+        """
+
+        tb = traceback.TracebackException.from_exception(
+            e, lookup_lines=True, capture_locals=False
+        )
+        if e.__traceback__:
+            traceback.clear_frames(e.__traceback__)
+        return ''.join(tb.format())
+
     def error(self,
               error: str | Exception,
               end: str = '\n') -> None:
-        r"""Print an error message, if the `UI` is not set to quiet mode.
+        r"""Print an error message.
+
+        Nothing will be printed when ``UI`` is set to quiet mode.
+
+        When provided, Exceptions will print tracebacks in debug mode.
 
         Parameters
         ----------
         error
-            Prints the string, or the message of an error.
-            If debug mode is activated, displays the full traceback of an
-            exception.
-
+            Error message to print. Exceptions will have their message printed
+            and traceback added to the debug log.
         end
-            Specify the string at the end of prints.
-            Per default, prints end with a line break.
+            String to end the message with. Defaults to "\n".
         """
+
         self.error_count += 1
         if not self.quiet:
             print(f"ERROR: {error}", file=sys.stderr, end=end)
         if isinstance(error, Exception):
-            tb = traceback.TracebackException.from_exception(
-                error, lookup_lines=True, capture_locals=False
-            )
-            if error.__traceback__:
-                traceback.clear_frames(error.__traceback__)
-            self.logger.debug(''.join(tb.format()))
+            self.log_debug(self.format_traceback(error))
 
     def log(self,
             message: str,

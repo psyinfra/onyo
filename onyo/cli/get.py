@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.argparse_helpers import StoreSortOption
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.commands import onyo_get
+from onyo.lib.exceptions import OnyoCLIExitCode
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
+from onyo.lib.onyo import OnyoRepo
 
 if TYPE_CHECKING:
     import argparse
@@ -197,4 +197,4 @@ def get(args: argparse.Namespace) -> None:
                        keys=args.keys)
 
     if not results:
-        sys.exit(1)
+        raise OnyoCLIExitCode("'onyo get' exits 1 when no results are found.", 1)
