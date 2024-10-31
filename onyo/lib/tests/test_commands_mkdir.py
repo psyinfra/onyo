@@ -83,7 +83,7 @@ def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
     # no new directory/anchor was created
     assert not dir_path_new.is_dir()
     assert not (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert not (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert not (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files  # noqa: E713
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
     assert inventory.repo.git.is_clean_worktree()

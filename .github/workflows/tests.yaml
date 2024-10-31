@@ -29,9 +29,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[tests]"
         sudo apt-get install -y zsh
-    - name: flake8 linting
+    - name: ruff linting
       run: |
-        flake8
+        ruff check
     - name: Pyre type-checking
       run: |
         pyre --noninteractive check
