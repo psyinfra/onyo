@@ -31,11 +31,11 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 tests = [
-    'flake8',
     'pyre-check',
     'pytest',
     'pytest-cov',
-    'pytest-randomly'
+    'pytest-randomly',
+    'ruff',
 ]
 docs = [
     'sphinx',
@@ -58,3 +58,13 @@ version_file = "onyo/_version.py"
 
 [tool.setuptools.packages]
 find = {}  # Scanning implicit namespaces is active by default
+
+[tool.ruff]
+exclude = ["build/"]
+# E501: Line too long (82 > 79 characters)
+lint.ignore = ["E501"]
+lint.select = [
+    "E",
+    "F",
+    "W",
+]
