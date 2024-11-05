@@ -56,12 +56,12 @@ Templates
 This section describes some of the templates provided with ``onyo init`` in the
 directory ``.onyo/templates/``.
 
-``onyo new --keys <keys> --path <directory>`` (equivalent to
-``onyo new --keys <keys> --template empty --path <directory>``) as defined
+``onyo new --keys <keys> --directory <directory>`` (equivalent to
+``onyo new --keys <keys> --template empty --directory <directory>``) as defined
 by ``.onyo/templates/empty`` is an empty YAML file, and ``keys`` must
 additionally specify the keys used for asset names.
 
-``onyo new --edit --template laptop.example --path <directory>`` as defined by
+``onyo new --edit --template laptop.example --directory <directory>`` as defined by
 ``.onyo/templates/laptop.example`` contains a simple example for a laptop asset
 which already contains some fields, which are relevant for all assets of that
 device type.

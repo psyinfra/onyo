@@ -51,7 +51,7 @@ Remove a key from an asset:
 
 .. code:: shell
 
-    $ onyo unset --keys USB_A --path accounting/Bingo\ Bob/laptop_apple_macbook.oiw629
+    $ onyo unset --keys USB_A --asset accounting/Bingo\ Bob/laptop_apple_macbook.oiw629
 
 Remove a key from all laptops:
 
