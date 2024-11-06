@@ -25,7 +25,7 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
     ``git-config`` stores configuration information in a variety of locations.
     This makes sure that such location flags aren't in the list (and ``--help``).
 
-    A helper for the ``onyo config`` command.
+    A helper for ``onyo_config()``.
 
     Parameters
     ----------
@@ -37,6 +37,7 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
     ValueError
         If a disallowed flag is detected.
     """
+
     # git-config supports multiple layers of git configuration. Onyo uses
     # ``--file`` to write to .onyo/config. Other options are excluded.
     forbidden_flags = ['--system',

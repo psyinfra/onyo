@@ -41,8 +41,8 @@ def config(args: argparse.Namespace) -> None:
     r"""
     Set, query, and unset Onyo repository configuration options.
 
-    These options are stored in ``.onyo/config``, which is tracked by git and
-    shared with all other users of the Onyo repository.
+    These options are stored in ``.onyo/config``, which is in the Onyo
+    repository and thus shared with all other consumers of the repository.
 
     To set configuration options locally (and not commit them to the Onyo
     repository), use ``git config`` instead.
@@ -55,22 +55,27 @@ def config(args: argparse.Namespace) -> None:
     Onyo configuration options:
 
       * ``onyo.assets.name-format``: The format for asset names on the
-        filesystem. (default: "{type}_{make}_{model}.{serial}")
-      * ``onyo.core.editor``: The editor to use for subcommands such as ``edit``
-        and ``new``. If unset, it will fallback to ``core.editor`` of  ``git``,
-        then the environmental variable ``EDITOR`` and lastly ``nano``.
-        (default: unset)
-      * ``onyo.history.interactive``: The interactive command to use for
-        ``onyo history``. (default: "tig --follow")
-      * ``onyo.history.non-interactive``: The non-interactive command for
-        running ``onyo history --non-interactive``.
-        (default: "git --no-pager log --follow")
+        filesystem.
+        Default: "{type}_{make}_{model}.{serial}"
+      * ``onyo.core.editor``: The command to run subcommands such as ``edit``
+        and ``new --edit``. If unset, it will fallback to ``git``'s ``core.editor``,
+        then the environmental variable ``EDITOR``, and lastly ``nano``.
+        Default: unset
+      * ``onyo.history.interactive``: The command to run for
+        ``onyo history``.
+        Default: "tig --follow"
+      * ``onyo.history.non-interactive``: The command to run for
+        ``onyo history --non-interactive``.
+        Default: "git --no-pager log --follow"
       * ``onyo.new.template``: The default template to use with ``onyo new``.
-        (default: "empty")
+        Default: "empty"
       * ``onyo.repo.version``: The Onyo repository version.
     """
 
-    # TODO: Wouldn't we want to commit (implying message parameter)?
+    # Though this commit makes changes and commits, the --message and
+    # --no-auto-message flags are omitted to simplify passing args to
+    # git-config.
+    # A motivated individual could choose to fix this.
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     onyo_config(inventory,
