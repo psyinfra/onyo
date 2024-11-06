@@ -29,7 +29,7 @@ args_rm = {
         default=False,
         action='store_true',
         help=r"""
-            If set, remove directories recursively including their content.
+            Remove directories recursively including their content.
         """
     ),
 
@@ -64,6 +64,7 @@ def rm(args: argparse.Namespace) -> None:
     If any of the given paths are invalid, Onyo will error and delete none of
     them.
     """
+
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     paths = [Path(p).resolve() for p in args.path]
 
