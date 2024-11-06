@@ -406,7 +406,7 @@ def onyo_edit(inventory: Inventory,
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -694,7 +694,7 @@ def onyo_mkdir(inventory: Inventory,
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -790,7 +790,7 @@ def onyo_mv(inventory: Inventory,
 
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -931,7 +931,7 @@ def onyo_new(inventory: Inventory,
 
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -1092,7 +1092,7 @@ def onyo_rm(inventory: Inventory,
 
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     """
     if auto_message is None:
@@ -1158,7 +1158,7 @@ def onyo_set(inventory: Inventory,
 
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -1320,7 +1320,7 @@ def onyo_unset(inventory: Inventory,
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
