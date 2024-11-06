@@ -72,26 +72,12 @@ class StoreMultipleKeyValuePairs(argparse.Action):
             parser.error(f"All keys given multiple times must be given the same number of times:\n"
                          f"{f'{linesep}'.join(['{}: {}'.format(k, c) for k, c in key_counts.items() if 1 < c])}")
 
-        def cvt(v: str) -> int | float | str | bool:
-            if v.lower() == "true":
-                return True
-            elif v.lower() == "false":
-                return False
-            try:
-                r = int(v)
-            except ValueError:
-                try:
-                    r = float(v)
-                except ValueError:
-                    r = v
-            return r
-
         results = []
         for i in range(key_max_count):
             d = dict()
             for k, values in key_lists.items():
                 v = values[0] if len(values) == 1 else values[i]
-                d[k] = cvt(v)
+                d[k] = v
             results.append(d)
         setattr(namespace, self.dest, results)
 
@@ -143,20 +129,6 @@ class StoreSingleKeyValuePairs(argparse.Action):
             if "=" not in kv:
                 parser.error(f"Invalid argument '{kv}'. Expected key-value pairs '<key>=<value>'.")
 
-        def cvt(v: str) -> int | float | str | bool:
-            if v.lower() == "true":
-                return True
-            elif v.lower() == "false":
-                return False
-            try:
-                r = int(v)
-            except ValueError:
-                try:
-                    r = float(v)
-                except ValueError:
-                    r = v
-            return r
-
         pairs = [p.split('=', maxsplit=1) for p in key_values]
         results = dict()
         for k, v in pairs:
@@ -164,7 +136,7 @@ class StoreSingleKeyValuePairs(argparse.Action):
                 parser.error(f"Duplicate key '{k}' found.\n"
                              f"Keys must not be given multiple times.")
 
-            results[k] = cvt(v)
+            results[k] = v
 
         setattr(namespace, self.dest, results)
 

@@ -33,7 +33,7 @@ asset_specs = [DotNotationWrapper({'type': 'laptop',
 assets = []
 for i, d in enumerate(directories):
     for spec in asset_specs:
-        spec['serial'] = str(i)
+        spec['serial'] = "00_" + str(i)
         name = f"{spec['type']}_{spec['make']}_{spec['model.name']}.{spec['serial']}"
         content = dict_to_asset_yaml(spec)
         assets.append([f"{d}/{name}", content])
