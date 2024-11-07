@@ -406,7 +406,7 @@ def onyo_edit(inventory: Inventory,
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -694,7 +694,7 @@ def onyo_mkdir(inventory: Inventory,
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -790,7 +790,7 @@ def onyo_mv(inventory: Inventory,
 
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -931,7 +931,7 @@ def onyo_new(inventory: Inventory,
 
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -1072,29 +1072,24 @@ def onyo_rm(inventory: Inventory,
             message: str | None = None,
             recursive: bool = False,
             auto_message: bool | None = None) -> None:
-    r"""Delete assets and/or directories from the inventory.
+    r"""Delete assets and/or directories from an inventory.
 
     Parameters
     ----------
     inventory
         The inventory in which assets and/or directories will be deleted.
-
     paths
-        List of paths to assets and/or directories to delete from the Inventory.
-        If any path given is not valid, none of them gets deleted.
-
+        Path or List of Paths of assets and/or directories to delete from the
+        inventory. If any path is invalid or encounters a problem, none are deleted.
     recursive
-        Recursively remove a directory with all its content. If not set,
-        fail on non-empty directories.
-
+        Remove directories recursively.
     message
         Commit message to append to the auto-generated message.
-
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
-
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
     """
+
     if auto_message is None:
         auto_message = inventory.repo.auto_message
     paths = [paths] if not isinstance(paths, list) else paths
@@ -1158,7 +1153,7 @@ def onyo_set(inventory: Inventory,
 
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
@@ -1320,7 +1315,7 @@ def onyo_unset(inventory: Inventory,
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, take the value from the 'onyo.commit.auto-message' configuration.
+        If ``None``, lookup the value from 'onyo.commit.auto-message'.
 
     Raises
     ------
