@@ -36,7 +36,10 @@ from onyo.lib.exceptions import (
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.ui import ui
-from onyo.lib.utils import deduplicate, write_asset_file
+from onyo.lib.utils import (
+    deduplicate,
+    write_asset_file,
+)
 
 if TYPE_CHECKING:
     from collections import UserDict
@@ -46,8 +49,8 @@ if TYPE_CHECKING:
         Generator,
         Iterable,
     )
-    from onyo.lib.onyo import OnyoRepo
     from onyo.lib.consts import sort_t
+    from onyo.lib.onyo import OnyoRepo
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -1210,43 +1213,42 @@ def onyo_set(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_tree(inventory: Inventory,
-              paths: list[tuple[str, Path]],
+              path: Path,
+              description: str | None = None,
               dirs_only: bool = False) -> None:
-    r"""Print the directory tree of paths.
+    r"""Print a directory's child assets and directories in a tree-like format.
 
     Parameters
     ----------
     inventory
-        The inventory in which the directories to display are located.
-
-    paths
-        A list of tuples containing (str, Path) of directories to build a tree
-        of.
-
-        The description is used as a text representation of what path the user
-        requested. This way, regardless of how the user requested a path
-        (relative, absolute, subdir, etc), it is always printed "correctly".
-
+        The inventory in which the directory is located.
+    path
+        The directory to build a tree of.
+    description
+        The string to represent the root node. Usually the verbatim path
+        requested by the user (relative, absolute, subdir, etc).
     dirs_only
         Print only directories.
+
     Raises
     ------
     ValueError
         If paths are invalid.
     """
-    # sanitize the paths
-    non_inventory_dirs = [desc for (desc, p) in paths if not inventory.repo.is_inventory_dir(p)]
-    if non_inventory_dirs:
-        raise ValueError("The following paths are not inventory directories: %s" %
-                         '\n'.join(non_inventory_dirs))
+    desc = description if description is not None else str(path)
 
-    for (desc, p) in paths:
-        ui.rich_print(f'[bold][sandy_brown]{desc}[/sandy_brown][/bold]')
-        for line in _tree(p, dirs_only=dirs_only):
-            ui.rich_print(line)
+    # sanitize the path
+    if not inventory.repo.is_inventory_dir(path):
+        raise ValueError(f"The following path is not an inventory directory: {desc}")
+
+    ui.rich_print(f'[bold][sandy_brown]{desc}[/sandy_brown][/bold]')
+    for line in _tree(path, dirs_only=dirs_only):
+        ui.rich_print(line)
 
 
-def _tree(dir_path: Path, prefix: str = '', dirs_only: bool = False) -> Generator[str, None, None]:
+def _tree(dir_path: Path,
+          prefix: str = '',
+          dirs_only: bool = False) -> Generator[str, None, None]:
     r"""Yield lines that assemble tree-like output, stylized by rich.
 
     Parameters
