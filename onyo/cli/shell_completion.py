@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+from importlib import resources
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -37,14 +37,4 @@ def shell_completion(args: argparse.Namespace) -> None:
 
     The output of this command is suitable to ``source`` in your shell.
     """
-    content = ''
-    shell_completion_dir = Path(__file__).resolve().parent.parent / 'shell_completion'
-
-    if args.shell == 'zsh':
-        shell_completion_file = shell_completion_dir / 'zsh' / '_onyo'
-
-    # TODO: add bash
-    # bash: ~/.local/share/bash-completion/completions
-
-    content = shell_completion_file.read_text()
-    print(content)
+    print(resources.files('onyo.shell_completion').joinpath(args.shell).read_text())

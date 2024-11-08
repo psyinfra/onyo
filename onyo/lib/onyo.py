@@ -357,6 +357,8 @@ class OnyoRepo(object):
             If called on a directory which sub-directory path does not exist.
         """
 
+        from importlib import resources
+
         # Note: Why is this necessary to check? Assuming we call git-init on it,
         # this will repeat that same test anyway (and would fail telling us this
         # problem) target must be a directory
@@ -376,13 +378,9 @@ class OnyoRepo(object):
 
         self.git.maybe_init()
 
-        # Note: pheewww - No. Installed resource needs to be found differently.
-        #       Who the hell is supposed to maintain that? One cannot simply
-        #       move this function without changing its implementation.
-        skel_dir = Path(__file__).resolve().parent.parent / 'skel'
-
         # populate .onyo dir
-        shutil.copytree(skel_dir, self.dot_onyo)
+        with resources.path("onyo", "skel") as skel_dir:
+            shutil.copytree(skel_dir, self.dot_onyo)
 
         # set default config if it's not set already
         if self.git.get_config(name="onyo.commit.auto-message",

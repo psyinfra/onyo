@@ -1,12 +1,13 @@
 import os
 import subprocess
+from importlib import resources
 from pathlib import Path
 
 import pytest
 
 from onyo.lib.onyo import OnyoRepo
 
-prepared_tsvs = Path(__file__).parent / "tables"
+prepared_tsvs = resources.files('onyo.cli.tests').joinpath('tables')
 directories = ['simple',
                's p a c e s',
                's p a/c e s',
