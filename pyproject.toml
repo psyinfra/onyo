@@ -51,11 +51,9 @@ onyo = "onyo.main:main"
 [tool.setuptools_scm]
 version_file = "onyo/_version.py"
 
-#[tool.setuptools]
-## If there are data files included in your packages that need to be
-## installed, specify them here.
-#package-data = {"sample" = ["*.dat"]}
-
+## Resources
+# All non-.py files in git are included as data files.
+# Untracked files must be listed in MANIFEST.in.
 [tool.setuptools.packages]
 find = {}  # Scanning implicit namespaces is active by default
 
