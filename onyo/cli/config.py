@@ -21,6 +21,33 @@ args_config = {
 }
 
 epilog_config = r"""
+.. rubric:: Configuration Options
+
+``onyo.assets.name-format``:
+  The format for asset names on the filesystem.
+  Default: "{type}_{make}_{model}.{serial}"
+
+``onyo.core.editor``:
+  The command to run subcommands such as ``edit`` and ``new --edit``. If unset,
+  it will fallback to ``git``'s ``core.editor``, then the environmental variable
+  ``EDITOR``, and lastly ``nano``.
+  Default: unset
+
+``onyo.history.interactive``:
+  The command to run for ``onyo history``.
+  Default: "tig --follow"
+
+``onyo.history.non-interactive``:
+  The command to run for ``onyo history --non-interactive``.
+  Default: "git --no-pager log --follow"
+
+``onyo.new.template``:
+  The default template to use with ``onyo new``.
+  Default: "empty"
+
+``onyo.repo.version``:
+  The Onyo repository version.
+
 .. rubric:: Examples
 
 Get the tool used for interactive history:
@@ -51,25 +78,6 @@ def config(args: argparse.Namespace) -> None:
     capabilities are available with the exception of ``--system``, ``--global``,
     ``--local``, ``--worktree``, and ``--file``. Please see the **git-config**
     manpage for more information about usage.
-
-    Onyo configuration options:
-
-      * ``onyo.assets.name-format``: The format for asset names on the
-        filesystem.
-        Default: "{type}_{make}_{model}.{serial}"
-      * ``onyo.core.editor``: The command to run subcommands such as ``edit``
-        and ``new --edit``. If unset, it will fallback to ``git``'s ``core.editor``,
-        then the environmental variable ``EDITOR``, and lastly ``nano``.
-        Default: unset
-      * ``onyo.history.interactive``: The command to run for
-        ``onyo history``.
-        Default: "tig --follow"
-      * ``onyo.history.non-interactive``: The command to run for
-        ``onyo history --non-interactive``.
-        Default: "git --no-pager log --follow"
-      * ``onyo.new.template``: The default template to use with ``onyo new``.
-        Default: "empty"
-      * ``onyo.repo.version``: The Onyo repository version.
     """
 
     # Though this commit makes changes and commits, the --message and
