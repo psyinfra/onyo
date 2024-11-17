@@ -148,7 +148,7 @@ def fsck(repo: OnyoRepo,
 
 @raise_on_inventory_state
 def onyo_cat(inventory: Inventory,
-             paths: list[Path]) -> None:
+             assets: list[Path]) -> None:
     r"""Print the contents of assets.
 
     The same asset can be given multiple times.
@@ -160,7 +160,7 @@ def onyo_cat(inventory: Inventory,
     ----------
     inventory
         The inventory containing the assets to print.
-    paths
+    assets
         Paths of assets to print the contents of.
 
     Raises
@@ -176,18 +176,18 @@ def onyo_cat(inventory: Inventory,
     from onyo.lib.onyo import OnyoRepo
     from onyo.lib.utils import validate_yaml
 
-    if not paths:
+    if not assets:
         raise ValueError("At least one asset must be specified.")
 
-    non_asset_paths = [str(p) for p in paths if not inventory.repo.is_asset_path(p)]
+    non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
     if non_asset_paths:
         raise ValueError("The following paths are not assets:\n%s" %
                          "\n".join(non_asset_paths))
 
-    files = list(p / OnyoRepo.ASSET_DIR_FILE_NAME
-                 if inventory.repo.is_asset_dir(p)
-                 else p
-                 for p in paths)
+    files = list(a / OnyoRepo.ASSET_DIR_FILE_NAME
+                 if inventory.repo.is_asset_dir(a)
+                 else a
+                 for a in assets)
     # open file and print to stdout
     for f in files:
         asset_text = f.read_text()
