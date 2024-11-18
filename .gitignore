@@ -1,7 +1,9 @@
 onyo/_version.py
 docs/source/onyo.*.rst
+.benchmarks/
 .coverage
+.pyre/
+.pytest_cache/
 build/
 __pycache__
 *egg-info
-.pyre

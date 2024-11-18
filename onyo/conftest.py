@@ -280,7 +280,7 @@ class OnyoProvider(python.Provider):
                          num: int = 1,
                          override: dict | None = None) -> Generator[dict, None, None]:
         r"""
-        Yield asset directories suitable for populating realistic assets.
+        Yield asset dictionaries suitable for populating realistic assets.
         """
         if override is None:
             override = {}

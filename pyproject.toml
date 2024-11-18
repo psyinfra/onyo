@@ -34,6 +34,7 @@ tests = [
     'Faker',
     'pyre-check',
     'pytest',
+    'pytest-benchmark',
     'pytest-cov',
     'pytest-randomly',
     'ruff',

@@ -68,6 +68,18 @@ flake8
 pyre check
 ```
 
+### Benchmarks
+
+Benchmarks use pytest-benchmark.
+```bash
+pytest -p no:randomly -p no:cov --benchmark-autosave --benchmark-time-unit=s --benchmark-max-time=5 --benchmark-min-rounds=5 --benchmark-sort=name --benchmark-group-by=func --benchmark-columns=min,max,mean,stddev,median,rounds -vv onyo/tests/benchmark.py
+```
+To compare to previous runs:
+```
+pytest-benchmark compare .benchmarks/[...] [...]
+```
+
+
 ### Building documentation
 
 ```bash
