@@ -62,9 +62,9 @@ REPO_ROOT=$PWD pytest -vv --cov
 
 ### Linting and type checking
 
-Linting uses both flake8 and Pyre.
+Linting uses both ruff and Pyre.
 ```bash
-flake8
+ruff check
 pyre check
 ```
 
@@ -91,7 +91,7 @@ Navigate to <file:///<repo_dir>/docs/build/html/index.html>
 ## Code Conventions
 
 Onyo follows a set of development and coding conventions throughout its code
-base. For linting and type checking, Onyo uses flake8 and Pyre. The following
+base. For linting and type checking, Onyo uses ruff and Pyre. The following
 sections describe conventions followed in this project, additionally to the
 [PEP 8 Style Guide](https://peps.python.org/pep-0008/).
 
