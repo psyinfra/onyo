@@ -46,7 +46,7 @@ def test_add_asset(repo: OnyoRepo) -> None:
     asset_file = newdir2 / "test_I_mk1.123"
     asset = DotNotationWrapper(
         dict(some_key="some_value",
-             other=1,
+             other='1',
              directory=newdir2,
              type="test",
              make="I",
@@ -155,7 +155,7 @@ def test_move_asset(repo: OnyoRepo) -> None:
     asset_file = newdir2 / "test_I_mk1.123"
     asset = DotNotationWrapper(
         dict(some_key="some_value",
-             other=1,
+             other='1',
              directory=newdir2,
              type="test",
              make="I",
@@ -200,7 +200,7 @@ def test_rename_asset(repo: OnyoRepo) -> None:
              make="MAKER",
              model=dict(name="MODEL"),
              serial="SERIAL",
-             other=1,
+             other='1',
              directory=newdir2)
     )
     inventory.add_asset(asset)
@@ -227,7 +227,7 @@ def test_modify_asset(repo: OnyoRepo) -> None:
              make="MAKER",
              model=dict(name="MODEL"),
              serial="SERIAL",
-             other=1,
+             other='1',
              directory=newdir2)
     )
     inventory.add_asset(asset)
@@ -328,7 +328,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
              make="MAKER",
              model=dict(name="MODEL"),
              serial="SERIAL",
-             other=1,
+             other='1',
              directory=newdir2)
     )
     inventory.add_asset(asset)

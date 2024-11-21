@@ -29,6 +29,32 @@ if TYPE_CHECKING:
     _VT = TypeVar("_VT")  # Value type.
 
 
+def get_patched_yaml() -> YAML:  # pyre-ignore[11] pyre can't deal with the import hence can't figure `YAML` as type here
+    import re
+    import ruamel.yaml.resolver  # pyre-ignore[21]
+    # lazy evaluation regex:
+    from ruamel.yaml.util import RegExp  # pyre-ignore[21]
+    # HACK: Patch ruamel in order to disable implicit typing,
+    #       by removing the default implicit_resolvers. Then
+    #       add one, that resolves everything to a string.
+    # Eventually, this needs to be conditioned on discovering
+    # a (user-provided) schema.
+    ruamel.yaml.resolver.implicit_resolvers = []
+    yaml = YAML(typ='rt', pure=True)
+    # A YAML null still needs to be `None`. Copy the RegExp and 'first' from
+    # ruamel.yaml.resolver and add this one first.
+    yaml.resolver.add_implicit_resolver(tag="tag:yaml.org,2002:null",
+                                        regexp=RegExp('''^(?: ~
+                                                      |null|Null|NULL
+                                                      | )$''', re.X),
+                                        first=['~', 'n', 'N', ''])
+    # Everything else becomes a string:
+    yaml.resolver.add_implicit_resolver(tag="tag:yaml.org,2002:str",
+                                        regexp=RegExp('^.*$'),
+                                        first=None)
+    return yaml
+
+
 class DotNotationWrapper(UserDict):
     """Dictionary wrapper for providing access to nested dictionaries via hierarchical keys.
 
@@ -193,7 +219,7 @@ def dict_to_asset_yaml(d: Dict | UserDict) -> str:
         return '---\n'
 
     from io import StringIO
-    yaml = YAML(typ='rt')
+    yaml = get_patched_yaml()
     yaml.explicit_start = True
     s = StringIO()
     yaml.dump(content,
@@ -201,7 +227,7 @@ def dict_to_asset_yaml(d: Dict | UserDict) -> str:
     return s.getvalue()
 
 
-def get_asset_content(asset_file: Path) -> dict[str, bool | float | int | str | Path]:
+def get_asset_content(asset_file: Path) -> dict:
     r"""Get the contents of an asset as a dictionary.
 
     If the asset file's contents are not valid YAML, an error is printed.
@@ -211,12 +237,13 @@ def get_asset_content(asset_file: Path) -> dict[str, bool | float | int | str | 
     asset_file
         The Path of the asset file to get the contents of.
     """
-    yaml = YAML(typ='rt', pure=True)
+
+    yaml = get_patched_yaml()
     contents = dict()
     try:
         contents = yaml.load(asset_file)
     except YAMLError as e:  # pyre-ignore[66]
-        # Remove ruaml usage pointer (see github issue 436)
+        # Remove ruamel usage pointer (see github issue 436)
         if hasattr(e, 'note') and isinstance(e.note, str) and "suppress this check" in e.note:
             e.note = ""
         raise NotAnAssetError(f"Invalid YAML in {asset_file}:\n{str(e)}") from e
@@ -277,7 +304,7 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
     for asset in asset_files:
         # TODO: use valid_yaml()
         try:
-            YAML(typ='rt').load(asset)
+            get_patched_yaml().load(asset)
         except scanner.ScannerError:  # pyre-ignore[66]
             invalid_yaml.append(str(asset))
 
