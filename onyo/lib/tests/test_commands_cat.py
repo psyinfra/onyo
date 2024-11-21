@@ -18,51 +18,51 @@ def test_onyo_cat_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[])
+                  assets=[])
 
     # cat on dir
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[dir_path])
+                  assets=[dir_path])
 
     # cat on non-existing file
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[dir_path / "does_not_exi.st"])
+                  assets=[dir_path / "does_not_exi.st"])
 
     # cat on untracked file
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[inventory.root / "untracked" / "file"])
+                  assets=[inventory.root / "untracked" / "file"])
 
     # cat on path outside onyo repository
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[inventory.root / ".."])
+                  assets=[inventory.root / ".."])
 
     # one of multiple is non-existing
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[asset_path,
-                         inventory.root / "doesnotexist",
-                         asset_path])
+                  assets=[asset_path,
+                          inventory.root / "doesnotexist",
+                          asset_path])
 
     # cat on .anchor
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[dir_path / OnyoRepo.ANCHOR_FILE_NAME])
+                  assets=[dir_path / OnyoRepo.ANCHOR_FILE_NAME])
 
     # cat on a template file
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  paths=[inventory.repo.dot_onyo / "templates" / "laptop.example"])
+                  assets=[inventory.repo.dot_onyo / "templates" / "laptop.example"])
 
     # cat on a file that is in the inventory, but has invalid YAML contents
     invalid_path = inventory.root / "in_va_l.id"
@@ -73,7 +73,7 @@ def test_onyo_cat_errors(inventory: Inventory) -> None:
     pytest.raises(InvalidAssetError,
                   onyo_cat,
                   inventory,
-                  paths=[invalid_path])
+                  assets=[invalid_path])
 
 
 @pytest.mark.ui({'yes': True})
@@ -84,7 +84,7 @@ def test_onyo_cat_single(inventory: Inventory,
 
     # cat single asset
     onyo_cat(inventory,
-             paths=[asset_path])
+             assets=[asset_path])
 
     # verify asset contents are in output
     assert Path.read_text(asset_path) in capsys.readouterr().out
@@ -110,8 +110,8 @@ def test_onyo_cat_multiple(inventory: Inventory,
 
     # cat multiple assets at once
     onyo_cat(inventory,
-             paths=[asset_path1,
-                    asset_path2])
+             assets=[asset_path1,
+                     asset_path2])
 
     # verify the output contains both assets
     out = capsys.readouterr().out
@@ -127,9 +127,9 @@ def test_onyo_cat_with_duplicate_path(inventory: Inventory,
 
     # cat single asset
     onyo_cat(inventory,
-             paths=[asset_path, asset_path, asset_path])
+             assets=[asset_path, asset_path, asset_path])
 
-    # verify output contains the asset contents once for each time the asset is in `paths`
+    # verify output contains the asset contents once for each time the asset is in `assets`
     assert capsys.readouterr().out.count(Path.read_text(asset_path)) == 3
 
 

@@ -31,8 +31,10 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 tests = [
+    'Faker',
     'pyre-check',
     'pytest',
+    'pytest-benchmark',
     'pytest-cov',
     'pytest-randomly',
     'ruff',

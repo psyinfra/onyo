@@ -62,11 +62,23 @@ REPO_ROOT=$PWD pytest -vv --cov
 
 ### Linting and type checking
 
-Linting uses both flake8 and Pyre.
+Linting uses both ruff and Pyre.
 ```bash
-flake8
+ruff check
 pyre check
 ```
+
+### Benchmarks
+
+Benchmarks use pytest-benchmark.
+```bash
+pytest -p no:randomly -p no:cov --benchmark-autosave --benchmark-time-unit=s --benchmark-max-time=5 --benchmark-min-rounds=5 --benchmark-sort=name --benchmark-group-by=func --benchmark-columns=min,max,mean,stddev,median,rounds -vv onyo/tests/benchmark.py
+```
+To compare to previous runs:
+```
+pytest-benchmark compare .benchmarks/[...] [...]
+```
+
 
 ### Building documentation
 
@@ -79,7 +91,7 @@ Navigate to <file:///<repo_dir>/docs/build/html/index.html>
 ## Code Conventions
 
 Onyo follows a set of development and coding conventions throughout its code
-base. For linting and type checking, Onyo uses flake8 and Pyre. The following
+base. For linting and type checking, Onyo uses ruff and Pyre. The following
 sections describe conventions followed in this project, additionally to the
 [PEP 8 Style Guide](https://peps.python.org/pep-0008/).
 

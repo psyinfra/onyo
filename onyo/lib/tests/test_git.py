@@ -237,6 +237,8 @@ def test_GitRepo_get_subtrees(gitrepo) -> None:
 
 
 def test_GitRepo_get_hexsha(gitrepo) -> None:
+    import string
+
     # empty repo yields no hexsha:
     assert gitrepo.get_hexsha() is None
     # unknown commit-ish raises ValueError:
@@ -249,8 +251,10 @@ def test_GitRepo_get_hexsha(gitrepo) -> None:
     # There actually is a commit now:
     sha = gitrepo.get_hexsha()
     assert isinstance(sha, str)
-    # TODO: Add proper length assumption
-    #       -> also: short
+    # full sha is always returned
+    assert len(sha) == 40
+    # only hex characters used
+    assert all(c in string.hexdigits for c in sha)
 
     # Default is HEAD
     assert sha == gitrepo.get_hexsha('HEAD')

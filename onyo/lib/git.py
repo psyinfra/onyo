@@ -343,7 +343,7 @@ class GitRepo(object):
         if short:
             cmd.append('--short')
         try:
-            return self._git(cmd)
+            return self._git(cmd).strip()
         except subprocess.CalledProcessError:
             if commitish is None:
                 return None
