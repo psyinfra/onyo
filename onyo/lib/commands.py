@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import logging
 import subprocess
 from pathlib import Path
@@ -19,7 +18,6 @@ from onyo.lib.command_utils import (
     print_diff,
 )
 from onyo.lib.consts import (
-    PSEUDO_KEYS,
     RESERVED_KEYS,
     SORT_ASCENDING,
     SORT_DESCENDING,
@@ -34,7 +32,9 @@ from onyo.lib.exceptions import (
     OnyoRepoError,
     PendingInventoryOperationError,
 )
+from onyo.lib.items import Item
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
+from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.ui import ui
 from onyo.lib.utils import (
     deduplicate,
@@ -293,12 +293,13 @@ def _edit_asset(inventory: Inventory,
     if not editor:
         editor = inventory.repo.get_editor()
 
-    # Store original reserved keys of `asset`, in order to re-assign
+    # Store original pseudo-keys of `asset`, in order to re-assign
     # them when loading edited file from disc. This is relevant, when
-    # `operation` uses them (`Inventory.add_asset`)
-    reserved_keys = {k: v for k, v in asset.items() if k in RESERVED_KEYS}
-    disallowed_keys = RESERVED_KEYS + PSEUDO_KEYS
-    disallowed_keys.remove("is_asset_directory")
+    # `operation` uses them (`Inventory.add_asset/modify_asset`).
+    reserved_keys = {k: v for k, v in asset.items() if k in list(PSEUDO_KEYS.keys()) + ['template']}
+    disallowed_keys = RESERVED_KEYS + list(PSEUDO_KEYS.keys())
+    disallowed_keys.remove('onyo.is.directory')
+    disallowed_keys.remove('onyo.path.parent')
 
     tmp_path = get_temp_file()
     write_asset_file(tmp_path, asset)
@@ -319,15 +320,19 @@ def _edit_asset(inventory: Inventory,
         subprocess.run(f'{editor} {quote(str(tmp_path))}', check=True, shell=True)
         operations = None
         try:
-            asset = DotNotationWrapper(get_asset_content(tmp_path))
-            if 'is_asset_directory' in asset.keys():
+            tmp_asset = DotNotationWrapper(get_asset_content(tmp_path))
+            if 'onyo.is.directory' in tmp_asset.keys():
                 # special case
-                # 'is_asset_directory' currently is the only modifiable, reserved key.
+                # 'onyo.is.directory' currently is the only modifiable, reserved key.
                 # TODO: This may either need a separate category or RESERVED_KEYS to
                 #       become a more structured thing than a plain list.
-                reserved_keys['is_asset_directory'] = asset['is_asset_directory']
-            if any(k in disallowed_keys for k in asset.keys()):
+                reserved_keys['onyo.is.directory'] = tmp_asset['onyo.is.directory']
+            # Check disallowed keys before we make an `Item` of this,
+            # because that will have all pseudo-keys.
+            if any(k in disallowed_keys for k in tmp_asset.keys()):
                 raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
+            asset = Item()
+            asset.data = tmp_asset.data  # keep exact objects for ruamel-based roundtrip
             # When reading from file, we don't get reserved keys back, since they are not
             # part of the file content. We do need the object from reading the file to be
             # the basis, though, to get comment roundtrip from ruamel.
@@ -437,7 +442,7 @@ def onyo_edit(inventory: Inventory,
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if auto_message:
                 operation_paths = sorted(deduplicate([  # pyre-ignore[6]
-                    op.operands[0].get("path").relative_to(inventory.root)
+                    op.operands[0].get("onyo.path.relative")
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
                 message = inventory.repo.generate_auto_message(
@@ -497,7 +502,7 @@ def onyo_get(inventory: Inventory,
       `sort` dictionary). Possible values are
       `onyo.lib.consts.SORT_ASCENDING` and `onyo.lib.consts.SORT_DESCENDING`.
       If other values are specified an error is raised.
-      Default: `{'path': SORT_ASCENDING}`.
+      Default: `{'onyo.path.relative': SORT_ASCENDING}`.
       One can sort by keys that are not in the output.
 
     Raises
@@ -527,7 +532,7 @@ def onyo_get(inventory: Inventory,
     if sort and not all(v in allowed_sorting for k, v in sort.items()):
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
-    selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['path']
+    selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['onyo.path.relative']
     results = list(inventory.get_assets_by_query(include=include,
                                                  exclude=exclude,
                                                  depth=depth,
@@ -535,16 +540,12 @@ def onyo_get(inventory: Inventory,
                                                  # This is useless nonsense.
                                                  match=match))  # pyre-ignore[6]
 
-    # convert paths for sorting and printing
-    for r in results:
-        r['path'] = r['path'].relative_to(inventory.root)
-
     # Note: Sorting is done before any further filtering/replacing. Therefore, one can sort by keys that aren't actually
     #       in the output of the command. This behavior is utilized in tests.
     results = natural_sort(
         assets=results,
         # pyre can't tell SORT_ASCENDING is not an arbitrary string but matches the Literal declaration:
-        keys=sort or {'path': SORT_ASCENDING})  # pyre-ignore[6]
+        keys=sort or {'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
 
     # Filter results for `selected_keys` first in order to not iterate over irrelevant parts of the assets in subsequent
     # replacements.
@@ -941,7 +942,6 @@ def onyo_new(inventory: Inventory,
     ValueError
         If information is invalid, missing, or contradictory.
     """
-    from onyo.lib.consts import PSEUDO_KEYS
     from copy import deepcopy
 
     if auto_message is None:
@@ -1015,11 +1015,6 @@ def onyo_new(inventory: Inventory,
     if clone and any('template' in d.keys() for d in specs):
         raise ValueError("Can't use 'clone' key and 'template' option.")
 
-    for pseudo_key in PSEUDO_KEYS:
-        for d in specs:
-            if pseudo_key in d.keys():
-                raise ValueError(f"Pseudo key '{pseudo_key}' must not be specified.")
-
     # Generate actual assets:
     if edit and not specs:
         # Special case: No asset specification defined via `keys` or `tsv`, but we have `edit`.
@@ -1035,7 +1030,6 @@ def onyo_new(inventory: Inventory,
         # 2. start from template
         if clone:
             asset = inventory.get_asset(clone)
-            asset.pop('path')
         else:
             t = spec.pop('template', None) or template
             asset = inventory.get_asset_from_template(Path(t) if t else None)
@@ -1057,7 +1051,7 @@ def onyo_new(inventory: Inventory,
         if edit or ui.request_user_response("Create assets? (y/n) "):
             if auto_message:
                 operation_paths = sorted(deduplicate([  # pyre-ignore[6]
-                    op.operands[0].get("path").relative_to(inventory.root)
+                    op.operands[0].get("onyo.path.relative")
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_assets']]))
                 message = inventory.repo.generate_auto_message(
@@ -1149,7 +1143,7 @@ def onyo_set(inventory: Inventory,
         asset, their value will be overwritten. If they do not exist the values
         are added.
         Keys that appear in asset names will result in the asset being renamed.
-        The key 'is_asset_directory' (bool) can be used to change whether an
+        The pseudo-key 'onyo.is.directory' (bool) can be used to change whether an
         asset is an asset directory.
     message
         Commit message to append to the auto-generated message.
@@ -1170,8 +1164,8 @@ def onyo_set(inventory: Inventory,
     if not keys:
         raise ValueError("At least one key-value pair must be specified.")
 
-    disallowed_keys = RESERVED_KEYS + PSEUDO_KEYS
-    disallowed_keys.remove("is_asset_directory")
+    disallowed_keys = RESERVED_KEYS + list(PSEUDO_KEYS.keys())
+    disallowed_keys.remove("onyo.is.directory")
     if any(k in disallowed_keys for k in keys.keys()):
         raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
 
@@ -1181,10 +1175,8 @@ def onyo_set(inventory: Inventory,
                          "\n".join(non_asset_paths))
 
     for asset in [inventory.get_asset(a) for a in assets]:
-        new_content = copy.deepcopy(asset)
+        new_content = Item(asset, inventory.repo)
         new_content.update(keys)
-        for k in PSEUDO_KEYS:
-            new_content.pop(k)
         try:
             inventory.modify_asset(asset, new_content)
         except NoopError:
@@ -1198,7 +1190,7 @@ def onyo_set(inventory: Inventory,
         if ui.request_user_response("Update assets? (y/n) "):
             if auto_message:
                 operation_paths = sorted(deduplicate([  # pyre-ignore[6]
-                    op.operands[0].get("path").relative_to(inventory.root)
+                    op.operands[0].get("onyo.path.relative")
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
                 message = inventory.repo.generate_auto_message(
@@ -1334,20 +1326,20 @@ def onyo_unset(inventory: Inventory,
         raise ValueError("The following paths aren't assets:\n%s" % "\n".join(non_asset_paths))
     if any(k in inventory.repo.get_asset_name_keys() for k in keys):
         raise ValueError("Can't unset asset name keys.")
-    if any(k in RESERVED_KEYS + PSEUDO_KEYS for k in keys):
-        raise ValueError(f"Can't unset reserved or pseudo keys ({', '.join(RESERVED_KEYS + PSEUDO_KEYS)}).")
+    # TODO: Actual Namespaces! Key must not start with `onyo.` What about aliases?
+    if any(k in RESERVED_KEYS or k.startswith("onyo.") for k in keys):
+        raise ValueError(f"Can't unset reserved keys ({', '.join(RESERVED_KEYS)}) "
+                         f"or keys in 'onyo.' namespace (pseudo keys)")
 
     for asset in [inventory.get_asset(a) for a in assets]:
-        new_content = copy.deepcopy(asset)
+        new_content = Item(asset, inventory.repo)
         # remove keys to unset, if they exist
         for key in keys:
             try:
                 new_content.pop(key)
             except KeyError:
                 ui.log_debug(f"{key} not in {asset}")
-        # remove keys illegal to write
-        for k in PSEUDO_KEYS:
-            new_content.pop(k)
+
         try:
             inventory.modify_asset(asset, new_content)
         except NoopError:
@@ -1361,7 +1353,7 @@ def onyo_unset(inventory: Inventory,
         if ui.request_user_response("Update assets? (y/n) "):
             if auto_message:
                 operation_paths = sorted(deduplicate([  # pyre-ignore[6]
-                    op.operands[0].get("path").relative_to(inventory.root)
+                    op.operands[0].get("onyo.path.relative")
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING[
                         'modify_assets']]))

@@ -5,6 +5,7 @@ import pytest
 from onyo.lib.exceptions import InvalidAssetError
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.items import Item
 from ..commands import onyo_cat
 
 
@@ -97,7 +98,7 @@ def test_onyo_cat_multiple(inventory: Inventory,
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     # TODO: simplify with new fixtures
     # add a different second asset to the inventory
-    inventory.add_asset(dict(some_key="some_value",
+    inventory.add_asset(Item(some_key="some_value",
                              type="TYPE",
                              make="MAKER",
                              model=dict(name="MODEL"),
@@ -135,15 +136,15 @@ def test_onyo_cat_with_duplicate_path(inventory: Inventory,
 
 def test_onyo_cat_asset_dir(inventory: Inventory,
                             capsys) -> None:
-    inventory.add_asset(dict(some_key="some_value",
-                             type="TYPE",
-                             make="MAKER",
-                             model=dict(name="MODEL"),
-                             serial="SERIAL2",
-                             other=1,
-                             directory=inventory.root,
-                             is_asset_directory=True)
-                        )
+    asset = Item(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model=dict(name="MODEL"),
+                 serial="SERIAL2",
+                 other=1,
+                 directory=inventory.root)
+    asset['onyo.is.directory'] = True
+    inventory.add_asset(asset)
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
 

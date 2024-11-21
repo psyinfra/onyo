@@ -133,7 +133,7 @@ def test_get_defaults(repo: OnyoRepo) -> None:
     r"""Test `onyo get` using default values"""
     cmd = ['onyo', 'get']
     ret = subprocess.run(cmd, capture_output=True, text=True)
-    keys = ['type', 'make', 'model.name', 'serial', 'path']
+    keys = ['type', 'make', 'model.name', 'serial', 'onyo.path.relative']
     assert 'laptop_apple_macbookpro.1' in ret.stdout
     assert 'laptop_dell_precision.2' in ret.stdout
     assert 'headphones_apple_pro.3' in ret.stdout
@@ -162,7 +162,7 @@ def test_get_all(
     """
     keys = keys if keys else repo.get_asset_name_keys()
     cmd = ['onyo', 'get', '--include', *paths, '--depth', depth]
-    cmd += ['--keys', *keys + ["path"]] if keys else []
+    cmd += ['--keys', *keys + ["onyo.path.relative"]] if keys else []
     cmd += ['--match', *matches] if matches else []
     cmd += [machine_readable] if machine_readable else []
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -300,10 +300,10 @@ def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
                                                      'laptop_dell_precision.2',
                                                      'headphones_apple_pro.3']]])
 @pytest.mark.parametrize('keys', [
-    ['type', 'make', 'model.name', 'serial', 'path'],
-    ['unset', 'type', 'unset2', 'make', 'path'],
-    ['num', 'str', 'bool', 'path'],
-    ['TyPe', 'MAKE', 'moDEL', 'NuM', 'STR', 'path'],
+    ['type', 'make', 'model.name', 'serial', 'onyo.path.relative'],
+    ['unset', 'type', 'unset2', 'make', 'onyo.path.relative'],
+    ['num', 'str', 'bool', 'onyo.path.relative'],
+    ['TyPe', 'MAKE', 'moDEL', 'NuM', 'STR', 'onyo.path.relative'],
     []])
 def test_get_keys(
         repo: OnyoRepo, raw_assets: list[tuple[str, dict[str, Any]]],
@@ -311,7 +311,7 @@ def test_get_keys(
     r"""
     Test that `onyo get --keys x y z` retrieves the expected keys.
     """
-    from onyo.lib.consts import PSEUDO_KEYS
+    from onyo.lib.pseudokeys import PSEUDO_KEYS
     cmd = ['onyo', 'get', '-H']
     cmd += ['--keys', *keys, ] if keys else []
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -319,7 +319,7 @@ def test_get_keys(
 
     # Asset name keys returned if no keys were specified
     if not keys:
-        keys = repo.get_asset_name_keys() + ["path"]
+        keys = repo.get_asset_name_keys() + ["onyo.path.relative"]
 
     # Get all the key values and make sure they match
     for line in output:

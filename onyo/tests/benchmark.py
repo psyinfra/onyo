@@ -126,7 +126,8 @@ class TestOnyoBenchmark:
 
         inventory = benchmark_inventory
         # get 50 random assets
-        assets = [a['path'].resolve() for a in random.sample(onyo_get(inventory), k=50)]
+        assets = [a["onyo.path.absolute"]
+                  for a in random.sample(onyo_get(inventory, keys=["onyo.path.absolute"]), k=50)]
         # set 50
         onyo_set(inventory, assets=assets, keys={'fifty': 'fifty'})
 
@@ -151,7 +152,8 @@ class TestOnyoBenchmark:
 
         inventory = benchmark_inventory
         # get 50 assets
-        assets = [str(a['path'].resolve()) for a in random.sample(onyo_get(inventory), k=50)]
+        assets = [str(a["onyo.path.absolute"])
+                  for a in random.sample(onyo_get(inventory, keys=["onyo.path.absolute"]), k=50)]
 
         def setup():
             """
@@ -183,7 +185,8 @@ class TestOnyoBenchmark:
         r"""Cat 1 asset in the repo."""
         inventory = benchmark_inventory
         # get 1 asset
-        assets = [a['path'].resolve() for a in random.sample(onyo_get(inventory), k=1)]
+        assets = [a["onyo.path.absolute"]
+                  for a in random.sample(onyo_get(inventory, keys=["onyo.path.absolute"]), k=1)]
 
         benchmark(onyo_cat, inventory, assets=assets)
 
@@ -198,7 +201,7 @@ class TestOnyoBenchmark:
         r"""Cat 1 asset from the CLI."""
         inventory = benchmark_inventory
         # get 1 asset
-        asset = random.sample(onyo_get(inventory), k=1)[0]['path'].resolve()
+        asset = random.sample(onyo_get(inventory, keys=["onyo.path.absolute"]), k=1)[0]['onyo.path.absolute']
 
         @benchmark
         def bench():

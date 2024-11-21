@@ -2,6 +2,7 @@ import pytest
 
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.items import Item
 from . import check_commit_msg
 from ..commands import onyo_mv
 
@@ -224,7 +225,7 @@ def test_onyo_mv_and_rename(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_into_asset(inventory: Inventory) -> None:
-    asset = dict(some_key="some_value",
+    asset = Item(some_key="some_value",
                  type="TYPE",
                  make="MAKE",
                  model=dict(name="MODEL"),
@@ -252,13 +253,13 @@ def test_onyo_mv_into_asset(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_asset_dir(inventory: Inventory) -> None:
-    asset_dir = dict(some_key="some_value",
+    asset_dir = Item(some_key="some_value",
                      type="TYPE",
                      make="MAKE",
                      model=dict(name="MODEL"),
                      serial="SERIAL2",
-                     is_asset_directory=True,
                      directory=inventory.root)
+    asset_dir["onyo.is.directory"] = True
     asset_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
     inventory.add_asset(asset_dir)
     inventory.commit("Add an asset dir.")

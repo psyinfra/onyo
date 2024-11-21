@@ -25,14 +25,14 @@ from onyo.lib.onyo import OnyoRepo
 
 
 def record_item(repo: OnyoRepo, item: Path | dict) -> str:
-    path = item if isinstance(item, Path) else item['path']
+    path = item if isinstance(item, Path) else item['onyo.path.absolute']
     return f"- {path.relative_to(repo.git.root).as_posix()}\n"
 
 
 def record_move(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
     # This currently expects `dst` to be the dir to move src into,
     # rather than already containing src' name at the destination.
-    src_path = src if isinstance(src, Path) else src['path']
+    src_path = src if isinstance(src, Path) else src['onyo.path.absolute']
     dst_path = (dst / src_path.name).relative_to(repo.git.root).as_posix()
     src_path = src_path.relative_to(repo.git.root).as_posix()
     return f"- {src_path} -> {dst_path}\n"
@@ -40,7 +40,7 @@ def record_move(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
 
 def record_rename(repo: OnyoRepo, src: Path | dict, dst: Path) -> str:
     # In opposition to record_move, this expects the full target path in `dst`
-    src_path = src if isinstance(src, Path) else src['path']
+    src_path = src if isinstance(src, Path) else src['onyo.path.absolute']
     src_path = src_path.relative_to(repo.git.root).as_posix()
     dst_path = dst.relative_to(repo.git.root).as_posix()
     return f"- {src_path} -> {dst_path}\n"

@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from onyo.lib.onyo import OnyoRepo, OnyoInvalidRepoError
+from onyo.lib.items import Item
 
 
 def test_OnyoRepo_instantiation_existing(onyorepo: OnyoRepo) -> None:
@@ -59,7 +60,7 @@ def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo: OnyoRepo,
         OnyoRepo(tmp_path, init=True, find_root=True)
 
 
-@pytest.mark.inventory_assets(dict(type="asset",
+@pytest.mark.inventory_assets(Item(type="asset",
                                    make="for",
                                    model="test",
                                    serial=0,
@@ -71,7 +72,7 @@ def test_clear_cache(onyorepo) -> None:
     """
 
     # Use arbitrary asset here:
-    asset = onyorepo.test_annotation['assets'][0]['path']
+    asset = onyorepo.test_annotation['assets'][0]['onyo.path.absolute']
 
     # make sure asset is in the cache:
     assert asset in onyorepo.asset_paths
@@ -204,7 +205,7 @@ def test_Repo_validate_anchors(onyorepo) -> None:
                               (Path("subdir") / "subsub" / "untracked_som.txt", ""),
                               (Path("docs") / "regular", "whatever")
                               )
-@pytest.mark.inventory_assets(dict(type="atype",
+@pytest.mark.inventory_assets(Item(type="atype",
                                    make="amake",
                                    model="amodel",
                                    serial=1,
@@ -214,7 +215,7 @@ def test_onyo_ignore(onyorepo) -> None:
     # TODO: This test still has hardcoded stuff from the markers.
     #       Markers and fixture annotation not fit for this yet.
     for a in onyorepo.test_annotation['assets']:
-        assert not onyorepo.is_onyo_ignored(a['path'])
+        assert not onyorepo.is_onyo_ignored(a['onyo.path.absolute'])
     for d in onyorepo.test_annotation['dirs']:
         assert not onyorepo.is_onyo_ignored(d)
         assert not onyorepo.is_onyo_ignored(d / OnyoRepo.ANCHOR_FILE_NAME)

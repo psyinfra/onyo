@@ -11,7 +11,8 @@ from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
 from ruamel.yaml.representer import RoundTripRepresenter  # pyre-ignore[21]
 from ruamel.yaml.dumper import RoundTripDumper  # pyre-ignore[21]
 
-from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.consts import RESERVED_KEYS
+from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
@@ -204,13 +205,11 @@ def dict_to_asset_yaml(d: Dict | UserDict) -> str:
     d
         Dictionary to strip of reserved-keys and convert to a YAML string.
     """
-    if isinstance(d, DotNotationWrapper):
-        d = d.data
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
-    for k in PSEUDO_KEYS + RESERVED_KEYS:
-        if k in content.keys():
-            del content[k]
+    for key in RESERVED_KEYS + list(PSEUDO_KEYS.keys()):
+        if key in content:
+            del content[key]
 
     # Empty dicts are serialized to '{}', and I was unable to find any input
     # ('', None, etc) that would serialize to nothing. Hardcoding, though ugly,
@@ -222,7 +221,9 @@ def dict_to_asset_yaml(d: Dict | UserDict) -> str:
     yaml = get_patched_yaml()
     yaml.explicit_start = True
     s = StringIO()
-    yaml.dump(content,
+    yaml.dump(content.data
+              if isinstance(content, DotNotationWrapper)
+              else content,
               s)
     return s.getvalue()
 
@@ -329,6 +330,7 @@ def write_asset_file(path: Path,
     asset
         A dictionary of content to write to the path.
     """
+    # TODO: Get file path from onyo.path.file?
     path.open('w').write(dict_to_asset_yaml(asset))
 
 
@@ -364,17 +366,21 @@ def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
 
     This also accounts for nested dicts recursively.
     """
+    # TODO: This entire function may become part of the Item class instead (__eq__?)
 
     # Note: Checking types here, because of potential recursive calls.
     if not isinstance(a, (dict, UserDict)) or not isinstance(b, (dict, UserDict)):
         return False
 
-    # TODO: This may become part of (thin) Asset class instead,
-    # if there are more reasons to have such a class.
     if isinstance(a, DotNotationWrapper):
         a = a.data
     if isinstance(b, DotNotationWrapper):
         b = b.data
+
+    # TODO: Problem:
+    #   In test_edit_single_asset second invocation of edit, is_equal_asset_dict comparison returns False
+    #   for the wrong reason (unresolved `PseudoKey` instance, b/c we were looking at the python dict, not the Item.)
+    #   While the trigger is fixed, this is still wrong in this recursion here:
 
     # Recurse into nested dicts:
     for k, v in a.items():

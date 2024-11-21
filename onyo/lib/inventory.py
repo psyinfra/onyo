@@ -35,7 +35,9 @@ from onyo.lib.executors import (
     exec_rename_directories,
     generic_executor,
 )
+from onyo.lib.items import Item
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.recorders import (
     record_modify_assets,
     record_move_assets,
@@ -49,7 +51,6 @@ from onyo.lib.recorders import (
 )
 from onyo.lib.utils import (
     deduplicate,
-    DotNotationWrapper,
     is_equal_assets_dict,
 )
 from onyo.lib.ui import ui
@@ -215,7 +216,7 @@ class Inventory(object):
         names = []
         for op in self.operations:
             if op.operator == OPERATIONS_MAPPING['new_assets']:
-                names.append(op.operands[0].get('path').name)
+                names.append(op.operands[0].get('onyo.path.absolute').name)  # TODO: onyo.path.file?
             elif op.operator == OPERATIONS_MAPPING['rename_assets']:
                 names.append(op.operands[1].name)
         return names
@@ -291,7 +292,7 @@ class Inventory(object):
 
     def add_asset(self, asset: dict | UserDict) -> list[InventoryOperation]:
         # TODO: what if I call this with a modified (possibly moved) asset?
-        # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or rest")
+        # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or reset")
         operations = []
         path = None
 
@@ -304,15 +305,17 @@ class Inventory(object):
         self.raise_required_key_empty_value(asset)
         name = self.generate_asset_name(asset)
 
-        if asset.get('is_asset_directory', False):
-            # 'path' needs to be given, if this is about an already existing dir.
-            # Otherwise, a 'directory' to create the asset in is expected as with
-            # any other asset.
-            path = asset.get('path')
+        if asset.get('onyo.is.directory', False):
+            # 'onyo.path.absolute' needs to be given, if this is about an already existing dir.
+            path = asset.get('onyo.path.absolute')
         if path is None:
-            path = asset['path'] = asset['directory'] / name
+            # Otherwise, a 'onyo.path.parent' to create the asset in is expected as with
+            # any other asset.
+            path = asset['onyo.path.absolute'] = asset['onyo.path.parent'] / name
         if not path:
             raise ValueError("Unable to determine asset path")
+        assert isinstance(asset, Item)
+        asset.repo = self.repo
 
         # ### validate - TODO: function - reuse in modify_asset
         if self.repo.is_asset_path(path):
@@ -324,14 +327,14 @@ class Inventory(object):
         if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
             raise ValueError(f"Asset name '{name}' already exists in inventory")
 
-        if asset.get('is_asset_directory', False):
+        if asset.get('onyo.is.directory', False):
             if self.repo.is_inventory_dir(path):
                 # We want to turn an existing dir into an asset dir.
                 operations.extend(self.rename_directory(path, self.generate_asset_name(asset)))
                 # Temporary hack: Adjust the asset's path to the renamed one.
-                # TODO: Actual solution: This entire method must not be based on the dict's 'path', but 'directory' +
-                #       generated name. This ties in with pulling parts of `onyo_new` in here.
-                asset['path'] = path.parent / self.generate_asset_name(asset)
+                # TODO: Actual solution: This entire method must not be based on the dict's 'onyo.path.absolute', but
+                #       'onyo.path.parent' + generated name. This ties in with pulling parts of `onyo_new` in here.
+                asset['onyo.path.absolute'] = path.parent / self.generate_asset_name(asset)
             else:
                 # The directory does not yet exist.
                 operations.extend(self.add_directory(path))
@@ -363,7 +366,7 @@ class Inventory(object):
         return operations
 
     def remove_asset(self, asset: dict | UserDict | Path) -> list[InventoryOperation]:
-        path = asset if isinstance(asset, Path) else asset.get('path')
+        path = asset if isinstance(asset, Path) else asset.get('onyo.path.absolute')
         if path in self._get_pending_removals(mode='assets'):
             ui.log_debug(f"{path} already queued for removal.")
             # TODO: Consider NoopError when addressing #546.
@@ -374,7 +377,7 @@ class Inventory(object):
 
     def move_asset(self, src: Path | dict | UserDict, dst: Path) -> list[InventoryOperation]:
         if not isinstance(src, Path):
-            src = Path(src.get('path'))
+            src = Path(src.get('onyo.path.absolute'))
         if not self.repo.is_asset_path(src):
             raise NotAnAssetError(f"No such asset: {src}.")
         if src.parent == dst:
@@ -393,7 +396,7 @@ class Inventory(object):
         # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
         #       separate operation already.
 
-        path = asset if isinstance(asset, Path) else Path(asset.get('path'))
+        path = asset if isinstance(asset, Path) else Path(asset.get('onyo.path.absolute'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
 
@@ -423,14 +426,16 @@ class Inventory(object):
 
     def modify_asset(self, asset: dict | UserDict | Path, new_asset: dict | UserDict) -> list[InventoryOperation]:
         operations = []
-        path = asset if isinstance(asset, Path) else Path(asset.get('path'))
+        path = asset if isinstance(asset, Path) else Path(asset.get('onyo.path.absolute'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
         asset = self.get_asset(path) if isinstance(asset, Path) else asset
 
-        # Raise on 'path' key in `new_asset`. It needs to be generated:
-        if 'path' in new_asset:
-            raise ValueError("Illegal key 'path' in new asset.")  # TODO: Figure better message (or change upstairs)
+        # A path change must not be specified w/ modify_asset. A move is a different operation and
+        # a renaming has to be derived from content:
+        if new_asset['onyo.path.absolute'] is not None and \
+                new_asset['onyo.path.absolute'] != asset['onyo.path.absolute']:
+            raise ValueError("A change in 'onyo.path.absolute' must not be set in an asset modification.")
 
         self.raise_empty_keys(new_asset)
         # ### generate stuff - TODO: function - reuse in add_asset
@@ -440,20 +445,20 @@ class Inventory(object):
             new_asset['serial'] = self.get_faux_serials(num=1).pop()
         self.raise_required_key_empty_value(new_asset)
         # We keep the old path - if it needs to change, this will be done by a rename operation down the road
-        new_asset['path'] = path
+        new_asset['onyo.path.absolute'] = path
         if is_equal_assets_dict(asset, new_asset):
             raise NoopError
 
-        # If a change in is_asset_directory is implied, do this first:
-        if asset.get("is_asset_directory", False) != new_asset.get("is_asset_directory", False):
+        # If a change in is.directory is implied, do this first:
+        if asset.get("onyo.is.directory", False) != new_asset.get("onyo.is.directory", False):
             # remove or add dir aspect from/to asset
-            ops = self.add_directory(asset["path"]) if new_asset.get("is_asset_directory", False)\
-                else self.remove_directory(asset["path"])
+            ops = self.add_directory(asset["onyo.path.absolute"]) if new_asset.get("onyo.is.directory", False)\
+                else self.remove_directory(asset["onyo.path.absolute"])
             operations.extend(ops)
-            # If there is no other change, we should not record a modify_assets operation!
+            # If there is no change in non-pseudo-keys, we should not record a modify_assets operation!
             if all(asset.get(k) == new_asset.get(k)
                    for k in [a for a in asset.keys()] + [b for b in new_asset.keys()]
-                   if k != "is_asset_directory"):
+                   if k not in PSEUDO_KEYS):
                 return operations
         operations.append(self._add_operation('modify_assets', (asset, new_asset)))
         # new_asset has the same 'path' at this point, regardless of potential renaming.
@@ -533,8 +538,7 @@ class Inventory(object):
 
     def get_asset(self, path: Path) -> UserDict:
         # read and return Asset
-        from .utils import DotNotationWrapper
-        return DotNotationWrapper(self.repo.get_asset_content(path))
+        return Item(path, self.repo)
 
     def get_assets(self,
                    include: Iterable[Path] | None = None,
@@ -568,9 +572,9 @@ class Inventory(object):
                 # report the error, but proceed
                 ui.error(e)
 
-    def get_asset_from_template(self, template: Path | str | None) -> DotNotationWrapper:
+    def get_asset_from_template(self, template: Path | str | None) -> UserDict:
         # TODO: Possibly join with get_asset (path optional)
-        return DotNotationWrapper(self.repo.get_template(template))
+        return Item(self.repo.get_template(template))  # , repo=self.repo ?? Probably not. Template is not yet bound.
 
     def get_assets_by_query(self,
                             include: list[Path] | None = None,
@@ -626,7 +630,7 @@ class Inventory(object):
 
         # TODO: Used to test valid asset name first. Do we need that?
         #       Not in context of `new`, because the name is generated.
-        paths_to_test = [a.get('path') for a in assets]
+        paths_to_test = [a.get('onyo.path.absolute') for a in assets]
         for path in paths_to_test:
             if not path:
                 continue  # TODO: raise or ignore?
@@ -644,10 +648,10 @@ class Inventory(object):
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.name-format'.")
 
-        if not isinstance(asset, DotNotationWrapper):
+        if not isinstance(asset, Item):
             # We allow dot-notation for nested dicts in the name config.
             # Therefore, we need to make sure, the asset is wrapped accordingly here.
-            asset = DotNotationWrapper(asset)
+            asset = Item(asset)
 
         # Replace key references so that the same dot notation as in CLI works, while actual
         # format-language features using the dot work as well.
@@ -656,11 +660,8 @@ class Inventory(object):
         for name in self.repo.get_asset_name_keys():
             config_str = config_str.replace(f"{{{name}", f"{{asset[{name}]")
 
-        # Workaround: dump proper representation rather that str() of values in `asset`.
-        # This should probably be integrated in an asset wrapper class instead.
-        from onyo.lib.utils import YAMLDumpWrapper
         try:
-            name = config_str.format(asset=YAMLDumpWrapper(asset))  # TODO: Only pass non-pseudo keys?!
+            name = config_str.format(asset=asset)  # TODO: Only pass non-pseudo keys?!
         except KeyError as e:
             raise ValueError(f"Asset missing value for required field {str(e)}.") from e
         return name
@@ -710,9 +711,8 @@ class Inventory(object):
         required is anticipated. This would need to account for those
         as well.
         """
-        if any(v is None or not str(v).strip()
-               for k, v in asset.items()
-               if k in self.repo.get_asset_name_keys()):
+        if any(key not in asset or asset[key] is None or not str(asset[key]).strip()
+               for key in self.repo.get_asset_name_keys()):
             raise ValueError(f"Required asset keys ({', '.join(self.repo.get_asset_name_keys())})"
                              f" must not have empty values.")
 

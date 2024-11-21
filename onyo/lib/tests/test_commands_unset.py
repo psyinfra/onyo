@@ -1,7 +1,11 @@
 import pytest
 
+from onyo.lib.consts import RESERVED_KEYS
+from onyo.lib.items import Item
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.pseudokeys import PSEUDO_KEYS
+
 from . import check_commit_msg
 from ..commands import onyo_unset
 
@@ -88,11 +92,10 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
 def test_onyo_unset_illegal_fields(inventory: Inventory) -> None:
     """`onyo_unset` must raise an error when requested to unset an
     illegal/reserverd field."""
-    from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    illegal_fields = RESERVED_KEYS + PSEUDO_KEYS
+    illegal_fields = RESERVED_KEYS + list(PSEUDO_KEYS.keys())
 
     # unset on illegal fields errors
     for illegal in illegal_fields:
@@ -271,15 +274,15 @@ def test_onyo_unset_allows_key_duplicates(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
-    inventory.add_asset(dict(some_key="some_value",
-                             type="TYPE",
-                             make="MAKER",
-                             model=dict(name="MODEL"),
-                             serial="SERIAL2",
-                             other=1,
-                             directory=inventory.root,
-                             is_asset_directory=True)
-                        )
+    asset = Item(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model=dict(name="MODEL"),
+                 serial="SERIAL2",
+                 other=1,
+                 directory=inventory.root)
+    asset["onyo.is.directory"] = True
+    inventory.add_asset(asset)
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -300,7 +303,7 @@ def test_onyo_unset_empty(inventory: Inventory) -> None:
     # Note: This is making sure onyo does not confuse an "empty value",
     #       w/ the key not being present.
 
-    asset = dict(type="TYPE",
+    asset = Item(type="TYPE",
                  make="MAKE",
                  model=dict(name="MODEL"),
                  serial="SERIAL2",

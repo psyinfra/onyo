@@ -160,11 +160,11 @@ def get(args: argparse.Namespace) -> None:
     In addition to keys in asset contents, **PSEUDO-KEYS** can be queried and
     matched.
 
-      * ``is_asset_directory``: is the asset an Asset Directory
-      * ``directory``: parent directory of the asset relative to repo root
-      * ``path``: path of the asset relative to repo root
+      * ``onyo.is.directory``: is the asset an Asset Directory
+      * ``onyo.path.parent`` (default alias: ``directory``): parent directory of the asset relative to repo root
+      * ``onyo.path.relative`` (default alias: ``path``): path of the asset relative to repo root
 
-    By default, the results are sorted by ``path``.
+    By default, the results are sorted by ``onyo.path.relative``.
     """
     includes = [Path(p).resolve() for p in args.include] if args.include else [Path.cwd()]
     excludes = [Path(p).resolve() for p in args.exclude] if args.exclude else None

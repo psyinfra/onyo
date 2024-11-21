@@ -18,6 +18,7 @@ from .utils import get_asset_content, write_asset_file
 
 if TYPE_CHECKING:
     from typing import Iterable, List
+    from collections import UserDict
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
 
@@ -637,29 +638,22 @@ class OnyoRepo(object):
         if not self.is_asset_path(path):
             raise NotAnAssetError(f"{path} is not an asset path")
         try:
-            if self.is_inventory_dir(path):
-                # It's an asset and an inventory dir -> asset dir
-                a = get_asset_content(path / self.ASSET_DIR_FILE_NAME)
-                a['is_asset_directory'] = True
-            else:
-                a = get_asset_content(path)
-                a['is_asset_directory'] = False
+            # TODO: Where do we make sure to distinguish onyo.path.file from onyo.path.relative?
+            #       Surely outside, but consider this!
+            a = get_asset_content((path / self.ASSET_DIR_FILE_NAME) if self.is_inventory_dir(path) else path)
         except NotAnAssetError as e:
             raise NotAnAssetError(f"{str(e)}\n"
                                   f"If {path} is not meant to be an asset, consider putting it into"
                                   f" '{self.IGNORE_FILE_NAME}'") from e
-        # Add pseudo-keys:
-        a['path'] = path
-        a['directory'] = path.parent
         return a
 
     def write_asset_content(self,
-                            asset: dict) -> dict:
-        path = asset.get('path')
+                            asset: dict | UserDict) -> dict | UserDict:
+        path = asset.get('onyo.path.absolute')
         if not path:
             raise RuntimeError("Trying to write asset to unknown path")
         if self.is_inventory_path(path):
-            if asset.get('is_asset_directory', False) and path.name != self.ASSET_DIR_FILE_NAME:
+            if asset.get('onyo.is.directory') and path.name != self.ASSET_DIR_FILE_NAME:
                 path = path / self.ASSET_DIR_FILE_NAME
             write_asset_file(path, asset)
         else:
