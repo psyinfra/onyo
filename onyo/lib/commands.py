@@ -434,6 +434,9 @@ def onyo_edit(inventory: Inventory,
         _edit_asset(inventory, asset, partial(inventory.modify_asset, path), editor)
 
     if inventory.operations_pending():
+        # display changes
+        ui.print('\n' + inventory.operations_summary())
+
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if auto_message:
                 operation_paths = sorted(deduplicate([  # pyre-ignore[6]
