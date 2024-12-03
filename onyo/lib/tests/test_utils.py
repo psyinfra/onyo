@@ -1,8 +1,10 @@
 import pytest
 
-from onyo.lib.consts import PSEUDO_KEYS, RESERVED_KEYS
+from onyo.lib.consts import RESERVED_KEYS
+from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.utils import (
     dict_to_asset_yaml,
+    DotNotationWrapper,
     get_asset_content,
 )
 
@@ -52,10 +54,11 @@ def test_dict_to_asset_yaml() -> None:
     assert d_expected_output == dict_to_asset_yaml(d)
 
 
-@pytest.mark.parametrize('rkey', PSEUDO_KEYS + RESERVED_KEYS)
+@pytest.mark.parametrize('rkey', list(PSEUDO_KEYS.keys()) + RESERVED_KEYS)
 def test_redaction_dict_to_asset_yaml(rkey: str) -> None:
     r"""Reserved- and Pseudo-Keys should not be serialized."""
-    d = {'type': 'TYPE', 'make': 'MAKE', 'model': 'MODEL', 'serial': '008675309', 'explicit': 123, rkey: 'REDACT_ME'}
+    d = DotNotationWrapper({'type': 'TYPE', 'make': 'MAKE', 'model': 'MODEL', 'serial': '008675309', 'explicit': 123})
+    d[rkey] = 'REDACT_ME'
     d_expected_output = "---\ntype: TYPE\nmake: MAKE\nmodel: MODEL\nserial: 008675309\nexplicit: !!int '123'\n"
     assert d_expected_output == dict_to_asset_yaml(d)
 

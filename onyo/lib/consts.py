@@ -1,20 +1,16 @@
 from collections import UserDict
 from typing import TYPE_CHECKING
+
+from onyo.lib.pseudokeys import PSEUDOKEY_ALIASES
 if TYPE_CHECKING:
     from typing import Literal
     sort_t = Literal['ascending', 'descending']
 
 
-PSEUDO_KEYS = ['path']
-r"""Key names that are addressable but not in asset content.
-
-All ``PSEUDO_KEYS`` are reserved.
-
-See Also
---------
-RESERVED_KEYS
-"""
-RESERVED_KEYS = ['directory', 'is_asset_directory', 'template']
+RESERVED_KEYS = ['template', 'onyo'] + list(PSEUDOKEY_ALIASES.keys())
+# TODO: That's not right yet. We need all aliases and the "onyo." namespace
+# How do we deal with namespaces, though? We may want Item/DotNotationWrapper
+# to yield views based on namespaces.
 r"""Key names that are reserved and must not be part of asset content.
 
 These keys have functional meaning for Onyo. Thus they are reserved and cannot

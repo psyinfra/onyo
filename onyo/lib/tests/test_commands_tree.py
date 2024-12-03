@@ -1,6 +1,7 @@
 import pytest
 
 from onyo.lib.inventory import Inventory
+from onyo.lib.items import Item
 from ..commands import onyo_tree
 
 
@@ -76,12 +77,13 @@ def test_onyo_tree_description(inventory: Inventory,
 def test_onyo_tree_dirs_only(inventory: Inventory,
                              capsys) -> None:
     r"""Display a tree w/o any files"""
-    inventory.add_asset(dict(type="atype",
-                             make="someone",
-                             model=dict(name="fancy"),
-                             serial="faux",
-                             directory=inventory.root,
-                             is_asset_directory=True))
+    asset = Item(type="atype",
+                 make="someone",
+                 model=dict(name="fancy"),
+                 serial="faux",
+                 directory=inventory.root)
+    asset["onyo.is.directory"] = True
+    inventory.add_asset(asset)
     inventory.commit("Add an asset dir to make sure it's not excluded.")
     onyo_tree(inventory,
               path=inventory.root,

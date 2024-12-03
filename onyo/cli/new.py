@@ -165,7 +165,7 @@ def new(args: argparse.Namespace) -> None:
 
       * ``directory``: directory to create the asset in relative to the root of
         the repository. This key cannot be used with the ``--directory`` flag.
-      * ``is_asset_directory``: whether to create the asset as an Asset
+      * ``onyo.is.directory``: whether to create the asset as an Asset
         Directory.  Default is ``false``.
       * ``template``: which template to use for the asset. This key cannot be
         used with the ``--clone`` or ``--template`` flags.

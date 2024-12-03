@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.items import Item
 
 if TYPE_CHECKING:
     from typing import Callable
@@ -37,7 +38,7 @@ def exec_new_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[P
     # Note: No need to account for implicitly to create dirs herein. That would be its own operation done before.
     asset = operands[0]
     repo.write_asset_content(asset)  # TODO: a = ...; reassignment for potential updates on metadata
-    path = asset.get('path')
+    path = asset.get('onyo.path.absolute')
     return [path], [path]
 
 
@@ -49,18 +50,18 @@ def exec_new_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], l
     # This may be an asset file that needs to be turned into an asset dir:
     turn_asset_dir = p.is_file() and repo.is_asset_path(p)
     if turn_asset_dir:
-        asset = repo.get_asset_content(p)
+        asset = Item(p, repo=repo)
         p.unlink()
     paths = repo.mk_inventory_dirs(p)
     if turn_asset_dir:
-        asset['is_asset_directory'] = True
+        asset['onyo.is.directory'] = True
         repo.write_asset_content(asset)
         paths.append(p / OnyoRepo.ASSET_DIR_FILE_NAME)
     return paths, paths
 
 
 def exec_remove_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
-    p = operands[0] if isinstance(operands[0], Path) else operands[0].get('path')
+    p = operands[0] if isinstance(operands[0], Path) else operands[0].get('onyo.path.absolute')
     paths = []
     if p.is_dir():
         # we were told p is an asset. It's also a dir, ergo an asset dir
@@ -78,19 +79,19 @@ def exec_remove_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path]
     paths = []
     p = operands[0]
     is_asset_dir = (p / OnyoRepo.ASSET_DIR_FILE_NAME).exists()  # required after dir was removed, therefore store
-    asset = dict()
     anchor = p / repo.ANCHOR_FILE_NAME
     anchor.unlink()
     paths.append(anchor)
     if is_asset_dir:
-        asset = repo.get_asset_content(p)
+        asset = Item(p, repo=repo)
+        # TODO: asset['onyo.path.file']
         asset_dir_file = p / OnyoRepo.ASSET_DIR_FILE_NAME
         asset_dir_file.unlink()
         paths.append(asset_dir_file)
     p.rmdir()
     if is_asset_dir:
-        asset['is_asset_directory'] = False
-        repo.write_asset_content(asset)
+        asset['onyo.is.directory'] = False  # pyre-ignore[61]  No, this is not "not always defined".
+        repo.write_asset_content(asset)  # pyre-ignore[61]
         paths.append(p)  # TODO: Does this need staging? Don't think so, but make sure.
     return paths, []
 
@@ -128,7 +129,7 @@ def exec_modify_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], lis
     # expected: (Asset, Asset)
     new = operands[1]
     repo.write_asset_content(new)
-    return [new['path']], []
+    return [new['onyo.path.absolute']], []
 
 
 def generic_executor(func: Callable, repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:

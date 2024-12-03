@@ -15,7 +15,7 @@ from faker.providers import python
 from onyo.lib.git import GitRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import DotNotationWrapper
+from onyo.lib.items import Item
 
 if TYPE_CHECKING:
     from typing import (
@@ -99,16 +99,16 @@ def onyorepo(gitrepo, request, monkeypatch) -> Generator[AnnotatedOnyoRepo, None
     m = request.node.get_closest_marker('inventory_assets')
     if m:
         for spec in list(m.args):
-            spec['path'] = gitrepo.root / spec['path']
-            implicit_dirs = [d for d in spec['path'].parents
+            spec['onyo.path.absolute'] = gitrepo.root / spec['onyo.path.relative']
+            implicit_dirs = [d for d in spec['onyo.path.absolute'].parents
                              if d.is_relative_to(gitrepo.root)]
-            if spec.get('is_asset_dir'):
-                implicit_dirs.append(spec['path'])
+            if spec.get('onyo.is.directory'):
+                implicit_dirs.append(spec['onyo.path.absolute'])
             to_commit += onyo.mk_inventory_dirs(implicit_dirs)
             onyo.test_annotation['dirs'].extend(implicit_dirs)
             onyo.write_asset_content(spec)
             onyo.test_annotation['assets'].append(spec)
-            to_commit.append(spec['path'])
+            to_commit.append(spec['onyo.path.absolute'])
 
     m = request.node.get_closest_marker('inventory_dirs')
     if m:
@@ -198,15 +198,14 @@ def inventory(repo) -> Generator:
     # TODO: This is currently not in line with `repo`, where files and dirs are defined differently.
     #       Paths to created items should be delivered somehow.
     inventory = Inventory(repo=repo)
-    inventory.add_asset(DotNotationWrapper(
-        dict(some_key="some_value",
-             type="TYPE",
-             make="MAKER",
-             model=dict(name="MODEL"),
-             serial="SERIAL",
-             other=1,
-             directory=repo.git.root / "somewhere" / "nested"))
-    )
+    inventory.add_asset(Item(
+        some_key="some_value",
+        type="TYPE",
+        make="MAKER",
+        model=dict(name="MODEL"),
+        serial="SERIAL",
+        other=1,
+        directory=repo.git.root / "somewhere" / "nested"))
     inventory.add_directory(repo.git.root / 'empty')
     inventory.add_directory(repo.git.root / 'different' / 'place')
     inventory.commit("First asset added")

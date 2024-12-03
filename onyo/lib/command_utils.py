@@ -72,13 +72,13 @@ def natural_sort(assets: list[dict | UserDict],
     """
     import locale
     import natsort
-
+    from onyo.lib.items import resolve_alias
     # set the locale for all categories to the user’s default setting
     locale.setlocale(locale.LC_ALL, '')
 
     for key in reversed(keys.keys()):
         alg = natsort.ns.LOCALE | natsort.ns.INT
-        if key == 'path':
+        if resolve_alias(key).startswith('onyo.path'):
             alg |= natsort.ns.PATH
         assets = sorted(assets,
                         key=natsort.natsort_keygen(key=lambda x: x.get(key), alg=alg),

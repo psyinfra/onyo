@@ -5,6 +5,7 @@ import pytest
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.items import Item
 from ..commands import onyo_get
 
 
@@ -66,7 +67,7 @@ def test_onyo_get_empty_keys(inventory: Inventory,
     assert missing_key not in Path.read_text(asset_path1)
     onyo_get(inventory,
              include=[asset_path1],
-             keys=[missing_key, "path"])
+             keys=[missing_key, "onyo.path.relative"])
 
     # verify output
     output1 = capsys.readouterr().out
@@ -77,7 +78,7 @@ def test_onyo_get_empty_keys(inventory: Inventory,
     assert empty_key in Path.read_text(asset_path2)
     onyo_get(inventory,
              include=[asset_path2],
-             keys=[empty_key, "path"])
+             keys=[empty_key, "onyo.path.relative"])
 
     # verify output
     output2 = capsys.readouterr().out
@@ -100,21 +101,22 @@ def test_onyo_get_reserved_keys(inventory: Inventory,
                                 capsys) -> None:
     r"""`onyo_get()` allows to specify all reserved keys to query
     and display information for."""
-    from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
-    reserved = ["type", "make", "model.name", "serial"] + PSEUDO_KEYS + RESERVED_KEYS
+    from onyo.lib.consts import RESERVED_KEYS
+    from onyo.lib.pseudokeys import PSEUDO_KEYS
+    reserved = ["type", "make", "model.name", "serial"] + list(PSEUDO_KEYS.keys()) + RESERVED_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
     # get on reserved fields
     for reserved_key in reserved:
         keys = [reserved_key]
-        if reserved_key != "path":
-            keys.append("path")
+        if reserved_key != "onyo.path.absolute":
+            keys.append("onyo.path.absolute")
         # verify that the key is in the header
         onyo_get(inventory, keys=keys)
         assert reserved_key in capsys.readouterr().out
         # verify asset is returned
         onyo_get(inventory, keys=keys, machine_readable=True)
-        assert asset_path.name in capsys.readouterr().out
+        assert str(asset_path) in capsys.readouterr().out
 
 
 @pytest.mark.ui({'yes': True})
@@ -170,7 +172,7 @@ def test_onyo_get_simple(inventory: Inventory,
     # get a value in an asset
     onyo_get(inventory,
              include=[asset_path],
-             keys=[get_key, "path"])
+             keys=[get_key, "onyo.path.relative"])
 
     # verify output
     output = capsys.readouterr().out
@@ -189,14 +191,14 @@ def test_onyo_get_machine_readable(inventory: Inventory,
     # call `onyo_get()` without machine readable mode
     onyo_get(inventory,
              include=[asset_path],
-             keys=[get_key, "path"])
+             keys=[get_key, "onyo.path.relative"])
 
     standard_output = capsys.readouterr().out
 
     # call `onyo_get()` in machine readable mode
     onyo_get(inventory,
              include=[asset_path],
-             keys=[get_key, "path"],
+             keys=[get_key, "onyo.path.relative"],
              machine_readable=True)
 
     # verify output contains the correct information but is different from normal mode
@@ -220,14 +222,14 @@ def test_onyo_get_sorting(inventory: Inventory,
 
     # call `onyo_get()` with sort=ascending
     onyo_get(inventory,
-             sort={get_key: "ascending", "path": "ascending"},
-             keys=[get_key, "path"])
+             sort={get_key: "ascending", "onyo.path.relative": "ascending"},
+             keys=[get_key, "onyo.path.relative"])
     ascending_output = capsys.readouterr().out
 
     # call `onyo_get()` with sort=descending
     onyo_get(inventory,
-             sort={get_key: "descending", "path": "descending"},
-             keys=[get_key, "path"])
+             sort={get_key: "descending", "onyo.path.relative": "descending"},
+             keys=[get_key, "onyo.path.relative"])
     descending_output = capsys.readouterr().out
 
     # verify output contains the correct information but is different depending on sorting
@@ -244,7 +246,7 @@ def test_onyo_get_sorting(inventory: Inventory,
                   onyo_get,
                   inventory,
                   sort={get_key: "ILLEGAL"},
-                  keys=[get_key, "path"])
+                  keys=[get_key, "onyo.path.relative"])
 
 
 @pytest.mark.ui({'yes': True})
@@ -258,7 +260,7 @@ def test_onyo_get_on_directory(inventory: Inventory,
     # call `onyo_get()` on a directory
     onyo_get(inventory,
              include=[dir_path],
-             keys=[get_key, "path"])
+             keys=[get_key, "onyo.path.relative"])
 
     # verify output contains the asset inside the directory
     output = capsys.readouterr().out
@@ -285,7 +287,7 @@ def test_onyo_get_match(inventory: Inventory,
     onyo_get(inventory,
              include=[asset_path1, asset_path2],
              match=matches,  # pyre-ignore[6]
-             keys=[get_key, "path"])
+             keys=[get_key, "onyo.path.relative"])
 
     # verify output contains just information for matching assets
     output = capsys.readouterr().out
@@ -313,7 +315,7 @@ def test_onyo_get_no_matches(inventory: Inventory,
     assert "No assets matching the filter(s) were found" in output
     assert asset_path1.name not in output
     assert asset_path2.name not in output
-    assert "path" not in output
+    assert "onyo.path.relative" not in output
 
 
 @pytest.mark.repo_contents(
@@ -330,13 +332,13 @@ def test_onyo_get_multiple(inventory: Inventory,
     onyo_get(inventory,
              include=[asset_path1,
                       asset_path2],
-             keys=[get_key, "path"])
+             keys=[get_key, "onyo.path.relative"])
 
-    # verify output contains all assets and "path" as default key
+    # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
     assert asset_path1.name in output
     assert asset_path2.name in output
-    assert "path" in output
+    assert "onyo.path.relative" in output
     assert get_key in output
 
 
@@ -354,20 +356,20 @@ def test_onyo_get_limited(inventory: Inventory,
              include=[inventory.root],
              depth=1)
 
-    # verify output contains all assets and "path" as default key
+    # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
     assert asset_path1.name not in output
     assert asset_path2.name in output
-    assert "path" in output
+    assert "onyo.path.relative" in output
 
     # exclude subtree rather than limiting depth
     onyo_get(inventory,
              exclude=asset_path1.parent)
-    # verify output contains all assets and "path" as default key
+    # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
     assert asset_path1.name not in output
     assert asset_path2.name in output
-    assert "path" in output
+    assert "onyo.path.relative" in output
 
 
 @pytest.mark.repo_contents(
@@ -381,7 +383,7 @@ def test_onyo_get_depth_zero(inventory: Inventory,
              depth=0,
              machine_readable=True)
 
-    # verify output contains all assets and "path" as default key
+    # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
     for asset in inventory.repo.get_asset_paths():
         assert asset.name in output
@@ -396,7 +398,7 @@ def test_onyo_get_default_inventory_root(inventory: Inventory,
     and selects all assets of the inventory."""
     onyo_get(inventory, machine_readable=True)
 
-    # verify output contains all assets and "path" as default key
+    # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
     for asset in inventory.repo.get_asset_paths():
         assert asset.name in output
@@ -414,25 +416,25 @@ def test_onyo_get_allows_duplicates(inventory: Inventory,
              include=[asset_path, asset_path, asset_path],
              machine_readable=True)
 
-    # verify output contains all assets and "path" as default key
+    # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
     assert output.count(asset_path.name) == 1
 
 
 def test_onyo_get_asset_dir(inventory: Inventory,
                             capsys) -> None:
-    inventory.add_asset(dict(some_key="some_value",
-                             type="TYPE",
-                             make="MAKER",
-                             model=dict(name="MODEL"),
-                             serial="SERIAL2",
-                             other=1,
-                             directory=inventory.root,
-                             is_asset_directory=True)
-                        )
+    asset = Item(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model=dict(name="MODEL"),
+                 serial="SERIAL2",
+                 other=1,
+                 directory=inventory.root)
+    asset['onyo.is.directory'] = True
+    inventory.add_asset(asset)
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
-    onyo_get(inventory, match=[Filter("other=1").match], keys=["path", "is_asset_directory"])
+    onyo_get(inventory, match=[Filter("other=1").match], keys=["onyo.path.relative", "onyo.is.directory"])
     output = capsys.readouterr().out
     assert str(asset_dir.relative_to(inventory.root)) in output
     assert str(True) in output
@@ -440,7 +442,7 @@ def test_onyo_get_asset_dir(inventory: Inventory,
 
 def test_onyo_get_is_asset_dir(inventory: Inventory,
                                capsys) -> None:
-    onyo_get(inventory, keys=["path", "is_asset_directory"])
+    onyo_get(inventory, keys=["onyo.path.relative", "onyo.is.directory"])
     assert str(False) in capsys.readouterr().out
 
 
@@ -448,7 +450,7 @@ def test_onyo_get_is_asset_dir(inventory: Inventory,
 def test_onyo_get_type_matching(inventory: Inventory,
                                 capsys) -> None:
     r"""`onyo_get()` allows matching types instead of values."""
-    inventory.add_asset(dict(some_key=dict(),
+    inventory.add_asset(Item(some_key=dict(),
                              type="TYPE",
                              make="MAKE",
                              model=dict(name="MODEL"),
@@ -456,7 +458,7 @@ def test_onyo_get_type_matching(inventory: Inventory,
                              subdict=dict(),
                              directory=inventory.root)
                         )
-    inventory.add_asset(dict(some_key=dict(some="value"),
+    inventory.add_asset(Item(some_key=dict(some="value"),
                              type="TYPE",
                              make="MAKE",
                              model=dict(name="MODEL"),
@@ -470,7 +472,7 @@ def test_onyo_get_type_matching(inventory: Inventory,
     onyo_get(inventory,
              include=[inventory.root],
              match=matches,  # pyre-ignore[6]
-             keys=["path"])
+             keys=["onyo.path.relative"])
 
     # verify output contains matching asset
     output = capsys.readouterr().out
@@ -482,7 +484,7 @@ def test_onyo_get_type_matching(inventory: Inventory,
     onyo_get(inventory,
              include=[inventory.root],
              match=matches,  # pyre-ignore[6]
-             keys=["path"])
+             keys=["onyo.path.relative"])
     # verify output does not contain the previously matching asset
     output = capsys.readouterr().out
     assert asset1_path.name not in output
@@ -493,14 +495,14 @@ def test_onyo_get_type_matching(inventory: Inventory,
 def test_onyo_get_match_empty_dict(inventory: Inventory,
                                    capsys) -> None:
     r"""onyo_get can match `{}` (empty dict)"""
-    inventory.add_asset(dict(some_key=dict(),
+    inventory.add_asset(Item(some_key=dict(),
                              type="TYPE",
                              make="MAKER",
                              model=dict(name="MODEL"),
                              serial="SERIAL2",
                              directory=inventory.root)
                         )
-    inventory.add_asset(dict(some_key=dict(notempty="some"),
+    inventory.add_asset(Item(some_key=dict(notempty="some"),
                              type="TYPE",
                              make="MAKER",
                              model=dict(name="MODEL"),
@@ -511,7 +513,7 @@ def test_onyo_get_match_empty_dict(inventory: Inventory,
 
     onyo_get(inventory,
              match=[Filter("some_key={}").match],
-             keys=["path", "some_key"])
+             keys=["onyo.path.relative", "some_key"])
     output = capsys.readouterr().out
     assert "SERIAL2" in output
     assert "SERIAL3" not in output
@@ -524,27 +526,27 @@ def test_onyo_get_match_empty_dict(inventory: Inventory,
 def test_onyo_get_match_empty_list(inventory: Inventory,
                                    capsys) -> None:
     r"""onyo_get can match `[]` (empty list)"""
-    inventory.add_asset(dict(some_key=list(),
-                             type="TYPE",
-                             make="MAKER",
-                             model=dict(name="MODEL"),
-                             serial="SERIAL2",
-                             directory=inventory.root,
-                             is_asset_directory=True)
+    inventory.add_asset(Item({"some_key": list(),
+                              "type": "TYPE",
+                              "make": "MAKER",
+                              "model": dict(name="MODEL"),
+                              "serial": "SERIAL2",
+                              "directory": inventory.root,
+                              "onyo.is.directory": True})
                         )
-    inventory.add_asset(dict(some_key=[1, 2],
-                             type="TYPE",
-                             make="MAKER",
-                             model=dict(name="MODEL"),
-                             serial="SERIAL3",
-                             directory=inventory.root,
-                             is_asset_directory=True)
+    inventory.add_asset(Item({"some_key": [1, 2],
+                              "type": "TYPE",
+                              "make": "MAKER",
+                              "model": dict(name="MODEL"),
+                              "serial": "SERIAL3",
+                              "directory": inventory.root,
+                              "onyo.is.directory": True})
                         )
     inventory.commit("test assets w/ dicts and lists")
 
     onyo_get(inventory,
              match=[Filter("some_key=[]").match],
-             keys=["path", "some_key"])
+             keys=["onyo.path.relative", "some_key"])
     output = capsys.readouterr().out
     assert "SERIAL2" in output
     assert "SERIAL3" not in output
@@ -558,7 +560,7 @@ def test_onyo_get_unset_values(inventory: Inventory,
                                capsys) -> None:
     """`get` does return `<unset>` value"""
     from onyo.lib.consts import UNSET_VALUE
-    asset = dict(type="TYPE",
+    asset = Item(type="TYPE",
                  make="MAKE",
                  model=dict(name="MODEL"),
                  serial="SERIAL2",
@@ -572,7 +574,7 @@ def test_onyo_get_unset_values(inventory: Inventory,
     asset2_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
 
     onyo_get(inventory,
-             keys=["path", "novalue", "emptystring"],
+             keys=["onyo.path.relative", "novalue", "emptystring"],
              machine_readable=True)
     output = capsys.readouterr().out
 

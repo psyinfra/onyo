@@ -441,7 +441,7 @@ def test_set_empty_dictlist(repo: OnyoRepo, asset: str) -> None:
     assert "new:" in ret.stdout
     assert "dict: {}" in ret.stdout
     assert "list: []" in ret.stdout
-    ret = subprocess.run(['onyo', 'get', '--keys', 'path', '--match', 'new.dict={}', 'new.list=[]'],
+    ret = subprocess.run(['onyo', 'get', '-H', '--keys', 'path', '--match', 'new.dict={}', 'new.list=[]'],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -458,12 +458,12 @@ def test_set_empty_dictlist(repo: OnyoRepo, asset: str) -> None:
     assert "list: {}" in ret.stdout
 
     # we swapped the keys, so old matching criterion should NOT work:
-    ret = subprocess.run(['onyo', 'get', '--keys', 'path', '--match', 'new.dict={}', 'new.list=[]'],
+    ret = subprocess.run(['onyo', 'get', '-H', '--keys', 'path', '--match', 'new.dict={}', 'new.list=[]'],
                          capture_output=True, text=True)
     assert ret.returncode == 1
 
     # correct query
-    ret = subprocess.run(['onyo', 'get', '--keys', 'path', '--match', 'new.dict=[]', 'new.list={}'],
+    ret = subprocess.run(['onyo', 'get', '-H', '--keys', 'path', '--match', 'new.dict=[]', 'new.list={}'],
                          capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr

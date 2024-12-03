@@ -4,6 +4,7 @@ import pytest
 
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
+from onyo.lib.items import Item
 from . import check_commit_msg
 from ..commands import onyo_set
 
@@ -106,13 +107,13 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
 def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
     r"""`onyo_set()` must raise an error when attempting to set an
     illegal/reserved field."""
-    from onyo.lib.consts import RESERVED_KEYS, PSEUDO_KEYS
+    from onyo.lib.consts import RESERVED_KEYS
+    from onyo.lib.pseudokeys import PSEUDO_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
-    illegal_keys = PSEUDO_KEYS + RESERVED_KEYS
-    # TODO: Remove is_asset_directory from RESERVED_KEYS altogether?
-    illegal_keys.remove("is_asset_directory")
+    illegal_keys = list(PSEUDO_KEYS.keys()) + RESERVED_KEYS
+    illegal_keys.remove("onyo.is.directory")
     illegal_fields = [{k: "new_value"} for k in illegal_keys]
 
     # set on illegal fields
@@ -322,15 +323,15 @@ def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_asset_dir(inventory: Inventory) -> None:
-    inventory.add_asset(dict(some_key="some_value",
-                             type="TYPE",
-                             make="MAKER",
-                             model=dict(name="MODEL"),
-                             serial="SERIAL2",
-                             other=1,
-                             directory=inventory.root,
-                             is_asset_directory=True)
-                        )
+    asset = Item(some_key="some_value",
+                 type="TYPE",
+                 make="MAKER",
+                 model=dict(name="MODEL"),
+                 serial="SERIAL2",
+                 other=1,
+                 directory=inventory.root)
+    asset["onyo.is.directory"] = True
+    inventory.add_asset(asset)
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -346,7 +347,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
     # turn asset dir into asset file:
     onyo_set(inventory,
              assets=[asset_dir],
-             keys={'is_asset_directory': False})
+             keys={'onyo.is.directory': False})
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~2') == old_hexsha
     assert inventory.repo.is_asset_path(asset_dir)
@@ -356,7 +357,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
     # turn it back into an asset dir
     onyo_set(inventory,
              assets=[asset_dir],
-             keys={'is_asset_directory': True})
+             keys={'onyo.is.directory': True})
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
     assert inventory.repo.is_asset_dir(asset_dir)

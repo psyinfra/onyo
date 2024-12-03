@@ -76,7 +76,7 @@ Change an Asset File to an Asset Directory:
 
 .. code:: shell
 
-    $ onyo set --keys is_asset_directory=true --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
+    $ onyo set --keys onyo.is.directory=true --asset accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
 """
 
 
@@ -89,7 +89,7 @@ def set(args: argparse.Namespace) -> None:
 
     In addition to keys in asset contents, some PSEUDO-KEYS can be set:
 
-      * ``is_asset_directory``: boolean to control whether the asset is an
+      * ``onyo.is.directory``: boolean to control whether the asset is an
         Asset Directory.
 
     The contents of all modified assets are checked for validity before

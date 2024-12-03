@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 def diff_assets(asset_old: dict, asset_new: dict) -> Generator[str, None, None]:
     yield from unified_diff(dict_to_asset_yaml(asset_old).splitlines(keepends=False),
                             dict_to_asset_yaml(asset_new).splitlines(keepends=False),
-                            fromfile=str(asset_old.get('path', '')),
-                            tofile=str(asset_new.get('path', '')),
+                            fromfile=str(asset_old.get('onyo.path.absolute', '')),
+                            tofile=str(asset_new.get('onyo.path.absolute', '')),
                             lineterm="")
 
 
@@ -37,7 +37,7 @@ diff_renamed_asset = diff_assets  # This is the same, because a rename requires 
 
 def diff_moved_asset(asset_old: dict | Path, asset_new: Path) -> Generator[str, None, None]:
     # could be same. Just check isinstance?
-    yield from diff_path_change(asset_old if isinstance(asset_old, Path) else asset_old.get('path'),
+    yield from diff_path_change(asset_old if isinstance(asset_old, Path) else asset_old.get('onyo.path.absolute'),
                                 asset_new)
 
 
@@ -50,7 +50,7 @@ def differ_new_directories(repo: OnyoRepo, operands: tuple) -> Generator[str, No
 
 
 def differ_remove_assets(repo: OnyoRepo, operands: tuple) -> Generator[str, None, None]:
-    yield f"-{str(operands[0]) if isinstance(operands[0], Path) else operands[0].get('path')}"
+    yield f"-{str(operands[0]) if isinstance(operands[0], Path) else operands[0].get('onyo.path.absolute')}"
 
 
 def differ_remove_directories(repo: OnyoRepo, operands: tuple) -> Generator[str, None, None]:

@@ -1,6 +1,7 @@
 import pytest
 
 from onyo.lib.exceptions import InvalidInventoryOperationError, InventoryOperationError
+from onyo.lib.items import Item
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from . import check_commit_msg
@@ -211,15 +212,15 @@ def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
 def test_onyo_rm_asset_dir(inventory: Inventory) -> None:
     # As long as there no assets within, `rm` should remove the asset dir
     # with and without the `--recursive` flag being set
-    inventory.add_asset(dict(some_key="some_value",
-                             type="TYPE",
-                             make="MAKE",
-                             model=dict(name="MODEL"),
-                             serial="SERIAL2",
-                             other=1,
-                             directory=inventory.root,
-                             is_asset_directory=True)
-                        )
+    asset = Item(some_key="some_value",
+                 type="TYPE",
+                 make="MAKE",
+                 model=dict(name="MODEL"),
+                 serial="SERIAL2",
+                 other=1,
+                 directory=inventory.root)
+    asset["onyo.is.directory"] = True
+    inventory.add_asset(asset)
     asset_dir = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
 
