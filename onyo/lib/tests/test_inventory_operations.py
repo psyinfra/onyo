@@ -83,7 +83,17 @@ def test_add_asset(repo: OnyoRepo) -> None:
     for k, v in asset.items():
         if k not in RESERVED_KEYS + list(PSEUDO_KEYS.keys()):
             assert asset_from_disc[k] == v
-    # TODO: check commit message
+
+    # check operations record:
+    commit = [c for c in inventory.get_history(asset_file, n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'new_assets':
+            assert v == [asset_file.relative_to(inventory.root)]
+        elif k == 'new_directories':
+            assert newdir1.relative_to(inventory.root) in v
+            assert newdir2.relative_to(inventory.root) in v
+        else:
+            assert v == []
 
     # required keys must not be empty
     asset.update(dict(model=dict(name="")))
@@ -146,6 +156,14 @@ def test_remove_asset(inventory: Inventory) -> None:
     # but parent dir still is an inventory dir:
     assert inventory.repo.is_inventory_dir(asset_file.parent)
 
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'remove_assets':
+            assert v == [asset_file.relative_to(inventory.root)]
+        else:
+            assert v == []
+
 
 def test_move_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
@@ -187,6 +205,16 @@ def test_move_asset(repo: OnyoRepo) -> None:
     inventory.commit("Move an asset")
     assert not asset_file.exists()
     assert (newdir1 / asset_file.name).is_file()
+
+    # check operations record:
+    commit = [c for c in inventory.get_history(newdir1 / asset_file.name, n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'move_assets':
+            assert v == [(
+                asset_file.relative_to(inventory.root), (newdir1 / asset_file.name).relative_to(inventory.root)
+            )]
+        else:
+            assert v == []
 
 
 def test_rename_asset(repo: OnyoRepo) -> None:
@@ -291,6 +319,16 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     assert asset_on_disc['onyo.path.parent'] == new_asset_file.parent.relative_to(inventory.root)
     assert asset_on_disc['onyo.is.directory'] is False
 
+    # check operations record:
+    commit = [c for c in inventory.get_history(new_asset_file, n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'modify_assets':
+            assert v == [asset_file.relative_to(inventory.root)]
+        elif k == 'rename_assets':
+            assert v == [(asset_file.relative_to(inventory.root), new_asset_file.relative_to(inventory.root))]
+        else:
+            assert v == []
+
 
 def test_add_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
@@ -317,17 +355,25 @@ def test_add_directory(repo: OnyoRepo) -> None:
     assert repo.is_inventory_dir(new_dir)
     assert (new_dir / repo.ANCHOR_FILE_NAME).is_file()
 
+    # check operations record:
+    commit = [c for c in inventory.get_history(new_dir / '.anchor', n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'new_directories':
+            assert v == [new_dir.relative_to(inventory.root)]
+        else:
+            assert v == []
+
 
 def test_remove_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     emptydir = newdir1 / "empty"
-    asset_file = newdir2 / "asset_file"
+    asset_file = newdir2 / "TYPE_MAKE_MODEL.SERIAL"
     asset = Item(
         some_key="some_value",
         type="TYPE",
-        make="MAKER",
+        make="MAKE",
         model=dict(name="MODEL"),
         serial="SERIAL",
         other='1',
@@ -362,6 +408,18 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     assert not asset_file.exists()
     assert not newdir2.exists()
     assert not newdir1.exists()
+
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'remove_directories':
+            assert newdir1.relative_to(inventory.root) in v
+            assert newdir2.relative_to(inventory.root) in v
+            assert len(v) == 2
+        elif k == 'remove_assets':
+            assert v == [asset_file.relative_to(inventory.root)]
+        else:
+            assert v == []
 
 
 def test_move_directory(repo: OnyoRepo) -> None:
@@ -402,6 +460,16 @@ def test_move_directory(repo: OnyoRepo) -> None:
     inventory.commit("Move a directory")
     assert not newdir2.exists()
     assert repo.is_inventory_dir(emptydir / newdir2.name)
+
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'move_directories':
+            assert v == [(
+                newdir2.relative_to(inventory.root), (emptydir / newdir2.name).relative_to(inventory.root)
+            )]
+        else:
+            assert v == []
 
 
 def test_rename_directory(repo: OnyoRepo) -> None:
@@ -446,6 +514,16 @@ def test_rename_directory(repo: OnyoRepo) -> None:
     assert not newdir2.exists()
     assert repo.is_inventory_dir(new_name)
 
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'rename_directories':
+            assert v == [(
+                newdir2.relative_to(inventory.root), new_name.relative_to(inventory.root)
+            )]
+        else:
+            assert v == []
+
 
 def test_add_asset_dir(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
@@ -484,6 +562,15 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.is_asset_dir(asset_dir_path)
     # TODO: should the yaml file within be a valid asset path as well? Think not.
     # assert inventory.repo.is_asset_path(asset_dir_path / OnyoRepo.ASSET_DIR_FILE)
+    # check operations record:
+    commit = [c for c in inventory.get_history((asset_dir_path / OnyoRepo.ASSET_DIR_FILE_NAME), n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'new_directories':
+            assert v == [asset_dir_path.relative_to(inventory.root)]
+        elif k == 'new_assets':
+            assert v == [asset_dir_path.relative_to(inventory.root)]
+        else:
+            assert v == []
 
     # add asset aspect to existing directory, which does not yet comply with asset naming scheme
     dir_path = inventory.root / "newdir"
@@ -531,6 +618,16 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.is_asset_dir(expected_path)
     assert inventory.repo.git.is_clean_worktree()
 
+    # check operations record:
+    commit = [c for c in inventory.get_history(expected_path / OnyoRepo.ASSET_DIR_FILE_NAME, n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'rename_directories':
+            assert v == [(dir_path.relative_to(inventory.root), expected_path.relative_to(inventory.root))]
+        elif k == 'new_assets':
+            assert v == [expected_path.relative_to(inventory.root)]
+        else:
+            assert v == []
+
 
 def test_add_dir_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
@@ -561,6 +658,14 @@ def test_add_dir_asset(repo: OnyoRepo) -> None:
     inventory.commit("Turn asset into asset dir")
     assert inventory.repo.is_asset_dir(asset_path)
     assert inventory.repo.git.is_clean_worktree()
+
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'new_directories':
+            assert v == [asset_path.relative_to(inventory.root)]
+        else:
+            assert v == []
 
 
 def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
@@ -601,6 +706,16 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     assert inventory.repo.is_asset_path(asset_dir_path)
     assert asset_dir_path.is_file()
     assert inventory.repo.git.is_clean_worktree()
+
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'remove_directories':
+            assert v == [asset_dir_path.relative_to(inventory.root)]
+        elif k == 'remove_assets':
+            assert v == [(asset_dir_path / "a_b_c.1A").relative_to(inventory.root)]
+        else:
+            assert v == []
 
 
 def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
@@ -644,6 +759,14 @@ def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
     # asset within unaffected:
     assert inventory.repo.is_asset_path(asset_within['directory'] / "a_b_c.1A")
 
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'remove_assets':
+            assert v == [asset_dir_path.relative_to(inventory.root)]
+        else:
+            assert v == []
+
 
 def test_move_asset_dir(repo: OnyoRepo) -> None:
     # An asset dir could be moved by either move_dir or move_asset. Since it's both, there's no difference when we treat
@@ -677,10 +800,20 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     new_path = dir_path / asset_dir_path.name
     assert not asset_dir_path.exists()
     assert inventory.repo.is_asset_dir(new_path)
-    # Two operations recorded:
-    msg = inventory.repo.git.get_commit_msg()
-    assert "Moved assets" in msg
-    assert "Moved directories" in msg
+
+    # check operations record (two operations recorded):
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'move_assets':
+            assert v == [(
+                asset_dir_path.relative_to(inventory.root), (dir_path / asset_dir_path.name).relative_to(inventory.root)
+            )]
+        elif k == 'move_directories':
+            assert v == [(
+                asset_dir_path.relative_to(inventory.root), (dir_path / asset_dir_path.name).relative_to(inventory.root)
+            )]
+        else:
+            assert v == []
 
     # Now move back but via `move_directory` instead.
     inventory.move_directory(new_path, inventory.root)
@@ -694,10 +827,20 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     inventory.commit("Move asset dir back")
     assert inventory.repo.is_asset_dir(asset_dir_path)
     assert not new_path.exists()
-    # Two operations recorded:
-    msg = inventory.repo.git.get_commit_msg()
-    assert "Moved assets" in msg
-    assert "Moved directories" in msg
+
+    # check operations record (two operations recorded):
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'move_assets':
+            assert v == [(
+                (dir_path / asset_dir_path.name).relative_to(inventory.root), asset_dir_path.relative_to(inventory.root)
+            )]
+        elif k == 'move_directories':
+            assert v == [(
+                (dir_path / asset_dir_path.name).relative_to(inventory.root), asset_dir_path.relative_to(inventory.root)
+            )]
+        else:
+            assert v == []
 
 
 def test_rename_asset_dir(repo: OnyoRepo) -> None:
@@ -747,10 +890,15 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.is_inventory_dir(new_asset_dir_path)
     assert inventory.repo.git.is_clean_worktree()
 
-    # Two operations recorded:
-    msg = inventory.repo.git.get_commit_msg()
-    assert "Renamed assets" in msg
-    assert "Renamed directories" in msg
+    # check operations record (two operations recorded):
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'rename_assets':
+            assert v == [(asset_dir_path.relative_to(inventory.root), new_asset_dir_path.relative_to(inventory.root))]
+        elif k == 'rename_directories':
+            assert v == [(asset_dir_path.relative_to(inventory.root), new_asset_dir_path.relative_to(inventory.root))]
+        else:
+            assert v == []
 
 
 def test_modify_asset_dir(repo: OnyoRepo) -> None:
@@ -813,3 +961,15 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
 
     assert asset_on_disc['onyo.path.absolute'] == new_asset_path
     assert asset_on_disc['onyo.path.parent'] == new_asset_path.parent.relative_to(inventory.root)
+
+    # check operations record:
+    commit = [c for c in inventory.get_history(n=1)][0]
+    for k, v in commit['operations'].items():
+        if k == 'modify_assets':
+            assert v == [asset_path.relative_to(inventory.root)]
+        elif k == 'rename_assets':
+            assert v == [(asset_path.relative_to(inventory.root), new_asset_path.relative_to(inventory.root))]
+        elif k == 'rename_directories':
+            assert v == [(asset_path.relative_to(inventory.root), new_asset_path.relative_to(inventory.root))]
+        else:
+            assert v == []
