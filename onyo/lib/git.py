@@ -418,7 +418,7 @@ class GitRepo(object):
         commit = dict()
         for line in lines:
             if line.startswith('commit '):
-                commit['commit'] = line.split()[1]
+                commit['hexsha'] = line.split()[1]
                 continue
             elif line.startswith('Author:'):
                 try:

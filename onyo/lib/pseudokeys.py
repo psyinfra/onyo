@@ -56,6 +56,48 @@ PSEUDO_KEYS: Dict[str, PseudoKey] = {
     'onyo.is.empty': PseudoKey(description="Is the directory empty. <unset> if the item is not a directory.",
                                implementation=partial(delegate, attribute='is_empty')
                                ),
+    'onyo.was.modified.hexsha': PseudoKey(description="SHA of the last commit that modified the item.",
+                                          implementation=partial(delegate, attribute='fill_modified', what='hexsha')
+                                          ),
+    'onyo.was.modified.time': PseudoKey(description="Time of the last commit that modified the item.",
+                                        implementation=partial(delegate, attribute='fill_modified', what='time')),
+    'onyo.was.modified.author.name': PseudoKey(
+        description="Name of the author of the last commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='author.time')
+    ),
+    'onyo.was.modified.author.email': PseudoKey(
+        description="Email of the author of the last commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='author.email')
+    ),
+    'onyo.was.modified.committer.name': PseudoKey(
+        description="Name of the committer of the last commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='committer.name')
+    ),
+    'onyo.was.modified.committer.email': PseudoKey(
+        description="Email of the committer of the last commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='committer.email')
+    ),
+    'onyo.was.created.hexsha': PseudoKey(description="SHA of the last commit that created the item.",
+                                         implementation=partial(delegate, attribute='fill_created', what='hexsha')
+                                         ),
+    'onyo.was.created.time': PseudoKey(description="Time of the last commit that created the item.",
+                                       implementation=partial(delegate, attribute='fill_created', what='time')),
+    'onyo.was.created.author.name': PseudoKey(
+        description="Name of the author of the last commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='author.time')
+    ),
+    'onyo.was.created.author.email': PseudoKey(
+        description="Email of the author of the last commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='author.email')
+    ),
+    'onyo.was.created.committer.name': PseudoKey(
+        description="Name of the committer of the last commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='committer.name')
+    ),
+    'onyo.was.created.committer.email': PseudoKey(
+        description="Email of the committer of the last commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='committer.email')
+    ),
 }
 r"""Pseudo-Keys are key names that are addressable but not written to disk in asset YAML.
 

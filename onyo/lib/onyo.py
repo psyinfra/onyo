@@ -746,6 +746,7 @@ class OnyoRepo(object):
         #       or have sort of a proxy in OnyoRepo.
         #       -> May be: get_history(Item) in Inventory and get_history(path) in OnyoRepo.
         from onyo.lib.decoder import parse_operations_record
+        from onyo.lib.utils import DotNotationWrapper
         for commit in self.git.follow(path, n):
             record = []
             start = False
@@ -757,4 +758,4 @@ class OnyoRepo(object):
             if record:
 
                 commit['operations'] = parse_operations_record(record)
-            yield commit
+            yield DotNotationWrapper(commit)
