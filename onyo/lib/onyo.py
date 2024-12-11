@@ -17,7 +17,11 @@ from .ui import ui
 from .utils import get_asset_content, write_asset_file
 
 if TYPE_CHECKING:
-    from typing import Iterable, List
+    from typing import (
+        Generator,
+        Iterable,
+        List,
+    )
     from collections import UserDict
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
@@ -739,14 +743,15 @@ class OnyoRepo(object):
         self.git.commit(paths=paths, message=message)
         self.clear_cache()
 
-    def get_history(self, path: Path | None = None, n: int | None = None):
+    def get_history(self, path: Path | None = None, n: int | None = None) -> Generator[UserDict, None, None]:
         # TODO: This isn't quite right yet. operations records are defined in Inventory.
         #       But Inventory shouldn't talk to GitRepo directly. So, either pass the record
         #       from Inventory to OnyoRepo and turn it into a commit-message part only,
         #       or have sort of a proxy in OnyoRepo.
         #       -> May be: get_history(Item) in Inventory and get_history(path) in OnyoRepo.
-        from onyo.lib.decoder import parse_operations_record
-        for commit in self.git.follow(path, n):
+        from onyo.lib.parser import parse_operations_record
+        from onyo.lib.utils import DotNotationWrapper
+        for commit in self.git.history(path, n):
             record = []
             start = False
             for line in commit['message']:
@@ -757,4 +762,4 @@ class OnyoRepo(object):
             if record:
 
                 commit['operations'] = parse_operations_record(record)
-            yield commit
+            yield DotNotationWrapper(commit)

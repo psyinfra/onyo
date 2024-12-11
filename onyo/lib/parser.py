@@ -3,7 +3,7 @@ from pathlib import Path
 from onyo.lib.inventory import OPERATIONS_MAPPING
 
 
-def parse_operations_record(record: list[str]):
+def parse_operations_record(record: list[str]) -> dict:
 
     if not record[0].strip() == "--- Inventory Operations ---":
         raise RuntimeError("Invalid operations record.")

@@ -408,8 +408,8 @@ class GitRepo(object):
     def _parse_log_output(self, lines: list[str]) -> dict:
         """Generate a dict from the output of ``git log`` for one commit.
 
-        Internal helper that gets a list of git-log-output lines,
-        that represent a single commit and generates a dictionary from it.
+        Internal helper that converts a list of git-log-output lines of
+        a single commit to a dictionary.
         """
         import datetime
         import re
@@ -418,7 +418,7 @@ class GitRepo(object):
         commit = dict()
         for line in lines:
             if line.startswith('commit '):
-                commit['commit'] = line.split()[1]
+                commit['hexsha'] = line.split()[1]
                 continue
             elif line.startswith('Author:'):
                 try:
@@ -450,21 +450,24 @@ class GitRepo(object):
 
         return commit
 
-    def follow(self, path: Path | None = None, n: int | None = None) -> Generator[dict, None, None]:
+    def history(self, path: Path | None = None, n: int | None = None) -> Generator[dict, None, None]:
         """Yields commit dicts representing the history of ``path``.
 
-        History according to ``git log --follow`` if a path is given
-        or ``git log`` otherwise.
+        History according to git log (git log --follow if a path is given).
 
         Parameters
         ----------
-        path: Path, optional
+        path:
           What file to follow. If `None`, get the history of HEAD instead.
-        n: int, optional
+        n:
           Limit history going back ``n`` commits.
           ``None`` for no limit (default).
         """
-        # TODO: Do we want to distinguish methods for `git log` (path optional) vs `git log --follow` (requires a path)?
+        # TODO: Something like this may allow us to efficiently deal with multiline strings in git-log's output,
+        #       rather than splitting lines and iterating over them when assembling output that belongs to a single
+        #       commit, parsing the git data and then the operations record (also removes leading spaces for the commit
+        #       message):
+        #       --pretty='format:commit: %H%nAuthor: %an (%ae)%nCommitter: %cn (%ce)%nCommitDate: %cI%nMessage:%n%B'
         limit = [f'-n{n}'] if n is not None else []
         pathspec = ['--follow', '--', str(path)] if path else []
         cmd = ['log', '--date=iso-strict', '--pretty=fuller'] + limit + pathspec

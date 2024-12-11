@@ -265,8 +265,12 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     assert inventory.repo.is_asset_path(new_asset_path1)
     new_asset = inventory.get_asset(new_asset_path1)
     # equals existing asset except for path-pseudo-keys and serial:
+    # Actually: history differs as well. onyo.is. doesn't, though
+    for k, v in existing_asset.items():
+        if k != "serial" and not k.startswith('onyo.path.') and not k.startswith('onyo.was.'):
+            assert v == new_asset[k], f"{k}: {v} != {new_asset[k]}"
     assert all(v == new_asset[k] for k, v in existing_asset.items()
-               if k != "serial" and not k.startswith('onyo.path'))
+               if k != "serial" and not k.startswith('onyo.path') and not k.startswith('onyo.was.'))
     assert new_asset['serial'] == 'ANOTHER'
 
     # second new asset
@@ -275,7 +279,7 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     new_asset = inventory.get_asset(new_asset_path2)
     # equals existing asset except for path-pseudo-keys and serial:
     assert all(v == new_asset[k] for k, v in existing_asset.items()
-               if k != "serial" and not k.startswith('onyo.path'))
+               if k != "serial" and not k.startswith('onyo.path') and not k.startswith('onyo.was.'))
     assert new_asset['serial'] == 'whatever'
     assert inventory.repo.git.is_clean_worktree()
 
