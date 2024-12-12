@@ -725,3 +725,7 @@ class Inventory(object):
             # Note, that DotNotationWrapper.keys() delivers strings (and has to).
             # Hence, `None` as a key would show up here as 'None'.
             raise ValueError("Keys are not allowed to be empty or None-values.")
+
+    def get_history(self, path: Path | None = None, n: int | None = None):
+        # TODO: Not sure we need this one yet. We get the data from pseudo-keys.
+        yield from self.repo.get_history(path, n)
