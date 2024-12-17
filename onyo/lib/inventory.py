@@ -725,3 +725,6 @@ class Inventory(object):
             # Note, that DotNotationWrapper.keys() delivers strings (and has to).
             # Hence, `None` as a key would show up here as 'None'.
             raise ValueError("Keys are not allowed to be empty or None-values.")
+
+    def get_history(self, path: Path | None = None, n: int | None = None) -> Generator[UserDict, None, None]:
+        yield from self.repo.get_history(path, n)
