@@ -296,7 +296,7 @@ def _edit_asset(inventory: Inventory,
     # Store original pseudo-keys of `asset`, in order to re-assign
     # them when loading edited file from disc. This is relevant, when
     # `operation` uses them (`Inventory.add_asset/modify_asset`).
-    reserved_keys = {k: v for k, v in asset.items() if k in list(PSEUDO_KEYS.keys()) + ['template']}
+    reserved_keys = {k: v for k, v in asset.items() if k in list(PSEUDO_KEYS.keys()) + ['template'] and v is not None}
     disallowed_keys = RESERVED_KEYS + list(PSEUDO_KEYS.keys())
     disallowed_keys.remove('onyo.is.directory')
     disallowed_keys.remove('onyo.path.parent')
@@ -332,7 +332,11 @@ def _edit_asset(inventory: Inventory,
             if any(k in disallowed_keys for k in tmp_asset.keys()):
                 raise ValueError(f"Can't set any of the keys ({', '.join(disallowed_keys)}).")
             asset = Item()
-            asset.data = tmp_asset.data  # keep exact objects for ruamel-based roundtrip
+            # keep exact objects for ruamel-based roundtrip:
+            asset.data = tmp_asset.data
+            # ^ This kills pseudo-keys, though. Re-add those, that aren't specified:
+            asset.update({k: v for k, v in PSEUDO_KEYS.items() if k not in tmp_asset})
+
             # When reading from file, we don't get reserved keys back, since they are not
             # part of the file content. We do need the object from reading the file to be
             # the basis, though, to get comment roundtrip from ruamel.

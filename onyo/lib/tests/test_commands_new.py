@@ -191,7 +191,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     directory = inventory.root / "edited"
-    monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
+    monkeypatch.setenv('EDITOR', "printf 'key: value  #w/ comment' >>")
 
     specs = [{'template': 'empty',
               'model': {'name': 'MODEL'},
@@ -207,7 +207,8 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     assert expected_path in inventory.repo.git.files
     asset_content = inventory.get_asset(expected_path)
     assert asset_content['key'] == 'value'
-
+    assert 'key: value  #w/ comment' in expected_path.read_text()
+    assert 'None' not in list(inventory.get_history(expected_path, n=1))[0]['message']
     # file already exists:
     edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
@@ -240,6 +241,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     expected_content = '---\n' + edit_str
     expected_path = directory / "TYPE_MAKER_MODEL.8675309"
     assert expected_content == expected_path.read_text()
+    assert 'None' not in list(inventory.get_history(expected_path, n=1))[0]['message']
 
 
 @pytest.mark.ui({'yes': True})
