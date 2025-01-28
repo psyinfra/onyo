@@ -374,3 +374,31 @@ def test_set_empty_dictlist(inventory: Inventory) -> None:
     onyo_set(inventory, assets=[asset_path], keys={"new_key": list()})
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.get_asset(asset_path)["new_key"] == list()
+
+
+@pytest.mark.ui({'yes': True})
+@pytest.mark.repo_dirs("roundtrip")
+def test_set_roundtrip(inventory: Inventory):
+    asset_path = inventory.root / "roundtrip" / "atype_amake_amodelname.aserial"
+    asset_content = """---
+type: atype # comment 1
+
+make: amake
+model:
+  name: amodelname # comment 2
+
+serial: aserial
+akey: # comment 3
+"""
+    asset_path.write_text(asset_content)
+    inventory.repo.git.commit(asset_path, "Add raw formatted asset file")
+    assert inventory.repo.git.is_clean_worktree()
+    assert asset_content == asset_path.read_text()
+    old_hexsha = inventory.repo.git.get_hexsha()
+
+    # We have an asset file w/ blank lines and comments.
+    # When we set a new value nothing but that value should change.
+    onyo_set(inventory, assets=[asset_path], keys={'akey': 'avalue'})
+    assert inventory.repo.git.is_clean_worktree()
+    assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
+    assert asset_content.replace("akey:", "akey: avalue") == asset_path.read_text()
