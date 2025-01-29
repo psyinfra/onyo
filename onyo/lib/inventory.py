@@ -85,38 +85,58 @@ class InventoryOperation(object):
         return self.operator.executor(repo=self.repo, operands=self.operands)
 
 
-OPERATIONS_MAPPING: dict = {'new_directories': InventoryOperator(executor=exec_new_directories,
-                                                                 differ=differ_new_directories,
-                                                                 recorder=record_new_directories),
-                            'new_assets': InventoryOperator(executor=exec_new_assets,
-                                                            differ=differ_new_assets,
-                                                            recorder=record_new_assets),
-                            'remove_assets': InventoryOperator(executor=exec_remove_assets,
-                                                               differ=differ_remove_assets,
-                                                               recorder=record_remove_assets),
-                            'modify_assets': InventoryOperator(executor=exec_modify_assets,
-                                                               differ=differ_modify_assets,
-                                                               recorder=record_modify_assets),
-                            'rename_assets': InventoryOperator(executor=exec_rename_assets,
-                                                               differ=differ_rename_assets,
-                                                               recorder=record_rename_assets),
-                            'remove_directories': InventoryOperator(executor=exec_remove_directories,
-                                                                    differ=differ_remove_directories,
-                                                                    recorder=record_remove_directories),
-                            'move_directories': InventoryOperator(executor=exec_move_directories,
-                                                                  differ=differ_move_directories,
-                                                                  recorder=record_move_directories),
-                            'rename_directories': InventoryOperator(executor=exec_rename_directories,
-                                                                    differ=differ_rename_directories,
-                                                                    recorder=record_rename_directories),
-                            'move_assets': InventoryOperator(executor=exec_move_assets,
-                                                             differ=differ_move_assets,
-                                                             recorder=record_move_assets),
-                            'remove_generic_file': InventoryOperator(
-                                executor=partial(generic_executor, lambda x: x[0].unlink()),
-                                differ=differ_remove_assets,
-                                recorder=lambda x: dict()),  # no operations record for this, not an inventory item.
-                            }
+OPERATIONS_MAPPING: dict = {
+    'modify_assets': InventoryOperator(
+        executor=exec_modify_assets,
+        differ=differ_modify_assets,
+        recorder=record_modify_assets,
+    ),
+    'move_assets': InventoryOperator(
+        executor=exec_move_assets,
+        differ=differ_move_assets,
+        recorder=record_move_assets,
+    ),
+    'move_directories': InventoryOperator(
+        executor=exec_move_directories,
+        differ=differ_move_directories,
+        recorder=record_move_directories,
+    ),
+    'new_assets': InventoryOperator(
+        executor=exec_new_assets,
+        differ=differ_new_assets,
+        recorder=record_new_assets,
+    ),
+    'new_directories': InventoryOperator(
+        executor=exec_new_directories,
+        differ=differ_new_directories,
+        recorder=record_new_directories,
+    ),
+    'remove_assets': InventoryOperator(
+        executor=exec_remove_assets,
+        differ=differ_remove_assets,
+        recorder=record_remove_assets,
+    ),
+    'remove_directories': InventoryOperator(
+        executor=exec_remove_directories,
+        differ=differ_remove_directories,
+        recorder=record_remove_directories,
+    ),
+    'remove_generic_file': InventoryOperator(
+        executor=partial(generic_executor, lambda x: x[0].unlink()),
+        differ=differ_remove_assets,
+        recorder=lambda x: dict()  # no operations record for this, not an inventory item
+    ),
+    'rename_assets': InventoryOperator(
+        executor=exec_rename_assets,
+        differ=differ_rename_assets,
+        recorder=record_rename_assets,
+    ),
+    'rename_directories': InventoryOperator(
+        executor=exec_rename_directories,
+        differ=differ_rename_directories,
+        recorder=record_rename_directories,
+    ),
+}
 
 
 # TODO: Conflict w/ existing operations?
