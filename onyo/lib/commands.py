@@ -89,49 +89,45 @@ def raise_on_inventory_state(func: Callable[P, T]) -> Callable[P, T]:
 
 def fsck(repo: OnyoRepo,
          tests: list[str] | None = None) -> None:
-    r"""Run a suite of integrity checks on an Onyo repository and its contents.
+    r"""Run integrity checks on an Onyo repository and its contents.
 
-    By default, the following tests are performed:
+    The following tests are available:
 
-    * ``anchors``: verify that all directories (outside of ``.onyo/``) have an
-      ``.anchor`` file
-    * ``asset-unique``: verify that all asset names are unique
-    * ``asset-yaml``: verify that all asset contents are valid YAML
-    * ``clean-tree``: verify that git has no changed (staged or unstaged) or
-      untracked files
+    * ``anchors``: directories (outside of ``.onyo/``) have an ``.anchor`` file
+    * ``asset-yaml``: asset YAML is valid
+    * ``clean-tree``: git reports no changed (staged or unstaged) or untracked files
+
+    Like Git, Onyo ignores files specified in ``.gitignore``.
 
     Parameters
     ----------
     repo
         The repository on which to perform the fsck.
-
     tests
         A list of tests to run. By default, all tests are run.
 
     Raises
     ------
     ValueError
-        If a specified test does not exist.
-
+        A specified test does not exist.
     OnyoInvalidRepoError
-        If a test fails.
+        One or more tests failed.
     """
 
     from functools import partial
-    from onyo.lib.utils import has_unique_names, validate_yaml
+    from onyo.lib.utils import validate_yaml
 
     all_tests = {
         # TODO: fsck would probably want to relay or analyze `git-status` output, rather
         # than just get a bool for clean worktree:
-        "clean-tree": repo.git.is_clean_worktree,
         "anchors": repo.validate_anchors,
-        "asset-unique": partial(has_unique_names, repo.asset_paths),
         "asset-yaml": partial(validate_yaml, {repo.git.root / a for a in repo.asset_paths}),
+        "clean-tree": repo.git.is_clean_worktree,
     }
     if tests:
         # only known tests are accepted
         if [x for x in tests if x not in all_tests.keys()]:
-            raise ValueError("Invalid test requested. Valid tests are: {}".format(', '.join(all_tests.keys())))
+            raise ValueError("Invalid test requested. Available tests are: {}".format(', '.join(all_tests.keys())))
     else:
         tests = list(all_tests.keys())
 
@@ -140,9 +136,6 @@ def fsck(repo: OnyoRepo,
         ui.log(f"'{key}' starting")
 
         if not all_tests[key]():
-            # Note: What's that debug message adding? Alone it lacks the
-            #       identifying path and in combination with the exception
-            #       it's redundant.
             ui.log_debug(f"'{key}' failed")
             raise OnyoInvalidRepoError(f"'{repo.git.root}' failed fsck test '{key}'")
 

@@ -24,15 +24,13 @@ def fsck(args: argparse.Namespace) -> None:
     r"""
     Run a suite of integrity checks on the Onyo repository and its contents.
 
-    By default, the following tests are performed:
+    The following tests are performed:
 
-      * ``clean-tree``: verify that git has no changed (staged or unstaged) or
-        untracked files
-      * ``anchors``: verify that all directories (outside of .onyo) have an
-        .anchor file
-      * ``asset-unique``: verify that all asset names are unique
-      * ``asset-yaml``: verify that all asset contents are valid YAML
+      * ``anchors``: directories (outside of .onyo) have an .anchor file
+      * ``asset-yaml``: asset YAML is valid
+      * ``clean-tree``: git has no changed (staged or unstaged) or untracked files
+
+    Like Git, Onyo ignores files specified in ``.gitignore``.
     """
-    # TODO: Pass args and have a test; Actually - no args defined?
     repo = OnyoRepo(Path.cwd(), find_root=True)
     fsck_cmd(repo)
