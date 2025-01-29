@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from ruamel.yaml import CommentedMap  # pyre-ignore[21]
 
 import onyo.lib.onyo
 import onyo.lib.inventory
@@ -48,10 +51,14 @@ class Item(DotNotationWrapper):
                  **kwargs: _VT):
         super().__init__()
         self.repo: onyo.lib.onyo.OnyoRepo | None = repo
+        self._path: Path | None = None
+        self.data = CommentedMap()
         self.update(onyo.lib.pseudokeys.PSEUDO_KEYS)
-        self._path = None
 
-        if isinstance(item, Path):
+        if isinstance(item, Item):
+            self._path = item._path
+            self.data = deepcopy(item.data)
+        elif isinstance(item, Path):
             assert item.is_absolute()  # currently no support for relative. This is how all existing code should work ATM.
             self.update_from_path(item)
         elif item is not None:
@@ -86,24 +93,72 @@ class Item(DotNotationWrapper):
         return super().get(resolve_alias(key), default=default)
 
     def update_from_path(self, path: Path):
-        """Update internal dictionary from a YAML file."""
+        """Update internal dictionary from a YAML file.
+
+        Regarding keys and values this is a "regular" update.
+        However, with respect to comments etc., this overwrites
+        possibly existing ones.
+        """
         # TODO: Potentially account for being pointed to
         #       a directory or an .onyoignore'd file.
         from onyo.lib.utils import get_asset_content
         self._path = path
         if self['onyo.is.asset']:
             loader = self.repo.get_asset_content if self.repo else get_asset_content
-            self.update(loader(path))
+            map_from_file = loader(path)
+            self.update(map_from_file)
+            if hasattr(map_from_file, 'copy_attributes'):
+                # We got a (subclass of) ruamel.yaml.CommentBase.
+                # Copy the attributes re comments, format, etc. for roundtrip.
+                # Note, that this is replacing - there's no straightforward way to merge w/
+                # existing comments etc.
+                map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
 
-    # TODO: git metadata:
-    # def fill_created(self, what: str | None):
-    #     # self.repo.git.xxx   (self.get('onyo.path.file'))
-    #     # fill in all created keys
-    #     # switch `what` -> return whatever part was requesting this
-    #     pass#raise NotImplementedError
-    #
-    # def fill_modified(self, what: str | None):
-    #     pass#raise NotImplementedError
+    def fill_created(self, what: str | None):
+        """Initializer for the 'onyo.was.created' pseudo-keys.
+
+        Fills in the entire sub-dict and returns the value specified by ``what``.
+
+        Note/TODO:
+        ----------
+        This is currently based on ``git log --follow <path>``. Looking back, the first appearance
+        of a 'new_assets'/'new_directories' operation should be it, assuming the history
+        was created by onyo commands.
+        However, if the history was created using the python interface, that assumption wouldn't hold
+        and we'd have to trace back moves and renames in order to know what path or file name we are looking
+        to match against these operations.
+        """
+        if self.repo and self['onyo.path.absolute']:
+            for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
+                if 'operations' in commit:
+                    if (self['onyo.is.asset'] and commit['operations']['new_assets']) or \
+                            (self['onyo.is.directory'] and commit['operations']['new_directories']):
+                        self['onyo.was.created'] = commit.data
+                        return commit[what] if what else None
+            return None
+
+    def fill_modified(self, what: str | None):
+        """Initializer for the 'onyo.was.modified' pseudo-keys.
+
+        Fills in the entire sub-dict and returns the value specified by ``what``.
+
+        Note/TODO:
+        ----------
+        See ``fill_created``.
+        """
+        if self.repo and self['onyo.path.absolute']:
+            for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
+                if 'operations' in commit:
+                    if (self['onyo.is.asset'] and
+                        (commit['operations']['modify_assets'] or
+                         commit['operations']['new_assets'])) or \
+                       (self['onyo.is.directory'] and
+                        (commit['operations']['new_directories'] or
+                         commit['operations']['move_directories'] or
+                         commit['operations']['rename_directories'])):
+                        self['onyo.was.modified'] = commit.data
+                        return commit[what] if what else None
+        return None
 
     def get_path_absolute(self):
         """Initializer for the 'onyo.path.absolute' pseudo-key."""
@@ -125,7 +180,14 @@ class Item(DotNotationWrapper):
 
     def get_path_file(self):
         """Initializer for the 'onyo.path.file' pseudo-key."""
-        return self._path.relative_to(self.repo.git.root) if self.repo and self['onyo.is.asset'] else None
+        if self.repo and self['onyo.path.absolute']:
+            if self['onyo.is.asset'] and not self['onyo.is.directory']:
+                return self['onyo.path.relative']
+            if self['onyo.is.asset'] and self['onyo.is.directory']:
+                return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ASSET_DIR_FILE_NAME
+            if self['onyo.is.directory'] and not self['onyo.is.asset']:
+                return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ANCHOR_FILE_NAME
+        return None
 
     def is_asset(self) -> bool | None:
         """Initializer for the 'onyo.is.asset' pseudo-key."""
@@ -147,7 +209,10 @@ class Item(DotNotationWrapper):
 
     def is_empty(self) -> bool | None:
         """Initializer for the 'onyo.is.empty' pseudo-key."""
-        return None  # TODO: Unclear what exactly this needs to consider. Probably child items? Or just assets?
+        if self['onyo.is.directory'] and self.repo and self._path:
+            # TODO: This likely can be faster when redoing/enhancing caching of repo paths.
+            return not any(p.parent == self._path for p in self.repo.get_asset_paths())
+        return None
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet

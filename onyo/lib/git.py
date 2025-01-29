@@ -9,7 +9,10 @@ from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
-    from typing import Iterable
+    from typing import (
+        Generator,
+        Iterable,
+    )
 
 log: logging.Logger = logging.getLogger('onyo.git')
 
@@ -401,3 +404,88 @@ class GitRepo(object):
 
     # TODO: git check-ignore --no-index --stdin (or via command call)  ->  lazy, check GitRepo.files once. (Same invalidation)
     #       -> OnyoRepo would use it to maintain a ignore list from a (top-level .onyoignore)? .onyo/ignore ? Both?
+
+    def _parse_log_output(self, lines: list[str]) -> dict:
+        """Generate a dict from the output of ``git log`` for one commit.
+
+        Internal helper that converts a list of git-log-output lines of
+        a single commit to a dictionary.
+        """
+        import datetime
+        import re
+        regex_author = re.compile(r"Author:\s+(?P<name>\b.*\b)\s+<(?P<email>[^\s]+)>$")
+        regex_committer = re.compile(r"Commit:\s+(?P<name>\b.*\b)\s+<(?P<email>[^\s]+)>$")
+        commit = dict()
+        for line in lines:
+            if line.startswith('commit '):
+                commit['hexsha'] = line.split()[1]
+                continue
+            elif line.startswith('Author:'):
+                try:
+                    commit['author'] = re.match(regex_author, line).groupdict()  # pyre-ignore [16] AttributeError is caught
+                except AttributeError as e:
+                    if str(e).endswith("'groupdict'"):
+                        raise RuntimeError(f"Unable to parse author-line:\n{line}") from e
+                    raise
+                continue
+            elif line.startswith('AuthorDate:'):
+                continue
+            elif line.startswith('Commit:'):
+                try:
+                    commit['committer'] = re.match(regex_committer, line).groupdict()
+                except AttributeError as e:
+                    if str(e).endswith("'groupdict'"):
+                        raise RuntimeError(f"Unable to parse committer-line:\n{line}") from e
+                    raise
+                continue
+            elif line.startswith('CommitDate:'):
+                commit['time'] = datetime.datetime.fromisoformat(line.split(maxsplit=1)[1])
+                continue
+            else:
+                # This line is part of the message.
+                if 'message' not in commit:
+                    commit['message'] = [line]
+                else:
+                    commit['message'].append(line)
+
+        return commit
+
+    def history(self, path: Path | None = None, n: int | None = None) -> Generator[dict, None, None]:
+        """Yields commit dicts representing the history of ``path``.
+
+        History according to git log (git log --follow if a path is given).
+
+        Parameters
+        ----------
+        path:
+          What file to follow. If `None`, get the history of HEAD instead.
+        n:
+          Limit history going back ``n`` commits.
+          ``None`` for no limit (default).
+        """
+        # TODO: Something like this may allow us to efficiently deal with multiline strings in git-log's output,
+        #       rather than splitting lines and iterating over them when assembling output that belongs to a single
+        #       commit, parsing the git data and then the operations record (also removes leading spaces for the commit
+        #       message):
+        #       --pretty='format:commit: %H%nAuthor: %an (%ae)%nCommitter: %cn (%ce)%nCommitDate: %cI%nMessage:%n%B'
+        limit = [f'-n{n}'] if n is not None else []
+        pathspec = ['--follow', '--', str(path)] if path else []
+        cmd = ['log', '--date=iso-strict', '--pretty=fuller'] + limit + pathspec
+        output = self._git(cmd)
+
+        # yield output on a per-commit-basis
+        commit_output = []
+        for line in output.splitlines():
+            if line.startswith('commit '):
+                # This is the first line of a new commit.
+                # 1. store previous commit output
+                if commit_output:
+                    # we just finished the previous commit.
+                    yield self._parse_log_output(commit_output)
+                # 2. start new commit output
+                commit_output = [line]
+            else:
+                # add to current commit output
+                commit_output.append(line)
+        if commit_output:
+            yield self._parse_log_output(commit_output)

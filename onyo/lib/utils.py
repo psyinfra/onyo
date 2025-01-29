@@ -12,7 +12,7 @@ from ruamel.yaml.representer import RoundTripRepresenter  # pyre-ignore[21]
 from ruamel.yaml.dumper import RoundTripDumper  # pyre-ignore[21]
 
 from onyo.lib.consts import RESERVED_KEYS
-from onyo.lib.pseudokeys import PSEUDO_KEYS
+from onyo.lib.pseudokeys import PSEUDO_KEYS, PseudoKey
 from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
@@ -351,8 +351,8 @@ class YAMLDumpWrapper(UserDict):
         if isinstance(data, list) and data:
             # non-empty list: Implement analogous wrapper
             raise NotImplementedError
-        if isinstance(data, Path):
-            return data  # no representer for `Path`
+        if isinstance(data, (Path, PseudoKey)):
+            return data  # no representer for `Path` and `PseudoKey`
         return RoundTripRepresenter(dumper=RoundTripDumper(stream=StringIO())).represent_data(data).value
 
 

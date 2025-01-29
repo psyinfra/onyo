@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from onyo.lib.onyo import OnyoRepo
 from ..items import Item
 from ..pseudokeys import PSEUDO_KEYS, PSEUDOKEY_ALIASES
 
@@ -51,10 +52,12 @@ def test_item_init(onyorepo) -> None:
             assert item.get('onyo.path.parent') is None
         # Check actual paths:
         if idx == 4:
+            # item is a dir in a repo
             assert item.get('onyo.path.absolute') == onyorepo.test_annotation['dirs'][0]
             assert item.get('onyo.path.relative') == onyorepo.test_annotation['dirs'][0].relative_to(onyorepo.git.root)
             assert item.get('onyo.path.parent') == onyorepo.test_annotation['dirs'][0].parent.relative_to(onyorepo.git.root)
-            assert item.get('onyo.path.file') is None
+            assert item.get('onyo.path.file') == onyorepo.test_annotation['dirs'][0].relative_to(onyorepo.git.root) / OnyoRepo.ANCHOR_FILE_NAME
+            assert item.get('onyo.is.empty') is not None
         elif idx == 5:
             assert item.get('onyo.path.absolute') == onyorepo.test_annotation['assets'][0]['onyo.path.absolute']
             assert item.get('onyo.path.relative') == onyorepo.test_annotation['assets'][0]['onyo.path.absolute'].relative_to(onyorepo.git.root)

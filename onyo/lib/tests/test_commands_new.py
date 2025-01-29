@@ -191,7 +191,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     directory = inventory.root / "edited"
-    monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
+    monkeypatch.setenv('EDITOR', "printf 'key: value  #w/ comment' >>")
 
     specs = [{'template': 'empty',
               'model': {'name': 'MODEL'},
@@ -207,7 +207,8 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     assert expected_path in inventory.repo.git.files
     asset_content = inventory.get_asset(expected_path)
     assert asset_content['key'] == 'value'
-
+    assert 'key: value  #w/ comment' in expected_path.read_text()
+    assert 'None' not in list(inventory.get_history(expected_path, n=1))[0]['message']
     # file already exists:
     edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
@@ -240,6 +241,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     expected_content = '---\n' + edit_str
     expected_path = directory / "TYPE_MAKER_MODEL.8675309"
     assert expected_content == expected_path.read_text()
+    assert 'None' not in list(inventory.get_history(expected_path, n=1))[0]['message']
 
 
 @pytest.mark.ui({'yes': True})
@@ -265,8 +267,12 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     assert inventory.repo.is_asset_path(new_asset_path1)
     new_asset = inventory.get_asset(new_asset_path1)
     # equals existing asset except for path-pseudo-keys and serial:
+    # Actually: history differs as well. onyo.is. doesn't, though
+    for k, v in existing_asset.items():
+        if k != "serial" and not k.startswith('onyo.path.') and not k.startswith('onyo.was.'):
+            assert v == new_asset[k], f"{k}: {v} != {new_asset[k]}"
     assert all(v == new_asset[k] for k, v in existing_asset.items()
-               if k != "serial" and not k.startswith('onyo.path'))
+               if k != "serial" and not k.startswith('onyo.path') and not k.startswith('onyo.was.'))
     assert new_asset['serial'] == 'ANOTHER'
 
     # second new asset
@@ -275,7 +281,7 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     new_asset = inventory.get_asset(new_asset_path2)
     # equals existing asset except for path-pseudo-keys and serial:
     assert all(v == new_asset[k] for k, v in existing_asset.items()
-               if k != "serial" and not k.startswith('onyo.path'))
+               if k != "serial" and not k.startswith('onyo.path') and not k.startswith('onyo.was.'))
     assert new_asset['serial'] == 'whatever'
     assert inventory.repo.git.is_clean_worktree()
 

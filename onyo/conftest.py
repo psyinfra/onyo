@@ -199,13 +199,14 @@ def inventory(repo) -> Generator:
     #       Paths to created items should be delivered somehow.
     inventory = Inventory(repo=repo)
     inventory.add_asset(Item(
-        some_key="some_value",
-        type="TYPE",
-        make="MAKER",
-        model=dict(name="MODEL"),
-        serial="SERIAL",
-        other=1,
-        directory=repo.git.root / "somewhere" / "nested"))
+        dict(some_key="some_value",
+             type="TYPE",
+             make="MAKER",
+             model=dict(name="MODEL"),
+             serial="SERIAL",
+             other=1,
+             directory=repo.git.root / "somewhere" / "nested"),
+        repo=repo))
     inventory.add_directory(repo.git.root / 'empty')
     inventory.add_directory(repo.git.root / 'different' / 'place')
     inventory.commit("First asset added")

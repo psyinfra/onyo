@@ -24,6 +24,13 @@ class PseudoKey:
     This Callable is expected to have a single parameter of type `Item`.
     """
 
+    def __eq__(self, other):
+        if not isinstance(other, PseudoKey):
+            return False
+
+        # TODO: This isn't clean yet, since it relies on `implementation` being a `partial`:
+        return self.description == other.description and self.implementation.func == other.implementation.func
+
 
 def delegate(self: Item, attribute: str, *args, **kwargs):
     # This is to avoid circular imports ATM.
@@ -56,6 +63,48 @@ PSEUDO_KEYS: Dict[str, PseudoKey] = {
     'onyo.is.empty': PseudoKey(description="Is the directory empty. <unset> if the item is not a directory.",
                                implementation=partial(delegate, attribute='is_empty')
                                ),
+    'onyo.was.modified.hexsha': PseudoKey(description="SHA of the most recent commit that modified the item.",
+                                          implementation=partial(delegate, attribute='fill_modified', what='hexsha')
+                                          ),
+    'onyo.was.modified.time': PseudoKey(description="Time of the most recent commit that modified the item.",
+                                        implementation=partial(delegate, attribute='fill_modified', what='time')),
+    'onyo.was.modified.author.name': PseudoKey(
+        description="Name of the author of the most recent commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='author.time')
+    ),
+    'onyo.was.modified.author.email': PseudoKey(
+        description="Email of the author of the most recent commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='author.email')
+    ),
+    'onyo.was.modified.committer.name': PseudoKey(
+        description="Name of the committer of the most recent commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='committer.name')
+    ),
+    'onyo.was.modified.committer.email': PseudoKey(
+        description="Email of the committer of the most recent commit that modified the item.",
+        implementation=partial(delegate, attribute='fill_modified', what='committer.email')
+    ),
+    'onyo.was.created.hexsha': PseudoKey(description="SHA of the commit that created the item.",
+                                         implementation=partial(delegate, attribute='fill_created', what='hexsha')
+                                         ),
+    'onyo.was.created.time': PseudoKey(description="Time of the commit that created the item.",
+                                       implementation=partial(delegate, attribute='fill_created', what='time')),
+    'onyo.was.created.author.name': PseudoKey(
+        description="Name of the author of the commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='author.time')
+    ),
+    'onyo.was.created.author.email': PseudoKey(
+        description="Email of the author of the commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='author.email')
+    ),
+    'onyo.was.created.committer.name': PseudoKey(
+        description="Name of the committer of the commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='committer.name')
+    ),
+    'onyo.was.created.committer.email': PseudoKey(
+        description="Email of the committer of the commit that created the item.",
+        implementation=partial(delegate, attribute='fill_created', what='committer.email')
+    ),
 }
 r"""Pseudo-Keys are key names that are addressable but not written to disk in asset YAML.
 
@@ -65,33 +114,6 @@ See Also
 --------
 RESERVED_KEYS
 """
-
-# 'onyo.git.created.time': PseudoKey(description="Datetime the inventory item was created.",
-#                                    implementation=partial(delegate,
-#                                                           attribute='fill_created',
-#                                                           what='time')
-#                                    # or onyo.git.created.time for an "return self.get(what)" in implementation?
-#                                    ),
-# 'onyo.git.created.commit': PseudoKey(description="Commit SHA of the commit the object was created in",
-#                                      implementation=partial(delegate,
-#                                                             attribute='fill_created',
-#                                                             what='SHA')
-#                                      ),
-
-# 'onyo.git.created.committer.name': None,
-                   # 'onyo.git.created.committer.email': None,
-                   # 'onyo.git.created.author.name': None,
-                   # 'onyo.git.created.author.email': None,
-                   # 'onyo.git.modified.time': None,
-                   # 'onyo.git.modified.commit': None,
-                   # 'onyo.git.modified.committer.name': None,
-                   # 'onyo.git.modified.committer.email': None,
-                   # 'onyo.git.modified.author.name': None,
-                   # 'onyo.git.modified.author.email': None,
-                   #
-                   #          },
-                   #  }
-                   # }
 
 # Hardcode aliases for now:
 # Introduction of proper aliases requires config cache first.
