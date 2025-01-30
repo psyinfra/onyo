@@ -47,7 +47,7 @@ Convert an Asset File into an Asset Directory:
 
 def mkdir(args: argparse.Namespace) -> None:
     r"""
-    Create **DIRECTORY**\ s or convert Asset Files into an Asset Directory.
+    Create **DIRECTORY**\ s or convert Asset Files into Asset Directories.
 
     Intermediate directories are created as needed (i.e. parent and child
     directories can be created in one call).
@@ -55,9 +55,8 @@ def mkdir(args: argparse.Namespace) -> None:
     An empty ``.anchor`` file is added to each directory, to ensure that git
     tracks them even when empty.
 
-    If the **DIRECTORY** already exists, the path is protected, or the asset is
-    already an Asset Directory, then Onyo will error and leave everything
-    unmodified.
+    If a **DIRECTORY** is already a directory or a protected path, then Onyo
+    will error and leave everything unmodified.
     """
     dirs = [Path(d).resolve() for d in args.directory]
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))

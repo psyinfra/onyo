@@ -645,47 +645,46 @@ def onyo_mkdir(inventory: Inventory,
                dirs: list[Path],
                message: str | None = None,
                auto_message: bool | None = None) -> None:
-    r"""Create new directories in the inventory.
+    r"""Create directories or convert Asset Files into Asset Directories.
 
-    Intermediate directories will be created as needed (i.e. parent and
-    child directories can be created in one call).
+    Intermediate directories are created as needed (i.e. parent and child
+    directories can be created in one call).
 
     An empty `.anchor` file is added to each directory, to ensure that git
     tracks them even when empty.
-    If `dirs` contains duplicates, onyo will create just one new directory and
-    ignore the duplicates.
 
-    All paths in `dirs` must be new and valid directory paths inside the
-    inventory. However, a path to an existing asset file is valid and means
-    to turn that asset file into an asset dir.
-    At least one valid path is required.
-    If any path specified is invalid no new directories are created, and an
-    error is raised.
+    If ``dirs`` contains a path that is already a directory or a protected path,
+    then no new directories are created and an error is raised.
+
+    At least one path is required.
 
     Parameters
     ----------
     inventory
-        The inventory in which to create new directories.
+        The Inventory in which to create directories or convert asset files.
     dirs
-        Paths to directories which to create.
+        Paths of directories to create.
     message
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, lookup the value from 'onyo.commit.auto-message'.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
 
     Raises
     ------
     ValueError
-        If `dirs` is empty.
+        ``dirs`` is empty.
     """
+
     if auto_message is None:
         auto_message = inventory.repo.auto_message
+
     if not dirs:
         raise ValueError("At least one directory path must be specified.")
-    for d in deduplicate(dirs):  # pyre-ignore[16]  deduplicate would return None only of `dirs` was None.
-        # explicit duplicates would make auto-generating message subject more complicated ATM
+
+    for d in deduplicate(dirs):  # pyre-ignore[16]
         inventory.add_directory(d)
+
     if inventory.operations_pending():
         # display changes
         ui.print(inventory.operations_summary())
@@ -700,8 +699,10 @@ def onyo_mkdir(inventory: Inventory,
                     format_string="mkdir [{len}]: {operation_paths}\n",
                     len=len(operation_paths),
                     operation_paths=sorted(operation_paths)) + (message or "")
+
             inventory.commit(message=message)
             return
+
     ui.print('No directories created.')
 
 
