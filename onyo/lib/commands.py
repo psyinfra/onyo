@@ -783,30 +783,32 @@ def onyo_mv(inventory: Inventory,
     if destination.exists():
         # Move Mode
         subject = "mv"
-        if not inventory.repo.is_inventory_dir(destination) \
-                and inventory.repo.is_asset_path(destination):
-            # destination is an existing asset; turn into asset dir
+        # destination Asset File needs to be converted into Asset Directory first
+        if inventory.repo.is_asset_file(destination):
             inventory.add_directory(destination)
 
         for s in sources:
             _move_asset_or_dir(inventory, s, destination)
-    elif len(sources) == 1 and destination.name == sources[0].name:
-        # MOVE special case
+    elif len(sources) == 1 and sources[0].name == destination.name:
+        # Move Mode: explicit destination name
+        # The destination does not exist, but is named the same as the source.
+        # e.g. mv example dir/example
         subject = "mv"
         _move_asset_or_dir(inventory, sources[0], destination.parent)
-    elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():  # TODO: last condition necessary?
-        # RENAME directory
-        subject = "ren"
-        if sources[0].parent != destination.parent:
-            # This is a `mv` into non-existent dir not under same parent.
-            # Hence, first move and only then rename.
-            subject = "mv + " + subject
+    elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():
+        if sources[0].parent == destination.parent:
+            # Rename Mode
+            # e.g. mv example different
+            subject = "ren"
+            _maybe_rename(inventory, sources[0], destination)
+        else:
+            # Move + Rename Mode: different parents (rename) and different source/dest names
+            # e.g. mv example dir/different
+            subject = "mv + ren"
             inventory.move_directory(sources[0], destination.parent)
             _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
             inventory._ignore_for_commit.append(destination.parent / sources[0].name)
-        else:
-            _maybe_rename(inventory, sources[0], destination)
     else:
         raise ValueError("Can only move into an existing directory/asset, or rename a single directory.")
 
