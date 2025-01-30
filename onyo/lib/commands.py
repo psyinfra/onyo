@@ -455,57 +455,47 @@ def onyo_get(inventory: Inventory,
              match: list[Callable[[dict], bool]] | None = None,
              keys: list[str] | None = None,
              sort: dict[str, sort_t] | None = None) -> list[dict]:
-    r"""Query the repository for information about assets.
+    r"""Query the key-values of assets.
 
     Parameters
     ----------
     inventory
-      The inventory to query.
+        The Inventory to query.
     include
-      Limits the query to assets underneath these paths.
-      Paths can be assets and directories.
-      If no paths are specified, the inventory root is used as default.
+        Assets or directories to query.
+        Default: inventory root
     exclude
-      Paths to exclude, meaning that assets underneath any of these are not
-      being returned. Defaults to `None`. Note, that `depth` only applies to
-      `include`, not to `exclude`. `depth` and `exclude` are different ways
-      of limiting the results.
+        Assets or directories to exclude from the query.
     depth
-      Number of levels to descend into. Must be greater or equal 0.
-      If 0, descend recursively without limit.
+        Descend up to **depth** levels into the directories specified by
+        ``include``. A depth of ``0`` descends recursively without limit.
     machine_readable
-      Whether to print the matching assets as TAB-separated lines,
-      where the columns correspond to the `keys`. If `False`,
-      print a table meant for human consumption.
+        Toggle whether to print the output machine-friendly (no headers and
+        separate values with a single tab) vs more human-friendly output
+        (headers and padded whitespace to align columns).
     match
-      Callables suited for use with builtin `filter`. They are
-      passed an asset dictionary and expected to return a `bool`,
-      where `True` indicates a match. The result of the query
-      consists of all assets that are matched by all callables in
-      this list. One can match keys that are not in the output.
+        Callables suited for use with builtin :py:func:`filter`. They are passed
+        an asset dictionary and expected to return a ``bool``.
+        All keys (not just those in the output) can be matched.
     keys
-      Defines what key-value pairs of an asset a result is composed of.
-      If no `keys` are given then the asset name keys and `path` are used.
-      Keys may be repeated.
+        Keys to print the values of. Pseudo-keys (information not stored in the
+        asset file) are also available for queries. Dictionary subkeys can be
+        addressed using a period (e.g. ``model.name``, ``model.year``, etc.)
+        Default: asset-name keys and ``path``
     sort
-      How to sort the results. This is a dictionary, where the keys
-      are the asset keys to sort by (in order of appearances in the
-      `sort` dictionary). Possible values are
-      `onyo.lib.consts.SORT_ASCENDING` and `onyo.lib.consts.SORT_DESCENDING`.
-      If other values are specified an error is raised.
-      Default: `{'onyo.path.relative': SORT_ASCENDING}`.
-      One can sort by keys that are not in the output.
+        Dictionary of keys to sort the resulting assets, and are applied in the
+        order they are defined in the dictionary. All keys (not just those in
+        the output) can be used for sorting. The value specifies which sort to
+        use: :py:data:`onyo.lib.consts.SORT_ASCENDING` and
+        :py:data:`onyo.lib.consts.SORT_DESCENDING`.
+        Default: ``{'onyo.path.relative': SORT_ASCENDING}``
 
     Raises
     ------
     ValueError
-      On invalid arguments.
-
-    Returns
-    -------
-    list of dict
-      A dictionary per matching asset as defined by `keys`.
+        Invalid argument.
     """
+
     from .consts import TYPE_SYMBOL_MAPPING, UNSET_VALUE
 
     selected_keys = keys.copy() if keys else None
@@ -527,28 +517,19 @@ def onyo_get(inventory: Inventory,
     results = list(inventory.get_assets_by_query(include=include,
                                                  exclude=exclude,
                                                  depth=depth,
-                                                 # pyre's complaint boils down to "Dict" not being "Dict | UserDict".
-                                                 # This is useless nonsense.
                                                  match=match))  # pyre-ignore[6]
 
-    # Note: Sorting is done before any further filtering/replacing. Therefore, one can sort by keys that aren't actually
-    #       in the output of the command. This behavior is utilized in tests.
+    # sort results before filtering/replacing, so all keys can be sorted
     results = natural_sort(
         assets=results,
-        # pyre can't tell SORT_ASCENDING is not an arbitrary string but matches the Literal declaration:
         keys=sort or {'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
 
-    # Filter results for `selected_keys` first in order to not iterate over irrelevant parts of the assets in subsequent
-    # replacements.
+    # reduce results to just the `selected_keys`
     results = [{k: r[k] if k in r and r[k] not in [None, ""] else UNSET_VALUE
                 for k in selected_keys}
                for r in results]
-    # Note: We now have a list of regular dicts forming the output rather than a list of assets.
-    #       Hence, this is a flattened view containing keys with literal dots.
 
-    # Replace structures with an indication of type.
-    # Instead of outputting `{}`, `[]` or even `{some: {other: value}}`, just print `<dict>`/`<list>`.
-    # If information on content is wanted, the respective `keys` should be specified instead.
+    # replace structures with an indication of type.
     for symbol in TYPE_SYMBOL_MAPPING:
         results = [{k: symbol if isinstance(v, TYPE_SYMBOL_MAPPING[symbol]) else v
                     for k, v in r.items()}

@@ -21,8 +21,8 @@ args_get = {
         required=False,
         default=0,
         help=r"""
-            Descend up to **DEPTH** levels into the directories specified. A
-            depth of **0** descends recursively without limit.
+            Descend up to **DEPTH** levels into the directories specified by
+            ``include``. A depth of **0** descends recursively without limit.
         """
     ),
 
@@ -81,7 +81,6 @@ args_get = {
         nargs='+',
         help=r"""
             Assets or directories to exclude from the query.
-            Note, that **DEPTH** does not apply to excluded paths.
         """
     ),
 
