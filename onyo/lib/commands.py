@@ -536,23 +536,25 @@ def onyo_get(inventory: Inventory,
                    for r in results]
 
     if machine_readable:
-        sep = '\t'  # column separator
+        sep = '\t'
         for data in results:
             values = sep.join([str(data[k]) for k in selected_keys])
             ui.print(f'{values}')
-    elif results:
-        table = Table(
-            box=box.HORIZONTALS, title='', show_header=True,
-            header_style='bold')
-        for key in selected_keys:
-            table.add_column(key, overflow='fold')
-        for data in results:
-            values = [str(data[k]) for k in selected_keys]
-            table.add_row(*values)
-
-        ui.rich_print(table)
     else:
-        ui.rich_print('No assets matching the filter(s) were found')
+        if results:
+            table = Table(
+                box=box.HORIZONTALS, title='', show_header=True,
+                header_style='bold')
+            for key in selected_keys:
+                table.add_column(key, overflow='fold')
+            for data in results:
+                values = [str(data[k]) for k in selected_keys]
+                table.add_row(*values)
+
+            ui.rich_print(table)
+        else:
+            ui.rich_print('No assets matching the filter(s) were found')
+
     return results
 
 
