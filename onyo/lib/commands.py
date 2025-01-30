@@ -706,21 +706,21 @@ def onyo_mkdir(inventory: Inventory,
     ui.print('No directories created.')
 
 
-def move_asset_or_dir(inventory: Inventory,
-                      source: Path,
-                      destination: Path) -> None:
+def _move_asset_or_dir(inventory: Inventory,
+                       source: Path,
+                       destination: Path) -> None:
     r"""Move a source asset or directory to a destination.
 
     Parameters
     ----------
     inventory
-        Inventory to operate on.
+        The Inventory to operate on.
     source
-        Path object to an asset or directory which to move to the destination.
+        Path of an asset or directory to move.
     destination
-        Path object to an asset or directory to which to move source.
+        Path of a directory to move the source into.
     """
-    # TODO: method of Inventory?
+
     try:
         inventory.move_asset(source, destination)
     except NotAnAssetError:
@@ -730,7 +730,7 @@ def move_asset_or_dir(inventory: Inventory,
 def _maybe_rename(inventory: Inventory,
                   src: Path,
                   dst: Path) -> None:
-    r"""Helper for `onyo_mv`"""
+    r"""Rename a directory. Catch and clean if it's an Asset Directory."""
 
     try:
         inventory.rename_directory(src, dst)
@@ -746,58 +746,54 @@ def onyo_mv(inventory: Inventory,
             destination: Path,
             message: str | None = None,
             auto_message: bool | None = None) -> None:
-    r"""Move assets or directories, or rename a directory.
+    r"""Move assets or directories, or rename directory.
 
-    If `destination` is an asset file, turns it into an asset dir first.
+    If the ``destination`` is an asset file, it is converted into an Asset
+    Directory first, and then the ``source``\ (s) moved into it.
+
+    If a single source directory is given and the ``destination`` is a
+    non-existing directory, the source will be renamed.
 
     Parameters
     ----------
     inventory
         The Inventory in which to move assets or directories.
-
     source
-        A list of source paths that will be moved to the destination.
-        If a single source directory is given and the destination is a
-        non-existing directory, the source will be renamed.
-
+        A list of source paths to move to ``destination``.
     destination
-        The path to which the source(s) will be moved, or a single
-        source directory will be renamed.
-
+        The path to which ``source``\ (s) will be moved (or the new name, if a
+        single source directory).
     message
         Commit message to append to the auto-generated message.
-
     auto_message
         Generate a commit-message subject line.
-        If ``None``, lookup the value from 'onyo.commit.auto-message'.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
 
     Raises
     ------
     ValueError
         If multiple source paths are specified to be renamed.
     """
+
     if auto_message is None:
         auto_message = inventory.repo.auto_message
+
     sources = [source] if not isinstance(source, list) else source
 
-    # If destination exists, it as to be an inventory directory and we are dealing with a move.
-    # If it doesn't exist at all, we are dealing with a rename of a dir.
-    # Special case: One source and its name is explicitly restated as the destination. This is a move, too.
-    # TODO: Error reporting. Right now we just let the first exception from inventory operations bubble up.
-    #       We could catch them and collect all errors (use ExceptionGroup?)
     if destination.exists():
-        # MOVE
+        # Move Mode
         subject = "mv"
         if not inventory.repo.is_inventory_dir(destination) \
                 and inventory.repo.is_asset_path(destination):
             # destination is an existing asset; turn into asset dir
             inventory.add_directory(destination)
+
         for s in sources:
-            move_asset_or_dir(inventory, s, destination)
+            _move_asset_or_dir(inventory, s, destination)
     elif len(sources) == 1 and destination.name == sources[0].name:
         # MOVE special case
         subject = "mv"
-        move_asset_or_dir(inventory, sources[0], destination.parent)
+        _move_asset_or_dir(inventory, sources[0], destination.parent)
     elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():  # TODO: last condition necessary?
         # RENAME directory
         subject = "ren"
@@ -835,6 +831,7 @@ def onyo_mv(inventory: Inventory,
                     destination=destination.relative_to(inventory.root)) + (message or "")
             inventory.commit(message=message)
             return
+
     ui.print('Nothing was moved.')
 
 
