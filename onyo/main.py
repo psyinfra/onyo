@@ -382,7 +382,7 @@ def setup_parser() -> OnyoArgumentParser:
         description=cli.mv.__doc__,
         epilog=epilog_mv,
         formatter_class=parser.formatter_class,
-        help='Move assets or directories into a destination directory; or rename a directory.'
+        help='Move assets and/or directories into a destination directory; or rename a directory.'
     )
     cmd_mv.set_defaults(run=cli.mv)
     build_parser(cmd_mv, args_mv)
@@ -406,7 +406,7 @@ def setup_parser() -> OnyoArgumentParser:
         description=cli.rm.__doc__,
         epilog=epilog_rm,
         formatter_class=parser.formatter_class,
-        help='Delete assets and directories.'
+        help='Delete assets and/or directories.'
     )
     cmd_rm.set_defaults(run=cli.rm)
     build_parser(cmd_rm, args_rm)

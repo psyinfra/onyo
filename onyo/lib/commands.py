@@ -462,10 +462,10 @@ def onyo_get(inventory: Inventory,
     inventory
         The Inventory to query.
     include
-        Assets or directories to query.
+        Assets and/or directories to query.
         Default: inventory root
     exclude
-        Assets or directories to exclude from the query.
+        Assets and/or directories to exclude from the query.
     depth
         Descend up to **depth** levels into the directories specified by
         ``include``. A depth of ``0`` descends recursively without limit.
@@ -746,7 +746,7 @@ def onyo_mv(inventory: Inventory,
             destination: Path,
             message: str | None = None,
             auto_message: bool | None = None) -> None:
-    r"""Move assets or directories, or rename directory.
+    r"""Move assets and/or directories, or rename a directory.
 
     If the ``destination`` is an asset file, it is converted into an Asset
     Directory first, and then the ``source``\ (s) moved into it.
@@ -757,7 +757,7 @@ def onyo_mv(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The Inventory in which to move assets or directories.
+        The Inventory in which to move assets and/or directories.
     source
         A list of source paths to move to ``destination``.
     destination

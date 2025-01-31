@@ -65,8 +65,8 @@ Rename a department:
 
 def mv(args: argparse.Namespace) -> None:
     r"""
-    Move **SOURCE**\ s (assets or directories) into the **DEST** directory, or
-    rename a **SOURCE** directory to **DEST**.
+    Move **SOURCE**\ s (assets and/or directories) into the **DEST** directory,
+    or rename a **SOURCE** directory to **DEST**.
 
     If **DEST** is an Asset File, it will be converted into an Asset Directory
     and then the **SOURCE**\ s will be moved into it.
