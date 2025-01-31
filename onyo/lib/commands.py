@@ -1265,31 +1265,36 @@ def onyo_unset(inventory: Inventory,
                auto_message: bool | None = None) -> None:
     r"""Remove keys from assets.
 
+    Keys that are used in asset names (see the ``onyo.assets.name-format``
+    configuration option) cannot be unset.
+
     Parameters
     ----------
     inventory
-        The Inventory in which to unset key/values for assets.
+        The Inventory in which to modify assets.
     keys
-        The keys that will be unset in assets.
-        If keys do not exist in an asset, a debug message is logged.
-        If keys are specified which appear in asset names an error is raised.
-        If `keys` is empty an error is raised.
+        List of keys to unset in assets.
+
+        Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+        ``model.year``, etc.).
     assets
-        Paths to assets for which to unset key-value pairs.
+        Paths of assets to modify.
     message
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, lookup the value from 'onyo.commit.auto-message'.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
 
     Raises
     ------
     ValueError
-        If assets are invalid paths, or `keys` are empty or invalid.
-
+        If ``assets`` contains  invalid paths, ``keys`` is empty, or an keys in
+        an asset's name are attempted to be unset.
     """
+
     if auto_message is None:
         auto_message = inventory.repo.auto_message
+
     if not keys:
         raise ValueError("At least one key must be specified.")
     non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
@@ -1304,7 +1309,6 @@ def onyo_unset(inventory: Inventory,
 
     for asset in [inventory.get_asset(a) for a in assets]:
         new_content = Item(asset, inventory.repo)
-        # remove keys to unset, if they exist
         for key in keys:
             try:
                 new_content.pop(key)
@@ -1335,4 +1339,5 @@ def onyo_unset(inventory: Inventory,
                     operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
+
     ui.print("No assets updated.")
