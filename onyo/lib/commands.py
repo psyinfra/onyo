@@ -155,7 +155,7 @@ def onyo_cat(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory containing the assets to print.
+        The Inventory containing the assets to print.
     assets
         Paths of assets to print the contents of.
 
@@ -163,7 +163,6 @@ def onyo_cat(inventory: Inventory,
     ------
     ValueError
         The path is not an asset, or ``paths`` is empty.
-
     InvalidAssetError
         An invalid asset is encountered.
     """
@@ -211,7 +210,7 @@ def onyo_config(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory to configure.
+        The Inventory to configure.
     config_args
         Options and arguments to pass to the underlying call of ``git config``.
     """
@@ -395,20 +394,21 @@ def onyo_edit(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory containing the assets to edit.
+        The Inventory containing the assets to edit.
     paths
         Paths of assets to edit.
     message
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, lookup the value from 'onyo.commit.auto-message'.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
 
     Raises
     ------
     ValueError
-        If a provided asset is not an asset, or if ``paths`` is empty.
+        ``paths`` is empty or contains a path to a non-asset.
     """
+
     from functools import partial
 
     if auto_message is None:
@@ -564,17 +564,17 @@ def onyo_history(inventory: Inventory,
                  interactive: bool | None = None) -> None:
     r"""Display the history of a path.
 
-    Only one ``path`` is accepted as that's ``git log --follow``'s limitation.
+    Only one ``path`` is accepted due to ``git log --follow``'s limitation.
 
     Parameters
     ----------
     inventory
-        The inventory to display the history of.
+        The Inventory to display the history of.
     path
         Path to display the history of.
     interactive
-        Force interactive mode on/off. ``None`` autodetects if the TTY is
-        interactive.
+        Force interactive mode on/off.
+        ``None`` autodetects if the TTY is interactive.
 
     Raises
     ------
@@ -602,10 +602,10 @@ def _get_history_cmd(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory from which to get the configured history program.
+        The Inventory from which to get the configured history program.
     interactive
-        Force interactive mode on/off. ``None`` autodetects if the TTY is
-        interactive.
+        Force interactive mode on/off.
+        ``None`` autodetects if the TTY is interactive.
 
     Raises
     ------
@@ -622,8 +622,6 @@ def _get_history_cmd(inventory: Inventory,
             config_name = 'onyo.history.interactive'
         case False:
             config_name = 'onyo.history.non-interactive'
-
-        # fallback
         case _:
             config_name = 'onyo.history.interactive' if stdout.isatty() else 'onyo.history.non-interactive'
 
@@ -1041,7 +1039,7 @@ def onyo_rm(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory in which assets and/or directories will be deleted.
+        The Inventory in which assets and/or directories will be deleted.
     paths
         Path or List of Paths of assets and/or directories to delete from the
         inventory. If any path is invalid or encounters a problem, none are deleted.
@@ -1051,19 +1049,20 @@ def onyo_rm(inventory: Inventory,
         Commit message to append to the auto-generated message.
     auto_message
         Generate a commit-message subject line.
-        If ``None``, lookup the value from 'onyo.commit.auto-message'.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
     """
 
     if auto_message is None:
         auto_message = inventory.repo.auto_message
-    paths = [paths] if not isinstance(paths, list) else paths
 
+    paths = [paths] if not isinstance(paths, list) else paths
     for p in paths:
         try:
             inventory.remove_asset(p)
             is_asset = True
         except NotAnAssetError:
             is_asset = False
+
         if not is_asset or inventory.repo.is_asset_dir(p):
             try:
                 inventory.remove_directory(p, recursive=recursive)
@@ -1088,6 +1087,7 @@ def onyo_rm(inventory: Inventory,
                     operation_paths=operation_paths) + (message or "")
             inventory.commit(message)
             return
+
     ui.print('Nothing was deleted.')
 
 
@@ -1184,7 +1184,7 @@ def onyo_tree(inventory: Inventory,
     Parameters
     ----------
     inventory
-        The inventory in which the directory is located.
+        The Inventory in which the directory is located.
     path
         The directory to build a tree of.
     description
@@ -1196,8 +1196,9 @@ def onyo_tree(inventory: Inventory,
     Raises
     ------
     ValueError
-        If paths are invalid.
+        If ``path`` is not an inventory directory.
     """
+
     desc = description if description is not None else str(path)
 
     # sanitize the path
@@ -1217,10 +1218,10 @@ def _tree(dir_path: Path,
     Parameters
     ----------
     dir_path
-        Path of directory to yield tree of.
+        Path of directory to yield a tree of.
     prefix
-        Lines should be prefixed with this string. In practice, only useful by
-        ``_tree`` itself recursing into directories.
+        Prefix lines with this string. In practice, only useful by ``_tree()``
+        itself recursing into directories.
     dirs_only
         Yield only directories.
     """

@@ -500,7 +500,6 @@ class OnyoRepo(object):
     def get_template(self,
                      path: Path | str | None = None) -> dict:
         r"""Select a template file and return an asset dict from it.
-         from the directory `.onyo/templates/`
 
         Parameters
         ----------
