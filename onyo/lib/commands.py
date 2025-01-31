@@ -849,85 +849,77 @@ def onyo_new(inventory: Inventory,
              auto_message: bool | None = None) -> None:
     r"""Create new assets and add them to the inventory.
 
-    Either keys, tsv or edit must be given.
-    If keys and tsv and keys define multiple assets: Number of assets must match.
-    If only one value pair key: Update tsv assets with them.
-    If `keys` and tsv conflict: raise, there's no priority overwriting or something.
-    --directory and `directory` reserved key given -> raise, no priority
-    pseudo-keys must not be given -> PSEUDO_KEYS
+    Destination directories are created if they are missing.
 
-    TODO: Document special keys (directory, asset dir, template, etc) -> RESERVED_KEYS
-    TODO: 'directory' -> relative to inventory root!
+    Asset contents are populated in a waterfall pattern and can overwrite values
+    from previous steps:
 
-    - keys vs template: fill up? Write it down!
-    - edit: TODO: May lead to delay any error until we got the edit result? As in: Can start empty?
-    - template: if it can be given as a key, do we need a dedicated option?
+    1) ``clone`` or ``template``
+    2) ``tsv``
+    3) ``keys``
+    4) ``edit`` (i.e. manual user input)
 
-    # TODO: This just copy pasta from StoreKeyValuePair, ATM. To some extend should go into help for `--key`.
-    # But: description of TSV and special keys required.
-    Every key appearing multiple times in `key=value` is applied to a new dictionary every time.
-    All keys appearing multiple times, must appear the same number of times (and thereby define the number of dicts
-    to be created). In case of different counts: raise.
-    Every key appearing once in `key_values` will be applied to all dictionaries.
+    The keys that comprise the asset filename are required (configured by
+    ``onyo.assets.name-format``).
 
     Parameters
     ----------
     inventory
         The Inventory in which to create new assets.
-
     directory
-        The directory to create new asset(s) in. Defaults to CWD.
-        Note, that it technically is not a default (as per signature of this
-        function), because we need to be able to tell whether a path was given
-        in order to check for conflict with a possible 'directory' key or
-        table column.
+        The directory to create new asset(s) in. This cannot be used with the
+        ``directory`` Reserved Key.
 
+        If `None` and the ``directory`` Reserved Key is not found, it defaults
+        to CWD.
     template
-        Path to a template file. If relative, this is allowed to be relative to ``.onyo/templates/``.
-        The template is copied as a base for the new assets to be created.
+        Path to a template to populate the contents of new assets.
 
+        Relative paths are resolved relative to ``.onyo/templates``.
     clone
-        Path to an asset to clone. Mutually exclusive with `template`.
-        Note, that a straight clone with no change via `keys`, `tsv` or `edit`
-        would result in the exact same asset, which therefore is bound to fail.
-
+        Path of an asset to clone. Cannot be used with the ``template`` argument
+        nor the ``template`` Reserved Key.
     tsv
-        A path to a tsv table that describes new assets to be created.
+        Path to a **TSV** file describing new assets.
 
+        The header declares the key names to be populated. The values to
+        populate assets are declared with one line per asset.
     keys
-        List of dictionaries with key/value pairs that will be set in the newly
-        created assets. The keys used in the ``onyo.assets.name-format`` config
-        ``.onyo/config`` (e.g. ``name-format = "{type}_{make}_{model}.{serial}"``)
-        are used in the asset name and therefore a required.
+        List of dictionaries with key/value pairs to set in the new assets.
 
+        Each key can be defined either ``1`` or ``N`` times (where ``N`` is the number
+        of assets to be created). A key that is declared once will apply to all
+        new assets, otherwise each will be applied to each new asset in the
+        order they were declared.
+
+        Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+        ``model.year``, etc.)
     edit
-        If True, newly created assets are opened in the editor before the
-        changes are saved.
-
+        Open newly created assets in an editor before they are saved.
     message
         Commit message to append to the auto-generated message.
-
     auto_message
         Generate a commit-message subject line.
-        If ``None``, lookup the value from 'onyo.commit.auto-message'.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
 
     Raises
     ------
     ValueError
         If information is invalid, missing, or contradictory.
     """
+
     from copy import deepcopy
 
     if auto_message is None:
         auto_message = inventory.repo.auto_message
+
     keys = keys or []
     if not any([tsv, keys, edit, template, clone]):
         raise ValueError("Key-value pairs, a TSV, or a template/clone-target must be given.")
     if template and clone:
         raise ValueError("'template' and 'clone' options are mutually exclusive.")
-    # Try to get editor early in case it's bound to fail;
-    # Empty string b/c pyre doesn't properly consider the condition and complains
-    # when we pass `editor` where it's not optional.
+
+    # get editor early in case it fails
     editor = inventory.repo.get_editor() if edit else ""
 
     # read and verify the information for new assets from TSV
@@ -1034,6 +1026,7 @@ def onyo_new(inventory: Inventory,
                     operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
+
     ui.print('No new assets created.')
 
 
