@@ -1097,35 +1097,39 @@ def onyo_set(inventory: Inventory,
              assets: list[Path],
              message: str | None = None,
              auto_message: bool | None = None) -> str | None:
-    r"""Set key-value pairs of assets, and change asset names.
+    r"""Set key-value pairs in assets.
+
+    Modifying the values of keys used in the asset name will rename the Asset
+    File/Directory.
 
     Parameters
     ----------
     inventory
-        The Inventory in which to set key/values for assets.
+        The Inventory in which to modify assets.
     assets
-        Paths to assets for which to set key-value pairs.
+        Paths of assets to modify.
     keys
-        Key-value pairs that will be set in assets. If keys already exist in an
-        asset, their value will be overwritten. If they do not exist the values
-        are added.
-        Keys that appear in asset names will result in the asset being renamed.
-        The pseudo-key 'onyo.is.directory' (bool) can be used to change whether an
-        asset is an asset directory.
+        Key-value pairs to set in assets. Keys that already exist in an asset
+        will have their their values overwritten. Keys that do not exist will be
+        added and the value set.
+
+        Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
+        ``model.year``, etc.)
     message
         Commit message to append to the auto-generated message.
-
     auto_message
         Generate a commit-message subject line.
-        If ``None``, lookup the value from 'onyo.commit.auto-message'.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
 
     Raises
     ------
     ValueError
-        If a given path is invalid or if `keys` is empty.
+        If a given path is invalid or if ``keys`` is empty.
     """
+
     if auto_message is None:
         auto_message = inventory.repo.auto_message
+
     if not assets:
         raise ValueError("At least one asset must be specified.")
     if not keys:
