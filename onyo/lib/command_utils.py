@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .consts import (
@@ -15,6 +16,10 @@ from .ui import ui
 if TYPE_CHECKING:
     from collections import UserDict
     from .consts import sort_t
+    from typing import (
+        Sequence,
+        Tuple,
+    )
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
@@ -55,6 +60,107 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
             raise ValueError("The following options cannot be used with onyo config:\n%s\nExiting. Nothing was set." %
                              '\n'.join(forbidden_flags))
     return True
+
+
+def inline_path_diff(source: str | Path,
+                     destination: str| Path) -> str:
+    """
+    Generate an inline diff of two paths.
+
+    Renaming (i.e. changing the last element) is its own action, and does not
+    group with other changes. Moves group with adjacent changes when possible.
+    (e.g. a/b/c/d/one -> a/b/two: "a/{b/c/d -> b}/{one -> two}")
+
+    Parameters
+    ----------
+    source
+        Path of source.
+    destination
+        Path of destination.
+    """
+
+    if Path(source).is_absolute() or Path(destination).is_absolute():
+        raise ValueError("Paths must be relative.")
+
+    result = []
+
+    s_parts = Path(source).parts
+    d_parts = Path(destination).parts
+
+    # Special case
+    # No grouping is possible if either are one element long.
+    if len(s_parts) == 1 or len(d_parts) == 1:
+        return f"{'/'.join(s_parts)} -> {'/'.join(d_parts)}"
+
+    #
+    # Rename
+    #
+    # build suffix
+    if s_parts[-1] == d_parts[-1]:
+        suffix = s_parts[-1]
+    else:
+        suffix = f"{{{s_parts[-1]} -> {d_parts[-1]}}}"
+    s_parts = s_parts[:-1]
+    d_parts = d_parts[:-1]
+
+    #
+    # Move
+    #
+    while s_parts or d_parts:
+        if s_parts[0] == d_parts[0]:
+            # Either (but not both) would empty themselves.
+            # So group all that is left.
+            if (len(s_parts) == 1) ^ (len(d_parts) == 1):
+                result.append(f"{{{'/'.join(s_parts)} -> {'/'.join(d_parts)}}}")
+                break
+            else:
+                result.append(s_parts[0])
+                s_parts = s_parts[1:]
+                d_parts = d_parts[1:]
+        else:
+            # get the indexes of the /next/ mutual value
+            ns, ds = intersect_index(s_parts[1:], d_parts[1:])
+            ns = ns if ns is None else ns + 1 # correct index
+            ds = ds if ds is None else ds + 1 # correct index
+
+            if ns is None:
+                # No more overlap between the two lists.
+                # So group all that is left.
+                result.append(f"{{{'/'.join(s_parts)} -> {'/'.join(d_parts)}}}")
+                break
+            else:
+                # There is a future overlap. So group up until it.
+                result.append(f"{{{'/'.join(s_parts[:ns])} -> {'/'.join(d_parts[:ds])}}}")
+                s_parts = s_parts[ns:]
+                d_parts = d_parts[ds:]
+
+    result.append(suffix)
+
+    return '/'.join(result)
+
+
+def intersect_index(seq1: Sequence,
+                    seq2: Sequence) -> Tuple[int | None, int | None]:
+    """
+    Compare two sequences. If a match is found, return both indexes of the match.
+
+    Returns ``None`` as the indexes if no match is found.
+
+    Parameters
+    ----------
+    seq1
+        First sequence.
+    seq2
+        Second sequence.
+    """
+    for index1, item in enumerate(seq1):
+        try:
+            index2 = seq2.index(item)
+            return (index1, index2)
+        except ValueError:
+            pass
+
+    return (None, None)
 
 
 def natural_sort(assets: list[dict | UserDict],
