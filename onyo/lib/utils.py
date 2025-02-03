@@ -22,7 +22,6 @@ if TYPE_CHECKING:
         Generator,
         Hashable,
         Mapping,
-        Set,
         TypeVar,
     )
 
@@ -263,28 +262,6 @@ def get_temp_file() -> Path:
     from tempfile import mkstemp
     fd, tmp_path = mkstemp(prefix='onyo_', suffix='.yaml', text=True)
     return Path(tmp_path)
-
-
-def has_unique_names(asset_files: Set[Path]) -> bool:
-    r"""Check files for unique file names.
-
-    If duplicates are found, an error is printed listing them.
-
-    Parameters
-    ----------
-    asset_files
-        A set of files to check for the uniqueness of their file names.
-    """
-    asset_names = [a.name for a in asset_files]
-    duplicates = [a for a in asset_files if asset_names.count(a.name) > 1]
-    duplicates.sort(key=lambda x: x.name)
-
-    if duplicates:
-        ui.error('The following file names are not unique:\n{}'.format(
-            '\n'.join(map(str, duplicates))))
-        return False
-
-    return True
 
 
 def validate_yaml(asset_files: list[Path] | None) -> bool:

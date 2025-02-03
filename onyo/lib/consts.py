@@ -9,16 +9,10 @@ if TYPE_CHECKING:
 
 RESERVED_KEYS = ['template', 'onyo'] + list(PSEUDOKEY_ALIASES.keys())
 # TODO: That's not right yet. We need all aliases and the "onyo." namespace
-# How do we deal with namespaces, though? We may want Item/DotNotationWrapper
-# to yield views based on namespaces.
 r"""Key names that are reserved and must not be part of asset content.
 
 These keys have functional meaning for Onyo. Thus they are reserved and cannot
 be part of asset content.
-"""
-# TODO: other symbols like <list>, <dict>, and potentially <none> or <null>?
-UNSET_VALUE = '<unset>'
-r"""String to represent keys that are not set.
 """
 
 KNOWN_REPO_VERSIONS = ['1', '2']
@@ -29,9 +23,23 @@ Needed to realize when onyo runs on a repo that was created by a newer version.
 """
 
 SORT_ASCENDING = 'ascending'
+r"""Sort ascending.
+
+Used to sort the output of :py:func:`onyo_get`.
+"""
 SORT_DESCENDING = 'descending'
+r"""Sort descending.
+
+Used to sort the output of :py:func:`onyo_get`.
+"""
+
+UNSET_VALUE = '<unset>'
+r"""String to represent keys that are not set.
+"""
 
 TYPE_SYMBOL_MAPPING = {"<dict>": (dict, UserDict),
                        "<list>": list}
-r"""Mapping of symbols for use w/ type matching (`onyo_get`) and simplified output.
+r"""Mapping of Onyo type-symbols with Python types.
+
+For use with type matching (:py:func:`onyo_get`) and output.
 """

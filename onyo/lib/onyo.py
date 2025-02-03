@@ -411,14 +411,43 @@ class OnyoRepo(object):
         ----------
         path
           The path to check.
-
-        Returns
-        -------
-        bool
-          True if `path` is used internally by onyo.
         """
         return path == self.dot_onyo or self.dot_onyo in path.parents or \
             path.name.startswith('.onyo') or path.name == self.ANCHOR_FILE_NAME
+
+    def is_asset_dir(self, path: Path) -> bool:
+        r"""Whether ``path`` is an asset directory.
+
+        An asset directory is both an asset and an inventory directory.
+
+        Parameters
+        ----------
+        path
+          Path to check.
+        """
+        return self.is_inventory_dir(path) and self.is_asset_path(path)
+
+    def is_asset_file(self,
+                      path: Path) -> bool:
+        r"""Whether ``path`` is an asset file.
+
+        Parameters
+        ----------
+        path
+          Path to check.
+        """
+        return not self.is_inventory_dir(path) and self.is_asset_path(path)
+
+    def is_asset_path(self,
+                      path: Path) -> bool:
+        r"""Whether ``path`` is an asset in the repository.
+
+        Parameters
+        ----------
+        path
+          Path to check.
+        """
+        return path in self.asset_paths
 
     def is_inventory_dir(self,
                          path: Path) -> bool:
@@ -428,22 +457,6 @@ class OnyoRepo(object):
         """
         return path == self.git.root or \
             (self.is_inventory_path(path) and path / self.ANCHOR_FILE_NAME in self.git.files)
-
-    def is_asset_path(self,
-                      path: Path) -> bool:
-        r"""Whether `path` is an asset in the repository.
-
-        Parameters
-        ----------
-        path
-          Path to check for pointing to an asset.
-
-        Returns
-        -------
-        bool
-          Whether `path` is an asset in the repository.
-        """
-        return path in self.asset_paths
 
     def is_inventory_path(self,
                           path: Path) -> bool:
@@ -457,33 +470,11 @@ class OnyoRepo(object):
         ----------
         path
           Path to check.
-
-        Returns
-        -------
-        bool
-          Whether `path` is valid for an inventory item.
         """
         return path.is_relative_to(self.git.root) and \
             not self.git.is_git_path(path) and \
             not self.is_onyo_path(path) and \
             not self.is_onyo_ignored(path)
-
-    def is_asset_dir(self, path: Path) -> bool:
-        r"""Whether `path` is an asset directory.
-
-        An asset directory is both, an asset and an inventory directory.
-
-        Parameters
-        ----------
-        path
-          Path to check.
-
-        Returns
-        -------
-        bool
-          Whether `path` is an asset directory.
-        """
-        return self.is_inventory_dir(path) and self.is_asset_path(path)
 
     def is_onyo_ignored(self, path: Path) -> bool:
         r"""Whether `path` is matched by an ``.onyoignore`` file.
@@ -497,11 +488,6 @@ class OnyoRepo(object):
         path
           Path to check for matching an exclude pattern in an ignore
           file (`OnyoRepo.IGNORE_FILE_NAME`).
-
-        Returns
-        -------
-        bool
-          Whether `path` is ignored.
         """
         candidates = [self.git.root / p / OnyoRepo.IGNORE_FILE_NAME
                       for p in path.relative_to(self.git.root).parents]
@@ -514,7 +500,6 @@ class OnyoRepo(object):
     def get_template(self,
                      path: Path | str | None = None) -> dict:
         r"""Select a template file and return an asset dict from it.
-         from the directory `.onyo/templates/`
 
         Parameters
         ----------
