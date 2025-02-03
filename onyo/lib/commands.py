@@ -864,7 +864,6 @@ def onyo_new(inventory: Inventory,
              directory: Path | None = None,
              template: Path | str | None = None,
              clone: Path | None = None,
-             tsv: Path | None = None,
              keys: list[Dict | UserDict] | None = None,
              edit: bool = False,
              message: str | None = None,
@@ -877,9 +876,8 @@ def onyo_new(inventory: Inventory,
     from previous steps:
 
     1) ``clone`` or ``template``
-    2) ``tsv``
-    3) ``keys``
-    4) ``edit`` (i.e. manual user input)
+    2) ``keys``
+    3) ``edit`` (i.e. manual user input)
 
     The keys that comprise the asset filename are required (configured by
     ``onyo.assets.name-format``).
@@ -901,11 +899,6 @@ def onyo_new(inventory: Inventory,
     clone
         Path of an asset to clone. Cannot be used with the ``template`` argument
         nor the ``template`` Reserved Key.
-    tsv
-        Path to a **TSV** file describing new assets.
-
-        The header declares the key names to be populated. The values to
-        populate assets are declared with one line per asset.
     keys
         List of dictionaries with key/value pairs to set in the new assets.
 
@@ -936,62 +929,21 @@ def onyo_new(inventory: Inventory,
         auto_message = inventory.repo.auto_message
 
     keys = keys or []
-    if not any([tsv, keys, edit, template, clone]):
-        raise ValueError("Key-value pairs, a TSV, or a template/clone-target must be given.")
+    if not any([keys, edit, template, clone]):
+        raise ValueError("Key-value pairs or a template/clone-target must be given.")
     if template and clone:
         raise ValueError("'template' and 'clone' options are mutually exclusive.")
 
     # get editor early in case it fails
     editor = inventory.repo.get_editor() if edit else ""
 
-    # read and verify the information for new assets from TSV
-    tsv_dicts = None
-    if tsv:
-        import csv
-        with tsv.open('r', newline='') as tsv_file:
-            reader = csv.DictReader(tsv_file, delimiter='\t')
-            if reader.fieldnames is None:
-                raise ValueError(f"No header fields in tsv {str(tsv)}")
-            if template and 'template' in reader.fieldnames:
-                raise ValueError("Can't use '--template' option and 'template' column in tsv.")
-            if clone and 'template' in reader.fieldnames:
-                raise ValueError("Can't use '--clone' option and 'template' column in tsv.")
-            if directory and 'directory' in reader.fieldnames:
-                raise ValueError("Can't use '--directory' option and 'directory' column in tsv.")
-            tsv_dicts = [row for row in reader]
-            # Any line's remainder (values beyond available columns) would be stored in the `None` key.
-            # Note, that `i` is shifted by one in order to give the correct line number (header line + index of dict):
-            for d, i in zip(tsv_dicts, range(1, len(tsv_dicts) + 1)):
-                if None in d.keys() and d[None] != ['']:
-                    raise ValueError(f"Values exceed number of columns in {str(tsv)} at line {i}: {d[None]}")
-
-    if tsv_dicts and len(keys) > 1 and len(keys) != len(tsv_dicts):
-        raise ValueError(f"Number of assets in tsv ({len(tsv_dicts)}) doesn't match "
-                         f"number of assets given via --keys ({len(keys)}).")
-
-    if tsv_dicts and len(keys) == 1:
-        # Fill up to number of assets
-        keys = [keys[0] for i in range(len(tsv_dicts))]
-
-    if tsv_dicts and keys:
-        # merge both to get the actual asset specification
-        duplicate_keys = set(tsv_dicts[0].keys()).intersection(set(keys[0].keys()))
-        if duplicate_keys:
-            # TODO: We could list the entire asset (including duplicate key-values) to better identify where the
-            # problem is.
-            raise ValueError(f"Asset keys specified twice: {duplicate_keys}")
-        [tsv_dicts[i].update(keys[i]) for i in range(len(tsv_dicts))]
-        specs = tsv_dicts
-    else:
-        # We have either keys given or a TSV, not both. Note, however, that neither one could be given
-        # (plain edit-based onyo_new). In this case we get `keys` default into `specs` here, which should be an empty
-        # list, thus preventing any iteration further down the road.
-        specs = tsv_dicts if tsv_dicts else deepcopy(keys)  # we don't want to change the caller's `keys` dictionaries
+    # Note that `keys` can be empty.
+    specs = deepcopy(keys)
 
     # TODO: These validations could probably be more efficient and neat.
-    #       For ex., only first dict is actually relevant. It's either TSV (columns exist for all) or came from --key,
+    #       For ex., only first dict is actually relevant. It came from --key,
     #       where everything after the first one comes from repetition (However, what about python interface where one
-    #       could pass an arbitrary list of dicts? -> requires consistency check like TSV + doc).
+    #       could pass an arbitrary list of dicts? -> requires consistency check
     if any('directory' in d.keys() for d in specs):
         if directory:
             raise ValueError("Can't use '--directory' option and specify 'directory' key.")
@@ -1005,7 +957,7 @@ def onyo_new(inventory: Inventory,
 
     # Generate actual assets:
     if edit and not specs:
-        # Special case: No asset specification defined via `keys` or `tsv`, but we have `edit`.
+        # Special case: No asset specification defined via `keys`, but we have `edit`.
         # This implies a single asset, starting with a (possibly empty) template.
         specs = [{}]
 

@@ -45,18 +45,6 @@ args_new = {
         """
     ),
 
-    'tsv': dict(
-        args=('-tsv', '--tsv'),
-        metavar='TSV',
-        required=False,
-        help=r"""
-            Path to a **TSV** file describing new assets.
-
-            The header declares the key names to be populated. The values to
-            populate assets are declared with one line per asset.
-        """
-    ),
-
     'keys': dict(
         args=('-k', '--keys'),
         required=False,
@@ -150,9 +138,8 @@ def new(args: argparse.Namespace) -> None:
     values from previous steps:
 
       1) ``--clone`` or ``--template``
-      2) ``--tsv``
-      3) ``--keys``
-      4) ``--edit`` (i.e. manual user input)
+      2) ``--keys``
+      3) ``--edit`` (i.e. manual user input)
 
     The **KEY**\ s that comprise the asset filename are required (configured by
     ``onyo.assets.name-format``).
@@ -189,7 +176,6 @@ def new(args: argparse.Namespace) -> None:
              directory=Path(args.directory).resolve() if args.directory else None,
              template=template,
              clone=Path(args.clone).resolve() if args.clone else None,
-             tsv=Path(args.tsv).resolve() if args.tsv else None,
              keys=args.keys,
              edit=args.edit,
              message='\n\n'.join(m for m in args.message) if args.message else None,

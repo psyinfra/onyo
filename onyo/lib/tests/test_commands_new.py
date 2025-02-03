@@ -1,17 +1,12 @@
 import subprocess
-from pathlib import Path
 
 import pytest
 
-import onyo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import DotNotationWrapper
 from . import check_commit_msg
 from ..commands import onyo_new
-
-# TODO: Derive path from installed package resources (and don't place it within a specific test location):
-prepared_tsvs = [p for p in (Path(onyo.__file__).parent / "cli" / "tests" / "tables").iterdir()]
 
 
 # TODO: Asset dirs!
@@ -26,26 +21,11 @@ def test_onyo_new_invalid(inventory: Inventory) -> None:
     pytest.raises(ValueError, onyo_new, inventory, keys=[])
     # edit should fail in non-interactive test
     pytest.raises(subprocess.CalledProcessError, onyo_new, inventory, edit=True)
-    # tsv must exist:
-    pytest.raises(FileNotFoundError, onyo_new, inventory, tsv=inventory.root / "nonexisting.tsv")
     # clone and template are mutually exclusive
     pytest.raises(ValueError, onyo_new, inventory,
                   keys=[{'serial': 'faux'}],
                   clone=inventory.root / "somewhere" / "nested" / "TYPE_MAKE_MODEL.SERIAL",
                   template='laptop.example')
-    assert inventory.repo.git.is_clean_worktree()
-
-
-@pytest.mark.ui({'yes': True})
-@pytest.mark.parametrize('tsv', prepared_tsvs)
-def test_onyo_new_tsv(inventory: Inventory, tsv: Path) -> None:
-    if tsv.name.startswith('error'):
-        # TODO: Be more specific about the errors
-        pytest.raises(ValueError, onyo_new, inventory, tsv)
-    else:
-        # TODO: Same here; just ensures those tables still don't crash
-        onyo_new(inventory, tsv=tsv)
-        inventory.repo.git._git(['reset', '--hard', 'HEAD~1'])
     assert inventory.repo.git.is_clean_worktree()
 
 

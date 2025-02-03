@@ -1,8 +1,8 @@
-type	make	model.name	serial	directory
-laptop	apple	macbookpro	0	simple
-laptop	apple	macbookpro	1	overlap/one
-l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one
-l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one
-l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one
-laptop	apple	macbookpro	faux	new directory/new subfolder
-laptop	apple	macbookpro	faux	new directory/new subfolder
+type	make	model.name	serial	directory	age	group
+laptop	apple	macbookpro	0	simple	1	my_group
+laptop	apple	macbookpro	1	overlap/one	2	your_group
+l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one	3	his_group
+l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one	new	her_group
+l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one	newer	our_group
+laptop	apple	macbookpro	faux	new directory/new subfolder	old	your_group
+laptop	apple	macbookpro	faux	new directory/new subfolder	older	their_group
