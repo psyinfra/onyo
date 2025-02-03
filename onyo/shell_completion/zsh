@@ -68,6 +68,7 @@ _onyo() {
         'set:set the VALUE of KEYs for ASSETs'
         'shell-completion:display a tab-completion script for Onyo'
         'tree:list the assets and directories of DIRECTORYs in a tree-like format'
+        'tsv-to-yaml:convert a TSV file to YAML'
         'unset:remove KEY from ASSETs'
     )
 
@@ -190,6 +191,12 @@ _onyo() {
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '*::DIR:_files -W "$(_onyo_dir)" -/'
+                )
+                ;;
+            tsv-to-yaml)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*::TSV:_files -W "$(_onyo_dir)" -/'
                 )
                 ;;
             unset)

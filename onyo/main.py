@@ -263,6 +263,7 @@ def setup_parser() -> OnyoArgumentParser:
     from onyo.cli.set import args_set, epilog_set
     from onyo.cli.shell_completion import args_shell_completion, epilog_shell_completion
     from onyo.cli.tree import args_tree, epilog_tree
+    from onyo.cli.tsv_to_yaml import args_tsv_to_yaml, epilog_tsv_to_yaml
     from onyo.cli.unset import args_unset, epilog_unset
 
     global subcmds
@@ -446,6 +447,18 @@ def setup_parser() -> OnyoArgumentParser:
     )
     cmd_tree.set_defaults(run=cli.tree)
     build_parser(cmd_tree, args_tree)
+    #
+    # subcommand "tsv-to-yaml"
+    #
+    cmd_tsv_to_yaml = subcmds.add_parser(
+        'tsv-to-yaml',
+        description=cli.tsv_to_yaml.__doc__,
+        epilog=epilog_tsv_to_yaml,
+        formatter_class=parser.formatter_class,
+        help='Convert a TSV file to YAML.'
+    )
+    cmd_tsv_to_yaml.set_defaults(run=cli.tsv_to_yaml)
+    build_parser(cmd_tsv_to_yaml, args_tsv_to_yaml)
     #
     # subcommand "unset"
     #

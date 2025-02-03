@@ -19,4 +19,5 @@ Command Line Reference
    cmd_set
    cmd_shell-completion
    cmd_tree
+   cmd_tsv_to_yaml
    cmd_unset

@@ -1,0 +1,63 @@
+---
+type: laptop
+make: apple
+model:
+  name: macbookpro
+serial: 0000
+directory: simple
+age: 1,000
+group: my_group
+---
+type: laptop
+make: apple
+model:
+  name: macbookpro
+serial: 0001
+directory: overlap/one
+age: 20.00
+group: your_group
+---
+type: l a p t o p
+make: a p p l e
+model:
+  name: m a c b o o k p r o
+serial: faux
+directory: overlap/one
+age: 3
+group: his_group
+---
+type: l a p t o p
+make: a p p l e
+model:
+  name: m a c b o o k p r o
+serial: faux
+directory: overlap/one
+age: new
+group: her_group
+---
+type: l a p t o p
+make: a p p l e
+model:
+  name: m a c b o o k p r o
+serial: faux
+directory: overlap/one
+age: newer
+group: our_group
+---
+type: laptop
+make: apple
+model:
+  name: macbookpro
+serial: faux
+directory: new directory/new subfolder
+age: old
+group: your_group
+---
+type: laptop
+make: apple
+model:
+  name: macbookpro
+serial: faux
+directory: new directory/new subfolder
+age: older
+group: their_group

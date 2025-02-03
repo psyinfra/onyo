@@ -1234,6 +1234,64 @@ def _tree(dir_path: Path,
             yield from _tree(path, prefix=prefix + next_prefix_level, dirs_only=dirs_only)
 
 
+def onyo_tsv_to_yaml(tsv: Path) -> None:
+    r"""Convert a TSV file to YAML.
+
+    Convert a tabular file (e.g. TSV, CSV) to YAML suitable for passing to
+    ``onyo new`` and ``onyo set``.
+
+    The header declares the key names to be populated. The values to populate
+    documents are declared with one line per YAML document.
+
+    The output is printed to stdout as a multiple document YAML file (each
+    document is separated by a ``---`` line).
+
+    Parameters
+    ----------
+    tsv
+        Path to a **TSV** file.
+
+    Raises
+    ------
+    ValueError
+        If information is invalid, missing, or contradictory.
+    """
+
+    import csv
+    from io import StringIO
+
+    from onyo.lib.utils import DotNotationWrapper, get_patched_yaml
+
+    dicts = []
+    with tsv.open('r', newline='') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+
+        # check for headers
+        if reader.fieldnames is None:
+            raise ValueError(f"No header fields in tsv {str(tsv)}")
+
+        dicts = [DotNotationWrapper(row, pristine_original=False) for row in reader]
+
+        # check for content
+        if not dicts:
+            raise ValueError(f"Headers but no content in tsv {str(tsv)}")
+
+        # Check if any lines have more values than columns. These are stored in the `None` key.
+        # Note: start at 1 to give the correct line number (header + index of dict)
+        for i, d in enumerate(dicts, start=1):
+            if None in d.keys() and d[None] != ['']:
+                raise ValueError(f"Values exceed number of columns in {str(tsv)} at line {i}: {d[None]}")
+
+    # build YAML stream
+    yaml = get_patched_yaml()
+    yaml.explicit_start = True
+    s = StringIO()
+    for d in dicts:
+        yaml.dump(d.data, s)
+
+    ui.print(s.getvalue(), end='')
+
+
 @raise_on_inventory_state
 def onyo_unset(inventory: Inventory,
                keys: Iterable[str],
