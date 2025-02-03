@@ -14,6 +14,7 @@ from rich import box
 from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't find Table
 
 from onyo.lib.command_utils import (
+    inline_path_diff,
     natural_sort,
     print_diff,
 )
@@ -777,10 +778,12 @@ def onyo_mv(inventory: Inventory,
         auto_message = inventory.repo.auto_message
 
     sources = [source] if not isinstance(source, list) else source
+    implicit_move = False
 
     if destination.exists():
         # Move Mode
-        subject = "mv"
+        subject_prefix = "mv"
+        implicit_move = True
         # destination Asset File needs to be converted into Asset Directory first
         if inventory.repo.is_asset_file(destination):
             inventory.add_directory(destination)
@@ -791,18 +794,18 @@ def onyo_mv(inventory: Inventory,
         # Move Mode: explicit destination name
         # The destination does not exist, but is named the same as the source.
         # e.g. mv example dir/example
-        subject = "mv"
+        subject_prefix = "mv"
         _move_asset_or_dir(inventory, sources[0], destination.parent)
     elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():
         if sources[0].parent == destination.parent:
             # Rename Mode
             # e.g. mv example different
-            subject = "ren"
+            subject_prefix = "ren"
             _maybe_rename(inventory, sources[0], destination)
         else:
             # Move + Rename Mode: different parents (rename) and different source/dest names
             # e.g. mv example dir/different
-            subject = "mv + ren"
+            subject_prefix = "mv + ren"
             inventory.move_directory(sources[0], destination.parent)
             _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
@@ -823,12 +826,33 @@ def onyo_mv(inventory: Inventory,
                     op.operator == OPERATIONS_MAPPING['move_assets'] or
                     op.operator == OPERATIONS_MAPPING['move_directories'] or
                     op.operator == OPERATIONS_MAPPING['rename_directories']]))
-                message = inventory.repo.generate_auto_message(
-                    format_string="{prefix} [{len}]: {operation_paths} -> {destination}\n",
-                    prefix=subject,
-                    len=len(operation_paths),
-                    operation_paths=operation_paths,
-                    destination=destination.relative_to(inventory.root)) + (message or "")
+                # renames and single item moves use an inline diff for the subject line
+                if len(sources) == 1:
+                    # NOTE: It would be preferable to extract this information
+                    # from inventory.operations (e.g. inventory.operations[0].operator.recorder()),
+                    # but recorders are currently inconvenient to use (they even
+                    # have a TODO to simplify them to use Inventory).
+                    # Furthermore, record_move() explicitly notes that it
+                    # assumes that it's passed the complete paths, which is the
+                    # exact same problem that we have here, so it actually
+                    # doesn't help us. :-/
+                    if implicit_move:
+                        # the destination is not explicitly specified
+                        # (aka: e.g. onyo mv file dest/)
+                        dest = Path(destination / sources[0].name).relative_to(inventory.root)
+                    else:
+                        dest = destination.relative_to(inventory.root)
+
+                    inline_diff = inline_path_diff(operation_paths[0], dest)
+                    ln = len(operation_paths)
+                    message = f"{subject_prefix} [{ln}]: {inline_diff}\n" + (message or "")
+                else:  # multi-source moves
+                    message = inventory.repo.generate_auto_message(
+                        format_string="{prefix} [{ln}]: {operation_paths} -> {destination}\n",
+                        prefix=subject_prefix,
+                        ln=len(operation_paths),
+                        operation_paths=operation_paths,
+                        destination=destination.relative_to(inventory.root)) + (message or "")
             inventory.commit(message=message)
             return
 

@@ -1,4 +1,4 @@
-commit 39a6548b8ea1f9bf864507377a79d345f7ef3653
+commit 2687b536fb863536ddfa9f5fbf0256f0083a758e
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -8,7 +8,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     Removed directories:
     - management/Max Mustermann
 
-commit 48dda31ef1e14269b1723c5a6e71756925ffbbf8
+commit d463b317cdbec69dccb4c5e010f9fef4da77fe90
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -19,17 +19,17 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     - management/Max Mustermann/headphones_apple_airpods.7h8f04 -> warehouse/headphones_apple_airpods.7h8f04
     - management/Max Mustermann/laptop_apple_macbook.uef82b3 -> warehouse/laptop_apple_macbook.uef82b3
 
-commit b5ea51f768de2d3097328e852e0adef6dd8a51e5
+commit 8de7cdbb667ccfafa7adc420f5e1805d326a8cfd
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: warehouse/laptop_lenovo_thinkpad.owh8e2 -> ethics/Theo Turtle
+    mv [1]: {warehouse -> ethics/Theo Turtle}/laptop_lenovo_thinkpad.owh8e2
     
     --- Inventory Operations ---
     Moved assets:
     - warehouse/laptop_lenovo_thinkpad.owh8e2 -> ethics/Theo Turtle/laptop_lenovo_thinkpad.owh8e2
 
-commit f0fcfedeef1ab0849060e8b7bbbdcfbe2435f174
+commit 88fc0907f46c5f1ccc26860189c07a5700f62f7f
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -39,7 +39,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     New directories:
     - ethics/Theo Turtle
 
-commit 74810fc84cc40083bfaeaabd0ea71ce79a2cd1fc
+commit 889e57e723818b505f760a0de3b668f0b57d9fac
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -49,7 +49,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     New assets:
     - management/Alice Wonder/laptop_apple_macbook.83hd0
 
-commit c794f05f9340afd0079ae7d91b1ed869c7d68e2e
+commit 584ac206b121dcc7081e26596ee1b0b060df2002
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -59,17 +59,17 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     New directories:
     - management/Alice Wonder
 
-commit 0c16e95d73b7c519eea956643b317c109eb3a78c
+commit 12c778533887e8b218b297f3895e4771cbb8aa6d
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: ethics/Max Mustermann -> management
+    mv [1]: {ethics -> management}/Max Mustermann
     
     --- Inventory Operations ---
     Moved directories:
     - ethics/Max Mustermann -> management/Max Mustermann
 
-commit 971b397dce814f48c1a834f33ad829dfe05eb802
+commit 266b44dfd27e11911c994ea2db4542978ce8e5de
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -79,37 +79,37 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     New directories:
     - management
 
-commit f64526372088deb6073468fa1dab90faeae4f845
+commit 7ec885336eb8f3838b5f205905cf25d97c49e7a4
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: warehouse/laptop_apple_macbook.uef82b3 -> ethics/Max Mustermann
+    mv [1]: {warehouse -> ethics/Max Mustermann}/laptop_apple_macbook.uef82b3
     
     --- Inventory Operations ---
     Moved assets:
     - warehouse/laptop_apple_macbook.uef82b3 -> ethics/Max Mustermann/laptop_apple_macbook.uef82b3
 
-commit b63f859bf9c903b56b661c2135d145767c36d72d
+commit 23d2b2f86bd90d308b0bd62ecf8fada29b57882b
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: ethics/Max Mustermann/laptop_apple_macbook.9r32he -> recycling
+    mv [1]: {ethics/Max Mustermann -> recycling}/laptop_apple_macbook.9r32he
     
     --- Inventory Operations ---
     Moved assets:
     - ethics/Max Mustermann/laptop_apple_macbook.9r32he -> recycling/laptop_apple_macbook.9r32he
 
-commit 924b1b1fd197b5cd0efe3bad1d3b27e98d772b5f
+commit fc597b26824466146a4761536c201b98c3ea4ea6
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: repair/laptop_lenovo_thinkpad.owh8e2 -> warehouse
+    mv [1]: {repair -> warehouse}/laptop_lenovo_thinkpad.owh8e2
     
     --- Inventory Operations ---
     Moved assets:
     - repair/laptop_lenovo_thinkpad.owh8e2 -> warehouse/laptop_lenovo_thinkpad.owh8e2
 
-commit 30ad29a4cc6f7f9f9e9de79a168eb410b81783d4
+commit b7d2a9d626af94177181ecb9f99a7f3a2e47b6bc
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -119,7 +119,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     Modified assets:
     - repair/laptop_lenovo_thinkpad.owh8e2
 
-commit d992d4519b28fbfe514475cdab36a146a047c168
+commit 844b61e2ab73c870765c963bec9e6d4d23c5401b
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -131,7 +131,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     - warehouse/laptop_apple_macbook.oiw629 -> accounting/Bingo Bob/laptop_apple_macbook.oiw629
     - warehouse/monitor_dell_PH123.86JZho -> accounting/Bingo Bob/monitor_dell_PH123.86JZho
 
-commit 1890e9029d8b7560b485ae83d1ed41b136704fc0
+commit bf9d7f179112183e692a69b34e3f12be74b9c95c
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -141,7 +141,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     New assets:
     - warehouse/headphones_apple_airpods.uzl8e1
 
-commit f0992980751f04c3b6a9477c544e072d131c2dfd
+commit bb892b2d46f3bd77176c3fa808b193cb8af1ee89
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -151,7 +151,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     New assets:
     - warehouse/laptop_apple_macbook.oiw629
 
-commit a0ed7f880bf6b17d3edab562ef9ee34ee4df56d2
+commit 8ceed49b67f8175998b34ca2f7dfadb8f93b81d7
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -161,7 +161,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     New assets:
     - warehouse/monitor_dell_PH123.86JZho
 
-commit e1a130baab3bdd8c7f5102b5303bec11ba394a05
+commit f8dca7f1feca28ba242c5e06efd4a3c964a12800
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -172,7 +172,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     - accounting
     - accounting/Bingo Bob
 
-commit 9237c7b50365b5c860c73c325f7c42209f016486
+commit 4f4d6161a9fc5b97b159d16d4bbbe0b7befb6e03
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -184,7 +184,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     - warehouse/laptop_apple_macbook.9il2b4
     - warehouse/laptop_apple_macbook.uef82b3
 
-commit 6e038325e8b30e1518027c5410ba11631f74f869
+commit 2af7c16ffe3f35a975902adde001a858d4ada954
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -195,7 +195,7 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     - ethics/Max Mustermann/laptop_apple_macbook.9r32he
     - warehouse/laptop_apple_macbook.9r5qlk
 
-commit 661255cc37a306741f32107cbfcb64a563808b91
+commit 06d92c8309bfcf93830d5fea75025276d4bd9f91
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
@@ -214,61 +214,61 @@ Date:   Sun Jan 1 00:00:00 2023 +0100
     - warehouse/laptop_apple_macbookpro.1eic93
     - warehouse/laptop_lenovo_thinkpad.iu7h6d
 
-commit 283ff37812cae2ff8f3e38434829393d3f3c1b4f
+commit 8f1bcca32bc7358244c469a24eef9612aa470cbf
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: warehouse/laptop_microsoft_surface.oq782j -> ethics/Achilles Book
+    mv [1]: {warehouse -> ethics/Achilles Book}/laptop_microsoft_surface.oq782j
     
     --- Inventory Operations ---
     Moved assets:
     - warehouse/laptop_microsoft_surface.oq782j -> ethics/Achilles Book/laptop_microsoft_surface.oq782j
 
-commit 75802147ff15222cf5b244e18323e731c0107ac0
+commit 46bd1cdeaeccc319ad4273cf43ca48342a4afb33
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2 -> repair
+    mv [1]: {ethics/Achilles Book -> repair}/laptop_lenovo_thinkpad.owh8e2
     
     --- Inventory Operations ---
     Moved assets:
     - ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2 -> repair/laptop_lenovo_thinkpad.owh8e2
 
-commit f21a57245f39a68df2feda9b5e4a7f269de5fe40
+commit 72f8221f9c836457ecc7ff6bdaf0b3d5134e0048
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: warehouse/headphones_JBL_pro.e98t2p -> ethics/Achilles Book
+    mv [1]: {warehouse -> ethics/Achilles Book}/headphones_JBL_pro.e98t2p
     
     --- Inventory Operations ---
     Moved assets:
     - warehouse/headphones_JBL_pro.e98t2p -> ethics/Achilles Book/headphones_JBL_pro.e98t2p
 
-commit d47538bc6f715e2d436e842f8e7ca81aa8f290a2
+commit 53d4eeae02d540812a70e5b6ce9875175eacc1d8
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: warehouse/laptop_lenovo_thinkpad.owh8e2 -> ethics/Achilles Book
+    mv [1]: {warehouse -> ethics/Achilles Book}/laptop_lenovo_thinkpad.owh8e2
     
     --- Inventory Operations ---
     Moved assets:
     - warehouse/laptop_lenovo_thinkpad.owh8e2 -> ethics/Achilles Book/laptop_lenovo_thinkpad.owh8e2
 
-commit 9670adf05bc80c58175e10c4063705f6e366dd6b
+commit 05208663bff3042fe95955fb745fcc1a787df710
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: warehouse/headphones_apple_airpods.7h8f04 -> ethics/Max Mustermann
+    mv [1]: {warehouse -> ethics/Max Mustermann}/headphones_apple_airpods.7h8f04
     
     --- Inventory Operations ---
     Moved assets:
     - warehouse/headphones_apple_airpods.7h8f04 -> ethics/Max Mustermann/headphones_apple_airpods.7h8f04
 
-commit bc5908c384faf592fa5dc93a0a9cb2bf1ff26215
+commit 6141940ab5e70740f91c21914787a7b34598050d
 Author: Yoko Onyo <yoko@onyo.org>
 Date:   Sun Jan 1 00:00:00 2023 +0100
 
-    mv [1]: warehouse/laptop_apple_macbook.9r32he -> ethics/Max Mustermann
+    mv [1]: {warehouse -> ethics/Max Mustermann}/laptop_apple_macbook.9r32he
     
     --- Inventory Operations ---
     Moved assets:
