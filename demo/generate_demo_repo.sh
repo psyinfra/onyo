@@ -92,8 +92,9 @@ onyo --yes mkdir recycling
 onyo --yes mkdir repair
 
 # import some existing hardware
-# TSV files can be very useful when adding large amounts of assets
-onyo --yes new --tsv "${SCRIPT_DIR}/inventory.tsv"
+# onyo tsv-to-yaml can generate YAML to pass to onyo new --yaml
+# TODO: depends on onyo new --yaml
+onyo --yes new --keys type=laptop make=apple model=macbookpro display=13.3 serial={0io4ff,1eic93,j7tbkk,dd082o,9sdjwa} directory={warehouse,warehouse,repair,repair,'admin/Karl Krebs'}
 
 # add a set of newly bought assets
 onyo --yes new --keys type=laptop make=apple model=macbook serial=9r32he RAM=8GB display=13.3 --directory warehouse/

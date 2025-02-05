@@ -68,6 +68,7 @@ _onyo() {
         'set:set the VALUE of KEYs for ASSETs'
         'shell-completion:display a tab-completion script for Onyo'
         'tree:list the assets and directories of DIRECTORYs in a tree-like format'
+        'tsv-to-yaml:convert a TSV file to YAML'
         'unset:remove KEY from ASSETs'
     )
 
@@ -158,7 +159,6 @@ _onyo() {
                     '(-e --edit)'{-e,--edit}'[open new assets in an editor before creation]'
                     '(-k --keys)'{-k,--keys}'[key-value pairs to set in the new assets]:*-*:KEYS: '
                     '(-d --directory)'{-d,--directory}'[directory to create new assets in]:DIRECTORY:_files -W "$(_onyo_dir)" -/'
-                    '(-tsv --tsv)'{-tsv,--tsv}'[path to a TSV file describing the new assets]:TSV:_files -W "$(_onyo_dir)"'
                     '(-m --message)'{-m,--message}'[append MESSAGE to the commit message]:MESSAGE: '
                     '(--no-auto-message)--no-auto-message[do not auto-generate commit message subject]'
                 )
@@ -191,6 +191,12 @@ _onyo() {
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
                     '*::DIR:_files -W "$(_onyo_dir)" -/'
+                )
+                ;;
+            tsv-to-yaml)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '*::TSV:_files -W "$(_onyo_dir)" -/'
                 )
                 ;;
             unset)

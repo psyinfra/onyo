@@ -12,8 +12,8 @@ Reserved keys
 *************
 
 Onyo reserves some keys which have a special function when used while creating
-new assets, either with ``onyo new --keys`` or in a tsv table with
-``onyo new --tsv``.
+new assets, either with ``onyo new --keys`` or in templates.
+
 They can be used multiple times with different values to create multiple
 new assets at once with a different value for each asset.
 

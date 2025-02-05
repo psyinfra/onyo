@@ -1,8 +1,0 @@
-directory	serial	model.name	template	make	type
-simple	0	macbookpro	laptop.example	apple	laptop
-overlap/one	1	macbookpro	laptop.example	apple	laptop
-overlap/one	faux	m a c b o o k p r o	empty	a p p l e	l a p t o p
-overlap/two	faux	m a c b o o k p r o	empty	a p p l e	l a p t o p
-overlap/one	faux	m a c b o o k p r o	laptop.example	a p p l e	l a p t o p
-new directory/new subfolder	faux	macbookpro	laptop.example	apple	laptop
-new directory/new subfolder	faux	macbookpro	empty	apple	laptop

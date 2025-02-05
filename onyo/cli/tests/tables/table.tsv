@@ -1,8 +1,0 @@
-type	make	model.name	serial	directory
-laptop	apple	macbookpro	0	simple
-laptop	apple	macbookpro	1	overlap/one
-l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one
-l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one
-l a p t o p	a p p l e	m a c b o o k p r o	faux	overlap/one
-laptop	apple	macbookpro	faux	new directory/new subfolder
-laptop	apple	macbookpro	faux	new directory/new subfolder

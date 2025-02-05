@@ -74,12 +74,28 @@ class DotNotationWrapper(UserDict):
     underlying dictionary is available from the `.data` attribute.
     """
 
-    def __init__(self, __dict: Mapping[_KT, _VT] | None = None, **kwargs: _VT) -> None:
-        if __dict and isinstance(__dict, dict):
-            super().__init__()
-            # If we have any sort of existing dict, we want to wrap it, maintaining the original object (and class).
+    def __init__(self,
+                 __dict: Mapping[_KT, _VT] | None = None,
+                 pristine_original: bool = True,
+                 **kwargs: _VT) -> None:
+        r"""
+        Parameters
+        ----------
+        __dict
+        pristine_original
+            Store ``__dict`` unaltered in the ``.data`` attribute. This is the
+            primarily intended use for the wrapper: that it's just a namespace
+            wrapper for dicts.
+
+            Set to ``False`` to interpret the incoming dict's keys for dot
+            notation and set accordingly.
+        """
+
+        if pristine_original and __dict and isinstance(__dict, dict):
+            # Maintain the original dict object (and class).
             # Note: Currently would modify wrapped dict w/ kwargs if both are given.
-            #       Would need deepcopy to prevent this, but this kinda contradicts the idea of wrapping.
+            #       deepcopy would prevent this, but contradicts the idea of wrapping.
+            super().__init__()
             self.data = __dict
             self.update(**kwargs)
         else:

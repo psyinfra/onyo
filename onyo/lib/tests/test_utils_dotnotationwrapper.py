@@ -2,6 +2,22 @@ import pytest
 from onyo.lib.utils import DotNotationWrapper
 
 
+def test_init_pristine_original():
+    d = {'some': 'value',
+         'nested.one': 1,
+         'nested.two': '2',
+         'nested.deep.key': 'value',
+         }
+
+    wrapper = DotNotationWrapper(d, pristine_original=False)
+    assert wrapper.data['some'] == d['some']
+    assert 'nested' in wrapper.data and isinstance(wrapper.data['nested'], dict)
+    assert wrapper.data['nested']['one'] == d['nested.one']
+    assert wrapper.data['nested']['two'] == d['nested.two']
+    assert 'deep' in wrapper.data['nested'] and isinstance(wrapper.data['nested']['deep'], dict)
+    assert wrapper.data['nested']['deep']['key'] == d['nested.deep.key']
+
+
 def test_get_values():
 
     d = {'some': 'value',
