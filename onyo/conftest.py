@@ -207,8 +207,8 @@ def inventory(repo) -> Generator:
              other=1,
              directory=repo.git.root / "somewhere" / "nested"),
         repo=repo))
-    inventory.add_directory(repo.git.root / 'empty')
-    inventory.add_directory(repo.git.root / 'different' / 'place')
+    inventory.add_directory(Item(repo.git.root / 'empty', repo=inventory.repo))
+    inventory.add_directory(Item(repo.git.root / 'different' / 'place', repo=inventory.repo))
     inventory.commit("First asset added")
     yield inventory
 

@@ -682,7 +682,7 @@ def onyo_mkdir(inventory: Inventory,
         raise ValueError("At least one directory path must be specified.")
 
     for d in deduplicate(dirs):  # pyre-ignore[16]
-        inventory.add_directory(d)
+        inventory.add_directory(Item(d, repo=inventory.repo))
 
     if inventory.operations_pending():
         # display changes
@@ -786,7 +786,7 @@ def onyo_mv(inventory: Inventory,
         implicit_move = True
         # destination Asset File needs to be converted into Asset Directory first
         if inventory.repo.is_asset_file(destination):
-            inventory.add_directory(destination)
+            inventory.add_directory(Item(destination, repo=inventory.repo))
 
         for s in sources:
             _move_asset_or_dir(inventory, s, destination)
