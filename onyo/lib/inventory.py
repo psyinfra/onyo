@@ -426,7 +426,7 @@ class Inventory(object):
         #             registered modify operations. It's easier to not force compliance here, but simply let
         #             modify_asset generate the name and pass it.
         generated_name = self.generate_asset_name(
-            self.get_asset(path)
+            self.get_item(path)
             if isinstance(asset, Path) else asset
         )
         if name and name != generated_name:
@@ -449,7 +449,7 @@ class Inventory(object):
         path = asset if isinstance(asset, Path) else Path(asset.get('onyo.path.absolute'))
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
-        asset = self.get_asset(path) if isinstance(asset, Path) else asset
+        asset = self.get_item(path) if isinstance(asset, Path) else asset
 
         # A path change must not be specified w/ modify_asset. A move is a different operation and
         # a renaming has to be derived from content:
@@ -556,8 +556,8 @@ class Inventory(object):
     # non-operation methods
     #
 
-    def get_asset(self, path: Path) -> UserDict:
-        # read and return Asset
+    def get_item(self, path: Path) -> Item:
+        r"""Get an inventory ``Item`` from ``path``."""
         return Item(path, self.repo)
 
     def get_assets(self,
@@ -585,9 +585,9 @@ class Inventory(object):
         Generator of dict
            All matching assets in the inventory.
         """
-        for p in self.repo.get_asset_paths(include=include, exclude=exclude, depth=depth):
+        for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=['assets']):
             try:
-                yield self.get_asset(p)
+                yield self.get_item(p)
             except NotAnAssetError as e:
                 # report the error, but proceed
                 ui.error(e)

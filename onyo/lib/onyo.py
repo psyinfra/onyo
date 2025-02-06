@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         Generator,
         Iterable,
         List,
+        Literal,
     )
     from collections import UserDict
 
@@ -301,7 +302,7 @@ class OnyoRepo(object):
         reset the cache.
         """
         if self._asset_paths is None:
-            self._asset_paths = self.get_asset_paths()
+            self._asset_paths = self.get_item_paths(types=['assets'])
         return self._asset_paths
 
     def validate_onyo_repo(self) -> None:
@@ -563,49 +564,63 @@ class OnyoRepo(object):
 
         return True
 
-    def get_asset_paths(self,
-                        include: Iterable[Path] | None = None,
-                        exclude: Iterable[Path] | Path | None = None,
-                        depth: int = 0
-                        ) -> List[Path]:
-        r"""Select all assets in the repository that are relative to the given
-        `subtrees` descending at most `depth` directories.
+    def get_item_paths(self,
+                       include: Iterable[Path] | None = None,
+                       exclude: Iterable[Path] | Path | None = None,
+                       depth: int = 0,
+                       types: List[Literal['assets', 'directories', 'templates']] | None = None
+                       ) -> List[Path]:
+        r"""Select all items in the repository that are relative to the given
+        ``subtrees`` descending at most ``depth`` directories.
 
         Parameters
         ----------
         include
-          Paths to look for assets under. Defaults to the root of the inventory.
+            Paths to look for items under. Defaults to the root of the inventory.
         exclude
-          Paths to exclude, meaning that assets underneath any of these are not
-          being returned. Defaults to `None`.
+            Paths to exclude, meaning that items underneath any of these are not
+            being returned. Defaults to ``None``.
         depth
-          Number of levels to descend into. Must be greater equal 0.
-          If 0, descend recursively without limit. Defaults to 0.
-
-        Returns
-        -------
-          list of Path
-            Paths to all matching assets in the repository.
+            Number of levels to descend into. Must be greater equal 0.
+            If 0, descend recursively without limit. Defaults to 0.
+        types
+            List of types of inventory items to consider. Valid types are
+            'assets', 'directories' and 'templates'. Defaults to ['assets'].
         """
+        if types is None:
+            types = ['assets']
+        if include is None:
+            include = [self.git.root]
         if depth < 0:
             raise ValueError(f"depth must be greater or equal 0, but is '{depth}'")
         # Note: The if-else here doesn't change result, but utilizes `GitRepo`'s cache:
         files = self.git.get_subtrees(include) if include else self.git.files
         if depth:
-            roots = include if include else [self.git.root]
             files = [f
                      for f in files
-                     for r in roots
-                     if r in f.parents and len(f.parents) - len(r.parents) <= depth]
+                     for root in include
+                     if root in f.parents and (len(f.parents) - len(root.parents) <= depth)]
 
         if exclude:
             exclude = [exclude] if isinstance(exclude, Path) else exclude
             files = [f for f in files if all(f != p and p not in f.parents for p in exclude)]
 
-        # This only checks for `is_inventory_path`, since we already
-        # know it's a committed file:
-        return [f for f in files if self.is_inventory_path(f)] + \
-               [f.parent for f in files if f.name == self.ASSET_DIR_FILE_NAME]
+        paths = []
+        if 'assets' in types:
+            paths.extend([f for f in files if self.is_inventory_path(f)] +
+                         [f.parent for f in files if f.name == self.ASSET_DIR_FILE_NAME])
+        if 'directories' in types:
+            paths.extend([f.parent for f in files
+                          if f.name == self.ANCHOR_FILE_NAME and self.is_inventory_path(f.parent)])
+            # special case root - has no anchor file that would show up in `files`:
+            if self.git.root in include:
+                paths.append(self.git.root)
+        if 'templates' in types:
+            # TODO: This does not yet account for directory-templates.
+            paths.extend([f for f in files
+                          if self.git.root / self.TEMPLATE_DIR in f.parents and not f.name.startswith('.')])
+
+        return paths
 
     def get_asset_content(self,
                           path: Path) -> dict:

@@ -82,7 +82,7 @@ def gitrepo(tmp_path: Path, request) -> Generator[AnnotatedGitRepo, None, None]:
             gr.test_annotation['files'].append(abs_path)
             gr.test_annotation['directories'].extend(gr.root / p for p in path.parents
                                                      if p != Path('.'))
-        subprocess.run(['git', 'add'] + [str(s[0]) for s in m.args], cwd=gr.root)
+        subprocess.run(['git', 'add', '.'], cwd=gr.root)  # leave .gitignored stuff uncommitted
         subprocess.run(['git', 'commit', '-m', 'Test repo setup'], cwd=gr.root)
     yield gr
 
@@ -93,6 +93,8 @@ def onyorepo(gitrepo, request, monkeypatch) -> Generator[AnnotatedOnyoRepo, None
     onyo = AnnotatedOnyoRepo(gitrepo.root, init=True)
     onyo.test_annotation = {'assets': [],
                             'dirs': [],
+                            'templates': [gitrepo.root / OnyoRepo.TEMPLATE_DIR / "empty",
+                                          gitrepo.root / OnyoRepo.TEMPLATE_DIR / "laptop.example"],
                             'git': gitrepo}
 
     to_commit = []
@@ -113,8 +115,21 @@ def onyorepo(gitrepo, request, monkeypatch) -> Generator[AnnotatedOnyoRepo, None
     m = request.node.get_closest_marker('inventory_dirs')
     if m:
         dirs = [gitrepo.root / p for p in list(m.args)]
-        to_commit += onyo.mk_inventory_dirs(dirs)
-        onyo.test_annotation['dirs'].extend(dirs)
+        new_anchors = onyo.mk_inventory_dirs(dirs)
+        to_commit += new_anchors
+        onyo.test_annotation['dirs'].extend(p.parent for p in new_anchors)
+
+    m = request.node.get_closest_marker('inventory_templates')
+    if m:
+        for spec in list(m.args):
+            path = spec[0]
+            content = spec[1]
+            abs_path = gitrepo.root / path
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(content)
+            onyo.test_annotation['templates'].append(abs_path)
+            to_commit.append(abs_path)
+
     if onyo.test_annotation['dirs']:
         onyo.test_annotation['dirs'] = deduplicate(onyo.test_annotation['dirs'])
     if to_commit:

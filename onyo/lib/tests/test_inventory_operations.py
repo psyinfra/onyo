@@ -78,7 +78,7 @@ def test_add_asset(repo: OnyoRepo) -> None:
     assert repo.is_inventory_dir(newdir1)
     assert repo.is_inventory_dir(newdir2)
     assert repo.is_asset_path(asset_file)
-    asset_from_disc = inventory.get_asset(asset_file)
+    asset_from_disc = inventory.get_item(asset_file)
     assert asset_file == asset_from_disc.get('onyo.path.absolute')
     # All pseudo-keys are set, except `onyo.is.empty` which is only set for directories:
     assert all(asset_from_disc[k] is not None for k in PSEUDO_KEYS.keys() if k != 'onyo.is.empty')
@@ -142,7 +142,7 @@ def test_remove_asset(inventory: Inventory) -> None:
     asset_file = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     assert asset_file.exists()
 
-    asset = inventory.get_asset(asset_file)
+    asset = inventory.get_item(asset_file)
     inventory.remove_asset(asset)
     # operation registered:
     assert num_operations(inventory, 'remove_assets') == 1
@@ -223,7 +223,7 @@ def test_move_asset(repo: OnyoRepo) -> None:
             )]
         else:
             assert v == []
-    asset_from_disc = inventory.get_asset(moved_asset_path)
+    asset_from_disc = inventory.get_item(moved_asset_path)
 
     # history pseudo-keys: The move is not an asset modification:
     assert asset_from_disc['onyo.was.created.hexsha'] == asset_from_disc['onyo.was.modified.hexsha'] == inventory.repo.git.get_hexsha('HEAD~1')
@@ -309,7 +309,7 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     # nothing done on disc yet:
     assert asset_file.is_file()
     assert not new_asset_file.exists()
-    asset_on_disc = inventory.get_asset(asset_file)
+    asset_on_disc = inventory.get_item(asset_file)
     assert asset_file == asset_on_disc.get('onyo.path.absolute')
     for k, v in asset.items():
         if k not in RESERVED_KEYS + list(PSEUDO_KEYS.keys()):
@@ -322,7 +322,7 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     assert not asset_file.exists()
     assert repo.is_asset_path(new_asset_file)
 
-    asset_on_disc = inventory.get_asset(new_asset_file)
+    asset_on_disc = inventory.get_item(new_asset_file)
     for k, v in new_asset.items():
         if k not in PSEUDO_KEYS:
             assert asset_on_disc[k] == new_asset[k]
@@ -617,7 +617,7 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(asset_dir_path)
+    asset_from_disk = inventory.get_item(asset_dir_path)
     assert asset_from_disk['onyo.path.relative'] == asset_dir_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative'] / OnyoRepo.ASSET_DIR_FILE_NAME
     assert asset_from_disk['onyo.is.asset'] is True
@@ -682,7 +682,7 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(expected_path)
+    asset_from_disk = inventory.get_item(expected_path)
     assert asset_from_disk['onyo.path.relative'] == expected_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative'] / OnyoRepo.ASSET_DIR_FILE_NAME
     assert asset_from_disk['onyo.is.asset'] is True
@@ -732,7 +732,7 @@ def test_add_dir_asset(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(asset_path)
+    asset_from_disk = inventory.get_item(asset_path)
     assert asset_from_disk['onyo.path.relative'] == asset_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative'] / OnyoRepo.ASSET_DIR_FILE_NAME
     assert asset_from_disk['onyo.is.asset'] is True
@@ -793,7 +793,7 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(asset_dir_path)
+    asset_from_disk = inventory.get_item(asset_dir_path)
     assert asset_from_disk['onyo.path.relative'] == asset_dir_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative']
     assert asset_from_disk['onyo.is.asset'] is True
@@ -853,7 +853,7 @@ def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(asset_dir_path)
+    asset_from_disk = inventory.get_item(asset_dir_path)
     assert asset_from_disk['onyo.path.relative'] == asset_dir_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative'] / OnyoRepo.ANCHOR_FILE_NAME
     assert asset_from_disk['onyo.is.asset'] is False
@@ -938,7 +938,7 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(asset_dir_path)
+    asset_from_disk = inventory.get_item(asset_dir_path)
     assert asset_from_disk['onyo.path.relative'] == asset_dir_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative'] / OnyoRepo.ASSET_DIR_FILE_NAME
     assert asset_from_disk['onyo.is.asset'] is True
@@ -1006,7 +1006,7 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(new_asset_dir_path)
+    asset_from_disk = inventory.get_item(new_asset_dir_path)
     assert asset_from_disk['onyo.path.relative'] == new_asset_dir_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative'] / OnyoRepo.ASSET_DIR_FILE_NAME
     assert asset_from_disk['onyo.is.asset'] is True
@@ -1037,7 +1037,7 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     )
     inventory.add_asset(asset)
     inventory.commit("asset dir added")
-    asset = inventory.get_asset(asset_path)
+    asset = inventory.get_item(asset_path)
     assert inventory.repo.is_asset_dir(asset_path)
     assert asset['onyo.is.directory'] and asset['onyo.is.asset']
 
@@ -1060,7 +1060,7 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     # nothing done on disc yet:
     assert inventory.repo.is_asset_dir(asset_path)
     assert not new_asset_path.exists()
-    asset_on_disc = inventory.get_asset(asset_path)
+    asset_on_disc = inventory.get_item(asset_path)
     for k1, v1 in asset_on_disc.items():
         assert asset[k1] == v1
     for k2, v2 in asset.items():
@@ -1073,7 +1073,7 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     assert inventory.repo.is_asset_dir(new_asset_path)
     assert inventory.repo.git.is_clean_worktree()
 
-    asset_on_disc = inventory.get_asset(new_asset_path)
+    asset_on_disc = inventory.get_item(new_asset_path)
     for k, v in new_asset.items():
         if k not in PSEUDO_KEYS:
             assert asset_on_disc[k] == new_asset[k]
@@ -1094,7 +1094,7 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
             assert v == []
 
     # pseudo-keys
-    asset_from_disk = inventory.get_asset(new_asset_path)
+    asset_from_disk = inventory.get_item(new_asset_path)
     assert asset_from_disk['onyo.path.relative'] == new_asset_path.relative_to(inventory.root)
     assert asset_from_disk['onyo.path.file'] == asset_from_disk['onyo.path.relative'] / OnyoRepo.ASSET_DIR_FILE_NAME
     assert asset_from_disk['onyo.is.asset'] is True

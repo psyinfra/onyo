@@ -200,7 +200,7 @@ def test_unset_key_does_not_exist(repo: OnyoRepo,
 def test_unset_multiple_assets(repo: OnyoRepo,
                                key: str) -> None:
     r"""Test that `onyo unset --keys KEY --asset ASSET [ASSET2 ...]` removes keys from of assets."""
-    assets = repo.get_asset_paths()
+    assets = repo.get_item_paths(types=['assets'])
 
     # test unsetting keys for multiple assets:
     ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', key, '--asset', *assets],

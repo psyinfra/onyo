@@ -211,7 +211,7 @@ class Item(DotNotationWrapper):
         """Initializer for the 'onyo.is.empty' pseudo-key."""
         if self['onyo.is.directory'] and self.repo and self._path:
             # TODO: This likely can be faster when redoing/enhancing caching of repo paths.
-            return not any(p.parent == self._path for p in self.repo.get_asset_paths())
+            return not any(p.parent == self._path for p in self.repo.asset_paths)
         return None
 
 # TODO/Notes for next PR(s):

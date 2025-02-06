@@ -424,7 +424,7 @@ def onyo_edit(inventory: Inventory,
 
     editor = inventory.repo.get_editor()
     for path in paths:
-        asset = inventory.get_asset(path)
+        asset = inventory.get_item(path)
         _edit_asset(inventory, asset, partial(inventory.modify_asset, path), editor)
 
     if inventory.operations_pending():
@@ -1017,7 +1017,7 @@ def onyo_new(inventory: Inventory,
         spec['directory'] = directory
         # 2. start from template
         if clone:
-            asset = inventory.get_asset(clone)
+            asset = inventory.get_item(clone)
         else:
             t = spec.pop('template', None) or template
             asset = inventory.get_asset_from_template(Path(t) if t else None)
@@ -1169,7 +1169,7 @@ def onyo_set(inventory: Inventory,
         raise ValueError("The following paths aren't assets:\n%s" %
                          "\n".join(non_asset_paths))
 
-    for asset in [inventory.get_asset(a) for a in assets]:
+    for asset in [inventory.get_item(a) for a in assets]:
         new_content = Item(asset, inventory.repo)
         new_content.update(keys)
         try:
@@ -1332,7 +1332,7 @@ def onyo_unset(inventory: Inventory,
         raise ValueError(f"Can't unset reserved keys ({', '.join(RESERVED_KEYS)}) "
                          f"or keys in 'onyo.' namespace (pseudo keys)")
 
-    for asset in [inventory.get_asset(a) for a in assets]:
+    for asset in [inventory.get_item(a) for a in assets]:
         new_content = Item(asset, inventory.repo)
         for key in keys:
             try:

@@ -342,7 +342,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
              keys={'other': 2})
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert inventory.get_asset(asset_dir)['other'] == 2
+    assert inventory.get_item(asset_dir)['other'] == 2
 
     # turn asset dir into asset file:
     onyo_set(inventory,
@@ -352,7 +352,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
     assert inventory.repo.git.get_hexsha('HEAD~2') == old_hexsha
     assert inventory.repo.is_asset_path(asset_dir)
     assert asset_dir.is_file()
-    assert inventory.get_asset(asset_dir)["some_key"] == "some_value"
+    assert inventory.get_item(asset_dir)["some_key"] == "some_value"
 
     # turn it back into an asset dir
     onyo_set(inventory,
@@ -361,7 +361,7 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
     assert inventory.repo.is_asset_dir(asset_dir)
-    assert inventory.get_asset(asset_dir)["some_key"] == "some_value"
+    assert inventory.get_item(asset_dir)["some_key"] == "some_value"
 
 
 @pytest.mark.ui({'yes': True})
@@ -370,10 +370,10 @@ def test_set_empty_dictlist(inventory: Inventory) -> None:
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     onyo_set(inventory, assets=[asset_path], keys={"new_key": dict()})
     assert inventory.repo.git.is_clean_worktree()
-    assert inventory.get_asset(asset_path)["new_key"] == dict()
+    assert inventory.get_item(asset_path)["new_key"] == dict()
     onyo_set(inventory, assets=[asset_path], keys={"new_key": list()})
     assert inventory.repo.git.is_clean_worktree()
-    assert inventory.get_asset(asset_path)["new_key"] == list()
+    assert inventory.get_item(asset_path)["new_key"] == list()
 
 
 @pytest.mark.ui({'yes': True})

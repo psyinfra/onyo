@@ -76,7 +76,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         p = inventory.root / "empty" / f"{s['type']}_{s['make']}_{s['model.name']}.{s['serial']}"
         assert inventory.repo.is_asset_path(p)
         assert p in inventory.repo.git.files
-        new_asset = inventory.get_asset(p)
+        new_asset = inventory.get_item(p)
         assert new_asset.get("onyo.path.absolute") == p
         assert all(new_asset[k] == s[k] for k in s.keys())
 
@@ -114,7 +114,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         assert files[0].name.startswith(f"{s['type']}_{s['make']}_{s['model.name']}.")
         assert inventory.repo.is_asset_path(files[0])
         assert files[0] in inventory.repo.git.files
-        new_asset = inventory.get_asset(files[0])
+        new_asset = inventory.get_item(files[0])
         assert new_asset.get("onyo.path.absolute") == files[0]
         assert new_asset.get("onyo.path.parent") == files[0].parent.relative_to(inventory.root)
         # content equals spec:
@@ -141,7 +141,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     expected_path = inventory.root / f"{specs[0]['type']}_{specs[0]['make']}_{specs[0]['model.name']}.{specs[0]['serial']}"
     assert inventory.repo.is_asset_path(expected_path)
     assert expected_path in inventory.repo.git.files
-    asset_content = inventory.get_asset(expected_path)
+    asset_content = inventory.get_item(expected_path)
     # check for template keys:
     # (Note: key must be there - no `KeyError`; but content is `None`)
     for k in ['RAM', 'Size', 'USB']:
@@ -182,7 +182,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
         p = new_directory / inventory.generate_asset_name(s)
         assert inventory.repo.is_asset_path(p)
         assert p in inventory.repo.git.files
-        new_asset = inventory.get_asset(p)
+        new_asset = inventory.get_item(p)
         assert new_asset.get("onyo.path.absolute") == p
         assert all(new_asset[k] == s[k] for k in s.keys())
     assert inventory.repo.git.is_clean_worktree()
@@ -205,7 +205,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
     assert inventory.repo.is_asset_path(expected_path)
     assert expected_path in inventory.repo.git.files
-    asset_content = inventory.get_asset(expected_path)
+    asset_content = inventory.get_item(expected_path)
     assert asset_content['key'] == 'value'
     assert 'key: value  #w/ comment' in expected_path.read_text()
     assert 'None' not in list(inventory.get_history(expected_path, n=1))[0]['message']
@@ -247,7 +247,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_clones(inventory: Inventory) -> None:
     existing_asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    existing_asset = inventory.get_asset(existing_asset_path)
+    existing_asset = inventory.get_item(existing_asset_path)
     asset_dir = inventory.root / "somewhere"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -265,7 +265,7 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     # first new asset:
     new_asset_path1 = asset_dir / f"{existing_asset_path.name.split('.')[0]}.ANOTHER"
     assert inventory.repo.is_asset_path(new_asset_path1)
-    new_asset = inventory.get_asset(new_asset_path1)
+    new_asset = inventory.get_item(new_asset_path1)
     # equals existing asset except for path-pseudo-keys and serial:
     # Actually: history differs as well. onyo.is. doesn't, though
     for k, v in existing_asset.items():
@@ -278,7 +278,7 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     # second new asset
     new_asset_path2 = asset_dir / f"{existing_asset_path.name.split('.')[0]}.whatever"
     assert inventory.repo.is_asset_path(new_asset_path2)
-    new_asset = inventory.get_asset(new_asset_path2)
+    new_asset = inventory.get_item(new_asset_path2)
     # equals existing asset except for path-pseudo-keys and serial:
     assert all(v == new_asset[k] for k, v in existing_asset.items()
                if k != "serial" and not k.startswith('onyo.path') and not k.startswith('onyo.was.'))
