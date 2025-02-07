@@ -1041,7 +1041,7 @@ def onyo_rm(inventory: Inventory,
 
         if not is_asset or inventory.repo.is_asset_dir(p):
             try:
-                inventory.remove_directory(p, recursive=recursive)
+                inventory.remove_directory(Item(p, repo=inventory.repo), recursive=recursive)
             except InventoryDirNotEmpty as e:
                 # Enhance message from failed operation with command specific context:
                 raise InventoryDirNotEmpty(f"{str(e)}\nDid you forget '--recursive'?") from e

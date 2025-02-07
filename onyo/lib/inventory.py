@@ -492,7 +492,7 @@ class Inventory(object):
             # remove or add dir aspect from/to asset
             ops = self.add_directory(Item(asset["onyo.path.absolute"], repo=self.repo)) \
                     if new_asset.get("onyo.is.directory", False) \
-                    else self.remove_directory(asset["onyo.path.absolute"])
+                    else self.remove_directory(Item(asset["onyo.path.absolute"], repo=self.repo))
             operations.extend(ops)
             # If there is no change in non-pseudo-keys, we should not record a modify_assets operation!
             if all(asset.get(k) == new_asset.get(k)
@@ -511,26 +511,44 @@ class Inventory(object):
             pass
         return operations
 
-    def remove_directory(self, directory: Path, recursive: bool = True) -> list[InventoryOperation]:
-        if directory in self._get_pending_removals(mode='dirs'):
-            ui.log_debug(f"{directory} already queued for removal")
+    def remove_directory(self,
+                         item: Item,
+                         recursive: bool = True) -> list[InventoryOperation]:
+        r"""Remove a directory.
+
+        Parameters
+        ----------
+        item
+            The Item to remove as a directory.
+
+        Raises
+        ------
+        ValueError
+            ``item['onyo.path.absolute']`` is invalid.
+        """
+
+        if item['onyo.path.absolute'] in self._get_pending_removals(mode='dirs'):
+            ui.log_debug(f"{item['onyo.path.absolute']} already queued for removal")
             # TODO: Consider NoopError when addressing #546.
             return []
-        if directory == self.root:
+        if item['onyo.path.absolute'] == self.root:
             raise InvalidInventoryOperationError("Can't remove inventory root.")
+        if not self.repo.is_inventory_dir(item['onyo.path.absolute']):
+            raise InvalidInventoryOperationError(f"Not an inventory directory: {item['onyo.path.absolute']}")
+
         operations = []
-        if not self.repo.is_inventory_dir(directory):
-            raise InvalidInventoryOperationError(f"Not an inventory directory: {directory}")
-        for p in directory.iterdir():
+        for p in item['onyo.path.absolute'].iterdir():
             if not recursive and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
-                raise InventoryDirNotEmpty(f"Directory {directory} not empty.")
+                raise InventoryDirNotEmpty(f"Directory {item['onyo.path.absolute']} not empty.")
+
             try:
                 operations.extend(self.remove_asset(p))
                 is_asset = True
             except NotAnAssetError:
                 is_asset = False
+
             if p.is_dir():
-                operations.extend(self.remove_directory(p))
+                operations.extend(self.remove_directory(Item(p, repo=self.repo)))
             elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
                 # Not an asset and not an inventory dir (hence also not an asset dir)
                 # implies we have a non-inventory file.
@@ -538,7 +556,9 @@ class Inventory(object):
                     ui.log_debug(f"{p} already queued for removal")
                     continue
                 operations.append(self._add_operation('remove_generic_file', (p,)))
-        operations.append(self._add_operation('remove_directories', (directory,)))
+
+        operations.append(self._add_operation('remove_directories', (item['onyo.path.absolute'],)))
+
         return operations
 
     def move_directory(self, src: Path, dst: Path) -> list[InventoryOperation]:

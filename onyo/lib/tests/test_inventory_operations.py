@@ -409,9 +409,9 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     inventory.commit("First asset added")
 
     # raise on non-dir
-    pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, asset_file)
+    pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, Item(asset_file, repo=repo))
 
-    inventory.remove_directory(emptydir)
+    inventory.remove_directory(Item(emptydir, repo=repo))
     assert num_operations(inventory, 'remove_directories') == 1
     assert isinstance(inventory.operations[0].operands, tuple)
     assert emptydir in inventory.operations[0].operands
@@ -426,7 +426,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     assert not emptydir.exists()
 
     # recursive
-    inventory.remove_directory(newdir1)
+    inventory.remove_directory(Item(newdir1, repo=repo))
     assert num_operations(inventory, 'remove_directories') == 2
     assert num_operations(inventory, 'remove_assets') == 1
 
@@ -763,7 +763,7 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory.add_asset(asset_within)
     inventory.commit("Whatever")
 
-    inventory.remove_directory(asset_dir_path)
+    inventory.remove_directory(Item(asset_dir_path, repo=repo))
     # Nothing done on disc yet:
     assert inventory.repo.is_inventory_dir(asset_dir_path)
     assert inventory.repo.is_asset_path(asset_dir_path)
