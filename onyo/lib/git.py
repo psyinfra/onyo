@@ -229,23 +229,23 @@ class GitRepo(object):
         return '.git' in path.parts or path.name.startswith('.git')
 
     def get_config(self,
-                   name: str,
-                   file_: Path | None = None) -> str | None:
-        r"""Get the value for a configuration option specified by `name`.
+                   key: str,
+                   path: Path | None = None) -> str | None:
+        r"""Get the value for a configuration option specified by ``key``.
 
         By default, git-config is read following its order of precedence (worktree,
-        local, global, system). If a `file_` is given, this is read instead.
+        local, global, system). If a ``path`` is given, this is read instead.
 
         Parameters:
         -----------
-        name
+        key
           Name of the config variable to query. Follows the Git convention of
           "SECTION.NAME.KEY" to address a key in a git config file::
 
             [SECTION "NAME"]
               KEY = VALUE
 
-        file\_
+        path
           path to a config file to read instead of Git's default locations.
 
         Returns
@@ -258,30 +258,30 @@ class GitRepo(object):
         #       Probably not, b/c then you can have onyo configs locally!
         #       However, this could be coming from OnyoRepo instead, since this is supposed to interface GIT.
         value = None
-        if file_:
+        if path:
             try:
-                value = self._git(['config', '--file', str(file_), '--get', name]).strip()
-                ui.log_debug(f"config '{name}' acquired from {file_}: '{value}'")
+                value = self._git(['config', '--file', str(path), '--get', key]).strip()
+                ui.log_debug(f"config '{key}' acquired from {path}: '{value}'")
             except subprocess.CalledProcessError:
-                ui.log_debug(f"config '{name}' missing in {file_}")
+                ui.log_debug(f"config '{key}' missing in {path}")
         else:
             # git-config (with its full stack of locations to check)
             try:
-                value = self._git(['config', '--get', name]).strip()
-                ui.log_debug(f"git config acquired '{name}': '{value}'")
+                value = self._git(['config', '--get', key]).strip()
+                ui.log_debug(f"git config acquired '{key}': '{value}'")
             except subprocess.CalledProcessError:
-                ui.log_debug(f"git config missed '{name}'")
+                ui.log_debug(f"git config missed '{key}'")
         return value
 
     def set_config(self,
-                   name: str,
+                   key: str,
                    value: str,
                    location: str | Path | None = None) -> None:
-        r"""Set the configuration option `name` to `value`.
+        r"""Set the configuration option ``name`` to ``value``.
 
         Parameters
         ----------
-        name
+        key
           The name of the configuration option to set.
         value
           The value to set for the configuration option.
@@ -311,8 +311,8 @@ class GitRepo(object):
             raise ValueError("Invalid config location requested. Valid options are: {}"
                              "".format(', '.join(str(location_options.keys())))) from e
 
-        self._git(['config'] + location_arg + [name, value])
-        ui.log_debug(f"'config for '{location}' set '{name}': '{value}'")
+        self._git(['config'] + location_arg + [key, value])
+        ui.log_debug(f"'config for '{location}' set '{key}': '{value}'")
 
     # Credit: Datalad
     def get_hexsha(self,

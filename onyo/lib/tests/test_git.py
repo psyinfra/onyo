@@ -294,19 +294,19 @@ def test_GitRepo_config(gitrepo) -> None:
 
     assert gitrepo.get_config("section.name.option") is None
     # TODO: patch env to redirect git config locations
-    gitrepo.set_config(name="section.name.option", value="some", location='local')
+    gitrepo.set_config(key="section.name.option", value="some", location='local')
     git_config = (gitrepo.root / '.git' / 'config').read_text()
     assert "[section \"name\"]" in git_config
     assert "option = some" in git_config
     assert gitrepo.get_config("section.name.option") == "some"
 
     cfg_file = gitrepo.root / "test_config"
-    gitrepo.set_config(name="onyo.test", value="another", location=cfg_file)
+    gitrepo.set_config(key="onyo.test", value="another", location=cfg_file)
     config = cfg_file.read_text()
     assert "[onyo]" in config
     assert "test = another" in config
     assert gitrepo.get_config("onyo.test") is None
-    assert gitrepo.get_config("onyo.test", file_=cfg_file) == "another"
+    assert gitrepo.get_config("onyo.test", path=cfg_file) == "another"
 
 
 def test_GitRepo_check_ignore(gitrepo) -> None:

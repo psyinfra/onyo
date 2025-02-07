@@ -109,7 +109,7 @@ class OnyoRepo(object):
         self._asset_paths: list[Path] | None = None
 
     def set_config(self,
-                   name: str,
+                   key: str,
                    value: str,
                    location: Literal['system', 'global', 'local', 'worktree', 'onyo'] = 'onyo'
                   ) -> None:
@@ -117,7 +117,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        name
+        key
             The name of the configuration key to set.
         value
             The value to set the configuration key to.
@@ -133,14 +133,14 @@ class OnyoRepo(object):
         """
 
         # repo version shim
-        if self.version == '1' and name == 'onyo.assets.name-format':
-            name = 'onyo.assets.filename'
+        if self.version == '1' and key == 'onyo.assets.name-format':
+            key = 'onyo.assets.filename'
 
         loc = self.ONYO_CONFIG if location == 'onyo' else location
-        return self.git.set_config(name=name, value=value, location=loc)
+        return self.git.set_config(key=key, value=value, location=loc)
 
     def get_config(self,
-                   name: str) -> str | None:
+                   key: str) -> str | None:
         r"""Get the effective value of a configuration key.
 
         This first checks git's normal git-config locations and then
@@ -148,7 +148,7 @@ class OnyoRepo(object):
 
         Parameters
         ----------
-        name
+        key
             Name of the configuration key to query. Follows Git's convention
             of "SECTION.NAME.KEY" to address a key in a git config file::
 
@@ -157,10 +157,10 @@ class OnyoRepo(object):
         """
 
         # repo version shim
-        if self.version == '1' and name == 'onyo.assets.name-format':
-            name = 'onyo.assets.filename'
+        if self.version == '1' and key == 'onyo.assets.name-format':
+            key = 'onyo.assets.filename'
 
-        return self.git.get_config(name) or self.git.get_config(name, self.git.root / self.ONYO_CONFIG)
+        return self.git.get_config(key) or self.git.get_config(key, self.git.root / self.ONYO_CONFIG)
 
     @property
     def auto_message(self) -> bool:
@@ -393,9 +393,9 @@ class OnyoRepo(object):
             shutil.copytree(skel_dir, self.dot_onyo)
 
         # set default config if it's not set already
-        if self.git.get_config(name="onyo.commit.auto-message",
-                               file_=self.ONYO_CONFIG) is None:
-            self.git.set_config(name="onyo.commit.auto-message",
+        if self.git.get_config(key="onyo.commit.auto-message",
+                               path=self.ONYO_CONFIG) is None:
+            self.git.set_config(key="onyo.commit.auto-message",
                                 value="true",
                                 location=self.ONYO_CONFIG)
 
