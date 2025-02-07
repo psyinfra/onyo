@@ -112,7 +112,8 @@ class GitRepo(object):
         """
 
         if not self._files:
-            self._files = self.get_subtrees()
+            self._files = self.get_files()
+
         return self._files
 
     def clear_cache(self) -> None:
@@ -125,8 +126,8 @@ class GitRepo(object):
 
         self._files = None
 
-    def get_subtrees(self,
-                     paths: Iterable[Path] | None = None) -> list[Path]:
+    def get_files(self,
+                  paths: Iterable[Path] | None = None) -> list[Path]:
         r"""Get the absolute ``Path``\ s of all tracked files under ``paths``.
 
         Parameters

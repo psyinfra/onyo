@@ -618,7 +618,7 @@ class OnyoRepo(object):
             raise ValueError(f"depth must be greater or equal 0, but is '{depth}'")
 
         # Note: The if-else here doesn't change result, but utilizes `GitRepo`'s cache:
-        files = self.git.get_subtrees(include) if include else self.git.files
+        files = self.git.get_files(include) if include else self.git.files
         if depth:
             files = [f
                      for f in files

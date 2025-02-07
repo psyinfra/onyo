@@ -212,7 +212,7 @@ def test_GitRepo_commit(gitrepo) -> None:
                               (Path('top') / 'mid' / "another.txt",
                                "")
                               )
-def test_GitRepo_get_subtrees(gitrepo) -> None:
+def test_GitRepo_get_files(gitrepo) -> None:
     # add an untracked files:
     for d in gitrepo.test_annotation['directories']:
         untracked = d / "untracked"
@@ -220,11 +220,11 @@ def test_GitRepo_get_subtrees(gitrepo) -> None:
 
     # only returns tracked files underneath the given directory:
     for d in gitrepo.test_annotation['directories']:
-        tree = gitrepo.get_subtrees([d])
+        tree = gitrepo.get_files([d])
         assert [p for p in gitrepo.test_annotation['files'] if d in p.parents] == tree
 
     # defaults to the entire worktree:
-    assert [p for p in gitrepo.test_annotation['files']] == gitrepo.get_subtrees()
+    assert [p for p in gitrepo.test_annotation['files']] == gitrepo.get_files()
 
     # several dirs:
     if len(gitrepo.test_annotation['directories']) > 1:
@@ -232,7 +232,7 @@ def test_GitRepo_get_subtrees(gitrepo) -> None:
         expected = [p
                     for p in gitrepo.test_annotation['files']
                     if any(d in dirs for d in p.parents)]
-        tree = gitrepo.get_subtrees(dirs)
+        tree = gitrepo.get_files(dirs)
         assert expected == tree
 
 
