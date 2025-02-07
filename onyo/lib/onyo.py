@@ -386,7 +386,7 @@ class OnyoRepo(object):
         if dot_onyo.exists():
             raise FileExistsError(f"'{dot_onyo}' already exists.")
 
-        self.git.maybe_init()
+        self.git.init_without_reinit()
 
         # populate .onyo dir
         with resources.path("onyo", "skel") as skel_dir:

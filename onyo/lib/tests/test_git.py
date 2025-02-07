@@ -38,19 +38,19 @@ def test_GitRepo_instantiation(tmp_path: Path) -> None:
     assert new_repo.root.samefile(tmp_path)
 
 
-def test_GitRepo_maybe_init(tmp_path: Path) -> None:
+def test_GitRepo_init_without_reinit(tmp_path: Path) -> None:
     root = tmp_path / 'doesnotexist'
 
     # Can initialize a git repository in
     # not yet existing dir:
     gr = GitRepo(root)
     assert not root.exists()
-    gr.maybe_init()
+    gr.init_without_reinit()
     assert root.is_dir()
     assert (root / '.git').exists()
 
     # Re-execution doesn't raise:
-    gr.maybe_init()
+    gr.init_without_reinit()
 
 
 def test_GitRepo_find_root(tmp_path: Path) -> None:

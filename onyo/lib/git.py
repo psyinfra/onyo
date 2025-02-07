@@ -161,7 +161,7 @@ class GitRepo(object):
 
         return not bool(self._git(['status', '--porcelain']))
 
-    def maybe_init(self) -> None:
+    def init_without_reinit(self) -> None:
         r"""Initialize ``self.root`` as a git repo, but not if it's already one.
         """
 
