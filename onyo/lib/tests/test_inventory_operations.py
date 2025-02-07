@@ -353,42 +353,41 @@ def test_add_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
 
     # can not add non-inventory paths:
-    invalid_inventory_dir = repo.git.root / '.git' / 'new'
+    invalid_inventory_dir = Item(repo.git.root / '.git' / 'new', repo=repo)
     pytest.raises(ValueError, inventory.add_directory, invalid_inventory_dir)
 
-    new_dir = repo.git.root / 'newdir'
+    new_dir = Item(repo.git.root / 'newdir', repo=repo)
     inventory.add_directory(new_dir)
 
     # operation is registered:
     assert num_operations(inventory, 'new_directories') == 1
     assert isinstance(inventory.operations[0].operands, tuple)
-    assert new_dir in inventory.operations[0].operands
+    assert new_dir['onyo.path.absolute'] in inventory.operations[0].operands
 
-    # nothing done on disc yet:
-    assert not new_dir.exists()
+    # nothing done on disk yet:
+    assert not new_dir['onyo.path.absolute'].exists()
 
     # TODO: diff
 
     # now commit
     inventory.commit("Add new directory")
-    assert repo.is_inventory_dir(new_dir)
-    assert (new_dir / repo.ANCHOR_FILE_NAME).is_file()
+    assert repo.is_inventory_dir(new_dir['onyo.path.absolute'])
+    assert new_dir['onyo.path.file'].is_file()
 
     # check operations record:
-    commit = [c for c in inventory.get_history(new_dir / '.anchor', n=1)][0]
+    commit = [c for c in inventory.get_history(new_dir['onyo.path.file'], n=1)][0]
     for k, v in commit['operations'].items():
         if k == 'new_directories':
-            assert v == [new_dir.relative_to(inventory.root)]
+            assert v == [new_dir['onyo.path.relative']]
         else:
             assert v == []
 
     # pseudo-keys
-    newdir_item = Item(new_dir, repo=inventory.repo)
-    assert newdir_item['onyo.is.directory'] is True
-    assert newdir_item['onyo.is.asset'] is False
-    assert newdir_item['onyo.is.empty'] is True
-    assert newdir_item['onyo.path.file'] == new_dir.relative_to(inventory.root) / repo.ANCHOR_FILE_NAME
-    assert newdir_item['onyo.was.created.hexsha'] == newdir_item['onyo.was.modified.hexsha'] == inventory.repo.git.get_hexsha()
+    assert new_dir['onyo.is.directory'] is True
+    assert new_dir['onyo.is.asset'] is False
+    assert new_dir['onyo.is.empty'] is True
+    assert new_dir['onyo.path.file'] == new_dir['onyo.path.relative'] / repo.ANCHOR_FILE_NAME
+    assert new_dir['onyo.was.created.hexsha'] == inventory.repo.git.get_hexsha()
 
 
 def test_remove_directory(repo: OnyoRepo) -> None:
@@ -406,7 +405,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
         other='1',
         directory=newdir2)
     inventory.add_asset(asset)
-    inventory.add_directory(emptydir)
+    inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
 
     # raise on non-dir
@@ -464,7 +463,7 @@ def test_move_directory(repo: OnyoRepo) -> None:
         other=1,
         directory=newdir2)
     inventory.add_asset(asset)
-    inventory.add_directory(emptydir)
+    inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
 
     # raise on non-dir:
@@ -523,7 +522,7 @@ def test_rename_directory(repo: OnyoRepo) -> None:
         other=1,
         directory=newdir2)
     inventory.add_asset(asset)
-    inventory.add_directory(emptydir)
+    inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
 
     new_place = repo.git.root / "new_place"
@@ -627,7 +626,7 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
 
     # add asset aspect to existing directory, which does not yet comply with asset naming scheme
     dir_path = inventory.root / "newdir"
-    inventory.add_directory(dir_path)
+    inventory.add_directory(Item(dir_path, repo=repo))
     inventory.commit("New inventory dir")
 
     asset = Item(some_key="some_value",
@@ -708,7 +707,7 @@ def test_add_dir_asset(repo: OnyoRepo) -> None:
     asset_path = inventory.root / "TYPE1_MAKE1_MODEL1.1X2"
 
     # Add directory aspect to existing asset:
-    inventory.add_directory(asset_path)
+    inventory.add_directory(asset)
 
     # registered operation:
     assert len(inventory.operations) == 1
@@ -879,7 +878,7 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     asset["onyo.path.absolute"] = asset_dir_path
     asset["onyo.is.directory"] = True
     inventory.add_asset(asset)
-    inventory.add_directory(dir_path)
+    inventory.add_directory(Item(dir_path, repo=repo))
     inventory.commit("Whatever")
 
     inventory.move_asset(asset_dir_path, dir_path)

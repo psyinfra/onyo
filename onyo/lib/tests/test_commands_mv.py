@@ -43,7 +43,7 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
                   destination=asset_path.parent / "new_asset_name")
 
     # target already exists
-    inventory.add_directory(asset_path.parent / dir_path.name)
+    inventory.add_directory(Item(asset_path.parent / dir_path.name, repo=inventory.repo))
     inventory.commit("add target dir")
     pytest.raises(ValueError,
                   onyo_mv,

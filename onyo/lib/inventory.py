@@ -357,16 +357,33 @@ class Inventory(object):
                 asset['onyo.path.absolute'] = path.parent / self.generate_asset_name(asset)
             else:
                 # The directory does not yet exist.
-                operations.extend(self.add_directory(path))
+                operations.extend(self.add_directory(Item(path, repo=self.repo)))
         elif not self.repo.is_inventory_dir(path.parent):
-            operations.extend(self.add_directory(path.parent))
+            operations.extend(self.add_directory(Item(path.parent, repo=self.repo)))
 
         # record operation
         operations.append(self._add_operation('new_assets', (asset,)))
         return operations
 
-    def add_directory(self, path: Path) -> list[InventoryOperation]:
+    def add_directory(self, item: Item) -> list[InventoryOperation]:
+        r"""Add a directory or convert an Asset File to a directory.
+
+        Parameters
+        ----------
+        item
+            The Item to make a directory of.
+
+        Raises
+        ------
+        ValueError
+            ``item['onyo.path.absolute']`` is invalid.
+        NoopError
+            ``item['onyo.path.absolute']`` is already a directory.
+        """
+
+        path = item['onyo.path.absolute']
         operations = []
+
         if not self.repo.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path.")
         # TODO: The following conditions aren't entirely correct yet.
@@ -383,6 +400,7 @@ class Inventory(object):
                            if self.root in p.parents and
                            not self.repo.is_inventory_dir(p) and
                            p not in self._get_pending_dirs()])
+
         return operations
 
     def remove_asset(self, asset: dict | UserDict | Path) -> list[InventoryOperation]:
@@ -472,8 +490,9 @@ class Inventory(object):
         # If a change in is.directory is implied, do this first:
         if asset.get("onyo.is.directory", False) != new_asset.get("onyo.is.directory", False):
             # remove or add dir aspect from/to asset
-            ops = self.add_directory(asset["onyo.path.absolute"]) if new_asset.get("onyo.is.directory", False)\
-                else self.remove_directory(asset["onyo.path.absolute"])
+            ops = self.add_directory(Item(asset["onyo.path.absolute"], repo=self.repo)) \
+                    if new_asset.get("onyo.is.directory", False) \
+                    else self.remove_directory(asset["onyo.path.absolute"])
             operations.extend(ops)
             # If there is no change in non-pseudo-keys, we should not record a modify_assets operation!
             if all(asset.get(k) == new_asset.get(k)
