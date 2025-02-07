@@ -12,59 +12,61 @@ if TYPE_CHECKING:
     from typing import (
         Generator,
         Iterable,
+        Literal,
     )
 
 log: logging.Logger = logging.getLogger('onyo.git')
 
 
 class GitRepo(object):
-    r"""Representation of a git repository.
+    r"""An object representing a Git repository.
 
-    This relies on subprocesses running on a git worktree.
-    Does not currently support bare repositories.
+    Uses :py:mod:`subprocess` to execute git commands on a repository.
+
+    Bare repositories are not supported.
 
     Attributes
     ----------
-    root: Path
-      The absolute path to the root of the git worktree.
+    root
+        The absolute Path of the root of the git repository.
     """
 
     def __init__(self,
                  path: Path,
                  find_root: bool = False) -> None:
-        r"""Instantiates a `GitRepo` object with `path` as the root directory.
+        r"""Instantiate a ``GitRepo`` object with ``path`` as the root directory.
 
         Parameters
         ----------
         path
-          An absolute path to the root of a git repository.
+            The absolute Path of a git repository.
         find_root
-          `find_root=True` allows to search the root of a git worktree from a
-          subdirectory, beginning at `path`, instead of requiring the root.
+            Replace ``path`` with the results of :py:func:`find_root`. Thus any
+            directory of a git repository can be passed as ``path``, not just
+            the repo root.
         """
+
         self.root = GitRepo.find_root(path) if find_root else path.resolve()
         self._files: list[Path] | None = None
 
     @staticmethod
     def find_root(path: Path) -> Path:
-        r"""Returns the git worktree root `path` belongs to.
+        r"""Return the absolute path of the git worktree root that ``path``
+        belongs to.
+
+        Checks ``path`` itself and each of its parents.
 
         Parameters
         ----------
         path
-          The path to identify the git worktree root for. This can be any
-          subdirectory of the repository, or the root directory itself.
-
-        Returns
-        -------
-        Path
-          An absolute path to the root of the git worktree.
+            The Path to find the git worktree root for.
 
         Raises
         ------
         OnyoInvalidRepoError
-            If `path` is not inside a git repository at all.
+            Neither ``path`` nor its parents are a git repository.
         """
+
         try:
             ret = subprocess.run(["git", "rev-parse", "--show-toplevel"],
                                  cwd=path, check=True,
@@ -72,82 +74,73 @@ class GitRepo(object):
             root = Path(ret.stdout.strip())
         except (subprocess.CalledProcessError, FileNotFoundError):
             raise OnyoInvalidRepoError(f"'{path}' is not a Git repository.")
+
         return root
 
     def _git(self,
              args: list[str], *,
              cwd: Path | None = None,
              raise_error: bool = True) -> str:
-        r"""A wrapper function for git calls, returning the output of commands.
+        r"""Run git commands and return the output.
 
         Parameters
         ----------
         args
-          Arguments to specify the git call to run, e.g. args=['add', <file>]
-          leads to a system call `git add <file>`.
+            Arguments to append to the ``git`` command.
+            e.g. ``args=['add', <file>]`` results in the system call
+            ``git add <file>``.
         cwd
-          Run git commands from `cwd`. Default: `self.root`.
+            Path to run commands from. Default to ``self.root``.
         raise_error
-          Whether to raise `subprocess.CalledProcessError` if the command
-          returned with non-zero exitcode.
-
-        Returns
-        -------
-        str
-          Standard output of the git command.
+            Raise :py:exc:`subprocess.CalledProcessError` if the command returns
+            with a non-zero exit code.
         """
+
         cwd = cwd or self.root
         ui.log_debug(f"Running 'git {' '.join(args)}'")
         ret = subprocess.run(["git"] + args,
                              cwd=cwd, check=raise_error,
                              capture_output=True, text=True)
+
         return ret.stdout
 
     @property
     def files(self) -> list[Path]:
         r"""Get the absolute ``Path``\ s of all tracked files.
 
-        This property is cached, and is reset automatically on `GitRepo.commit()`.
-
-        If changes are made by different means, use `GitRepo.clear_cache()` to
-        reset the cache.
+        This property is cached, and is reset automatically by :py:func:`commit()`.
         """
+
         if not self._files:
             self._files = self.get_subtrees()
         return self._files
 
     def clear_cache(self) -> None:
-        r"""Clear cache of this instance of GitRepo.
+        r"""Clear the cache of this instance of GitRepo.
 
-        Caches cleared are:
-        - `GitRepo.files`
-
-        If the repository is exclusively modified via public API functions, the
-        cache of the `GitRepo` object is consistent. If the repository is
-        modified otherwise, use of this function may be necessary to ensure that
-        the cache does not contain stale information.
+        When the repository is modified using only the public API functions, the
+        cache is consistent. This method is only necessary if the repository is
+        modified otherwise.
         """
+
         self._files = None
 
     def get_subtrees(self,
                      paths: Iterable[Path] | None = None) -> list[Path]:
-        r"""Get tracked files in the subtrees rooted at `paths`.
+        r"""Get the absolute ``Path``\ s of all tracked files under ``paths``.
 
         Parameters
         ----------
         paths
-          Roots of subtrees to consider. The entire worktree by default.
-
-        Returns
-        -------
-        list of Path
-          Absolute paths to all tracked files within the given subtrees.
+            Paths to limit the scope of the search to. The entire repo by default.
         """
+
         ui.log_debug("Looking up tracked files%s",
                      f" underneath {', '.join([str(p) for p in paths])}" if paths else "")
         git_cmd = ['ls-tree', '-r', '--full-tree', '--name-only', '-z', 'HEAD']
         if paths:
             git_cmd.extend([str(p) for p in paths])
+
         try:
             tree = self._git(git_cmd)
         except subprocess.CalledProcessError as e_ls_tree:
@@ -157,33 +150,27 @@ class GitRepo(object):
             except subprocess.CalledProcessError:
                 # no HEAD -> empty repository
                 tree = ""
+
         files = [self.root / x for x in tree.split('\0') if x]
         return files
 
     def is_clean_worktree(self) -> bool:
-        r"""Check whether the git worktree is clean.
-
-        Returns
-        -------
-        bool
-          True if the git worktree is clean, otherwise False.
+        r"""Whether the git worktree is clean.
         """
+
         return not bool(self._git(['status', '--porcelain']))
 
     def maybe_init(self) -> None:
-        r"""Initialize `self.root` as a git repository
-        if it is not already one.
+        r"""Initialize ``self.root`` as a git repo, but not if it's already one.
         """
-        # Note: Why? git-init would do that
-        # create target if it doesn't already exist
+
+        # make sure target dir exists
         self.root.mkdir(exist_ok=True)
 
-        # git init (if needed)
         if (self.root / '.git').exists():
             log.info(f"'{self.root}' is already a git repository.")
         else:
             ret = self._git(['init'])
-            # Note: What is it about capturing output everywhere only to spit it out again?
             ui.log_debug(ret.strip())
 
     def commit(self,
@@ -194,12 +181,14 @@ class GitRepo(object):
         Parameters
         ----------
         paths
-          List of paths to commit.
+            Paths to commit.
         message
-          The git commit message.
+            The git commit message.
         """
+
         if isinstance(paths, Path):
             paths = [paths]
+
         pathspecs = [str(p) for p in paths]
         self._git(['add'] + pathspecs)
         self._git(['commit', '-m', message, '--'] + pathspecs)
@@ -207,56 +196,43 @@ class GitRepo(object):
 
     @staticmethod
     def is_git_path(path: Path) -> bool:
-        r"""Whether `path` is a git file or directory.
+        r"""Whether ``path`` is a git file or directory.
 
-        A 'git path' is considered a path that is used by git
-        itself (tracked or not) and therefore not valid for use
-        by onyo, e.g. `.git/*`, `.gitignore`, `gitattributes`,
-        `.gitmodules`, etc.
-        Any path underneath a directory called `.git` and any
-        basename starting with `.git` returns False.
+        A "git path" is a path that is used by git itself (tracked or not) and
+        therefore not valid for use by Onyo.
+
+        Any path underneath a directory called ``.git`` and any basename
+        starting with ``.git`` is considered a git path. e.g. ``.git/*``,
+        ``.gitignore``, ``gitattributes``, ``.gitmodules``, etc.
 
         Parameters
         ----------
         path
           The path to check.
-
-        Returns
-        -------
-        bool
-          True if path is a git file or directory, otherwise False.
         """
+
         return '.git' in path.parts or path.name.startswith('.git')
 
     def get_config(self,
                    key: str,
                    path: Path | None = None) -> str | None:
-        r"""Get the value for a configuration option specified by ``key``.
+        r"""Get the value of a configuration key.
 
-        By default, git-config is read following its order of precedence (worktree,
-        local, global, system). If a ``path`` is given, this is read instead.
+        If no ``path`` is given, the configuration key is acquired according to
+        ``git-config``'s order of precedence (worktree, local, global, system).
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         key
-          Name of the config variable to query. Follows the Git convention of
-          "SECTION.NAME.KEY" to address a key in a git config file::
+            Name of the configuration key to query. Follows Git's convention
+            of "SECTION.NAME.KEY" to address a key in a git config file::
 
-            [SECTION "NAME"]
-              KEY = VALUE
-
+              [SECTION "NAME"]
+                  KEY = VALUE
         path
-          path to a config file to read instead of Git's default locations.
-
-        Returns
-        -------
-        str or None
-          The config value if it exists. None otherwise.
+            Path of a config file, rather than Git's default locations.
         """
-        # TODO: lru_cache?
-        # TODO: Not sure whether to stick with `file_` being alternative rather than fallback.
-        #       Probably not, b/c then you can have onyo configs locally!
-        #       However, this could be coming from OnyoRepo instead, since this is supposed to interface GIT.
+
         value = None
         if path:
             try:
@@ -271,38 +247,40 @@ class GitRepo(object):
                 ui.log_debug(f"git config acquired '{key}': '{value}'")
             except subprocess.CalledProcessError:
                 ui.log_debug(f"git config missed '{key}'")
+
         return value
 
     def set_config(self,
                    key: str,
                    value: str,
-                   location: str | Path | None = None) -> None:
-        r"""Set the configuration option ``name`` to ``value``.
+                   location: Literal['system', 'global', 'local', 'worktree'] | Path | None = None
+                  ) -> None:
+        r"""Set the value of a configuration key.
 
         Parameters
         ----------
         key
-          The name of the configuration option to set.
+            The name of the configuration key to set.
         value
-          The value to set for the configuration option.
+            The value to set the configuration key to.
         location
-          The location of the configuration for which the value should
-          be set. If a `Path`: config file to read, otherwise standard
-          Git config locations: 'system', 'global', 'local',
-          and 'worktree'. `None` means ``git-config``
-          default behavior ('local'). Default: `None`.
+            The location to set the key/value in. Valid locations are standard
+            git-config locations (``'system'``, ``'global'``, ``'local'``, and
+            ``'worktree'``) or a Path of a file. ``None`` will use
+            ``git-config``'s default location (``'local'``).
 
         Raises
         ------
         ValueError
-          If `location` is unknown.
+            ``location`` is invalid.
         """
+
         location_options = {
             'system': ['--system'],
             'global': ['--global'],
             'local': ['--local'],
             'worktree': ['--worktree'],
-            None: []  # Just go with Git's default behavior
+            None: []  # use Git's default behavior
         }
         try:
             location_arg = ['--file', str(location)] if isinstance(location, Path) \
@@ -314,33 +292,29 @@ class GitRepo(object):
         self._git(['config'] + location_arg + [key, value])
         ui.log_debug(f"'config for '{location}' set '{key}': '{value}'")
 
-    # Credit: Datalad
     def get_hexsha(self,
                    commitish: str | None = None,
                    short: bool = False) -> str | None:
         r"""Return the hexsha of a given commit-ish.
 
+        Will return ``None`` if querying the mother of all commits (i.e. "HEAD"
+        of an empty repository).
+
         Parameters
         ----------
         commitish
-          Any identifier that refers to a commit (defaults to "HEAD").
+            Any identifier that refers to a commit (defaults to "HEAD").
         short
-          Whether to return the abbreviated form of the hexsha.
-
-        Returns
-        -------
-        str or None
-          Hexsha of commitish. None, if querying the mother of all commits,
-          i.e. 'HEAD' of an empty repository.
+            Return the abbreviated form of the hexsha.
 
         Raises
         ------
         ValueError
-            If commit-ish is unknown.
+            ``commitish`` is unknown.
         """
-        # use --quiet because the 'Needed a single revision' error message
-        # that is the result of running this in a repo with no commits
-        # isn't useful to report
+
+        # Use --quiet to suppress the 'Needed a single revision' error message
+        # when running this on a repo with no commits.
         cmd = ['rev-parse', '--quiet', '--verify',
                '{}^{{commit}}'.format(commitish if commitish else 'HEAD')]
         if short:
@@ -354,65 +328,63 @@ class GitRepo(object):
 
     def get_commit_msg(self,
                        commitish: str | None = None) -> str:
-        r"""Returns the full commit message of a commit-ish.
+        r"""Return the full commit message of a commit-ish.
 
         Parameters
         ----------
         commitish
             Any identifier that refers to a commit (defaults to "HEAD").
-
-        Returns
-        -------
-        str
-            the commit message including the subject line.
         """
+
         return self._git(['log', commitish or 'HEAD', '-n1', '--pretty=%B'])
 
-    def check_ignore(self, ignore: Path, paths: list[Path]) -> list[Path]:
-        r"""Get the `paths` that are matched by patterns defined in `ignore`.
-
-        This is utilizing ``git-check-ignore`` to evaluate `paths` against
-        a file `ignore`, that defines exclude patterns the gitignore-way.
+    def check_ignore(self,
+                     ignore: Path,
+                     paths: list[Path]) -> list[Path]:
+        r"""Get the subset of ``paths`` that are matched by patterns defined in
+        the ``ignore`` file.
 
         Parameters
         ----------
         ignore
-          Path to a file containing exclude patterns to evaluate.
+            Path to a file containing exclude patterns (in the style of ``.gitignore``).
         paths
-          Paths to check against the patterns in `ignore`.
-
-        Returns
-        -------
-        list of Path
-          Paths in `paths` that are excluded by the patterns in `ignore`.
+            Paths to check
         """
+
         try:
             output = self._git(['-c', f'core.excludesFile={str(ignore)}', 'check-ignore', '--no-index', '--verbose'] +
                                [str(p) for p in paths])
         except subprocess.CalledProcessError as e:
             if e.returncode == 1:
-                # None of `paths` was ignored. That's fine.
+                # None of `paths` were ignored. That's ok.
                 return []
-            raise  # reraise on unexpected error
+            raise
+
         excluded = []
         for line in output.splitlines():
             parts = line.split('\t')
             src_file = Path(parts[0].split(':')[0])
             if src_file == ignore:
                 excluded.append(Path(parts[1]))
+
         return excluded
 
-    # TODO: git check-ignore --no-index --stdin (or via command call)  ->  lazy, check GitRepo.files once. (Same invalidation)
-    #       -> OnyoRepo would use it to maintain a ignore list from a (top-level .onyoignore)? .onyo/ignore ? Both?
+    def _parse_log_output(self,
+                          lines: list[str]) -> dict:
+        """Produce a commit dict (of one commit) from the output of ``git log``.
 
-    def _parse_log_output(self, lines: list[str]) -> dict:
-        """Generate a dict from the output of ``git log`` for one commit.
+        A helper for :py:func:`history`.
 
-        Internal helper that converts a list of git-log-output lines of
-        a single commit to a dictionary.
+        Parameters
+        ----------
+        lines
+            List of text lines from ``git log`` for a single commit.
         """
+
         import datetime
         import re
+
         regex_author = re.compile(r"Author:\s+(?P<name>\b.*\b)\s+<(?P<email>[^\s]+)>$")
         regex_committer = re.compile(r"Commit:\s+(?P<name>\b.*\b)\s+<(?P<email>[^\s]+)>$")
         commit = dict()
@@ -450,24 +422,28 @@ class GitRepo(object):
 
         return commit
 
-    def history(self, path: Path | None = None, n: int | None = None) -> Generator[dict, None, None]:
-        """Yields commit dicts representing the history of ``path``.
+    def history(self,
+                path: Path | None = None,
+                n: int | None = None) -> Generator[dict, None, None]:
+        """Yield commit dicts representing the history of ``path``.
 
-        History according to git log (git log --follow if a path is given).
+        The history is acquired via ``git log`` (``git log --follow`` if a
+        ``path`` is given).
 
         Parameters
         ----------
-        path:
-          What file to follow. If `None`, get the history of HEAD instead.
-        n:
-          Limit history going back ``n`` commits.
-          ``None`` for no limit (default).
+        path
+            The Path to get the history of. Defaults to the repo root.
+        n
+            Limit history to ``n`` commits. ``None`` for no limit (default).
         """
-        # TODO: Something like this may allow us to efficiently deal with multiline strings in git-log's output,
-        #       rather than splitting lines and iterating over them when assembling output that belongs to a single
-        #       commit, parsing the git data and then the operations record (also removes leading spaces for the commit
-        #       message):
-        #       --pretty='format:commit: %H%nAuthor: %an (%ae)%nCommitter: %cn (%ce)%nCommitDate: %cI%nMessage:%n%B'
+
+        # TODO: Formatting the output with `--pretty` may simplify handling
+        #       multi-line strings in git-log's output (rather than splitting
+        #       lines and iterating), parsing git's metadata and Onyo's
+        #       operations record, and remove the leading spaces for the commit
+        #       message.
+        # --pretty='format:commit: %H%nAuthor: %an (%ae)%nCommitter: %cn (%ce)%nCommitDate: %cI%nMessage:%n%B'
         limit = [f'-n{n}'] if n is not None else []
         pathspec = ['--follow', '--', str(path)] if path else []
         cmd = ['log', '--date=iso-strict', '--pretty=fuller'] + limit + pathspec
@@ -487,5 +463,6 @@ class GitRepo(object):
             else:
                 # add to current commit output
                 commit_output.append(line)
+
         if commit_output:
             yield self._parse_log_output(commit_output)
