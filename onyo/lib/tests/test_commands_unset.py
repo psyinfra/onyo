@@ -293,8 +293,8 @@ def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
                keys=['other', 'some_key'])
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    assert 'other' not in inventory.get_asset(asset_dir)
-    assert 'some_key' not in inventory.get_asset(asset_dir)
+    assert 'other' not in inventory.get_item(asset_dir)
+    assert 'some_key' not in inventory.get_item(asset_dir)
 
 
 @pytest.mark.ui({'yes': True})
@@ -317,7 +317,7 @@ def test_onyo_unset_empty(inventory: Inventory) -> None:
     inventory.commit("add asset w/ empty values")
     old_hexsha = inventory.repo.git.get_hexsha()
     asset_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
-    asset_written = inventory.get_asset(asset_path)
+    asset_written = inventory.get_item(asset_path)
 
     assert all(asset_written[k] == v for k, v in test_pairs.items())
 
@@ -326,5 +326,5 @@ def test_onyo_unset_empty(inventory: Inventory) -> None:
                keys=test_pairs.keys())
     assert inventory.repo.git.is_clean_worktree()
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
-    asset_written = inventory.get_asset(asset_path)
+    asset_written = inventory.get_item(asset_path)
     assert all(k not in asset_written.keys() for k in test_pairs.keys())

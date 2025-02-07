@@ -253,3 +253,44 @@ def test_onyo_auto_message(onyorepo, caplog) -> None:
     assert onyorepo.auto_message
     assert caplog.text.startswith("WARNING")
     assert "Invalid config value" in caplog.text
+
+
+@pytest.mark.gitrepo_contents((Path('.gitignore'), "idea/"),
+                              (Path("subdir") / ".gitignore", "i_*"),
+                              (Path(OnyoRepo.IGNORE_FILE_NAME), "*.pdf\ndocs/"),
+                              (Path("subdir") / OnyoRepo.IGNORE_FILE_NAME, "untracked*\n"),
+                              (Path("idea") / "something", "blubb"),
+                              (Path("some.pdf"), "bla"),
+                              (Path("subdir") / "another.pdf", "content"),
+                              (Path("subdir") / "i_untracked", ""),
+                              (Path("subdir") / "subsub" / "untracked_som.txt", ""),
+                              (Path("docs") / "regular", "whatever")
+                              )
+@pytest.mark.inventory_assets(Item(type="atype",
+                                   make="amake",
+                                   model="amodel",
+                                   serial=1,
+                                   path=Path("subdir") / "atype_amake_amodel.1"))
+@pytest.mark.inventory_dirs(Path('a/test/directory/structure/'),
+                            Path('another/dir/'))
+@pytest.mark.inventory_templates((Path(OnyoRepo.TEMPLATE_DIR) / "t_dir" / "atemplate", "--\nkey: value\n"))
+def test_get_item_paths(onyorepo) -> None:
+    assert set(onyorepo.get_item_paths(types=['assets'])) == set(a['onyo.path.absolute'] for a in onyorepo.test_annotation['assets'])
+    assert set(onyorepo.get_item_paths(types=['templates'])) == set(onyorepo.test_annotation['templates'])
+    assert set(onyorepo.get_item_paths(types=['directories'])) == set(onyorepo.test_annotation['dirs'] + [onyorepo.git.root])
+
+    # listing several types is equivalent to summing of separate calls:
+    assert set(onyorepo.get_item_paths(types=['assets', 'templates'])) == set(
+        [a['onyo.path.absolute'] for a in onyorepo.test_annotation['assets']] + onyorepo.test_annotation['templates']
+    )
+    assert set(onyorepo.get_item_paths(types=['templates', 'directories'])) == set(
+        onyorepo.test_annotation['templates'] + onyorepo.test_annotation['dirs']
+    )
+
+    # Explicitly double-check onyoignored stuff:
+    ignored_path = onyorepo.git.root / "subdir" / "subsub" / "untracked_som.txt"
+    assert ignored_path not in onyorepo.get_item_paths(types=['assets', 'directories', 'templates'])
+    assert all(onyorepo.git.root / "docs" not in p.parents
+               for p in onyorepo.get_item_paths(types=['assets', 'directories', 'templates']))
+
+    # TODO: Test include/exclude/depth. This is currently only done at higher level (onyo get command).

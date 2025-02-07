@@ -385,7 +385,7 @@ def test_onyo_get_depth_zero(inventory: Inventory,
 
     # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
-    for asset in inventory.repo.get_asset_paths():
+    for asset in inventory.repo.asset_paths:
         assert asset.name in output
 
 
@@ -400,7 +400,7 @@ def test_onyo_get_default_inventory_root(inventory: Inventory,
 
     # verify output contains all assets and "onyo.path.relative" as default key
     output = capsys.readouterr().out
-    for asset in inventory.repo.get_asset_paths():
+    for asset in inventory.repo.asset_paths:
         assert asset.name in output
 
 

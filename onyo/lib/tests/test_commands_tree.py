@@ -48,7 +48,7 @@ def test_onyo_tree(inventory: Inventory,
     # root node is path
     assert tree_output.startswith(f"{directory_path}\n")
     # assets and paths are in output
-    for path in inventory.repo.get_asset_paths(include=[directory_path]):
+    for path in inventory.repo.get_item_paths(include=[directory_path], types=['assets']):
         assert all([part in tree_output for part in path.parts])
     assert inventory.repo.git.is_clean_worktree()
 
