@@ -350,7 +350,7 @@ class Inventory(object):
         if asset.get('onyo.is.directory', False):
             if self.repo.is_inventory_dir(path):
                 # We want to turn an existing dir into an asset dir.
-                operations.extend(self.rename_directory(path, self.generate_asset_name(asset)))
+                operations.extend(self.rename_directory(Item(path, repo=self.repo), self.generate_asset_name(asset)))
                 # Temporary hack: Adjust the asset's path to the renamed one.
                 # TODO: Actual solution: This entire method must not be based on the dict's 'onyo.path.absolute', but
                 #       'onyo.path.parent' + generated name. This ties in with pulling parts of `onyo_new` in here.
@@ -572,24 +572,59 @@ class Inventory(object):
             raise ValueError(f"Target {dst / src.name} already exists.")
         return [self._add_operation('move_directories', (src, dst))]
 
-    def rename_directory(self, src: Path, dst: str | Path) -> list[InventoryOperation]:
-        if not self.repo.is_inventory_dir(src) and src not in self._get_pending_dirs():
-            raise ValueError(f"Not an inventory directory: {src}")
-        if self.repo.is_asset_dir(src):
-            raise NotADirError("Renaming an asset directory must be done via `rename_asset`.")
+    def rename_directory(self,
+                         src: Item,
+                         dst: str | Path) -> list[InventoryOperation]:
+        r"""Rename a directory to a new name under the same parent.
+
+        This renames a non-asset directory under the same parent. To move to a
+        different parent directory, see :py:func:`move_directory`. To rename an
+        asset (including an Asset Directory), see :py:func:`modify_asset` and
+        :py:func:`rename_asset`.
+
+        Parameters
+        ----------
+        src
+            The Item to rename.
+        dst
+            The new name or an absolute Path to the new destination.
+
+        Raises
+        ------
+        NotADirError
+            ``src`` is not a non-asset directory.
+        ValueError
+            ``src`` is not an inventory directory, ``dst`` already exists, or
+            ``dst`` would be an invalid location.
+        InvalidInventoryOperationError
+            ``src`` and ``dst`` do not share the same parent.
+        NoopError
+            Rename would result in the same name.
+        """
+
         if isinstance(dst, str):
-            dst = src.parent / dst
-        if src.parent != dst.parent:
-            raise InvalidInventoryOperationError(f"Cannot rename {src} -> {dst}. Consider moving instead.")
+            dst = src['onyo.path.absolute'].parent / dst
+
+        # can't rename an asset or template
+        if src['onyo.is.asset'] or src['onyo.is.template']:
+            raise NotADirError("Cannot rename an asset or template.")
+        # must be an inventory directory
+        if not src['onyo.is.directory'] and src['onyo.path.absolute'] not in self._get_pending_dirs():
+            raise ValueError(f"Not an inventory directory: {src['onyo.path.absolute']}")
+        # we only rename, not move and rename
+        if src['onyo.path.absolute'].parent != dst.parent:
+            raise InvalidInventoryOperationError(f"Cannot rename to a different parent directory: {src['onyo.path.absolute']} -> {dst}")
+        # sanity check the destination
         if not self.repo.is_inventory_path(dst):
             raise ValueError(f"{dst} is not a valid inventory directory.")
+        # can't rename to self
+        if src['onyo.path.absolute'].name == dst.name:
+            raise NoopError(f"Cannot rename directory {src['onyo.path.absolute']}. This is already its name.")
+        # destination must be available
         if dst.exists():
             raise ValueError(f"{dst} already exists.")
-        name = dst if isinstance(dst, str) else dst.name
-        if src.name == name:
-            raise NoopError(f"Cannot rename directory {str(src)}: This is already its name.")
 
-        return [self._add_operation('rename_directories', (src, dst))]
+        return [self._add_operation('rename_directories', (src['onyo.path.absolute'], dst))]
 
     #
     # non-operation methods

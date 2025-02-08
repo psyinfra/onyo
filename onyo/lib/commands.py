@@ -732,7 +732,7 @@ def _maybe_rename(inventory: Inventory,
     r"""Rename a directory. Catch and clean if it's an Asset Directory."""
 
     try:
-        inventory.rename_directory(src, dst)
+        inventory.rename_directory(Item(src, repo=inventory.repo), dst)
     except NotADirError as e:
         # We tried to rename an asset dir.
         inventory.reset()

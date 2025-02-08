@@ -527,14 +527,14 @@ def test_rename_directory(repo: OnyoRepo) -> None:
 
     new_place = repo.git.root / "new_place"
     # raise on non-dir:
-    pytest.raises(ValueError, inventory.rename_directory, asset_file, new_place)
+    pytest.raises(ValueError, inventory.rename_directory, Item(asset_file, repo=repo), new_place)
     # raise on existing destination:
-    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, newdir1, emptydir)
+    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, Item(newdir1, repo=repo), emptydir)
     # raise on move:
-    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, newdir2, new_place)
+    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, Item(newdir2, repo=repo), new_place)
 
     new_name = newdir1 / "new_name"
-    inventory.rename_directory(newdir2, new_name)
+    inventory.rename_directory(Item(newdir2, repo=repo), new_name)
     assert num_operations(inventory, 'rename_directories') == 1
     assert (newdir2, new_name) == inventory.operations[0].operands
 
@@ -967,7 +967,7 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     inventory.commit("Whatever")
 
     # renaming the asset dir as a dir needs to fail
-    pytest.raises(NotADirError, inventory.rename_directory, asset_dir_path, "newname")
+    pytest.raises(NotADirError, inventory.rename_directory, Item(asset_dir_path, repo=repo), "newname")
 
     # renaming as an asset by changing the naming config
     inventory.repo.set_config("onyo.assets.name-format", "{serial}_{other}", "onyo")
