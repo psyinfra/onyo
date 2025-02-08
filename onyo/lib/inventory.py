@@ -561,16 +561,39 @@ class Inventory(object):
 
         return operations
 
-    def move_directory(self, src: Path, dst: Path) -> list[InventoryOperation]:
-        if not self.repo.is_inventory_dir(src):
-            raise ValueError(f"Not an inventory directory: {src}")
+    def move_directory(self,
+                       src: Item,
+                       dst: Path) -> list[InventoryOperation]:
+        r"""Move a directory to a new parent directory.
+
+        To rename a directory under the same parent, see :py:func:`rename_directory`.
+
+        Parameters
+        ----------
+        src
+            The Item to move.
+        dst
+            The absolute Path of the new parent directory.
+
+        Raises
+        ------
+        ValueError
+            ``src`` is not an inventory directory, ``dst`` already exists, or
+            ``dst`` would be an invalid location.
+        InvalidInventoryOperationError
+            ``src`` and ``dst`` share the same parent.
+        """
+
+        if not src['onyo.is.directory']:
+            raise ValueError(f"Source is not an inventory directory: {src['onyo.path.absolute']}")
         if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
             raise ValueError(f"Destination is not an inventory directory: {dst}")
-        if src.parent == dst:
-            raise InvalidInventoryOperationError(f"Cannot move {src} -> {dst}. Consider renaming instead.")
-        if (dst / src.name).exists():
-            raise ValueError(f"Target {dst / src.name} already exists.")
-        return [self._add_operation('move_directories', (src, dst))]
+        if src['onyo.path.absolute'].parent == dst:
+            raise InvalidInventoryOperationError(f"Cannot move {src['onyo.path.absolute']} -> {dst}. Consider renaming instead.")
+        if (dst / src['onyo.path.absolute'].name).exists():
+            raise ValueError(f"Target {dst / src['onyo.path.absolute'].name} already exists.")
+
+        return [self._add_operation('move_directories', (src['onyo.path.absolute'], dst))]
 
     def rename_directory(self,
                          src: Item,

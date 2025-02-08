@@ -723,7 +723,7 @@ def _move_asset_or_dir(inventory: Inventory,
     try:
         inventory.move_asset(source, destination)
     except NotAnAssetError:
-        inventory.move_directory(source, destination)
+        inventory.move_directory(Item(source, repo=inventory.repo), destination)
 
 
 def _maybe_rename(inventory: Inventory,
@@ -806,7 +806,7 @@ def onyo_mv(inventory: Inventory,
             # Move + Rename Mode: different parents (rename) and different source/dest names
             # e.g. mv example dir/different
             subject_prefix = "mv + ren"
-            inventory.move_directory(sources[0], destination.parent)
+            inventory.move_directory(Item(sources[0], repo=inventory.repo), destination.parent)
             _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
             inventory._ignore_for_commit.append(destination.parent / sources[0].name)
