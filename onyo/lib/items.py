@@ -55,14 +55,15 @@ class Item(DotNotationWrapper):
         self.data = CommentedMap()
         self.update(onyo.lib.pseudokeys.PSEUDO_KEYS)
 
-        if isinstance(item, Item):
-            self._path = item._path
-            self.data = deepcopy(item.data)
-        elif isinstance(item, Path):
-            assert item.is_absolute()  # currently no support for relative. This is how all existing code should work ATM.
-            self.update_from_path(item)
-        elif item is not None:
-            self.update(item)
+        match item:
+            case Item():
+                self._path = item._path
+                self.data = deepcopy(item.data)
+            case Path():
+                assert item.is_absolute()  # currently no support for relative. This is how all existing code should work ATM.
+                self.update_from_path(item)
+            case _ if item is not None:
+                self.update(item)
 
         if kwargs:
             self.update(**kwargs)

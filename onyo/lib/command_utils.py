@@ -47,20 +47,13 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
         A disallowed flag is detected.
     """
 
-    forbidden_flags = ['--system',
-                       '--global',
-                       '--local',
-                       '--worktree',
-                       '--file',
-                       '--blob',
-                       '--help',
-                       '-h',
-                       ]
+    forbidden_flags = ['--system', '--global', '--local', '--worktree',
+                       '--file', '--blob',
+                       '--help', '-h']
+    if any([x in forbidden_flags for x in git_config_args]):
+        raise ValueError("The following options cannot be used with onyo config:\n%s\nExiting. Nothing was set." %
+                         '\n'.join(forbidden_flags))
 
-    for a in git_config_args:
-        if a in forbidden_flags:
-            raise ValueError("The following options cannot be used with onyo config:\n%s\nExiting. Nothing was set." %
-                             '\n'.join(forbidden_flags))
     return True
 
 
