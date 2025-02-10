@@ -54,7 +54,7 @@ args_get = {
         type=str,
         default=None,
         help=r"""
-            Criteria to match assets in the form ``KEY=VALUE``, where **VALUE**
+            Criteria to match in the form ``KEY=VALUE``, where **VALUE**
             is a python regular expression. Pseudo-keys such as ``path`` can
             also be used. Dictionary subkeys can be addressed using a period
             (e.g. ``model.name``, ``model.year``, etc.) One can match keys that
@@ -71,7 +71,7 @@ args_get = {
         metavar='INCLUDE',
         nargs='+',
         help=r"""
-            Assets or directories to query.
+            Paths to query.
         """
     ),
 
@@ -80,7 +80,7 @@ args_get = {
         metavar='EXCLUDE',
         nargs='+',
         help=r"""
-            Assets or directories to exclude from the query.
+            Paths to exclude from the query.
         """
     ),
 
@@ -113,6 +113,18 @@ args_get = {
             Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
             overrule what was specified before.
             One can sort by keys that are not in the output.
+        """
+    ),
+
+    'types': dict(
+        args=('-t', '--types'),
+        metavar="TYPES",
+        nargs='+',
+        choices=('assets', 'directories', 'templates'),
+        default=["assets"],
+        help=r"""
+            Item types to query.
+            Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
         """
     ),
 }
@@ -182,7 +194,8 @@ def get(args: argparse.Namespace) -> None:
                        # doesn't work with the bound method `Filter.match`.
                        # Not clear, what's the problem.
                        match=filters,  # pyre-ignore[6]
-                       keys=args.keys)
+                       keys=args.keys,
+                       types=args.types)
 
     if not results:
         raise OnyoCLIExitCode("'onyo get' exits 1 when no results are found.", 1)

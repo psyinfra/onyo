@@ -526,3 +526,74 @@ def test_natural_sort(keys: dict[str, sort_t], expected: list[int]) -> None:
                    'folder (1)/file.txt',
                    'folder (10)/file.txt']
     assert expectation == [str(a.get('path')) for a in sorted_assets]
+
+
+@pytest.mark.repo_contents(*convert_contents([t for t in asset_contents
+                                              if t[0] in ['laptop_apple_macbookpro.1',
+                                                          'one/laptop_dell_precision.2',
+                                                          'one/two/headphones_apple_pro.3']] +
+                                             [('.onyo/templates/laptop_dell_precision',
+                                               {'num': '16',
+                                                'str': 'bar',
+                                                'bool': False,
+                                                'type': 'laptop',
+                                                'make': 'dell',
+                                                'model': {'name': 'precision'},
+                                                'serial': 'faux'})]))
+def test_get_types(repo: OnyoRepo):
+
+    # get all assets, directories, and templates
+    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', 'templates', '--keys', 'onyo.path.relative']
+    ret = subprocess.run(cmd, capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    output_lines = ret.stdout.splitlines()
+    assert len(output_lines) == 9
+    # 3 assets (see decorator),
+    # 3 templates (2 default + 1 from decorator),
+    # 3 dirs (two from decorator + root)
+    assert all(p in output_lines
+               for p in [
+                   '.',
+                   'one',
+                   'one/two',
+                   '.onyo/templates/empty',
+                   '.onyo/templates/laptop.example',
+                   '.onyo/templates/laptop_dell_precision',
+                   'laptop_apple_macbookpro.1',
+                   'one/laptop_dell_precision.2',
+                   'one/two/headphones_apple_pro.3'
+               ])
+
+    # get a match across assets and templates:
+    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', 'templates', '--keys', 'onyo.path.relative',
+           '--match', 'make=dell']
+    ret = subprocess.run(cmd, capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    output_lines = ret.stdout.splitlines()
+    # 1 asset, 1 template, no dirs
+    assert len(output_lines) == 2
+    assert all(p in output_lines for p in ['one/laptop_dell_precision.2', '.onyo/templates/laptop_dell_precision'])
+
+    # same match, but don't match templates:
+    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', '--keys', 'onyo.path.relative',
+           '--match', 'make=dell']
+    ret = subprocess.run(cmd, capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    output_lines = ret.stdout.splitlines()
+    # 1 asset, no dirs
+    assert len(output_lines) == 1
+    assert all(p in output_lines for p in ['one/laptop_dell_precision.2'])
+
+    # match across assets and dirs:
+    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', '--keys', 'onyo.path.relative',
+           '--match', 'onyo.path.parent=one']
+    ret = subprocess.run(cmd, capture_output=True, text=True)
+    assert ret.returncode == 0
+    assert not ret.stderr
+    output_lines = ret.stdout.splitlines()
+    # 1 asset, 1 dir
+    assert len(output_lines) == 2
+    assert all(p in output_lines for p in ['one/laptop_dell_precision.2', 'one/two'])

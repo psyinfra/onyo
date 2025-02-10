@@ -584,3 +584,27 @@ def test_onyo_get_unset_values(inventory: Inventory,
                       for p in [asset1_path, asset2_path]]
     assert expected_lines[0] in output.splitlines()
     assert expected_lines[1] in output.splitlines()
+
+
+@pytest.mark.ui({'yes': True})
+def test_onyo_get_items(inventory: Inventory, capsys) -> None:
+    """`get` can also query dirs and templates"""
+
+    onyo_get(inventory,
+             keys=["onyo.path.relative"],
+             machine_readable=True,
+             types=['templates'])
+    output = capsys.readouterr().out
+    assert len(output.splitlines()) == 2
+    assert str(OnyoRepo.TEMPLATE_DIR / "empty") in output
+    assert str(OnyoRepo.TEMPLATE_DIR / "laptop.example") in output
+
+    onyo_get(inventory,
+             keys=["onyo.path.relative"],
+             machine_readable=True,
+             include=[inventory.root / "somewhere"],
+             types=['directories'])
+    output_lines = capsys.readouterr().out.splitlines(keepends=True)
+    assert len(output_lines) == 2
+    assert "somewhere\n" in output_lines
+    assert "somewhere/nested\n" in output_lines

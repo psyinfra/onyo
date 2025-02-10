@@ -49,6 +49,7 @@ if TYPE_CHECKING:
         Dict,
         Generator,
         Iterable,
+        Literal,
     )
     from onyo.lib.consts import sort_t
     from onyo.lib.onyo import OnyoRepo
@@ -455,7 +456,9 @@ def onyo_get(inventory: Inventory,
              machine_readable: bool = False,
              match: list[Callable[[dict], bool]] | None = None,
              keys: list[str] | None = None,
-             sort: dict[str, sort_t] | None = None) -> list[dict]:
+             sort: dict[str, sort_t] | None = None,
+             types: list[Literal['assets', 'directories', 'templates']] | None = None,
+             ) -> list[dict]:
     r"""Query the key-values of assets.
 
     Parameters
@@ -490,6 +493,11 @@ def onyo_get(inventory: Inventory,
         use: :py:data:`onyo.lib.consts.SORT_ASCENDING` and
         :py:data:`onyo.lib.consts.SORT_DESCENDING`.
         Default: ``{'onyo.path.relative': SORT_ASCENDING}``
+    types
+        List of types of inventory items to consider. Valid types are
+        'assets', 'directories', and 'templates'.
+        Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
+        Defaults to ['assets'].
 
     Raises
     ------
@@ -515,10 +523,11 @@ def onyo_get(inventory: Inventory,
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
     selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['onyo.path.relative']
-    results = list(inventory.get_assets_by_query(include=include,
-                                                 exclude=exclude,
-                                                 depth=depth,
-                                                 match=match))  # pyre-ignore[6]
+    results = list(inventory.get_items_by_query(include=include,
+                                                exclude=exclude,
+                                                depth=depth,
+                                                match=match,  # pyre-ignore[6]
+                                                types=types))
 
     # sort results before filtering/replacing, so all keys can be sorted
     results = natural_sort(

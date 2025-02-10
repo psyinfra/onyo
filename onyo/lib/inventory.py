@@ -560,11 +560,13 @@ class Inventory(object):
         r"""Get an inventory ``Item`` from ``path``."""
         return Item(path, self.repo)
 
-    def get_assets(self,
-                   include: Iterable[Path] | None = None,
-                   exclude: Iterable[Path] | Path | None = None,
-                   depth: int = 0) -> Generator[UserDict, None, None]:
-        r"""Yield all assets under `paths` up to `depth` directory levels.
+    def get_items(self,
+                  include: Iterable[Path] | None = None,
+                  exclude: Iterable[Path] | Path | None = None,
+                  depth: int = 0,
+                  types: list[Literal['assets', 'directories', 'templates']] | None = None
+                  ) -> Generator[UserDict, None, None]:
+        r"""Yield all assets under ``paths`` up to ``depth`` directory levels.
 
         Generator, because it needs to read file content. This allows to act upon
         results while they are coming in.
@@ -572,20 +574,20 @@ class Inventory(object):
         Parameters
         ----------
         include
-          Paths to look for assets under. Defaults to the root of the inventory.
+            Paths to look for assets under. Defaults to the root of the inventory.
         exclude
-          Paths to exclude, meaning that assets underneath any of these are not
-          being returned. Defaults to `None`.
+            Paths to exclude, meaning that assets underneath any of these are not
+            being returned. Defaults to ``None``.
         depth
-          Number of levels to descend into. Must be greater equal 0.
-          If 0, descend recursively without limit. Defaults to 0.
-
-        Returns
-        -------
-        Generator of dict
-           All matching assets in the inventory.
+            Number of levels to descend into. Must be greater equal 0.
+            If 0, descend recursively without limit. Defaults to 0.
+        types
+            List of types of inventory items to consider. Valid types are
+            'assets', 'directories' and 'templates'.
+            Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
+            Defaults to ['assets'].
         """
-        for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=['assets']):
+        for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=types):
             try:
                 yield self.get_item(p)
             except NotAnAssetError as e:
@@ -596,41 +598,42 @@ class Inventory(object):
         # TODO: Possibly join with get_asset (path optional)
         return Item(self.repo.get_template(template))  # , repo=self.repo ?? Probably not. Template is not yet bound.
 
-    def get_assets_by_query(self,
-                            include: list[Path] | None = None,
-                            exclude: list[Path] | Path | None = None,
-                            depth: int | None = 0,
-                            match: list[Callable[[dict | UserDict], bool]] | None = None) -> Generator | filter:
-        r"""Get assets matching paths and filters.
+    def get_items_by_query(self,
+                           include: list[Path] | None = None,
+                           exclude: list[Path] | Path | None = None,
+                           depth: int | None = 0,
+                           match: list[Callable[[dict | UserDict], bool]] | None = None,
+                           types: list[Literal['assets', 'directories', 'templates']] | None = None
+                           ) -> Generator | filter:
+        r"""Get items matching paths and filters.
 
-        Convenience to run the builtin `filter` on all assets retrieved by
-        `self.get(paths, depth)` for each callable in `filters`, thus
-        combining the filters by a logical AND.
+        Convenience to run the builtin ``filter`` on all items retrieved by
+        ``self.get_items(include, exclude, depth, types)`` for each callable in ``match``,
+        thus combining the filters by a logical AND.
 
         Parameters
         ----------
         include
-          Paths to look for assets under. Defaults to the root of
-          the inventory. Passed to `self.get_assets`.
+            Paths to look for assets under. Defaults to the root of
+            the inventory. Passed to ``self.get_items``.
         exclude
-          Paths to exclude, meaning that assets underneath any of these are not
-          being returned. Defaults to `None`. Passed to `self.get_assets`.
+            Paths to exclude, meaning that assets underneath any of these are not
+            being returned. Defaults to ``None``. Passed to ``self.get_items``.
         depth
-          Number of levels to descend into. Must be greater or equal 0.
-          If 0, descend recursively without limit. Defaults to 0.
-          Passed to `self.get_assets`.
+            Number of levels to descend into. Must be greater or equal 0.
+            If 0, descend recursively without limit. Defaults to 0.
+            Passed to ``self.get_items``.
         match
-          Callable suitable for the builtin `filter`, when called on a
-          list of assets (dictionaries).
-
-        Returns
-        -------
-        Generator of dict
-          All assets found underneath `paths` up to `depth` levels,
-          for which all `filters` returned `True`.
+            Callable suitable for the builtin ``filter``, when called on a
+            list of assets (dictionaries).
+        types
+            List of types of inventory items to consider. Valid types are
+            'assets', 'directories', and 'templates'.
+            Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
+            Defaults to ['assets']. Passed to ``self.get_items``.
         """
         depth = 0 if depth is None else depth
-        assets = self.get_assets(include=include, exclude=exclude, depth=depth)
+        assets = self.get_items(include=include, exclude=exclude, depth=depth, types=types)
         if match:
             # Remove assets that do not match all filters
             for f in match:
