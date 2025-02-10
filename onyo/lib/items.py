@@ -104,16 +104,20 @@ class Item(DotNotationWrapper):
         #       a directory or an .onyoignore'd file.
         from onyo.lib.utils import get_asset_content
         self._path = path
-        if self['onyo.is.asset']:
-            loader = self.repo.get_asset_content if self.repo else get_asset_content
-            map_from_file = loader(path)
-            self.update(map_from_file)
-            if hasattr(map_from_file, 'copy_attributes'):
-                # We got a (subclass of) ruamel.yaml.CommentBase.
-                # Copy the attributes re comments, format, etc. for roundtrip.
-                # Note, that this is replacing - there's no straightforward way to merge w/
-                # existing comments etc.
-                map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
+        if self['onyo.is.asset'] and self.repo:
+            loader = self.repo.get_asset_content
+        elif self['onyo.is.asset'] or self['onyo.is.template']:
+            loader = get_asset_content
+        else:
+            return
+        map_from_file = loader(path)
+        self.update(map_from_file)
+        if hasattr(map_from_file, 'copy_attributes'):
+            # We got a (subclass of) ruamel.yaml.CommentBase.
+            # Copy the attributes re comments, format, etc. for roundtrip.
+            # Note, that this is replacing - there's no straightforward way to merge w/
+            # existing comments etc.
+            map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
 
     def fill_created(self, what: str | None):
         """Initializer for the 'onyo.was.created' pseudo-keys.
@@ -129,6 +133,10 @@ class Item(DotNotationWrapper):
         and we'd have to trace back moves and renames in order to know what path or file name we are looking
         to match against these operations.
         """
+        if self['onyo.is.template']:
+            # Templates aren't actually tracked in the inventory (only in git).
+            # Hence, there are no operations records to be used.
+            return None
         if self.repo and self['onyo.path.absolute']:
             for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
                 if 'operations' in commit:
@@ -147,6 +155,10 @@ class Item(DotNotationWrapper):
         ----------
         See ``fill_created``.
         """
+        if self['onyo.is.template']:
+            # Templates aren't actually tracked in the inventory (only in git).
+            # Hence, there are no operations records to be used.
+            return None
         if self.repo and self['onyo.path.absolute']:
             for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
                 if 'operations' in commit:
@@ -170,24 +182,26 @@ class Item(DotNotationWrapper):
     def get_path_relative(self):
         """Initializer for the 'onyo.path.relative' pseudo-key."""
         if self.repo and self['onyo.path.absolute']:
-            return self['onyo.path.absolute'].relative_to(self.repo.git.root)
+            try:
+                return self['onyo.path.absolute'].relative_to(self.repo.git.root)
+            except ValueError:
+                pass  # return None (translates to '<unset>') if relative_to() fails b/c path is outside repo.
         return None
 
     def get_path_parent(self):
         """Initializer for the 'onyo.path.parent' pseudo-key."""
-        if self.repo and self['onyo.path.absolute']:
-            return self['onyo.path.absolute'].parent.relative_to(self.repo.git.root)
+        if self.repo and self['onyo.path.relative']:
+            return self['onyo.path.relative'].parent
         return None
 
     def get_path_file(self):
         """Initializer for the 'onyo.path.file' pseudo-key."""
-        if self.repo and self['onyo.path.absolute']:
-            if self['onyo.is.asset'] and not self['onyo.is.directory']:
+        if self.repo and self['onyo.path.relative']:
+            if not self['onyo.is.directory']:
                 return self['onyo.path.relative']
-            if self['onyo.is.asset'] and self['onyo.is.directory']:
+            if self['onyo.is.asset'] or self['onyo.is.template']:
                 return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ASSET_DIR_FILE_NAME
-            if self['onyo.is.directory'] and not self['onyo.is.asset']:
-                return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ANCHOR_FILE_NAME
+            return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ANCHOR_FILE_NAME
         return None
 
     def is_asset(self) -> bool | None:

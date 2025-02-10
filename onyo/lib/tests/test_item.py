@@ -27,6 +27,7 @@ def test_item_init(onyorepo) -> None:
                          Item(onyorepo.test_annotation['dirs'][0]),
                          Item(onyorepo.test_annotation['dirs'][0], onyorepo),
                          Item(onyorepo.test_annotation['assets'][0]['onyo.path.absolute'], onyorepo),
+                         Item(onyorepo.test_annotation['templates'][1], onyorepo),
                          ]
 
     for item, idx in zip(constructor_calls, range(len(constructor_calls))):
@@ -37,13 +38,13 @@ def test_item_init(onyorepo) -> None:
         # Non-existing keys raise proper error:
         pytest.raises(KeyError, lambda: item['doesnotexist'])
         # If a Path was given, at the very least the absolute path is available:
-        if idx in [3, 4, 5]:
+        if idx in [3, 4, 5, 6]:
             assert isinstance(item.get('onyo.path.absolute'), Path)
         else:
             # otherwise, this is unset
             assert item.get('onyo.path.absolute') is None
         # If the repo was given, relative-to-root paths are available as well:
-        if idx in [4, 5]:
+        if idx in [4, 5, 6]:
             assert isinstance(item.get('onyo.path.relative'), Path)
             assert isinstance(item.get('onyo.path.parent'), Path)
         else:
@@ -63,6 +64,11 @@ def test_item_init(onyorepo) -> None:
             assert item.get('onyo.path.relative') == onyorepo.test_annotation['assets'][0]['onyo.path.absolute'].relative_to(onyorepo.git.root)
             assert item.get('onyo.path.parent') == onyorepo.test_annotation['assets'][0]['onyo.path.absolute'].parent.relative_to(onyorepo.git.root)
             assert item.get('onyo.path.file') == item.get('onyo.path.relative')
+        elif idx == 6:
+            assert item.get('onyo.path.absolute') == onyorepo.test_annotation['templates'][1]
+            assert item.get('onyo.path.relative') == onyorepo.test_annotation['templates'][1].relative_to(onyorepo.git.root)
+            assert item.get('onyo.path.parent') == onyorepo.test_annotation['templates'][1].parent.relative_to(onyorepo.git.root)
+            assert item.get('onyo.path.file') == item.get('onyo.path.relative')
         if item.repo is None:
             assert item['onyo.is.asset'] is None
             assert item['onyo.is.directory'] is None
@@ -76,3 +82,7 @@ def test_item_init(onyorepo) -> None:
         # Aliases
         for k in PSEUDOKEY_ALIASES:
             assert item[k] == item[PSEUDOKEY_ALIASES[k]]
+
+        # content is read from file:
+        if idx in [5, 6]:
+            assert all(k in item.keys() for k in ['type', 'make', 'model.name'])
