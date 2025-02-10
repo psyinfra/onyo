@@ -368,18 +368,6 @@ class OnyoRepo(object):
 
         from importlib import resources
 
-        # Note: Why is this necessary to check? Assuming we call git-init on it,
-        # this will repeat that same test anyway (and would fail telling us this
-        # problem)
-        # target must be a directory
-        if path.exists() and not path.is_dir():
-            raise FileExistsError(f"'{path}' exists but is not a directory.")
-
-        # Note: Why is this a requirement? What could go wrong with `mkdir -p`?
-        # parent must exist
-        if not path.parent.exists():
-            raise FileNotFoundError(f"'{path.parent}' does not exist.")
-
         # Note: Why not upgrade/heal/no-op for a re-init?
         # cannot already be an .onyo repo
         dot_onyo = path / '.onyo'
