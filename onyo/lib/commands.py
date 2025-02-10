@@ -437,7 +437,7 @@ def onyo_edit(inventory: Inventory,
                     op.operands[0].get("onyo.path.relative")
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
-                message = inventory.repo.generate_auto_message(
+                message = inventory.repo.generate_commit_subject(
                     format_string="edit [{len}]: {operation_paths}",
                     len=len(operation_paths),
                     operation_paths=operation_paths) + (message or "")
@@ -694,7 +694,7 @@ def onyo_mkdir(inventory: Inventory,
                     op.operands[0].relative_to(inventory.root)
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_directories']]))
-                message = inventory.repo.generate_auto_message(
+                message = inventory.repo.generate_commit_subject(
                     format_string="mkdir [{len}]: {operation_paths}\n",
                     len=len(operation_paths),
                     operation_paths=sorted(operation_paths)) + (message or "")
@@ -723,7 +723,7 @@ def _move_asset_or_dir(inventory: Inventory,
     try:
         inventory.move_asset(source, destination)
     except NotAnAssetError:
-        inventory.move_directory(source, destination)
+        inventory.move_directory(Item(source, repo=inventory.repo), destination)
 
 
 def _maybe_rename(inventory: Inventory,
@@ -732,7 +732,7 @@ def _maybe_rename(inventory: Inventory,
     r"""Rename a directory. Catch and clean if it's an Asset Directory."""
 
     try:
-        inventory.rename_directory(src, dst)
+        inventory.rename_directory(Item(src, repo=inventory.repo), dst)
     except NotADirError as e:
         # We tried to rename an asset dir.
         inventory.reset()
@@ -806,7 +806,7 @@ def onyo_mv(inventory: Inventory,
             # Move + Rename Mode: different parents (rename) and different source/dest names
             # e.g. mv example dir/different
             subject_prefix = "mv + ren"
-            inventory.move_directory(sources[0], destination.parent)
+            inventory.move_directory(Item(sources[0], repo=inventory.repo), destination.parent)
             _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
             inventory._ignore_for_commit.append(destination.parent / sources[0].name)
@@ -847,7 +847,7 @@ def onyo_mv(inventory: Inventory,
                     ln = len(operation_paths)
                     message = f"{subject_prefix} [{ln}]: {inline_diff}\n" + (message or "")
                 else:  # multi-source moves
-                    message = inventory.repo.generate_auto_message(
+                    message = inventory.repo.generate_commit_subject(
                         format_string="{prefix} [{ln}]: {operation_paths} -> {destination}\n",
                         prefix=subject_prefix,
                         ln=len(operation_paths),
@@ -994,7 +994,7 @@ def onyo_new(inventory: Inventory,
                     op.operands[0].get("onyo.path.relative")
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_assets']]))
-                message = inventory.repo.generate_auto_message(
+                message = inventory.repo.generate_commit_subject(
                     format_string="new [{len}]: {operation_paths}\n",
                     len=len(operation_paths),
                     operation_paths=operation_paths) + (message or "")
@@ -1041,7 +1041,7 @@ def onyo_rm(inventory: Inventory,
 
         if not is_asset or inventory.repo.is_asset_dir(p):
             try:
-                inventory.remove_directory(p, recursive=recursive)
+                inventory.remove_directory(Item(p, repo=inventory.repo), recursive=recursive)
             except InventoryDirNotEmpty as e:
                 # Enhance message from failed operation with command specific context:
                 raise InventoryDirNotEmpty(f"{str(e)}\nDid you forget '--recursive'?") from e
@@ -1057,7 +1057,7 @@ def onyo_rm(inventory: Inventory,
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['remove_assets'] or
                     op.operator == OPERATIONS_MAPPING['remove_directories']]))
-                message = inventory.repo.generate_auto_message(
+                message = inventory.repo.generate_commit_subject(
                     format_string="rm [{len}]: {operation_paths}\n",
                     len=len(operation_paths),
                     operation_paths=operation_paths) + (message or "")
@@ -1140,7 +1140,7 @@ def onyo_set(inventory: Inventory,
                     op.operands[0].get("onyo.path.relative")
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
-                message = inventory.repo.generate_auto_message(
+                message = inventory.repo.generate_commit_subject(
                     format_string="set [{len}] ({keys}): {operation_paths}\n",
                     len=len(operation_paths),
                     keys=list(keys.keys()),
@@ -1367,7 +1367,7 @@ def onyo_unset(inventory: Inventory,
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING[
                         'modify_assets']]))
-                message = inventory.repo.generate_auto_message(
+                message = inventory.repo.generate_commit_subject(
                     format_string="unset [{len}] ({keys}): {operation_paths}\n",
                     len=len(operation_paths),
                     keys=keys,

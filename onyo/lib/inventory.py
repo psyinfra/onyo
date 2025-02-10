@@ -350,7 +350,7 @@ class Inventory(object):
         if asset.get('onyo.is.directory', False):
             if self.repo.is_inventory_dir(path):
                 # We want to turn an existing dir into an asset dir.
-                operations.extend(self.rename_directory(path, self.generate_asset_name(asset)))
+                operations.extend(self.rename_directory(Item(path, repo=self.repo), self.generate_asset_name(asset)))
                 # Temporary hack: Adjust the asset's path to the renamed one.
                 # TODO: Actual solution: This entire method must not be based on the dict's 'onyo.path.absolute', but
                 #       'onyo.path.parent' + generated name. This ties in with pulling parts of `onyo_new` in here.
@@ -492,7 +492,7 @@ class Inventory(object):
             # remove or add dir aspect from/to asset
             ops = self.add_directory(Item(asset["onyo.path.absolute"], repo=self.repo)) \
                     if new_asset.get("onyo.is.directory", False) \
-                    else self.remove_directory(asset["onyo.path.absolute"])
+                    else self.remove_directory(Item(asset["onyo.path.absolute"], repo=self.repo))
             operations.extend(ops)
             # If there is no change in non-pseudo-keys, we should not record a modify_assets operation!
             if all(asset.get(k) == new_asset.get(k)
@@ -511,26 +511,44 @@ class Inventory(object):
             pass
         return operations
 
-    def remove_directory(self, directory: Path, recursive: bool = True) -> list[InventoryOperation]:
-        if directory in self._get_pending_removals(mode='dirs'):
-            ui.log_debug(f"{directory} already queued for removal")
+    def remove_directory(self,
+                         item: Item,
+                         recursive: bool = True) -> list[InventoryOperation]:
+        r"""Remove a directory.
+
+        Parameters
+        ----------
+        item
+            The Item to remove as a directory.
+
+        Raises
+        ------
+        ValueError
+            ``item['onyo.path.absolute']`` is invalid.
+        """
+
+        if item['onyo.path.absolute'] in self._get_pending_removals(mode='dirs'):
+            ui.log_debug(f"{item['onyo.path.absolute']} already queued for removal")
             # TODO: Consider NoopError when addressing #546.
             return []
-        if directory == self.root:
+        if item['onyo.path.absolute'] == self.root:
             raise InvalidInventoryOperationError("Can't remove inventory root.")
+        if not self.repo.is_inventory_dir(item['onyo.path.absolute']):
+            raise InvalidInventoryOperationError(f"Not an inventory directory: {item['onyo.path.absolute']}")
+
         operations = []
-        if not self.repo.is_inventory_dir(directory):
-            raise InvalidInventoryOperationError(f"Not an inventory directory: {directory}")
-        for p in directory.iterdir():
+        for p in item['onyo.path.absolute'].iterdir():
             if not recursive and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
-                raise InventoryDirNotEmpty(f"Directory {directory} not empty.")
+                raise InventoryDirNotEmpty(f"Directory {item['onyo.path.absolute']} not empty.")
+
             try:
                 operations.extend(self.remove_asset(p))
                 is_asset = True
             except NotAnAssetError:
                 is_asset = False
+
             if p.is_dir():
-                operations.extend(self.remove_directory(p))
+                operations.extend(self.remove_directory(Item(p, repo=self.repo)))
             elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
                 # Not an asset and not an inventory dir (hence also not an asset dir)
                 # implies we have a non-inventory file.
@@ -538,38 +556,98 @@ class Inventory(object):
                     ui.log_debug(f"{p} already queued for removal")
                     continue
                 operations.append(self._add_operation('remove_generic_file', (p,)))
-        operations.append(self._add_operation('remove_directories', (directory,)))
+
+        operations.append(self._add_operation('remove_directories', (item['onyo.path.absolute'],)))
+
         return operations
 
-    def move_directory(self, src: Path, dst: Path) -> list[InventoryOperation]:
-        if not self.repo.is_inventory_dir(src):
-            raise ValueError(f"Not an inventory directory: {src}")
+    def move_directory(self,
+                       src: Item,
+                       dst: Path) -> list[InventoryOperation]:
+        r"""Move a directory to a new parent directory.
+
+        To rename a directory under the same parent, see :py:func:`rename_directory`.
+
+        Parameters
+        ----------
+        src
+            The Item to move.
+        dst
+            The absolute Path of the new parent directory.
+
+        Raises
+        ------
+        ValueError
+            ``src`` is not an inventory directory, ``dst`` already exists, or
+            ``dst`` would be an invalid location.
+        InvalidInventoryOperationError
+            ``src`` and ``dst`` share the same parent.
+        """
+
+        if not src['onyo.is.directory']:
+            raise ValueError(f"Source is not an inventory directory: {src['onyo.path.absolute']}")
         if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
             raise ValueError(f"Destination is not an inventory directory: {dst}")
-        if src.parent == dst:
-            raise InvalidInventoryOperationError(f"Cannot move {src} -> {dst}. Consider renaming instead.")
-        if (dst / src.name).exists():
-            raise ValueError(f"Target {dst / src.name} already exists.")
-        return [self._add_operation('move_directories', (src, dst))]
+        if src['onyo.path.absolute'].parent == dst:
+            raise InvalidInventoryOperationError(f"Cannot move {src['onyo.path.absolute']} -> {dst}. Consider renaming instead.")
+        if (dst / src['onyo.path.absolute'].name).exists():
+            raise ValueError(f"Target {dst / src['onyo.path.absolute'].name} already exists.")
 
-    def rename_directory(self, src: Path, dst: str | Path) -> list[InventoryOperation]:
-        if not self.repo.is_inventory_dir(src) and src not in self._get_pending_dirs():
-            raise ValueError(f"Not an inventory directory: {src}")
-        if self.repo.is_asset_dir(src):
-            raise NotADirError("Renaming an asset directory must be done via `rename_asset`.")
+        return [self._add_operation('move_directories', (src['onyo.path.absolute'], dst))]
+
+    def rename_directory(self,
+                         src: Item,
+                         dst: str | Path) -> list[InventoryOperation]:
+        r"""Rename a directory to a new name under the same parent.
+
+        This renames a non-asset directory under the same parent. To move to a
+        different parent directory, see :py:func:`move_directory`. To rename an
+        asset (including an Asset Directory), see :py:func:`modify_asset` and
+        :py:func:`rename_asset`.
+
+        Parameters
+        ----------
+        src
+            The Item to rename.
+        dst
+            The new name or an absolute Path to the new destination.
+
+        Raises
+        ------
+        NotADirError
+            ``src`` is not a non-asset directory.
+        ValueError
+            ``src`` is not an inventory directory, ``dst`` already exists, or
+            ``dst`` would be an invalid location.
+        InvalidInventoryOperationError
+            ``src`` and ``dst`` do not share the same parent.
+        NoopError
+            Rename would result in the same name.
+        """
+
         if isinstance(dst, str):
-            dst = src.parent / dst
-        if src.parent != dst.parent:
-            raise InvalidInventoryOperationError(f"Cannot rename {src} -> {dst}. Consider moving instead.")
+            dst = src['onyo.path.absolute'].parent / dst
+
+        # can't rename an asset or template
+        if src['onyo.is.asset'] or src['onyo.is.template']:
+            raise NotADirError("Cannot rename an asset or template.")
+        # must be an inventory directory
+        if not src['onyo.is.directory'] and src['onyo.path.absolute'] not in self._get_pending_dirs():
+            raise ValueError(f"Not an inventory directory: {src['onyo.path.absolute']}")
+        # we only rename, not move and rename
+        if src['onyo.path.absolute'].parent != dst.parent:
+            raise InvalidInventoryOperationError(f"Cannot rename to a different parent directory: {src['onyo.path.absolute']} -> {dst}")
+        # sanity check the destination
         if not self.repo.is_inventory_path(dst):
             raise ValueError(f"{dst} is not a valid inventory directory.")
+        # can't rename to self
+        if src['onyo.path.absolute'].name == dst.name:
+            raise NoopError(f"Cannot rename directory {src['onyo.path.absolute']}. This is already its name.")
+        # destination must be available
         if dst.exists():
             raise ValueError(f"{dst} already exists.")
-        name = dst if isinstance(dst, str) else dst.name
-        if src.name == name:
-            raise NoopError(f"Cannot rename directory {str(src)}: This is already its name.")
 
-        return [self._add_operation('rename_directories', (src, dst))]
+        return [self._add_operation('rename_directories', (src['onyo.path.absolute'], dst))]
 
     #
     # non-operation methods

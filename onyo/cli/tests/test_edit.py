@@ -22,7 +22,7 @@ def test_get_editor_onyo(repo: OnyoRepo, variant: str) -> None:
     r"""
     Get the editor from onyo configuration.
     """
-    repo.set_config('onyo.core.editor', variant, location=variant)
+    repo.set_config('onyo.core.editor', variant, location=variant)  # pyre-ignore[6]
 
     # test
     editor = repo.get_editor()

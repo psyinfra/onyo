@@ -409,9 +409,9 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     inventory.commit("First asset added")
 
     # raise on non-dir
-    pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, asset_file)
+    pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, Item(asset_file, repo=repo))
 
-    inventory.remove_directory(emptydir)
+    inventory.remove_directory(Item(emptydir, repo=repo))
     assert num_operations(inventory, 'remove_directories') == 1
     assert isinstance(inventory.operations[0].operands, tuple)
     assert emptydir in inventory.operations[0].operands
@@ -426,7 +426,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     assert not emptydir.exists()
 
     # recursive
-    inventory.remove_directory(newdir1)
+    inventory.remove_directory(Item(newdir1, repo=repo))
     assert num_operations(inventory, 'remove_directories') == 2
     assert num_operations(inventory, 'remove_assets') == 1
 
@@ -467,12 +467,12 @@ def test_move_directory(repo: OnyoRepo) -> None:
     inventory.commit("First asset added")
 
     # raise on non-dir:
-    pytest.raises(ValueError, inventory.move_directory, asset_file, repo.git.root / "doesnotexist")
-    pytest.raises(ValueError, inventory.move_directory, asset_file, (repo.git.root / "isafile").touch())
+    pytest.raises(ValueError, inventory.move_directory, Item(asset_file, repo=repo), repo.git.root / "doesnotexist")
+    pytest.raises(ValueError, inventory.move_directory, Item(asset_file, repo=repo), (repo.git.root / "isafile").touch())
     # raise on rename:
-    pytest.raises(InvalidInventoryOperationError, inventory.move_directory, newdir2, newdir1)
+    pytest.raises(InvalidInventoryOperationError, inventory.move_directory, Item(newdir2, repo=repo), newdir1)
 
-    inventory.move_directory(newdir2, emptydir)
+    inventory.move_directory(Item(newdir2, repo=repo), emptydir)
     assert num_operations(inventory, 'move_directories') == 1
     assert (newdir2, emptydir) == inventory.operations[0].operands
 
@@ -527,14 +527,14 @@ def test_rename_directory(repo: OnyoRepo) -> None:
 
     new_place = repo.git.root / "new_place"
     # raise on non-dir:
-    pytest.raises(ValueError, inventory.rename_directory, asset_file, new_place)
+    pytest.raises(ValueError, inventory.rename_directory, Item(asset_file, repo=repo), new_place)
     # raise on existing destination:
-    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, newdir1, emptydir)
+    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, Item(newdir1, repo=repo), emptydir)
     # raise on move:
-    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, newdir2, new_place)
+    pytest.raises(InvalidInventoryOperationError, inventory.rename_directory, Item(newdir2, repo=repo), new_place)
 
     new_name = newdir1 / "new_name"
-    inventory.rename_directory(newdir2, new_name)
+    inventory.rename_directory(Item(newdir2, repo=repo), new_name)
     assert num_operations(inventory, 'rename_directories') == 1
     assert (newdir2, new_name) == inventory.operations[0].operands
 
@@ -763,7 +763,7 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory.add_asset(asset_within)
     inventory.commit("Whatever")
 
-    inventory.remove_directory(asset_dir_path)
+    inventory.remove_directory(Item(asset_dir_path, repo=repo))
     # Nothing done on disc yet:
     assert inventory.repo.is_inventory_dir(asset_dir_path)
     assert inventory.repo.is_asset_path(asset_dir_path)
@@ -910,7 +910,7 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
             assert v == []
 
     # Now move back but via `move_directory` instead.
-    inventory.move_directory(new_path, inventory.root)
+    inventory.move_directory(Item(new_path, repo=repo), inventory.root)
     assert num_operations(inventory, 'move_directories') == 1
     assert (new_path, inventory.root) == inventory.operations[0].operands
 
@@ -967,7 +967,7 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     inventory.commit("Whatever")
 
     # renaming the asset dir as a dir needs to fail
-    pytest.raises(NotADirError, inventory.rename_directory, asset_dir_path, "newname")
+    pytest.raises(NotADirError, inventory.rename_directory, Item(asset_dir_path, repo=repo), "newname")
 
     # renaming as an asset by changing the naming config
     inventory.repo.set_config("onyo.assets.name-format", "{serial}_{other}", "onyo")

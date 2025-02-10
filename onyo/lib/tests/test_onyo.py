@@ -91,7 +91,7 @@ def test_clear_cache(onyorepo) -> None:
     assert asset not in onyorepo.asset_paths
 
 
-def test_Repo_generate_auto_message(onyorepo: OnyoRepo) -> None:
+def test_Repo_generate_commit_subject(onyorepo: OnyoRepo) -> None:
     """A generated commit message has to have a header with less then
     80 characters length, and a body with the paths to changed files
     and directories relative to the root of the repository.
@@ -100,7 +100,7 @@ def test_Repo_generate_auto_message(onyorepo: OnyoRepo) -> None:
                 onyorepo.git.root / 'a/new/folder']
 
     # generate a commit message:
-    message = onyorepo.generate_auto_message(
+    message = onyorepo.generate_commit_subject(
         format_string='TST [{length}]: {modified}',
         length=len(modified),
         modified=modified)

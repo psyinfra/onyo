@@ -38,19 +38,19 @@ def test_GitRepo_instantiation(tmp_path: Path) -> None:
     assert new_repo.root.samefile(tmp_path)
 
 
-def test_GitRepo_maybe_init(tmp_path: Path) -> None:
+def test_GitRepo_init_without_reinit(tmp_path: Path) -> None:
     root = tmp_path / 'doesnotexist'
 
     # Can initialize a git repository in
     # not yet existing dir:
     gr = GitRepo(root)
     assert not root.exists()
-    gr.maybe_init()
+    gr.init_without_reinit()
     assert root.is_dir()
     assert (root / '.git').exists()
 
     # Re-execution doesn't raise:
-    gr.maybe_init()
+    gr.init_without_reinit()
 
 
 def test_GitRepo_find_root(tmp_path: Path) -> None:
@@ -212,7 +212,7 @@ def test_GitRepo_commit(gitrepo) -> None:
                               (Path('top') / 'mid' / "another.txt",
                                "")
                               )
-def test_GitRepo_get_subtrees(gitrepo) -> None:
+def test_GitRepo_get_files(gitrepo) -> None:
     # add an untracked files:
     for d in gitrepo.test_annotation['directories']:
         untracked = d / "untracked"
@@ -220,11 +220,11 @@ def test_GitRepo_get_subtrees(gitrepo) -> None:
 
     # only returns tracked files underneath the given directory:
     for d in gitrepo.test_annotation['directories']:
-        tree = gitrepo.get_subtrees([d])
+        tree = gitrepo.get_files([d])
         assert [p for p in gitrepo.test_annotation['files'] if d in p.parents] == tree
 
     # defaults to the entire worktree:
-    assert [p for p in gitrepo.test_annotation['files']] == gitrepo.get_subtrees()
+    assert [p for p in gitrepo.test_annotation['files']] == gitrepo.get_files()
 
     # several dirs:
     if len(gitrepo.test_annotation['directories']) > 1:
@@ -232,7 +232,7 @@ def test_GitRepo_get_subtrees(gitrepo) -> None:
         expected = [p
                     for p in gitrepo.test_annotation['files']
                     if any(d in dirs for d in p.parents)]
-        tree = gitrepo.get_subtrees(dirs)
+        tree = gitrepo.get_files(dirs)
         assert expected == tree
 
 
@@ -294,19 +294,19 @@ def test_GitRepo_config(gitrepo) -> None:
 
     assert gitrepo.get_config("section.name.option") is None
     # TODO: patch env to redirect git config locations
-    gitrepo.set_config(name="section.name.option", value="some", location='local')
+    gitrepo.set_config(key="section.name.option", value="some", location='local')
     git_config = (gitrepo.root / '.git' / 'config').read_text()
     assert "[section \"name\"]" in git_config
     assert "option = some" in git_config
     assert gitrepo.get_config("section.name.option") == "some"
 
     cfg_file = gitrepo.root / "test_config"
-    gitrepo.set_config(name="onyo.test", value="another", location=cfg_file)
+    gitrepo.set_config(key="onyo.test", value="another", location=cfg_file)
     config = cfg_file.read_text()
     assert "[onyo]" in config
     assert "test = another" in config
     assert gitrepo.get_config("onyo.test") is None
-    assert gitrepo.get_config("onyo.test", file_=cfg_file) == "another"
+    assert gitrepo.get_config("onyo.test", path=cfg_file) == "another"
 
 
 def test_GitRepo_check_ignore(gitrepo) -> None:
