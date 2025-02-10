@@ -58,6 +58,10 @@ PSEUDO_KEYS: Dict[str, PseudoKey] = {
                     "Different from 'onyo.path.relative' in case of an asset directory.",
         implementation=partial(delegate, attribute='get_path_file')
     ),
+    'onyo.path.name': PseudoKey(
+        description="Basename of the item's path.",
+        implementation=partial(delegate, attribute='get_path_name')
+    ),
     'onyo.is.asset': PseudoKey(
         description="Is the item an asset.",
         implementation=partial(delegate, attribute='is_asset')

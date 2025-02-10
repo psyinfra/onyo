@@ -204,6 +204,12 @@ class Item(DotNotationWrapper):
             return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ANCHOR_FILE_NAME
         return None
 
+    def get_path_name(self):
+        """Initializer for the 'onyo.path.name' pseudo-key."""
+        if self['onyo.path.absolute']:
+            return self['onyo.path.absolute'].name
+        return None
+
     def is_asset(self) -> bool | None:
         """Initializer for the 'onyo.is.asset' pseudo-key."""
         if not self.repo or not self._path:
