@@ -110,6 +110,7 @@ def test_filter_invalid(filter_arg: str) -> None:
 
 def test_filter_format() -> None:
     """Test whether the input argument 'key=value' is properly formatted into
-    the `key` and `value` properties"""
+    the `key` and `value` properties
+    """
     assert Filter._format('key=value') == ['key', 'value']
     assert Filter._format('key=value=value') == ['key', 'value=value']

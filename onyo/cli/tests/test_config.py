@@ -17,7 +17,8 @@ def test_config_set(repo: OnyoRepo) -> None:
 
 def test_config_already_set(repo: OnyoRepo) -> None:
     r"""`onyo config` does not error if a legal value is
-    already set and no changes are made."""
+    already set and no changes are made.
+    """
     assert 'onyo "history"' in Path('.onyo/config').read_text()
     assert 'interactive = tig --follow' in Path('.onyo/config').read_text()
     ret = subprocess.run(["onyo", "config", "onyo.history.interactive", "tig --follow"],

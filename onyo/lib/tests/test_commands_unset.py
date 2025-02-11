@@ -65,7 +65,8 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
     """`onyo_unset` must raise an error when requested to unset a
-    reserved name field."""
+    reserved name field.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
     illegal_fields = ["type",
@@ -91,7 +92,8 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_illegal_fields(inventory: Inventory) -> None:
     """`onyo_unset` must raise an error when requested to unset an
-    illegal/reserverd field."""
+    illegal/reserverd field.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -200,7 +202,8 @@ def test_onyo_unset_multiple(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
     """Calling `onyo_unset()` with a list containing the same asset
-    multiple times does not error."""
+    multiple times does not error.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key = "some_key"
     old_hexsha = inventory.repo.git.get_hexsha()

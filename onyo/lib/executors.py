@@ -135,6 +135,7 @@ def exec_modify_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], lis
 def generic_executor(func: Callable, repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
     r"""This is intended for simple FS operations on non-inventory files
 
-    only current usecase is recursive remove_directory. Not yet meant to be a stable implementation"""
+    only current usecase is recursive remove_directory. Not yet meant to be a stable implementation
+    """
     func(operands)
     return [operands[0]], []
