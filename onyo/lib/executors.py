@@ -77,7 +77,7 @@ def exec_remove_assets(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], lis
 
 def exec_remove_directories(repo: OnyoRepo, operands: tuple) -> tuple[list[Path], list[Path]]:
     paths = []
-    p = operands[0]
+    p = operands[0]['onyo.path.absolute']
     is_asset_dir = (p / OnyoRepo.ASSET_DIR_FILE_NAME).exists()  # required after dir was removed, therefore store
     anchor = p / repo.ANCHOR_FILE_NAME
     anchor.unlink()

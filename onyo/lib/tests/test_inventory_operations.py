@@ -130,11 +130,11 @@ def test_remove_asset(inventory: Inventory) -> None:
     # NOTE: First trial using inventory fixture
 
     doesnotexist = inventory.root / "root_asset"
-    pytest.raises(NotAnAssetError, inventory.remove_asset, doesnotexist)
+    pytest.raises(NotAnAssetError, inventory.remove_asset, Item(doesnotexist, repo=inventory.repo))
 
     isadir = inventory.root / "a_dir"
     isadir.mkdir()
-    pytest.raises(NotAnAssetError, inventory.remove_asset, isadir)
+    pytest.raises(NotAnAssetError, inventory.remove_asset, Item(isadir, repo=inventory.repo))
 
     # TODO: Can't remove untracked?? See similar cases in new_asset, new_dir
 
@@ -411,10 +411,11 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     # raise on non-dir
     pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, Item(asset_file, repo=repo))
 
-    inventory.remove_directory(Item(emptydir, repo=repo))
+    emptydir_item = inventory.get_item(emptydir)
+    inventory.remove_directory(emptydir_item)
     assert num_operations(inventory, 'remove_directories') == 1
     assert isinstance(inventory.operations[0].operands, tuple)
-    assert emptydir in inventory.operations[0].operands
+    assert emptydir_item in inventory.operations[0].operands
 
     # nothing done on disc yet:
     assert emptydir.is_dir()
@@ -763,15 +764,18 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory.add_asset(asset_within)
     inventory.commit("Whatever")
 
-    inventory.remove_directory(Item(asset_dir_path, repo=repo))
+    asset_dir_item = inventory.get_item(asset_dir_path)
+    inventory.remove_directory(asset_dir_item)
     # Nothing done on disc yet:
     assert inventory.repo.is_inventory_dir(asset_dir_path)
     assert inventory.repo.is_asset_path(asset_dir_path)
     assert asset_dir_path.is_dir()
+
     assert num_operations(inventory, 'remove_assets') == 1
+
     assert num_operations(inventory, 'remove_directories') == 1
-    assert (asset_dir_path / "a_b_c.1A",) == inventory.operations[0].operands
-    assert (asset_dir_path,) == inventory.operations[1].operands
+    assert (inventory.get_item(asset_dir_path / 'a_b_c.1A'),) == inventory.operations[0].operands
+    assert (asset_dir_item,) == inventory.operations[1].operands
 
     inventory.commit("Remove dir from asset dir")
     assert not inventory.repo.is_asset_dir(asset_dir_path)

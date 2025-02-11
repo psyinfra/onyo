@@ -1,6 +1,9 @@
 import pytest
 
-from onyo.lib.exceptions import InvalidInventoryOperationError, InventoryOperationError
+from onyo.lib.exceptions import (
+    InvalidArgumentError,
+    InvalidInventoryOperationError,
+)
 from onyo.lib.items import Item
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
@@ -12,32 +15,32 @@ from ..commands import onyo_rm
 def test_onyo_rm_errors(inventory: Inventory) -> None:
     r"""`onyo_rm` must raise the correct error in different illegal or impossible calls."""
     # delete non-existing asset
-    pytest.raises(InvalidInventoryOperationError,
+    pytest.raises(InvalidArgumentError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / "TYPE_MAKER_MODEL.SERIAL")
 
     # delete non-existing directory
-    pytest.raises(InvalidInventoryOperationError,
+    pytest.raises(InvalidArgumentError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / "somewhere" / "non-existing")
 
     # delete .anchor
-    pytest.raises(InvalidInventoryOperationError,
+    pytest.raises(InvalidArgumentError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / OnyoRepo.ANCHOR_FILE_NAME)
 
     # delete outside onyo repository
-    pytest.raises(InventoryOperationError,
+    pytest.raises(InvalidArgumentError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / "..")
 
     # deleting an existing file which is neither an asset nor a directory is illegal
     assert (inventory.root / ".onyo" / "templates" / "laptop.example").is_file()
-    pytest.raises(InvalidInventoryOperationError,
+    pytest.raises(InvalidArgumentError,
                   onyo_rm,
                   inventory,
                   paths=inventory.root / ".onyo" / "templates" / "laptop.example")
@@ -69,7 +72,7 @@ def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
 
     # one of multiple paths to delete does not exist
-    pytest.raises(InvalidInventoryOperationError,
+    pytest.raises(InvalidArgumentError,
                   onyo_rm,
                   inventory,
                   paths=[asset_path, inventory.root / "not-existent", destination_path])
