@@ -723,32 +723,6 @@ class Inventory(object):
                 assets = filter(f, assets)
         return assets
 
-    def asset_paths_available(self, assets: dict | list[dict]) -> None:
-        r"""Test whether path used by `assets` are available in the inventory.
-
-        Availability not only requires the path to not yet exist, but also the filename to be unique.
-
-        Raises
-        ------
-        ValueError
-          if any of the paths can not be used for a new asset
-        """
-
-        # TODO: Used to test valid asset name first. Do we need that?
-        #       Not in context of `new`, because the name is generated.
-        paths_to_test = [a.get('onyo.path.absolute') for a in assets]
-        for path in paths_to_test:
-            if not path:
-                continue  # TODO: raise or ignore?
-            if path.exists():
-                raise ValueError(f"{str(path)} already exists in inventory")
-            if len([p.name for p in paths_to_test if p.name == path.name]) > 1:
-                raise ValueError(f"Multiple {path.name} given. Asset names must be unique.")
-            if not self.repo.is_inventory_path(path):
-                raise ValueError(f"{str(path)} is not a valid asset path.")
-            if path.name in [p.name for p in self.repo.asset_paths]:
-                raise ValueError(f"Asset name '{path.name}' already exists in inventory.")
-
     def generate_asset_name(self, asset: dict | UserDict) -> str:
         config_str = self.repo.get_config("onyo.assets.name-format")
         if not config_str:
