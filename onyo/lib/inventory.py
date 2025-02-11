@@ -428,13 +428,8 @@ class Inventory(object):
 
         return [self._add_operation('move_assets', (src, dst))]
 
-    def rename_asset(self, asset: dict | UserDict | Path, name: str | None = None) -> list[InventoryOperation]:
-        # ??? Do we need that? On the command level it's only accessible via modify_asset.
-        # But: A config change is sufficient to make it not actually an asset modification.
-        # Also: If we later on want to allow it under some circumstances, it would be good have it as a formally
-        #       separate operation already.
-
-        path = asset if isinstance(asset, Path) else Path(asset.get('onyo.path.absolute'))
+    def rename_asset(self, asset: Item, name: str | None = None) -> list[InventoryOperation]:
+        path = asset.get('onyo.path.absolute')
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
 
@@ -443,10 +438,7 @@ class Inventory(object):
         #       TODO: This may, however, need to go. When rename is implicit, it would need to account for already
         #             registered modify operations. It's easier to not force compliance here, but simply let
         #             modify_asset generate the name and pass it.
-        generated_name = self.generate_asset_name(
-            self.get_item(path)
-            if isinstance(asset, Path) else asset
-        )
+        generated_name = self.generate_asset_name(asset)
         if name and name != generated_name:
             raise ValueError(f"Renaming asset {path.name} to {name} is invalid."
                              f"Config 'onyo.assets.name-format' suggests '{generated_name}' as its name.")
@@ -462,12 +454,11 @@ class Inventory(object):
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
         return [self._add_operation('rename_assets', (path, destination))]
 
-    def modify_asset(self, asset: dict | UserDict | Path, new_asset: dict | UserDict) -> list[InventoryOperation]:
+    def modify_asset(self, asset: Item, new_asset: Item) -> list[InventoryOperation]:
         operations = []
-        path = asset if isinstance(asset, Path) else Path(asset.get('onyo.path.absolute'))
+        path = asset.get('onyo.path.absolute')
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
-        asset = self.get_item(path) if isinstance(asset, Path) else asset
 
         # A path change must not be specified w/ modify_asset. A move is a different operation and
         # a renaming has to be derived from content:
@@ -490,9 +481,9 @@ class Inventory(object):
         # If a change in is.directory is implied, do this first:
         if asset.get("onyo.is.directory", False) != new_asset.get("onyo.is.directory", False):
             # remove or add dir aspect from/to asset
-            ops = self.add_directory(Item(asset["onyo.path.absolute"], repo=self.repo)) \
+            ops = self.add_directory(asset) \
                     if new_asset.get("onyo.is.directory", False) \
-                    else self.remove_directory(Item(asset["onyo.path.absolute"], repo=self.repo))
+                    else self.remove_directory(asset)
             operations.extend(ops)
             # If there is no change in non-pseudo-keys, we should not record a modify_assets operation!
             if all(asset.get(k) == new_asset.get(k)
@@ -691,7 +682,7 @@ class Inventory(object):
                 # report the error, but proceed
                 ui.error(e)
 
-    def get_asset_from_template(self, template: Path | str | None) -> UserDict:
+    def get_asset_from_template(self, template: Path | str | None) -> Item:
         # TODO: Possibly join with get_asset (path optional)
         return Item(self.repo.get_template(template))  # , repo=self.repo ?? Probably not. Template is not yet bound.
 

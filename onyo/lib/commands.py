@@ -245,9 +245,9 @@ def onyo_config(inventory: Inventory,
 
 
 def _edit_asset(inventory: Inventory,
-                asset: dict | UserDict,
+                asset: Item,
                 operation: Callable,
-                editor: str | None) -> dict | UserDict:
+                editor: str | None) -> Item:
     r"""Edit an ``asset`` (as a temporary file) with ``editor``.
 
     A helper for ``onyo_edit()`` and ``onyo_new(edit=True)``.
@@ -339,7 +339,7 @@ def _edit_asset(inventory: Inventory,
                 case 'edit':
                     continue
                 case 'skip':
-                    return dict()
+                    return Item()
                 case 'abort':
                     # Error message was already passed to ui. Raise a different exception instead.
                     # TODO: Own exception class for that purpose? Can we have no message at all?
@@ -375,7 +375,7 @@ def _edit_asset(inventory: Inventory,
             case 'edit':
                 continue
             case 'skip':
-                return dict()
+                return Item()
             case 'abort':
                 raise KeyboardInterrupt
             case _:
@@ -426,7 +426,7 @@ def onyo_edit(inventory: Inventory,
     editor = inventory.repo.get_editor()
     for path in paths:
         asset = inventory.get_item(path)
-        _edit_asset(inventory, asset, partial(inventory.modify_asset, path), editor)
+        _edit_asset(inventory, asset, partial(inventory.modify_asset, asset), editor)
 
     if inventory.operations_pending():
         # display changes

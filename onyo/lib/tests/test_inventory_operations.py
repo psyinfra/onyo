@@ -289,9 +289,9 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     pytest.raises(ValueError, inventory.modify_asset, asset, new_asset)
     new_asset['onyo.path.absolute'] = None
     # raises on non-existing asset
-    pytest.raises(ValueError, inventory.modify_asset, repo.git.root / "doesnotexist", new_asset)
+    pytest.raises(ValueError, inventory.modify_asset, Item(repo.git.root / "doesnotexist", repo=inventory.repo), new_asset)
     # raises on non-asset
-    pytest.raises(ValueError, inventory.modify_asset, newdir1, new_asset)
+    pytest.raises(ValueError, inventory.modify_asset, Item(newdir1, repo=inventory.repo), new_asset)
 
     inventory.modify_asset(asset, new_asset)
     # modify operation:
@@ -966,8 +966,10 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
     inventory.add_asset(asset)
     inventory.commit("Whatever")
 
+    asset_dir = inventory.get_item(asset_dir_path)
+
     # renaming the asset dir as a dir needs to fail
-    pytest.raises(NotADirError, inventory.rename_directory, Item(asset_dir_path, repo=repo), "newname")
+    pytest.raises(NotADirError, inventory.rename_directory, asset_dir, "newname")
 
     # renaming as an asset by changing the naming config
     inventory.repo.set_config("onyo.assets.name-format", "{serial}_{other}", "onyo")
@@ -975,7 +977,7 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
                           "Change asset name config")
     new_asset_dir_path = asset_dir_path.parent / "SERIAL_1"
 
-    inventory.rename_asset(asset_dir_path)
+    inventory.rename_asset(asset_dir)
     # no change on disc:
     assert inventory.repo.is_inventory_dir(asset_dir_path)
     assert inventory.repo.is_asset_path(asset_dir_path)
