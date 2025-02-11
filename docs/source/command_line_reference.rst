@@ -16,6 +16,7 @@ Command Line Reference
    cmd_mv
    cmd_new
    cmd_rm
+   cmd_rmdir
    cmd_set
    cmd_shell-completion
    cmd_tree

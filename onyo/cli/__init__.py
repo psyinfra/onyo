@@ -9,6 +9,7 @@ from .mkdir import mkdir
 from .mv import mv
 from .new import new
 from .rm import rm
+from .rmdir import rmdir
 from .set import set
 from .shell_completion import shell_completion
 from .tree import tree
@@ -27,6 +28,7 @@ __all__ = [
     'mv',
     'new',
     'rm',
+    'rmdir',
     'set',
     'shell_completion',
     'tree',
