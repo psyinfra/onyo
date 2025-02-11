@@ -236,7 +236,7 @@ class Inventory(object):
         names = []
         for op in self.operations:
             if op.operator == OPERATIONS_MAPPING['new_assets']:
-                names.append(op.operands[0].get('onyo.path.absolute').name)  # TODO: onyo.path.file?
+                names.append(op.operands[0].get('onyo.path.name'))  # TODO: onyo.path.file?
             elif op.operator == OPERATIONS_MAPPING['rename_assets']:
                 names.append(op.operands[1].name)
         return names
@@ -576,8 +576,8 @@ class Inventory(object):
             raise ValueError(f"Destination is not an inventory directory: {dst}")
         if src['onyo.path.absolute'].parent == dst:
             raise InvalidInventoryOperationError(f"Cannot move {src['onyo.path.absolute']} -> {dst}. Consider renaming instead.")
-        if (dst / src['onyo.path.absolute'].name).exists():
-            raise ValueError(f"Target {dst / src['onyo.path.absolute'].name} already exists.")
+        if (dst / src['onyo.path.name']).exists():
+            raise ValueError(f"Target {dst / src['onyo.path.name']} already exists.")
 
         return [self._add_operation('move_directories', (src['onyo.path.absolute'], dst))]
 
@@ -627,7 +627,7 @@ class Inventory(object):
         if not self.repo.is_inventory_path(dst):
             raise ValueError(f"{dst} is not a valid inventory directory.")
         # can't rename to self
-        if src['onyo.path.absolute'].name == dst.name:
+        if src['onyo.path.name'] == dst.name:
             raise NoopError(f"Cannot rename directory {src['onyo.path.absolute']}. This is already its name.")
         # destination must be available
         if dst.exists():
