@@ -67,6 +67,13 @@ if TYPE_CHECKING:
 
 @dataclass
 class InventoryOperator:
+    r"""Representation of a type of Inventory Operation.
+
+    Groups together the Callables to execute, diff, and record an operation.
+
+    See :py:data:`OPERATIONS_MAPPING`.
+    """
+
     executor: Callable
     differ: Callable
     recorder: Callable
@@ -74,14 +81,24 @@ class InventoryOperator:
 
 @dataclass
 class InventoryOperation(object):
+    r"""Representation of an individual pending Inventory Operation.
+
+    Groups together the intended :py:class:`InventoryOperator`, its targets, and
+    repo.
+    """
+
     operator: InventoryOperator
     operands: tuple
     repo: OnyoRepo
 
     def diff(self) -> Generator[str, None, None]:
+        r"""Generate the anticipated diff of executing the operation."""
+
         yield from self.operator.differ(repo=self.repo, operands=self.operands)
 
     def execute(self) -> tuple[list[Path], list[Path]]:
+        r"""Execute the Inventory Operation."""
+
         return self.operator.executor(repo=self.repo, operands=self.operands)
 
 
@@ -137,6 +154,7 @@ OPERATIONS_MAPPING: dict = {
         recorder=record_rename_directories,
     ),
 }
+r"""Mapping of Inventory Operation types with the appropriate operators."""
 
 
 # TODO: Conflict w/ existing operations?
@@ -144,24 +162,47 @@ OPERATIONS_MAPPING: dict = {
 #       like removing something that is to be created. -> reset() or commit()
 # TODO: clear_cache from within commit? What about operations?
 class Inventory(object):
-    r""""""
+    r"""Representation of an inventory of an Onyo repository.
 
-    def __init__(self, repo: OnyoRepo) -> None:
+    Provides all functionality necessary to query, modify, create, or remove
+    inventory items.
+
+    Attributes
+    ----------
+    operations
+        List of all pending InventoryOperations.
+    repo
+        The OnyoRepo this Inventory represents.
+    """
+
+    def __init__(self,
+                 repo: OnyoRepo) -> None:
+        r"""Instantiate an ``Inventory`` object based on ``repo``.
+
+        Parameters
+        ----------
+        repo
+            The OnyoRepo to represent.
+        """
+
         self.repo: OnyoRepo = repo
         self.operations: list[InventoryOperation] = []
         self._ignore_for_commit: list[Path] = []
 
     @property
     def root(self):
-        r"""Path to root inventory directory."""
+        r"""Path to the root inventory directory."""
+
         return self.repo.git.root
 
     def reset(self) -> None:
         r"""Discard pending operations."""
+
         self.operations = []
 
     def commit(self, message: str | None) -> None:
-        r"""Execute and git-commit pending operations."""
+        r"""Execute pending operations and commit the results."""
+
         # get user message + generate appendix from operations
         # does order matter for execution? Prob.
         # ^  Nope. Fail on conflicts.
@@ -187,6 +228,8 @@ class Inventory(object):
             self.reset()
 
     def operations_summary(self) -> str:
+        r"""Get a textual summary of all operations."""
+
         summary = "--- Inventory Operations ---\n"
         operations_record = dict()
 
@@ -207,84 +250,72 @@ class Inventory(object):
         return summary
 
     def diff(self) -> Generator[str, None, None]:
+        r"""Yield the textual diffs of all operations."""
+
         for operation in self.operations:
             yield from operation.diff()
 
     def operations_pending(self) -> bool:
-        r"""Returns whether there's something to commit."""
+        r"""Return whether there's something to commit."""
+
         # Note: Seems superfluous now (operations is a list rather than dict of lists)
         return bool(self.operations)
 
     def _get_pending_asset_names(self) -> list[str]:
-        r"""List of asset names that are targets of pending operations.
+        r"""Get asset names that would result from pending operations.
 
-        This is extracting paths that would exist if the currently
-        pending operations were executed, in order to provide the
-        means to check for conflicts.
-
-        Current usecase: When adding/renaming assets, their
-        names and must not yet exist - neither committed nor pending.
+        When adding/renaming assets, their names and must not yet exist -
+        neither committed nor pending.
         """
-        # TODO: This needs to be better designed and generalized to
-        # include directory paths. Inventory methods need to check this
-        # instead of or in addition to something like Path.exists().
-        # The differs/executors/recorders already generate this
-        # information. Find a way to query that w/o executing in a
-        # structured way. Ideally, we should also account for paths
-        # that are being removed by pending operations and therefore
-        # are "free to use" for operations added to the queue.
+
+        # TODO: This needs to be better designed and generalized to include
+        #       directory paths. Inventory methods need to check this instead of
+        #       or in addition to something like Path.exists(). The
+        #       differs/executors/recorders already generate this information.
+        #       Find a way to query that w/o executing in a structured way.
+        #       Ideally, we should also account for paths that are being removed
+        #       by pending operations and therefore are "free to use" for
+        #       operations added to the queue. See issue #546.
         names = []
         for op in self.operations:
             if op.operator == OPERATIONS_MAPPING['new_assets']:
                 names.append(op.operands[0].get('onyo.path.name'))  # TODO: onyo.path.file?
             elif op.operator == OPERATIONS_MAPPING['rename_assets']:
                 names.append(op.operands[1].name)
+
         return names
 
     def _get_pending_dirs(self) -> list[Path]:
-        r"""Get inventory dirs that would come into existence due to pending operations.
+        r"""Get Paths of directories that are to be created by pending operations."""
 
-        Extract paths to inventory dirs, that are the anticipated results of pending
-        moves and creations.
+        # TODO: Currently used within `rename_directory` to allow for
+        #       move+rename. This needs enhancement/generalization (check for
+        #       removed ones as well, etc.). See issue #546.
 
-        Notes
-        -----
-        Currently used within `rename_directory` to allow for move+rename.
-        This needs enhancement/generalization (check for removed ones as well, etc.)
-
-        Returns
-        -------
-        list of Path
-            Inventory dirs about to be created.
-        """
         dirs = []
         for op in self.operations:
             if op.operator == OPERATIONS_MAPPING['new_directories']:
                 dirs.append(op.operands[0])
             elif op.operator == OPERATIONS_MAPPING['move_directories']:
                 dirs.append(op.operands[1] / op.operands[0].name)
+
         return dirs
 
     def _get_pending_removals(self,
-                              mode: Literal['assets', 'dirs', 'all'] = 'all') -> list[Item]:
-        r"""Get paths that are removed by pending operations.
+                              mode: Literal['assets', 'dirs', 'all'] = 'all'
+                              ) -> list[Item]:
+        r"""Get Items that are to be removed by pending operations.
 
         Parameters
         ----------
         mode
-            What pending removals to consider: 'assets' only, 'dirs' only, or 'all'.
-
-        Notes
-        -----
-        Just like `_get_pending_asset_names` and `_get_pending_dirs`,
-        this needs to be replaced by a more structured way of assessing
-        what's in the queue. See issue #546.
-
-        Returns
-        -------
-        list of Path
-            To be removed paths.
+            Which pending removals to consider.
         """
+
+        # TODO: Just like `_get_pending_asset_names` and `_get_pending_dirs`,
+        #       this needs to be replaced by a more structured way of assessing
+        #       what's in the queue. See issue #546.
+
         paths = []
         operators = []
         if mode in ['assets', 'all']:
@@ -296,6 +327,7 @@ class Inventory(object):
         for op in self.operations:
             if op.operator in operators:
                 paths.append(op.operands[0])
+
         return paths
 
     #
@@ -308,9 +340,25 @@ class Inventory(object):
                                 operands=operands,
                                 repo=self.repo)
         self.operations.append(op)
+
         return op
 
-    def add_asset(self, asset: Item) -> list[InventoryOperation]:
+    def add_asset(self,
+                  asset: Item) -> list[InventoryOperation]:
+        r"""Create an asset.
+
+        Parameters
+        ----------
+        asset
+            The Item to create as an asset.
+
+        Raises
+        ------
+        ValueError
+            ``item['onyo.path.absolute']`` cannot be generated, is invalid, or
+            the destination already exists.
+        """
+
         # TODO: what if I call this with a modified (possibly moved) asset?
         # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or reset")
         operations = []
@@ -365,8 +413,9 @@ class Inventory(object):
         operations.append(self._add_operation('new_assets', (asset,)))
         return operations
 
-    def add_directory(self, item: Item) -> list[InventoryOperation]:
-        r"""Add a directory or convert an Asset File to a directory.
+    def add_directory(self,
+                      item: Item) -> list[InventoryOperation]:
+        r"""Create a directory or convert an Asset File to an Asset Directory.
 
         Parameters
         ----------
@@ -375,10 +424,10 @@ class Inventory(object):
 
         Raises
         ------
-        ValueError
-            ``item['onyo.path.absolute']`` is invalid.
         NoopError
             ``item['onyo.path.absolute']`` is already a directory.
+        ValueError
+            ``item['onyo.path.absolute']`` is invalid.
         """
 
         path = item['onyo.path.absolute']
@@ -403,17 +452,55 @@ class Inventory(object):
 
         return operations
 
-    def remove_asset(self, asset: Item) -> list[InventoryOperation]:
+    def remove_asset(self,
+                     asset: Item) -> list[InventoryOperation]:
+        r"""Remove an asset.
+
+        Parameters
+        ----------
+        asset
+            Asset Item to remove.
+
+        Raises
+        ------
+        NotAnAssetError
+            ``asset`` is not an asset.
+        """
+
         path = asset.get('onyo.path.absolute')
         if path in [a['onyo.path.absolute'] for a in self._get_pending_removals(mode='assets')]:
             ui.log_debug(f"{path} already queued for removal.")
             # TODO: Consider NoopError when addressing #546.
             return []
+
         if not self.repo.is_asset_path(path):
             raise NotAnAssetError(f"No such asset: {path}")
+
         return [self._add_operation('remove_assets', (asset,))]
 
-    def move_asset(self, src: Path | dict | UserDict, dst: Path) -> list[InventoryOperation]:
+    def move_asset(self,
+                   src: Path | dict | UserDict,
+                   dst: Path) -> list[InventoryOperation]:
+        r"""Move an asset to a new parent directory.
+
+        To rename an asset under the same parent, see :py:func:`rename_asset`.
+
+        Parameters
+        ----------
+        src
+            The Path to move.
+        dst
+            The absolute Path of the new parent directory.
+
+        Raises
+        ------
+        NotAnAssetError
+            ``asset`` is not an asset.
+        ValueError
+            ``dst`` is the same parent, the target already exists, or
+            ``dst`` would be an invalid location.
+        """
+
         if not isinstance(src, Path):
             src = Path(src.get('onyo.path.absolute'))
         if not self.repo.is_asset_path(src):
@@ -428,7 +515,30 @@ class Inventory(object):
 
         return [self._add_operation('move_assets', (src, dst))]
 
-    def rename_asset(self, asset: Item, name: str | None = None) -> list[InventoryOperation]:
+    def rename_asset(self,
+                     asset: Item,
+                     name: str | None = None) -> list[InventoryOperation]:
+        r"""Rename an asset to a new name under the same parent.
+
+        This renames an asset under the same parent. To move to a different
+        parent directory, see :py:func:`move_asset`.
+
+        Parameters
+        ----------
+        asset
+            Item to rename.
+        name
+            New name.
+
+        Raises
+        ------
+        NoopError
+            Rename would result in the same name.
+        ValueError
+            ``asset`` is not an asset, ``name`` already exists, or
+            ``name`` would be an invalid location.
+        """
+
         path = asset.get('onyo.path.absolute')
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
@@ -454,14 +564,35 @@ class Inventory(object):
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
         return [self._add_operation('rename_assets', (path, destination))]
 
-    def modify_asset(self, asset: Item, new_asset: Item) -> list[InventoryOperation]:
+    def modify_asset(self,
+                     asset: Item,
+                     new_asset: Item) -> list[InventoryOperation]:
+        r"""Modify an asset.
+
+        Parameters
+        ----------
+        asset
+            Original asset Item to modify.
+        new_asset
+            New asset Item to apply to ``asset``.
+
+        Raises
+        ------
+        NoopError
+            No modifications would result from applying ``new_asset`` to
+            ``asset``.
+        ValueError
+            ``asset`` is not an asset, or ``new_asset`` changes read-only
+            pseudo-keys.
+        """
+
         operations = []
         path = asset.get('onyo.path.absolute')
         if not self.repo.is_asset_path(path):
             raise ValueError(f"No such asset: {path}")
 
-        # A path change must not be specified w/ modify_asset. A move is a different operation and
-        # a renaming has to be derived from content:
+        # Cannot change the path. Move is a different operation, and the asset
+        # name is derived from content.
         if new_asset['onyo.path.absolute'] is not None and \
                 new_asset['onyo.path.absolute'] != asset['onyo.path.absolute']:
             raise ValueError("A change in 'onyo.path.absolute' must not be set in an asset modification.")
@@ -473,6 +604,7 @@ class Inventory(object):
             #       accounting for pending operations in the Inventory.
             new_asset['serial'] = self.get_faux_serials(num=1).pop()
         self.raise_required_key_empty_value(new_asset)
+
         # We keep the old path - if it needs to change, this will be done by a rename operation down the road
         new_asset['onyo.path.absolute'] = path
         if is_equal_assets_dict(asset, new_asset):
@@ -485,12 +617,15 @@ class Inventory(object):
                     if new_asset.get("onyo.is.directory", False) \
                     else self.remove_directory(asset)
             operations.extend(ops)
-            # If there is no change in non-pseudo-keys, we should not record a modify_assets operation!
+
+            # If no change in non-pseudo-keys, do not record a modify_assets operation
             if all(asset.get(k) == new_asset.get(k)
                    for k in [a for a in asset.keys()] + [b for b in new_asset.keys()]
                    if k not in PSEUDO_KEYS):
                 return operations
+
         operations.append(self._add_operation('modify_assets', (asset, new_asset)))
+
         # new_asset has the same 'path' at this point, regardless of potential renaming.
         # We modify the content in place and only then perform a potential rename.
         # Otherwise, we'd move the old asset and write the modified one to the old place or
@@ -498,14 +633,15 @@ class Inventory(object):
         try:
             operations.extend(self.rename_asset(new_asset))
         except NoopError:
-            # Modification did not imply a rename
+            # modification did not result in a rename
             pass
+
         return operations
 
     def remove_directory(self,
                          item: Item,
                          recursive: bool = True) -> list[InventoryOperation]:
-        r"""Remove a directory.
+        r"""Remove a directory or convert an Asset Directory to a File.
 
         Parameters
         ----------
@@ -516,7 +652,7 @@ class Inventory(object):
 
         Raises
         ------
-        ValueError
+        InvalidInventoryOperationError
             ``item['onyo.path.absolute']`` is invalid.
         """
 
@@ -563,11 +699,11 @@ class Inventory(object):
 
         Raises
         ------
-        ValueError
-            ``src`` is not an inventory directory, ``dst`` already exists, or
-            ``dst`` would be an invalid location.
         InvalidInventoryOperationError
             ``src`` and ``dst`` share the same parent.
+        ValueError
+            ``src`` is not an inventory directory, the target already exists, or
+            ``dst`` would be an invalid location.
         """
 
         if not src['onyo.is.directory']:
@@ -600,15 +736,15 @@ class Inventory(object):
 
         Raises
         ------
+        InvalidInventoryOperationError
+            ``src`` and ``dst`` do not share the same parent.
         NotADirError
             ``src`` is not a non-asset directory.
+        NoopError
+            Rename would result in the same name.
         ValueError
             ``src`` is not an inventory directory, ``dst`` already exists, or
             ``dst`` would be an invalid location.
-        InvalidInventoryOperationError
-            ``src`` and ``dst`` do not share the same parent.
-        NoopError
-            Rename would result in the same name.
         """
 
         if isinstance(dst, str):
@@ -638,9 +774,16 @@ class Inventory(object):
     #
     # non-operation methods
     #
+    def get_item(self,
+                 path: Path) -> Item:
+        r"""Get the ``Item`` of ``path``.
 
-    def get_item(self, path: Path) -> Item:
-        r"""Get an inventory ``Item`` from ``path``."""
+        Parameters
+        ----------
+        path
+            Path to get as an Item.
+        """
+
         return Item(path, self.repo)
 
     def get_items(self,
@@ -726,15 +869,28 @@ class Inventory(object):
 
         return items
 
-    def generate_asset_name(self, asset: dict | UserDict) -> str:
+    def generate_asset_name(self,
+                            asset: Item) -> str:
+        r"""Generate an ``asset``'s file or directory name.
+
+        The asset name format is defined by the configuration
+        ``onyo.assets.name-format``.
+
+        Parameters
+        ----------
+        asset
+            Asset Item to generate the name for.
+
+        Raises
+        ------
+        ValueError
+            The configuration 'onyo.assets.name-format' is missing or ``asset``
+            does not contain all keys/values needed to generate the asset name.
+        """
+
         config_str = self.repo.get_config("onyo.assets.name-format")
         if not config_str:
             raise ValueError("Missing config 'onyo.assets.name-format'.")
-
-        if not isinstance(asset, Item):
-            # We allow dot-notation for nested dicts in the name config.
-            # Therefore, we need to make sure, the asset is wrapped accordingly here.
-            asset = Item(asset)
 
         # Replace key references so that the same dot notation as in CLI works, while actual
         # format-language features using the dot work as well.
@@ -744,29 +900,42 @@ class Inventory(object):
             config_str = config_str.replace(f"{{{name}", f"{{asset[{name}]")
 
         try:
-            name = config_str.format(asset=asset)  # TODO: Only pass non-pseudo keys?!
+            name = config_str.format(asset=asset)
         except KeyError as e:
             raise ValueError(f"Asset missing value for required field {str(e)}.") from e
+
         return name
 
     def get_faux_serials(self,
-                         length: int = 6,
-                         num: int = 1) -> set[str]:
-        r"""Generate a unique faux serial.
+                         num: int = 1,
+                         length: int = 6) -> set[str]:
+        r"""Generate a set of unique faux serials.
 
-        Generate a faux serial and verify that it is not used by any other asset
-        in the repository. The length of the faux serial must be 4 or greater.
+        The generated faux serials are unique within the set and repository.
 
-        Returns a set of unique faux serials.
+        The minimum serial length of 4 offers a serial space of 62^4 (~14.7
+        million). That is (arbitrarily) determined to be the highest acceptable
+        risk of collisions between independent checkouts of a repo generating
+        serials at the same time.
+
+        Parameters
+        ----------
+        num
+            Number of serials to generate.
+        length
+            String length of the serials to generate. Must be >= 4.
+
+        Raises
+        ------
+        ValueError
+            ``num`` or ``length`` is invalid.
         """
+
         import random
         import string
 
         if length < 4:
-            # 62^4 is ~14.7 million combinations. Which is the lowest acceptable
-            # risk of collisions between independent checkouts of a repo.
             raise ValueError('The length of faux serial numbers must be >= 4.')
-
         if num < 1:
             raise ValueError('The number of faux serial numbers must be >= 1.')
 
@@ -782,32 +951,56 @@ class Inventory(object):
 
         return faux_serials
 
-    def raise_required_key_empty_value(self, asset: dict | UserDict) -> None:
-        r"""Whether `asset` has an empty value for a required key.
+    def raise_required_key_empty_value(self,
+                                       asset: Item) -> None:
+        r"""Raise if ``asset`` has an empty value for a required key.
 
-        Validation helper.
+        A validation helper. This checks only asset name keys.
 
-        Notes
-        -----
-        This is currently considering asset name keys only. However,
-        proper asset validation with ways to declare other keys
-        required is anticipated. This would need to account for those
-        as well.
+        Parameters
+        ----------
+        asset
+            The asset Item to check.
+
+        Raises
+        ------
+        ValueError
+            A required key has an empty value.
         """
+
         if any(key not in asset or asset[key] is None or not str(asset[key]).strip()
                for key in self.repo.get_asset_name_keys()):
             raise ValueError(f"Required asset keys ({', '.join(self.repo.get_asset_name_keys())})"
                              f" must not have empty values.")
 
-    def raise_empty_keys(self, asset: dict | UserDict) -> None:
-        r"""Whether `asset` has empty keys.
+    def raise_empty_keys(self,
+                         asset: Item) -> None:
+        r"""Raise if ``asset`` has empty keys.
 
-        Validation helper
+        A validation helper.
+
+        Parameters
+        ----------
+        asset
+            The asset Item to check.
         """
+
         if any(not k or not str(k).strip() or k == 'None' for k in asset.keys()):
             # Note, that DotNotationWrapper.keys() delivers strings (and has to).
             # Hence, `None` as a key would show up here as 'None'.
             raise ValueError("Keys are not allowed to be empty or None-values.")
 
-    def get_history(self, path: Path | None = None, n: int | None = None) -> Generator[UserDict, None, None]:
+    def get_history(self,
+                    path: Path | None = None,
+                    n: int | None = None) -> Generator[UserDict, None, None]:
+        r"""Yield the history of Inventory Operations for a path.
+
+        Parameters
+        ----------
+        path
+            The Path to get the history of. Defaults to the repo root.
+        n
+            Limit history to ``n`` commits. ``None`` for no limit (default).
+        """
+
         yield from self.repo.get_history(path, n)

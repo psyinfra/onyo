@@ -3,6 +3,7 @@ import subprocess
 import pytest
 
 from onyo.lib.inventory import Inventory
+from onyo.lib.items import Item
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import DotNotationWrapper
 from . import check_commit_msg
@@ -159,7 +160,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 
     # new assets are added
     for s in specs:
-        p = new_directory / inventory.generate_asset_name(s)
+        p = new_directory / inventory.generate_asset_name(Item(s, repo=inventory.repo))
         assert inventory.repo.is_asset_path(p)
         assert p in inventory.repo.git.files
         new_asset = inventory.get_item(p)
