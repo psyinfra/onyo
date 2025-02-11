@@ -649,27 +649,27 @@ class Inventory(object):
                   depth: int = 0,
                   types: list[Literal['assets', 'directories', 'templates']] | None = None
                   ) -> Generator[UserDict, None, None]:
-        r"""Yield all assets under ``paths`` up to ``depth`` directory levels.
-
-        Generator, because it needs to read file content. This allows to act upon
-        results while they are coming in.
+        r"""Yield all Items matching paths and filters.
 
         Parameters
         ----------
         include
-            Paths to look for assets under. Defaults to the root of the inventory.
+            Paths under which to look for Items. Default is inventory root.
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         exclude
-            Paths to exclude, meaning that assets underneath any of these are not
-            being returned. Defaults to ``None``.
+            Paths to exclude (i.e. Items underneath will not be returned).
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         depth
-            Number of levels to descend into. Must be greater equal 0.
-            If 0, descend recursively without limit. Defaults to 0.
+            Number of levels to descend into the directories specified by
+            ``include``. A depth of ``0`` descends recursively without limit.
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         types
-            List of types of inventory items to consider. Valid types are
-            'assets', 'directories' and 'templates'.
-            Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
-            Defaults to ['assets'].
+            Types of inventory items to consider. Equivalent to
+            ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
+            ``onyo.is.template=True``. Default is ``['assets']``.
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         """
+
         for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=types):
             try:
                 yield self.get_item(p)
@@ -688,40 +688,43 @@ class Inventory(object):
                            match: list[Callable[[dict | UserDict], bool]] | None = None,
                            types: list[Literal['assets', 'directories', 'templates']] | None = None
                            ) -> Generator | filter:
-        r"""Get items matching paths and filters.
+        r"""Yield all Items matching paths and filters.
 
-        Convenience to run the builtin ``filter`` on all items retrieved by
-        ``self.get_items(include, exclude, depth, types)`` for each callable in ``match``,
-        thus combining the filters by a logical AND.
+        All keys, both on-disk YAML and :py:data:`onyo.lib.pseudokeys.PSEUDO-KEYS`,
+        can be matched. Dictionary subkeys are addressed using a period (e.g.
+        ``model.name``).
 
         Parameters
         ----------
         include
-            Paths to look for assets under. Defaults to the root of
-            the inventory. Passed to ``self.get_items``.
+            Paths under which to look for Items. Default is inventory root.
+            Passed to :py:func:`get_items`.
         exclude
-            Paths to exclude, meaning that assets underneath any of these are not
-            being returned. Defaults to ``None``. Passed to ``self.get_items``.
+            Paths to exclude (i.e. Items underneath will not be returned).
+            Passed to :py:func:`get_items`.
         depth
-            Number of levels to descend into. Must be greater or equal 0.
-            If 0, descend recursively without limit. Defaults to 0.
-            Passed to ``self.get_items``.
+            Number of levels to descend into the directories specified by
+            ``include``. A depth of ``0`` descends recursively without limit.
+            Passed to :py:func:`get_items`.
         match
-            Callable suitable for the builtin ``filter``, when called on a
-            list of assets (dictionaries).
+            Callables suited for use with builtin :py:func:`filter`. They are
+            passed an :py:class:`onyo.lib.items.Item` and are expected to return
+            a ``bool``.
         types
-            List of types of inventory items to consider. Valid types are
-            'assets', 'directories', and 'templates'.
-            Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
-            Defaults to ['assets']. Passed to ``self.get_items``.
+            Types of inventory items to consider. Equivalent to
+            ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
+            ``onyo.is.template=True``. Default is ``['assets']``.
+            Passed to :py:func:`get_items`.
         """
+
         depth = 0 if depth is None else depth
-        assets = self.get_items(include=include, exclude=exclude, depth=depth, types=types)
+        items = self.get_items(include=include, exclude=exclude, depth=depth, types=types)
         if match:
-            # Remove assets that do not match all filters
+            # Remove Items that do not match all filters
             for f in match:
-                assets = filter(f, assets)
-        return assets
+                items = filter(f, items)
+
+        return items
 
     def generate_asset_name(self, asset: dict | UserDict) -> str:
         config_str = self.repo.get_config("onyo.assets.name-format")

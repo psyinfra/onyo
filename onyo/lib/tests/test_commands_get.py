@@ -317,7 +317,7 @@ def test_onyo_get_no_matches(inventory: Inventory,
 
     # verify output contains no assets because nothing matched
     output = capsys.readouterr().out
-    assert "No assets matching the filter(s) were found" in output
+    assert "No inventory items matching the filter(s) were found" in output
     assert asset_path1.name not in output
     assert asset_path2.name not in output
     assert "onyo.path.relative" not in output

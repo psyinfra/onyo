@@ -460,50 +460,55 @@ def onyo_get(inventory: Inventory,
              sort: dict[str, sort_t] | None = None,
              types: list[Literal['assets', 'directories', 'templates']] | None = None,
              ) -> list[dict]:
-    r"""Query the key-values of assets.
+    r"""Query the key-values of inventory items.
+
+    All keys, both on-disk YAML and :py:data:`onyo.lib.pseudokeys.PSEUDO-KEYS`,
+    can be queried, matched, and sorted. Dictionary subkeys are addressed
+    using a period (e.g. ``model.name``).
 
     Parameters
     ----------
     inventory
         The Inventory to query.
     include
-        Assets and/or directories to query.
-        Default: inventory root
+        Paths under which to query. Default is inventory root.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     exclude
-        Assets and/or directories to exclude from the query.
+        Paths to exclude (i.e. results underneath will not be returned).
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     depth
-        Descend up to **depth** levels into the directories specified by
+        Number of levels to descend into the directories specified by
         ``include``. A depth of ``0`` descends recursively without limit.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     machine_readable
-        Toggle whether to print the output machine-friendly (no headers and
-        separate values with a single tab) vs more human-friendly output
-        (headers and padded whitespace to align columns).
+        Print results in a machine-friendly format (no headers; separate values
+        with a single tab) rather than a human-friendly output (headers and
+        padded whitespace to align columns).
     match
-        Callables suited for use with builtin :py:func:`filter`. They are passed
-        an asset dictionary and expected to return a ``bool``.
-        All keys (not just those in the output) can be matched.
+        Callables suited for use with builtin :py:func:`filter`. They
+        are passed an :py:class:`onyo.lib.items.Item` and are expected to
+        return a ``bool``. All keys can be matched, and are not limited to
+        those specified by ``keys``.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     keys
-        Keys to print the values of. Pseudo-keys (information not stored in the
-        asset file) are also available for queries. Dictionary subkeys can be
-        addressed using a period (e.g. ``model.name``, ``model.year``, etc.)
-        Default: asset-name keys and ``path``
+        Keys to print the values of. Default is asset-name keys and ``path``.
     sort
-        Dictionary of keys to sort the resulting assets, and are applied in the
-        order they are defined in the dictionary. All keys (not just those in
-        the output) can be used for sorting. The value specifies which sort to
-        use: :py:data:`onyo.lib.consts.SORT_ASCENDING` and
-        :py:data:`onyo.lib.consts.SORT_DESCENDING`.
-        Default: ``{'onyo.path.relative': SORT_ASCENDING}``
+        Dictionary of keys to sort the resulting items. The value specifies
+        which type of sort to use (:py:data:`onyo.lib.consts.SORT_ASCENDING`
+        and :py:data:`onyo.lib.consts.SORT_DESCENDING`). They are applied in
+        the order they are defined in the dictionary. All keys can be sorted,
+        and are not limited to those specified by ``keys``.
+        Default is ``{'onyo.path.relative': SORT_ASCENDING}``
     types
-        List of types of inventory items to consider. Valid types are
-        'assets', 'directories', and 'templates'.
-        Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
-        Defaults to ['assets'].
+        Types of inventory items to consider. Equivalent to
+        ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
+        ``onyo.is.template=True``. Default is ``['assets']``.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
 
     Raises
     ------
     ValueError
-        Invalid argument.
+        Invalid argument
     """
 
     from .consts import TYPE_SYMBOL_MAPPING, UNSET_VALUE
@@ -564,7 +569,7 @@ def onyo_get(inventory: Inventory,
 
             ui.rich_print(table)
         else:
-            ui.rich_print('No assets matching the filter(s) were found')
+            ui.rich_print('No inventory items matching the filter(s) were found')
 
     return results
 

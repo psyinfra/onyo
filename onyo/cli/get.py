@@ -21,8 +21,9 @@ args_get = {
         required=False,
         default=0,
         help=r"""
-            Descend up to **DEPTH** levels into the directories specified by
-            ``include``. A depth of **0** descends recursively without limit.
+            Number of levels to descend into the directories specified by
+            ``include``. A depth of ``0`` descends recursively without limit.
+            Default is ``0``.
         """
     ),
 
@@ -31,10 +32,8 @@ args_get = {
         metavar='KEY',
         nargs='+',
         help=r"""
-            **KEY**s to print the values of. Pseudo-keys (information not stored
-            in the asset file) are also available for queries.
-            Dictionary subkeys can be addressed using a period (e.g. ``model.name``,
-            ``model.year``, etc.)
+            **KEY**s to print the values of.
+            Default is asset-name keys and ``path``.
         """
     ),
 
@@ -42,8 +41,9 @@ args_get = {
         args=('-H', '--machine-readable'),
         action='store_true',
         help=r"""
-            Useful for scripting. Do not print headers and separate values with
-            a single tab instead of variable white space.
+            Print results in a machine-friendly format (no headers; separate
+            values with a single tab) rather than a human-friendly format
+            (headers and padded whitespace to align columns).
         """
     ),
 
@@ -54,11 +54,10 @@ args_get = {
         type=str,
         default=None,
         help=r"""
-            Criteria to match in the form ``KEY=VALUE``, where **VALUE**
-            is a python regular expression. Pseudo-keys such as ``path`` can
-            also be used. Dictionary subkeys can be addressed using a period
-            (e.g. ``model.name``, ``model.year``, etc.) One can match keys that
-            are not in the output. Special values supported are:
+            Criteria to match in the form ``KEY=VALUE`` — where **VALUE** is a
+            literal string or a python regular expression. All keys can be
+            matched, and are not limited to those specified by ``--keys``.
+            Special values supported are:
 
               * ``<dict>``
               * ``<list>``
@@ -71,7 +70,7 @@ args_get = {
         metavar='INCLUDE',
         nargs='+',
         help=r"""
-            Paths to query.
+            Paths under which to query. Default is inventory root.
         """
     ),
 
@@ -80,7 +79,7 @@ args_get = {
         metavar='EXCLUDE',
         nargs='+',
         help=r"""
-            Paths to exclude from the query.
+            Paths to exclude (i.e. results underneath will not be returned).
         """
     ),
 
@@ -90,13 +89,10 @@ args_get = {
         action=StoreSortOption,
         nargs='+',
         help=r"""
-            Sort matches by **SORT-KEY** in ascending order.
-            Can be given multiple times. Sorting by multiple **SORT-KEY** will be done in order
-            (earlier given keys take precedence over subsequent keys).
-            This can be intermixed with ``-s/--sort-descending``.
-            Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
-            overrule what was specified before.
-            One can sort by keys that are not in the output.
+            Sort matches by **SORT-KEY** in ascending order. Multiple **SORT-KEY**s
+            will be sorted in the order given. This can be intermixed with
+            ``-s/--sort-descending``. All keys can be sorted, and are not limited
+            to those specified by ``--keys``.
         """
     ),
 
@@ -106,13 +102,10 @@ args_get = {
         action=StoreSortOption,
         nargs='+',
         help=r"""
-            Sort matches by **SORT-KEY** in descending order.
-            Can be given multiple times. Sorting by multiple **SORT-KEY** will be done in order
-            (earlier given keys take precedence over subsequent keys).
-            This can be intermixed with ``-s/--sort-ascending``.
-            Note, that if a **SORT-KEY** appears multiple times, the latest appearance will
-            overrule what was specified before.
-            One can sort by keys that are not in the output.
+            Sort matches by **SORT-KEY** in descending order. Multiple **SORT-KEY**s
+            will be sorted in the order given. This can be intermixed with
+            ``-s/--sort-ascending``. All keys can be sorted, and are not limited
+            to those specified by ``--keys``.
         """
     ),
 
@@ -123,8 +116,9 @@ args_get = {
         choices=('assets', 'directories', 'templates'),
         default=["assets"],
         help=r"""
-            Item types to query.
-            Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
+            Item types to query. Equivalent to ``onyo.is.asset=True``,
+            ``onyo.is.directory=True``, and ``onyo.is.template=True``.
+            Default is ``assets``.
         """
     ),
 }
@@ -168,15 +162,20 @@ def get(args: argparse.Namespace) -> None:
     printed (see ``onyo.assets.name-format``). If no **PATH**\ s are given, the
     current working directory is used.
 
-    In addition to keys in asset contents, **PSEUDO-KEYS** can be queried and
-    matched.
+    All keys, both on-disk YAML and **PSEUDO-KEYS**, can be queried, matched, and
+    sorted. Dictionary subkeys are addressed using a period (e.g. ``model.name``).
 
-      * ``onyo.is.directory``: is the asset an Asset Directory
-      * ``onyo.path.parent`` (default alias: ``directory``): parent directory of the asset relative to repo root
-      * ``onyo.path.relative`` (default alias: ``path``): path of the asset relative to repo root
+      * ``onyo.is.asset``: is an asset
+      * ``onyo.is.directory``: is a directory
+      * ``onyo.is.template``: is a template
+      * ``onyo.path.absolute``: absolute path of the item
+      * ``onyo.path.name``: name of the item
+      * ``onyo.path.parent`` (default alias: ``directory``): parent directory of the item relative to repo root
+      * ``onyo.path.relative`` (default alias: ``path``): path of the item relative to repo root
 
     By default, the results are sorted by ``onyo.path.relative``.
     """
+
     includes = [Path(p).resolve() for p in args.include] if args.include else [Path.cwd()]
     excludes = [Path(p).resolve() for p in args.exclude] if args.exclude else None
 
