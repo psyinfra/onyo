@@ -24,6 +24,7 @@ from onyo.lib.consts import (
     SORT_DESCENDING,
 )
 from onyo.lib.exceptions import (
+    InvalidArgumentError,
     InvalidAssetError,
     InventoryDirNotEmpty,
     NotADirError,
@@ -35,6 +36,7 @@ from onyo.lib.exceptions import (
 )
 from onyo.lib.items import Item
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
+from onyo.lib.onyo import OnyoRepo
 from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.ui import ui
 from onyo.lib.utils import (
@@ -52,7 +54,6 @@ if TYPE_CHECKING:
         Literal,
     )
     from onyo.lib.consts import sort_t
-    from onyo.lib.onyo import OnyoRepo
 
 log: logging.Logger = logging.getLogger('onyo.commands')
 
@@ -1042,15 +1043,19 @@ def onyo_rm(inventory: Inventory,
 
     paths = [paths] if not isinstance(paths, list) else paths
     for p in paths:
-        try:
-            inventory.remove_asset(p)
-            is_asset = True
-        except NotAnAssetError:
-            is_asset = False
+        item = inventory.get_item(p)
+        if p.name in [OnyoRepo.ANCHOR_FILE_NAME, OnyoRepo.ASSET_DIR_FILE_NAME]:
+            raise InvalidArgumentError(f"Cannot remove onyo-managed files ({p}).\n"
+                                       f"You may want to remove {p.parent} instead.")
+        if not item['onyo.is.asset'] and not item['onyo.is.directory']:
+            raise InvalidArgumentError(f"{p} is neither an asset nor an inventory directory.\n"
+                                       f"You may want to remove this by other means than onyo.")
 
-        if not is_asset or inventory.repo.is_asset_dir(p):
+        if item['onyo.is.asset']:
+            inventory.remove_asset(item)
+        if item['onyo.is.directory']:
             try:
-                inventory.remove_directory(Item(p, repo=inventory.repo), recursive=recursive)
+                inventory.remove_directory(item, recursive=recursive)
             except InventoryDirNotEmpty as e:
                 # Enhance message from failed operation with command specific context:
                 raise InventoryDirNotEmpty(f"{str(e)}\nDid you forget '--recursive'?") from e
@@ -1062,7 +1067,7 @@ def onyo_rm(inventory: Inventory,
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
             if auto_message:
                 operation_paths = sorted(deduplicate([  # pyre-ignore[6]
-                    op.operands[0].relative_to(inventory.root)
+                    op.operands[0]['onyo.path.relative']
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['remove_assets'] or
                     op.operator == OPERATIONS_MAPPING['remove_directories']]))

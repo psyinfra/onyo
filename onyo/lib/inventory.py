@@ -266,7 +266,7 @@ class Inventory(object):
         return dirs
 
     def _get_pending_removals(self,
-                              mode: Literal['assets', 'dirs', 'all'] = 'all') -> list[Path]:
+                              mode: Literal['assets', 'dirs', 'all'] = 'all') -> list[Item]:
         r"""Get paths that are removed by pending operations.
 
         Parameters
@@ -310,7 +310,7 @@ class Inventory(object):
         self.operations.append(op)
         return op
 
-    def add_asset(self, asset: dict | UserDict) -> list[InventoryOperation]:
+    def add_asset(self, asset: Item) -> list[InventoryOperation]:
         # TODO: what if I call this with a modified (possibly moved) asset?
         # -> check for conflicts and raise InvalidInventoryOperationError("something about either commit first or reset")
         operations = []
@@ -403,9 +403,9 @@ class Inventory(object):
 
         return operations
 
-    def remove_asset(self, asset: dict | UserDict | Path) -> list[InventoryOperation]:
-        path = asset if isinstance(asset, Path) else asset.get('onyo.path.absolute')
-        if path in self._get_pending_removals(mode='assets'):
+    def remove_asset(self, asset: Item) -> list[InventoryOperation]:
+        path = asset.get('onyo.path.absolute')
+        if path in [a['onyo.path.absolute'] for a in self._get_pending_removals(mode='assets')]:
             ui.log_debug(f"{path} already queued for removal.")
             # TODO: Consider NoopError when addressing #546.
             return []
@@ -511,6 +511,8 @@ class Inventory(object):
         ----------
         item
             The Item to remove as a directory.
+        recursive
+            Recursively remove items within ``item``.
 
         Raises
         ------
@@ -518,37 +520,30 @@ class Inventory(object):
             ``item['onyo.path.absolute']`` is invalid.
         """
 
-        if item['onyo.path.absolute'] in self._get_pending_removals(mode='dirs'):
+        if item['onyo.path.absolute'] in [d['onyo.path.absolute'] for d in self._get_pending_removals(mode='dirs')]:
             ui.log_debug(f"{item['onyo.path.absolute']} already queued for removal")
             # TODO: Consider NoopError when addressing #546.
             return []
         if item['onyo.path.absolute'] == self.root:
             raise InvalidInventoryOperationError("Can't remove inventory root.")
-        if not self.repo.is_inventory_dir(item['onyo.path.absolute']):
+        if not item['onyo.is.directory']:
             raise InvalidInventoryOperationError(f"Not an inventory directory: {item['onyo.path.absolute']}")
 
         operations = []
         for p in item['onyo.path.absolute'].iterdir():
-            if not recursive and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
-                raise InventoryDirNotEmpty(f"Directory {item['onyo.path.absolute']} not empty.")
+            if p.name in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
+                # These files belong to `item` and are handled with it already.
+                continue
+            if not recursive:
+                raise InventoryDirNotEmpty(f"Directory {item['onyo.path.absolute']} not empty.\n")
 
-            try:
-                operations.extend(self.remove_asset(p))
-                is_asset = True
-            except NotAnAssetError:
-                is_asset = False
-
-            if p.is_dir():
+            p_item = self.get_item(p)
+            if p_item['onyo.is.asset']:
+                operations.extend(self.remove_asset(p_item))
+            if p_item['onyo.is.directory']:
                 operations.extend(self.remove_directory(Item(p, repo=self.repo)))
-            elif not is_asset and p.name not in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
-                # Not an asset and not an inventory dir (hence also not an asset dir)
-                # implies we have a non-inventory file.
-                if p in self._get_pending_removals(mode='all'):
-                    ui.log_debug(f"{p} already queued for removal")
-                    continue
-                operations.append(self._add_operation('remove_generic_file', (p,)))
 
-        operations.append(self._add_operation('remove_directories', (item['onyo.path.absolute'],)))
+        operations.append(self._add_operation('remove_directories', (item,)))
 
         return operations
 
