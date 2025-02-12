@@ -261,29 +261,23 @@ class Inventory(object):
         # Note: Seems superfluous now (operations is a list rather than dict of lists)
         return bool(self.operations)
 
-    def _get_pending_asset_names(self) -> list[str]:
-        r"""Get asset names that would result from pending operations.
+    def _get_pending_assets(self) -> list[str]:
+        r"""Get Paths of assets that are to be created by pending operations."""
 
-        When adding/renaming assets, their names and must not yet exist -
-        neither committed nor pending.
-        """
-
-        # TODO: This needs to be better designed and generalized to include
-        #       directory paths. Inventory methods need to check this instead of
-        #       or in addition to something like Path.exists(). The
-        #       differs/executors/recorders already generate this information.
-        #       Find a way to query that w/o executing in a structured way.
-        #       Ideally, we should also account for paths that are being removed
-        #       by pending operations and therefore are "free to use" for
-        #       operations added to the queue. See issue #546.
-        names = []
+        # TODO: Inventory methods should check this in addition to Path.exists().
+        #       The differs/executors/recorders already generate this
+        #       information. Find a way to query that w/o executing in a
+        #       structured way. Ideally, we should also account for paths that
+        #       are being removed by pending operations and therefore are "free
+        #       to use" for operations added to the queue. See issue #546.
+        assets = []
         for op in self.operations:
             if op.operator == OPERATIONS_MAPPING['new_assets']:
-                names.append(op.operands[0].get('onyo.path.name'))  # TODO: onyo.path.file?
+                assets.append(op.operands[0].get('onyo.path.absolute'))  # TODO: onyo.path.file?
             elif op.operator == OPERATIONS_MAPPING['rename_assets']:
-                names.append(op.operands[1].name)
+                assets.append(op.operands[1])
 
-        return names
+        return assets
 
     def _get_pending_dirs(self) -> list[Path]:
         r"""Get Paths of directories that are to be created by pending operations."""
@@ -312,8 +306,8 @@ class Inventory(object):
             Which pending removals to consider.
         """
 
-        # TODO: Just like `_get_pending_asset_names` and `_get_pending_dirs`,
-        #       this needs to be replaced by a more structured way of assessing
+        # TODO: Just like `_get_pending_assets` and `_get_pending_dirs`, this
+        #       needs to be replaced by a more structured way of assessing
         #       what's in the queue. See issue #546.
 
         paths = []
@@ -392,8 +386,8 @@ class Inventory(object):
             # Shouldn't there be a way to write files (or asset dirs) directly and then add them as new assets?
         if not self.repo.is_inventory_path(path):
             raise ValueError(f"{str(path)} is not a valid asset path.")
-        if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
-            raise ValueError(f"Asset name '{name}' already exists in inventory")
+        if path in self._get_pending_assets():
+            raise ValueError(f"Asset '{path}' is already pending to be created. Multiple assets cannot be stored at the same path.")
 
         if asset.get('onyo.is.directory', False):
             if self.repo.is_inventory_dir(path):
@@ -558,8 +552,8 @@ class Inventory(object):
             raise NoopError(f"Cannot rename asset {name}: This is already its name.")
 
         destination = path.parent / name
-        if name in self._get_pending_asset_names() + [p.name for p in self.repo.asset_paths]:
-            raise ValueError(f"Asset name '{name}' already exists in inventory")
+        if destination in self._get_pending_assets():
+            raise ValueError(f"Asset '{destination}' is already pending to be created. Multiple assets cannot be stored at the same path.")
         if destination.exists():
             raise ValueError(f"Cannot rename asset {path.name} to {destination}. Already exists.")
         return [self._add_operation('rename_assets', (path, destination))]

@@ -135,6 +135,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
     r"""`onyo_new()` must create new directories and subdirectories when called
     on a `directory` that does not yet exist, and add assets correctly to it.
     """
+
     specs = [{'type': 'a type',
               'make': 'I made it',
               'model': {'name': 'a model'},
@@ -197,13 +198,6 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
               'serial': 'totally_random'}]
 
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
-
-    # asset already exists (but elsewhere - see fixture):
-    edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\nserial: SERIAL\n"
-    monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
-    specs = [{'template': 'empty'}]
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
-    assert inventory.repo.git.is_clean_worktree()
 
     # missing required fields:
     specs = [{'template': 'empty'}]
