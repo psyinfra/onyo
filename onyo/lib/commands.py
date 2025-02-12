@@ -537,7 +537,7 @@ def onyo_get(inventory: Inventory,
 
     # sort results before filtering/replacing, so all keys can be sorted
     results = natural_sort(
-        assets=results,
+        items=results,
         keys=sort or {'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
 
     # reduce results to just the `selected_keys`
