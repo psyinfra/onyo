@@ -529,11 +529,11 @@ def onyo_get(inventory: Inventory,
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
     selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['onyo.path.relative']
-    results = list(inventory.get_items_by_query(include=include,
-                                                exclude=exclude,
-                                                depth=depth,
-                                                match=match,  # pyre-ignore[6]
-                                                types=types))
+    results = list(inventory.get_items(include=include,
+                                       exclude=exclude,
+                                       depth=depth,
+                                       match=match,  # pyre-ignore[6]
+                                       types=types))
 
     # sort results before filtering/replacing, so all keys can be sorted
     results = natural_sort(

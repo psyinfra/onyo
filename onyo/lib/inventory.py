@@ -789,48 +789,10 @@ class Inventory(object):
     def get_items(self,
                   include: Iterable[Path] | None = None,
                   exclude: Iterable[Path] | Path | None = None,
-                  depth: int = 0,
+                  depth: int | None = 0,
+                  match: list[Callable[[Item], bool]] | None = None,
                   types: list[Literal['assets', 'directories', 'templates']] | None = None
-                  ) -> Generator[UserDict, None, None]:
-        r"""Yield all Items matching paths and filters.
-
-        Parameters
-        ----------
-        include
-            Paths under which to look for Items. Default is inventory root.
-            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
-        exclude
-            Paths to exclude (i.e. Items underneath will not be returned).
-            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
-        depth
-            Number of levels to descend into the directories specified by
-            ``include``. A depth of ``0`` descends recursively without limit.
-            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
-        types
-            Types of inventory items to consider. Equivalent to
-            ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
-            ``onyo.is.template=True``. Default is ``['assets']``.
-            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
-        """
-
-        for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=types):
-            try:
-                yield self.get_item(p)
-            except NotAnAssetError as e:
-                # report the error, but proceed
-                ui.error(e)
-
-    def get_asset_from_template(self, template: Path | str | None) -> Item:
-        # TODO: Possibly join with get_asset (path optional)
-        return Item(self.repo.get_template(template))  # , repo=self.repo ?? Probably not. Template is not yet bound.
-
-    def get_items_by_query(self,
-                           include: list[Path] | None = None,
-                           exclude: list[Path] | Path | None = None,
-                           depth: int | None = 0,
-                           match: list[Callable[[dict | UserDict], bool]] | None = None,
-                           types: list[Literal['assets', 'directories', 'templates']] | None = None
-                           ) -> Generator | filter:
+                  ) -> Generator[Item, None, None] | filter:
         r"""Yield all Items matching paths and filters.
 
         All keys, both on-disk YAML and :py:data:`onyo.lib.pseudokeys.PSEUDO-KEYS`,
@@ -841,14 +803,14 @@ class Inventory(object):
         ----------
         include
             Paths under which to look for Items. Default is inventory root.
-            Passed to :py:func:`get_items`.
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         exclude
             Paths to exclude (i.e. Items underneath will not be returned).
-            Passed to :py:func:`get_items`.
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         depth
             Number of levels to descend into the directories specified by
             ``include``. A depth of ``0`` descends recursively without limit.
-            Passed to :py:func:`get_items`.
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         match
             Callables suited for use with builtin :py:func:`filter`. They are
             passed an :py:class:`onyo.lib.items.Item` and are expected to return
@@ -857,17 +819,26 @@ class Inventory(object):
             Types of inventory items to consider. Equivalent to
             ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
             ``onyo.is.template=True``. Default is ``['assets']``.
-            Passed to :py:func:`get_items`.
+            Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         """
 
         depth = 0 if depth is None else depth
-        items = self.get_items(include=include, exclude=exclude, depth=depth, types=types)
-        if match:
-            # Remove Items that do not match all filters
-            for f in match:
-                items = filter(f, items)
+        match = [] if match is None else match
 
-        return items
+        for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=types):
+            try:
+                item = self.get_item(p)
+                # check against filters
+                if all([f(item) for f in match]):
+                    yield item
+
+            except NotAnAssetError as e:
+                # report the error, and proceed
+                ui.error(e)
+
+    def get_asset_from_template(self, template: Path | str | None) -> Item:
+        # TODO: Possibly join with get_asset (path optional)
+        return Item(self.repo.get_template(template))  # , repo=self.repo ?? Probably not. Template is not yet bound.
 
     def generate_asset_name(self,
                             asset: Item) -> str:
