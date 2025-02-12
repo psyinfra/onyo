@@ -441,7 +441,9 @@ def test_onyo_get_asset_dir(inventory: Inventory,
     inventory.add_asset(asset)
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
-    onyo_get(inventory, match=[Filter("other=1").match], keys=["onyo.path.relative", "onyo.is.directory"])
+    onyo_get(inventory,
+             match=[Filter("other=1").match],  # pyre-ignore[6]
+             keys=["onyo.path.relative", "onyo.is.directory"])
     output = capsys.readouterr().out
     assert str(asset_dir.relative_to(inventory.root)) in output
     assert str(True) in output
@@ -519,7 +521,7 @@ def test_onyo_get_match_empty_dict(inventory: Inventory,
     inventory.commit("test assets w/ dicts and lists")
 
     onyo_get(inventory,
-             match=[Filter("some_key={}").match],
+             match=[Filter("some_key={}").match],  # pyre-ignore[6]
              keys=["onyo.path.relative", "some_key"])
     output = capsys.readouterr().out
     assert "SERIAL2" in output
@@ -552,7 +554,7 @@ def test_onyo_get_match_empty_list(inventory: Inventory,
     inventory.commit("test assets w/ dicts and lists")
 
     onyo_get(inventory,
-             match=[Filter("some_key=[]").match],
+             match=[Filter("some_key=[]").match],  # pyre-ignore[6]
              keys=["onyo.path.relative", "some_key"])
     output = capsys.readouterr().out
     assert "SERIAL2" in output
