@@ -4,9 +4,16 @@ from onyo.lib.inventory import OPERATIONS_MAPPING
 
 
 def parse_operations_record(record: list[str]) -> dict:
+    r"""Parse a textual Inventory Operations record.
+
+    To extract a collection of Inventory Operations from a git commit message.
+
+    Each field of the returned dict is a list of Paths or Path pairs.
+    """
 
     if not record[0].strip() == "--- Inventory Operations ---":
         raise RuntimeError("Invalid operations record.")
+
     parsed_record = {k: [] for k in OPERATIONS_MAPPING.keys()}
     collecting_key = None
     for line in record[1:]:
@@ -33,15 +40,20 @@ def parse_operations_record(record: list[str]) -> dict:
             case "Modified assets:":
                 collecting_key = "modify_assets"
             case _:
-                if not collecting_key or line and not line.startswith("- "):
+                if not collecting_key:
                     raise RuntimeError("Invalid operations record.")
-                cleaned_line = line[2:].split(" -> ")
-                if len(cleaned_line) > 2:
-                    raise RuntimeError(f"Invalid operations record:{line}")
-                if len(cleaned_line) == 1:
-                    parsed_record[collecting_key].append(Path(cleaned_line[0]))
-                else:
-                    parsed_record[collecting_key].append(
-                        (Path(cleaned_line[0]), Path(cleaned_line[1]))
-                    )
+                if collecting_key and not line.startswith("- "):
+                    raise RuntimeError("Invalid operations record.")
+
+                clean_line = line.removeprefix('- ').split(" -> ")
+                match len(clean_line):
+                    case 1:
+                        parsed_record[collecting_key].append(Path(clean_line[0]))
+                    case 2:
+                        parsed_record[collecting_key].append(
+                            (Path(clean_line[0]), Path(clean_line[1]))
+                        )
+                    case _:
+                        raise RuntimeError(f"Invalid operations record:{line}")
+
     return parsed_record
