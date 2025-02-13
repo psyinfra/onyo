@@ -28,7 +28,6 @@ from onyo.lib.exceptions import (
     InvalidAssetError,
     InventoryDirNotEmpty,
     NotADirError,
-    NotAnAssetError,
     NoopError,
     OnyoInvalidRepoError,
     OnyoRepoError,
@@ -719,24 +718,24 @@ def onyo_mkdir(inventory: Inventory,
 
 
 def _move_asset_or_dir(inventory: Inventory,
-                       source: Path,
-                       destination: Path) -> None:
-    r"""Move a source asset or directory to a destination.
+                       source: Item,
+                       destination: Item) -> None:
+    r"""Move a source asset or directory into a destination directory.
 
     Parameters
     ----------
     inventory
         The Inventory to operate on.
     source
-        Path of an asset or directory to move.
+        Asset or directory to move.
     destination
-        Path of a directory to move the source into.
+        Directory to move the source into.
     """
 
-    try:
+    if source['onyo.is.asset']:
         inventory.move_asset(source, destination)
-    except NotAnAssetError:
-        inventory.move_directory(Item(source, repo=inventory.repo), destination)
+        return
+    inventory.move_directory(source, destination)
 
 
 def _maybe_rename(inventory: Inventory,
@@ -798,17 +797,18 @@ def onyo_mv(inventory: Inventory,
         subject_prefix = "mv"
         implicit_move = True
         # destination Asset File needs to be converted into Asset Directory first
-        if inventory.repo.is_asset_file(destination):
-            inventory.add_directory(Item(destination, repo=inventory.repo))
+        dst_item = inventory.get_item(destination)
+        if dst_item['onyo.is.asset'] and not dst_item['onyo.is.directory']:
+            inventory.add_directory(dst_item)
 
         for s in sources:
-            _move_asset_or_dir(inventory, s, destination)
+            _move_asset_or_dir(inventory, inventory.get_item(s), dst_item)
     elif len(sources) == 1 and sources[0].name == destination.name:
         # Move Mode: explicit destination name
         # The destination does not exist, but is named the same as the source.
         # e.g. mv example dir/example
         subject_prefix = "mv"
-        _move_asset_or_dir(inventory, sources[0], destination.parent)
+        _move_asset_or_dir(inventory, inventory.get_item(sources[0]), inventory.get_item(destination.parent))
     elif len(sources) == 1 and sources[0].is_dir() and destination.parent.is_dir():
         if sources[0].parent == destination.parent:
             # Rename Mode
@@ -819,7 +819,7 @@ def onyo_mv(inventory: Inventory,
             # Move + Rename Mode: different parents (rename) and different source/dest names
             # e.g. mv example dir/different
             subject_prefix = "mv + ren"
-            inventory.move_directory(Item(sources[0], repo=inventory.repo), destination.parent)
+            inventory.move_directory(inventory.get_item(sources[0]), inventory.get_item(destination.parent))
             _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
             inventory._ignore_for_commit.append(destination.parent / sources[0].name)

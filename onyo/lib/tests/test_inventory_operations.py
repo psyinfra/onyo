@@ -189,15 +189,17 @@ def test_move_asset(repo: OnyoRepo) -> None:
 
     inventory.add_asset(asset)
     inventory.commit("First asset added")
+    # get item bound to inventory, implying pseudokeys are evaluated against that inventory:
+    asset = inventory.get_item(asset_file)
 
     # non-existing destination raises:
-    pytest.raises(ValueError, inventory.move_asset, asset, newdir1 / "doesnotexist")
+    pytest.raises(ValueError, inventory.move_asset, asset, inventory.get_item(newdir1 / "doesnotexist"))
 
     # move to same place:
-    pytest.raises(ValueError, inventory.move_asset, asset, newdir2)
+    pytest.raises(ValueError, inventory.move_asset, asset, inventory.get_item(newdir2))
 
     # valid target:
-    inventory.move_asset(asset, newdir1)
+    inventory.move_asset(asset, inventory.get_item(newdir1))
     assert num_operations(inventory, 'move_assets') == 1
     assert isinstance(inventory.operations[0].operands, tuple)
     assert asset_file in inventory.operations[0].operands
@@ -467,14 +469,18 @@ def test_move_directory(repo: OnyoRepo) -> None:
     inventory.add_asset(asset)
     inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
+    asset = inventory.get_item(asset_file)
 
     # raise on non-dir:
-    pytest.raises(ValueError, inventory.move_directory, Item(asset_file, repo=repo), repo.git.root / "doesnotexist")
-    pytest.raises(ValueError, inventory.move_directory, Item(asset_file, repo=repo), (repo.git.root / "isafile").touch())
+    pytest.raises(ValueError,
+                  inventory.move_directory, asset, inventory.get_item(repo.git.root / "doesnotexist"))
+    pytest.raises(ValueError,
+                  inventory.move_directory, asset, inventory.get_item((repo.git.root / "isafile").touch()))
     # raise on rename:
-    pytest.raises(InvalidInventoryOperationError, inventory.move_directory, Item(newdir2, repo=repo), newdir1)
+    pytest.raises(InvalidInventoryOperationError,
+                  inventory.move_directory, inventory.get_item(newdir2), inventory.get_item(newdir1))
 
-    inventory.move_directory(Item(newdir2, repo=repo), emptydir)
+    inventory.move_directory(inventory.get_item(newdir2), inventory.get_item(emptydir))
     assert num_operations(inventory, 'move_directories') == 1
     assert (newdir2, emptydir) == inventory.operations[0].operands
 
@@ -885,8 +891,9 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     inventory.add_asset(asset)
     inventory.add_directory(Item(dir_path, repo=repo))
     inventory.commit("Whatever")
+    asset_dir = inventory.get_item(asset_dir_path)
 
-    inventory.move_asset(asset_dir_path, dir_path)
+    inventory.move_asset(asset_dir, inventory.get_item(dir_path))
     assert num_operations(inventory, 'move_assets') == 1
     assert (asset_dir_path, dir_path) == inventory.operations[0].operands
 
@@ -915,7 +922,7 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
             assert v == []
 
     # Now move back but via `move_directory` instead.
-    inventory.move_directory(Item(new_path, repo=repo), inventory.root)
+    inventory.move_directory(inventory.get_item(new_path), inventory.get_item(inventory.root))
     assert num_operations(inventory, 'move_directories') == 1
     assert (new_path, inventory.root) == inventory.operations[0].operands
 
