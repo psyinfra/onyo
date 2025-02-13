@@ -19,12 +19,13 @@ if TYPE_CHECKING:
         TypeVar,
     )
 
-    _KT = TypeVar("_KT")  # Key type.
-    _VT = TypeVar("_VT")  # Value type.
+    _KT = TypeVar("_KT")  # Key type
+    _VT = TypeVar("_VT")  # Value type
 
 
 def resolve_alias(key: Any) -> Any:
-    """Return the target of a key alias."""
+    """Return the target key of a key alias."""
+
     try:
         return onyo.lib.pseudokeys.PSEUDOKEY_ALIASES[key]
     except KeyError:
@@ -32,17 +33,10 @@ def resolve_alias(key: Any) -> Any:
 
 
 class Item(DotNotationWrapper):
-    """An Item an Inventory can potentially track.
+    """An item that an :py:class:`onyo.lib.inventory.Inventory` can potentially track.
 
-    The main purpose of this class is to attach pseudo-keys
-    and alias resolution to things that can be inventoried.
-    That's directories and YAML-files.
-
-    The initializer methods are referenced in the `PSEUDO_KEYS`
-    mapping. They are called, when a pseudo-key is first
-    accessed (see `self.__getitem__`). This allows to distinguish
-    a meaningful `None` (<unset>) from a not yet evaluated
-    pseudo-key.
+    The main purpose is to attach pseudo-keys and alias resolution to things
+    that can be inventoried (directories and YAML-files).
     """
 
     def __init__(self,
@@ -68,13 +62,27 @@ class Item(DotNotationWrapper):
         if kwargs:
             self.update(**kwargs)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self,
+                    key,
+                    value):
         key = resolve_alias(key)
         super().__setitem__(key, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self,
+                    key):
+        r"""Get the value of a ``key``.
+
+        The initializer methods are referenced in the mapping
+        :py:data:`onyo.lib.pseudokeys.PSEUDO_KEYS`. They are called on-demand,
+        when a pseudo-key is first accessed.
+
+        This allows to distinguish a meaningful ``None`` (<unset>) from a not
+        yet evaluated pseudo-key.
+        """
+
         key = resolve_alias(key)
         value = super().__getitem__(key)
+
         if key in onyo.lib.pseudokeys.PSEUDO_KEYS and \
                 isinstance(value, onyo.lib.pseudokeys.PseudoKey):
             # Value still is the pseudo-key definition.
@@ -82,83 +90,109 @@ class Item(DotNotationWrapper):
             new_value = value.implementation(self)
             self[key] = new_value
             return new_value
+
         return value
 
-    def __delitem__(self, key):
+    def __delitem__(self,
+                    key):
         return super().__delitem__(resolve_alias(key))
 
-    def __contains__(self, key):
+    def __contains__(self,
+                     key):
         return super().__contains__(resolve_alias(key))
 
-    def get(self, key, default=None):
+    def get(self,
+            key,
+            default=None):
         return super().get(resolve_alias(key), default=default)
 
-    def update_from_path(self, path: Path):
-        """Update internal dictionary from a YAML file.
+    def update_from_path(self,
+                         path: Path) -> None:
+        """Update the internal dictionary with key/values from a YAML file.
 
-        Regarding keys and values this is a "regular" update.
-        However, with respect to comments etc., this overwrites
-        possibly existing ones.
+        YAML comments are preserved on a best-effort basis. There is no
+        straightforward way to merge YAML comments, and thus ones from ``path``
+        may overwrite internal ones.
+
+        Parameters
+        ----------
+        path
+            Path of YAML file to update from.
         """
-        # TODO: Potentially account for being pointed to
-        #       a directory or an .onyoignore'd file.
+
         from onyo.lib.utils import get_asset_content
+
         self._path = path
+
         if self['onyo.is.asset'] and self.repo:
             loader = self.repo.get_asset_content
         elif self['onyo.is.asset'] or self['onyo.is.template']:
             loader = get_asset_content
         else:
             return
+
         map_from_file = loader(path)
         self.update(map_from_file)
         if hasattr(map_from_file, 'copy_attributes'):
             # We got a (subclass of) ruamel.yaml.CommentBase.
             # Copy the attributes re comments, format, etc. for roundtrip.
-            # Note, that this is replacing - there's no straightforward way to merge w/
-            # existing comments etc.
             map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
 
-    def fill_created(self, what: str | None):
-        """Initializer for the 'onyo.was.created' pseudo-keys.
+    def fill_created(self,
+                     key: str | None = None):
+        """Initializer for the ``'onyo.was.created'`` pseudo-keys.
 
-        Fills in the entire sub-dict and returns the value specified by ``what``.
+        The entire ``'onyo.was.created'`` dict is initialized, regardless of
+        which (if any) ``key`` is requested.
 
-        Note/TODO:
+        Parameters
         ----------
-        This is currently based on ``git log --follow <path>``. Looking back, the first appearance
-        of a 'new_assets'/'new_directories' operation should be it, assuming the history
-        was created by onyo commands.
-        However, if the history was created using the python interface, that assumption wouldn't hold
-        and we'd have to trace back moves and renames in order to know what path or file name we are looking
-        to match against these operations.
+        key
+            Name of pseudo-key to get the value of.
         """
+
+        # TODO: This is based on `git log --follow <path>`. The first appearance
+        #       of 'new_assets'/'new_directories' should be the match. However,
+        #       this is known to be problematic, both due to `git` and if the
+        #       Python interface was used. A more robust solution will involve a
+        #       more involved parsing of Inventory Operation records, and
+        #       tracing history and moves, etc.
+
         if self['onyo.is.template']:
-            # Templates aren't actually tracked in the inventory (only in git).
-            # Hence, there are no operations records to be used.
+            # Templates aren't tracked by inventory operations (only in git).
+            # Thus there are no operations records to be parsed.
             return None
+
         if self.repo and self['onyo.path.absolute']:
             for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
                 if 'operations' in commit:
                     if (self['onyo.is.asset'] and commit['operations']['new_assets']) or \
                             (self['onyo.is.directory'] and commit['operations']['new_directories']):
                         self['onyo.was.created'] = commit.data
-                        return commit[what] if what else None
+                        return commit[key] if key else None
+
             return None
 
-    def fill_modified(self, what: str | None):
-        """Initializer for the 'onyo.was.modified' pseudo-keys.
+    def fill_modified(self,
+                      key: str | None = None):
+        """Initializer for the ``'onyo.was.modified'`` pseudo-keys.
 
-        Fills in the entire sub-dict and returns the value specified by ``what``.
+        The entire ``'onyo.was.modified'`` dict is initialized, regardless of
+        which (if any) ``key`` is requested.
 
-        Note/TODO:
+        Parameters
         ----------
-        See ``fill_created``.
+        key
+            Name of pseudo-key to get the value of.
         """
+
+        # TODO: see `fill_created()` todo.
+
         if self['onyo.is.template']:
-            # Templates aren't actually tracked in the inventory (only in git).
-            # Hence, there are no operations records to be used.
+            # Templates aren't tracked by inventory operations (only in git).
+            # Thus there are no operations records to be parsed.
             return None
+
         if self.repo and self['onyo.path.absolute']:
             for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
                 if 'operations' in commit:
@@ -170,69 +204,89 @@ class Item(DotNotationWrapper):
                          commit['operations']['move_directories'] or
                          commit['operations']['rename_directories'])):
                         self['onyo.was.modified'] = commit.data
-                        return commit[what] if what else None
+                        return commit[key] if key else None
+
         return None
 
     def get_path_absolute(self):
-        """Initializer for the 'onyo.path.absolute' pseudo-key."""
+        """Initializer for the ``'onyo.path.absolute'`` pseudo-key."""
+
         if self.repo and self._path and self._path.name == self.repo.ASSET_DIR_FILE_NAME:
             return self._path.parent
+
         return self._path
 
     def get_path_relative(self):
-        """Initializer for the 'onyo.path.relative' pseudo-key."""
+        """Initializer for the ``'onyo.path.relative'`` pseudo-key."""
+
         if self.repo and self['onyo.path.absolute']:
             try:
                 return self['onyo.path.absolute'].relative_to(self.repo.git.root)
             except ValueError:
-                pass  # return None (translates to '<unset>') if relative_to() fails b/c path is outside repo.
+                # return None (translates to '<unset>') if relative_to() fails b/c path is outside repo.
+                pass
+
         return None
 
     def get_path_parent(self):
-        """Initializer for the 'onyo.path.parent' pseudo-key."""
+        """Initializer for the ``'onyo.path.parent'`` pseudo-key."""
+
         if self.repo and self['onyo.path.relative']:
             return self['onyo.path.relative'].parent
+
         return None
 
     def get_path_file(self):
-        """Initializer for the 'onyo.path.file' pseudo-key."""
+        """Initializer for the ``'onyo.path.file'`` pseudo-key."""
+
         if self.repo and self['onyo.path.relative']:
             if not self['onyo.is.directory']:
                 return self['onyo.path.relative']
             if self['onyo.is.asset'] or self['onyo.is.template']:
                 return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ASSET_DIR_FILE_NAME
             return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ANCHOR_FILE_NAME
+
         return None
 
     def get_path_name(self):
-        """Initializer for the 'onyo.path.name' pseudo-key."""
+        """Initializer for the ``'onyo.path.name'`` pseudo-key."""
+
         if self['onyo.path.absolute']:
             return self['onyo.path.absolute'].name
+
         return None
 
     def is_asset(self) -> bool | None:
-        """Initializer for the 'onyo.is.asset' pseudo-key."""
+        """Initializer for the ``'onyo.is.asset'`` pseudo-key."""
+
         if not self.repo or not self._path:
             return None
+
         return self.repo.is_asset_path(self._path)
 
     def is_directory(self) -> bool | None:
-        """Initializer for the 'onyo.is.directory' pseudo-key."""
+        """Initializer for the ``'onyo.is.directory'`` pseudo-key."""
+
         if not self.repo or not self._path:
             return None
+
         return self.repo.is_inventory_dir(self._path)
 
     def is_template(self) -> bool | None:
-        """Initializer for the 'onyo.is.template' pseudo-key."""
+        """Initializer for the ``'onyo.is.template'`` pseudo-key."""
+
         if not self.repo or not self._path:
             return None
+
         return self.repo.git.root / self.repo.TEMPLATE_DIR in self._path.parents
 
     def is_empty(self) -> bool | None:
-        """Initializer for the 'onyo.is.empty' pseudo-key."""
+        """Initializer for the ``'onyo.is.empty'`` pseudo-key."""
+
         if self['onyo.is.directory'] and self.repo and self._path:
             # TODO: This likely can be faster when redoing/enhancing caching of repo paths.
             return not any(p.parent == self._path for p in self.repo.asset_paths)
+
         return None
 
 # TODO/Notes for next PR(s):

@@ -430,7 +430,6 @@ def onyo_edit(inventory: Inventory,
         _edit_asset(inventory, asset, partial(inventory.modify_asset, asset), editor)
 
     if inventory.operations_pending():
-        # display changes
         ui.print('\n' + inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -460,50 +459,55 @@ def onyo_get(inventory: Inventory,
              sort: dict[str, sort_t] | None = None,
              types: list[Literal['assets', 'directories', 'templates']] | None = None,
              ) -> list[dict]:
-    r"""Query the key-values of assets.
+    r"""Query the key-values of inventory items.
+
+    All keys, both on-disk YAML and :py:data:`onyo.lib.pseudokeys.PSEUDO-KEYS`,
+    can be queried, matched, and sorted. Dictionary subkeys are addressed
+    using a period (e.g. ``model.name``).
 
     Parameters
     ----------
     inventory
         The Inventory to query.
     include
-        Assets and/or directories to query.
-        Default: inventory root
+        Paths under which to query. Default is inventory root.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     exclude
-        Assets and/or directories to exclude from the query.
+        Paths to exclude (i.e. results underneath will not be returned).
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     depth
-        Descend up to **depth** levels into the directories specified by
+        Number of levels to descend into the directories specified by
         ``include``. A depth of ``0`` descends recursively without limit.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     machine_readable
-        Toggle whether to print the output machine-friendly (no headers and
-        separate values with a single tab) vs more human-friendly output
-        (headers and padded whitespace to align columns).
+        Print results in a machine-friendly format (no headers; separate values
+        with a single tab) rather than a human-friendly output (headers and
+        padded whitespace to align columns).
     match
-        Callables suited for use with builtin :py:func:`filter`. They are passed
-        an asset dictionary and expected to return a ``bool``.
-        All keys (not just those in the output) can be matched.
+        Callables suited for use with builtin :py:func:`filter`. They
+        are passed an :py:class:`onyo.lib.items.Item` and are expected to
+        return a ``bool``. All keys can be matched, and are not limited to
+        those specified by ``keys``.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     keys
-        Keys to print the values of. Pseudo-keys (information not stored in the
-        asset file) are also available for queries. Dictionary subkeys can be
-        addressed using a period (e.g. ``model.name``, ``model.year``, etc.)
-        Default: asset-name keys and ``path``
+        Keys to print the values of. Default is asset-name keys and ``path``.
     sort
-        Dictionary of keys to sort the resulting assets, and are applied in the
-        order they are defined in the dictionary. All keys (not just those in
-        the output) can be used for sorting. The value specifies which sort to
-        use: :py:data:`onyo.lib.consts.SORT_ASCENDING` and
-        :py:data:`onyo.lib.consts.SORT_DESCENDING`.
-        Default: ``{'onyo.path.relative': SORT_ASCENDING}``
+        Dictionary of keys to sort the resulting items. The value specifies
+        which type of sort to use (:py:data:`onyo.lib.consts.SORT_ASCENDING`
+        and :py:data:`onyo.lib.consts.SORT_DESCENDING`). They are applied in
+        the order they are defined in the dictionary. All keys can be sorted,
+        and are not limited to those specified by ``keys``.
+        Default is ``{'onyo.path.relative': SORT_ASCENDING}``
     types
-        List of types of inventory items to consider. Valid types are
-        'assets', 'directories', and 'templates'.
-        Equivalent to ``onyo.is.asset=True``, ``onyo.is.directory=True``, and ``onyo.is.template=True``.
-        Defaults to ['assets'].
+        Types of inventory items to consider. Equivalent to
+        ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
+        ``onyo.is.template=True``. Default is ``['assets']``.
+        Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
 
     Raises
     ------
     ValueError
-        Invalid argument.
+        Invalid argument
     """
 
     from .consts import TYPE_SYMBOL_MAPPING, UNSET_VALUE
@@ -524,15 +528,15 @@ def onyo_get(inventory: Inventory,
         raise ValueError(f"Allowed sorting modes: {', '.join(allowed_sorting)}")
 
     selected_keys = selected_keys or inventory.repo.get_asset_name_keys() + ['onyo.path.relative']
-    results = list(inventory.get_items_by_query(include=include,
-                                                exclude=exclude,
-                                                depth=depth,
-                                                match=match,  # pyre-ignore[6]
-                                                types=types))
+    results = list(inventory.get_items(include=include,
+                                       exclude=exclude,
+                                       depth=depth,
+                                       match=match,  # pyre-ignore[6]
+                                       types=types))
 
     # sort results before filtering/replacing, so all keys can be sorted
     results = natural_sort(
-        assets=results,
+        items=results,
         keys=sort or {'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
 
     # reduce results to just the `selected_keys`
@@ -564,7 +568,7 @@ def onyo_get(inventory: Inventory,
 
             ui.rich_print(table)
         else:
-            ui.rich_print('No assets matching the filter(s) were found')
+            ui.rich_print('No inventory items matching the filter(s) were found')
 
     return results
 
@@ -695,7 +699,6 @@ def onyo_mkdir(inventory: Inventory,
         inventory.add_directory(Item(d, repo=inventory.repo))
 
     if inventory.operations_pending():
-        # display changes
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -824,7 +827,6 @@ def onyo_mv(inventory: Inventory,
         raise ValueError("Can only move into an existing directory/asset, or rename a single directory.")
 
     if inventory.operations_pending():
-        # display changes
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -992,7 +994,6 @@ def onyo_new(inventory: Inventory,
             inventory.add_asset(asset)
 
     if inventory.operations_pending():
-        # display changes
         if not edit:
             # If `edit` was given, per-asset diffs were already approved. Don't ask again.
             print_diff(inventory)
@@ -1061,7 +1062,6 @@ def onyo_rm(inventory: Inventory,
                 raise InventoryDirNotEmpty(f"{str(e)}\nDid you forget '--recursive'?") from e
 
     if inventory.operations_pending():
-        # display changes
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -1144,7 +1144,6 @@ def onyo_set(inventory: Inventory,
             pass
 
     if inventory.operations_pending():
-        # display changes
         print_diff(inventory)
         ui.print('\n' + inventory.operations_summary())
 
@@ -1161,6 +1160,7 @@ def onyo_set(inventory: Inventory,
                     operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
+
     ui.print("No assets updated.")
 
 
@@ -1370,7 +1370,6 @@ def onyo_unset(inventory: Inventory,
             pass
 
     if inventory.operations_pending():
-        # display changes
         print_diff(inventory)
         ui.print('\n' + inventory.operations_summary())
 

@@ -27,9 +27,8 @@ def test_onyo_help(repo: OnyoRepo, variant: str) -> None:
 
 # TODO: this would be better if parametrized
 def test_onyo_without_subcommand(repo: OnyoRepo, helpers) -> None:
-    r"""
-    Test all possible combinations of flags for onyo, without any subcommand.
-    """
+    r"""Test all possible combinations of flags for onyo, without any subcommand."""
+
     for i in helpers.powerset(helpers.onyo_flags()):
         for k in product(*i):
             args = list(helpers.flatten(k))

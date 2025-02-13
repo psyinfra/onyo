@@ -2,6 +2,7 @@ import pytest
 
 from onyo.lib.exceptions import OnyoInvalidFilterError
 from onyo.lib.filters import Filter
+from onyo.lib.items import Item
 
 
 @pytest.mark.parametrize('filt', ['type=laptop', 'key=value', 'foo=<unset>'])
@@ -11,32 +12,32 @@ def test_filter(filt: str) -> None:
     post-initialization behavior
     """
 
-    def read_asset(name: str) -> dict:
+    def read_asset(name: str) -> Item:
         if name == 'laptop_make_model.1':
-            return dict(type='laptop',
+            return Item(type='laptop',
                         make='make',
                         model='model',
                         serial='1',
                         key='value')
         elif name == 'monitor_make_model.2':
-            return dict(type='monitor',
+            return Item(type='monitor',
                         make='make',
                         model='model',
                         serial='2',
                         foo='bar')
         elif name == 'headphones_make_model.3':
-            return dict(type='headphones',
+            return Item(type='headphones',
                         make='make',
                         model='model',
                         serial='3')
         elif name == 'wheelchair_make_model.4':
-            return dict(type='wheelchair',
+            return Item(type='wheelchair',
                         make='make',
                         model='model',
                         serial='4',
                         foo=None)
         elif name == 'wheelchair_make_model.5':
-            return dict(type='wheelchair',
+            return Item(type='wheelchair',
                         make='make',
                         model='model',
                         serial='5',
@@ -110,6 +111,7 @@ def test_filter_invalid(filter_arg: str) -> None:
 
 def test_filter_format() -> None:
     """Test whether the input argument 'key=value' is properly formatted into
-    the `key` and `value` properties"""
+    the `key` and `value` properties
+    """
     assert Filter._format('key=value') == ['key', 'value']
     assert Filter._format('key=value=value') == ['key', 'value=value']

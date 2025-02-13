@@ -4,22 +4,22 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .consts import (
+from onyo.lib.consts import (
     SORT_DESCENDING,
 )
-from .inventory import (
+from onyo.lib.inventory import (
     Inventory,
     InventoryOperation,
 )
-from .ui import ui
+from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
-    from collections import UserDict
-    from .consts import sort_t
     from typing import (
         Sequence,
         Tuple,
     )
+    from onyo.lib.consts import sort_t
+    from onyo.lib.items import Item
 
 log: logging.Logger = logging.getLogger('onyo.command_utils')
 
@@ -157,22 +157,23 @@ def intersect_index(seq1: Sequence,
     return (None, None)
 
 
-def natural_sort(assets: list[dict | UserDict],
-                 keys: dict[str, sort_t]) -> list[dict | UserDict]:
-    r"""Sort an asset list by a list of ``keys``.
+def natural_sort(items: list[Item],
+                 keys: dict[str, sort_t]) -> list[Item]:
+    r"""Sort ``items`` according to a list of ``keys``.
 
     Parameters
     ----------
-    assets
-        Assets to sort.
+    items
+        Items to sort.
     keys
-        Keys to sort ``assets`` by.
+        Keys to sort ``items`` by.
     reverse
         Sort in reverse order.
     """
 
     import locale
     import natsort
+
     from onyo.lib.items import resolve_alias
 
     # set the locale for all categories to the user’s default setting
@@ -182,11 +183,11 @@ def natural_sort(assets: list[dict | UserDict],
         alg = natsort.ns.LOCALE | natsort.ns.INT
         if resolve_alias(key).startswith('onyo.path'):
             alg |= natsort.ns.PATH
-        assets = sorted(assets,
-                        key=natsort.natsort_keygen(key=lambda x: x.get(key), alg=alg),
-                        reverse=keys[key] == SORT_DESCENDING)
+        items = sorted(items,
+                       key=natsort.natsort_keygen(key=lambda x: x.get(key), alg=alg),
+                       reverse=keys[key] == SORT_DESCENDING)
 
-    return assets
+    return items
 
 
 def print_diff(diffable: Inventory | InventoryOperation) -> None:

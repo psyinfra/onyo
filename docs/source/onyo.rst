@@ -16,6 +16,7 @@ Submodules
    :maxdepth: 2
 
    onyo.argparse_helpers
+   onyo.conftest
    onyo.main
 
 Module contents

@@ -80,51 +80,51 @@ PSEUDO_KEYS: Dict[str, PseudoKey] = {
     ),
     'onyo.was.modified.hexsha': PseudoKey(
         description="SHA of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', what='hexsha')
+        implementation=partial(delegate, attribute='fill_modified', key='hexsha')
     ),
     'onyo.was.modified.time': PseudoKey(
         description="Time of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', what='time')
+        implementation=partial(delegate, attribute='fill_modified', key='time')
     ),
     'onyo.was.modified.author.name': PseudoKey(
         description="Name of the author of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', what='author.time')
+        implementation=partial(delegate, attribute='fill_modified', key='author.time')
     ),
     'onyo.was.modified.author.email': PseudoKey(
         description="Email of the author of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', what='author.email')
+        implementation=partial(delegate, attribute='fill_modified', key='author.email')
     ),
     'onyo.was.modified.committer.name': PseudoKey(
         description="Name of the committer of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', what='committer.name')
+        implementation=partial(delegate, attribute='fill_modified', key='committer.name')
     ),
     'onyo.was.modified.committer.email': PseudoKey(
         description="Email of the committer of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', what='committer.email')
+        implementation=partial(delegate, attribute='fill_modified', key='committer.email')
     ),
     'onyo.was.created.hexsha': PseudoKey(
         description="SHA of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', what='hexsha')
+        implementation=partial(delegate, attribute='fill_created', key='hexsha')
     ),
     'onyo.was.created.time': PseudoKey(
         description="Time of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', what='time')
+        implementation=partial(delegate, attribute='fill_created', key='time')
     ),
     'onyo.was.created.author.name': PseudoKey(
         description="Name of the author of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', what='author.time')
+        implementation=partial(delegate, attribute='fill_created', key='author.time')
     ),
     'onyo.was.created.author.email': PseudoKey(
         description="Email of the author of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', what='author.email')
+        implementation=partial(delegate, attribute='fill_created', key='author.email')
     ),
     'onyo.was.created.committer.name': PseudoKey(
         description="Name of the committer of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', what='committer.name')
+        implementation=partial(delegate, attribute='fill_created', key='committer.name')
     ),
     'onyo.was.created.committer.email': PseudoKey(
         description="Email of the committer of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', what='committer.email')
+        implementation=partial(delegate, attribute='fill_created', key='committer.email')
     ),
 }
 r"""Addressable keys that are not part of the on-disk asset YAML.

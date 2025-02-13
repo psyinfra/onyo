@@ -477,40 +477,56 @@ def test_with_special_characters(
 
 @pytest.mark.repo_files('laptop_apple_macbookpro.0')
 @pytest.mark.parametrize('directory', directories)
-def test_error_asset_exists_already(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new` errors in all possible locations when it is called with
-    an asset name that already exists elsewhere in the directory.
-    """
+def test_identical_asset_exists(repo: OnyoRepo, directory: str) -> None:
+    r"""Allow an asset identical to an existing one, but in a different directory."""
+
     asset = f"{directory}/laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', '--directory', directory, '--keys'] + asset_spec,
+    ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
 
-    # verify correct error
-    assert not ret.stdout
-    assert f"'{Path(asset).name}' already exists" in ret.stderr
-    assert ret.returncode == 1
+    # verify correct output
+    assert "New assets:" in ret.stdout
+    assert asset in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
 
-    # verify that just the initial asset was created, but no new one, and the
-    # repository is still in a clean state
-    assert len(repo.asset_paths) == 1
+    # verify that the new asset exists and the repository is in a clean state
+    assert len(repo.asset_paths) == 2
+    assert repo.git.is_clean_worktree()
+
+
+@pytest.mark.parametrize('directory', directories)
+def test_two_identical_assets_in_input(
+        repo: OnyoRepo, directory: str) -> None:
+    r"""Create two identical assets in two different target directories."""
+
+    asset = "laptop_apple_macbookpro.0"
+    ret = subprocess.run(['onyo', '--yes', 'new', '--keys'] + asset_spec + ["directory=.", f"directory={directory}"],
+                         capture_output=True, text=True)
+
+    # verify correct output
+    assert "New assets:" in ret.stdout
+    assert asset in ret.stdout
+    assert not ret.stderr
+    assert ret.returncode == 0
+
+    # verify that the new asset exists and the repository is in a clean state
+    assert len(repo.asset_paths) == 2
     assert repo.git.is_clean_worktree()
 
 
 @pytest.mark.parametrize('directory', directories)
 def test_error_two_identical_assets_in_input(
         repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new` errors in all possible locations when it is called with
-    the same asset name twice, in two different locations.
-    """
-    asset_a = "laptop_apple_macbookpro.0"
-    ret = subprocess.run(['onyo', 'new', '--keys'] + asset_spec + ["directory=.", f"directory={directory}"],
+    r"""Error when two assets would result in identical name and location."""
+
+    asset = "laptop_apple_macbookpro.0"
+    ret = subprocess.run(['onyo', 'new', '--keys'] + asset_spec + [f"directory={directory}", f"directory={directory}"],
                          capture_output=True, text=True)
 
     # verify correct error
     assert not ret.stdout
-    assert asset_a in ret.stderr and "already exists" in ret.stderr
+    assert asset in ret.stderr and "pending to be created" in ret.stderr
     assert ret.returncode == 1
 
     # verify that no new assets were created and the repository stays clean

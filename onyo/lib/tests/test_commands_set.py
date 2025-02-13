@@ -106,7 +106,8 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
     r"""`onyo_set()` must raise an error when attempting to set an
-    illegal/reserved field."""
+    illegal/reserved field.
+    """
     from onyo.lib.consts import RESERVED_KEYS
     from onyo.lib.pseudokeys import PSEUDO_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -188,7 +189,8 @@ def test_onyo_set_simple(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_already_set(inventory: Inventory) -> None:
     r"""`onyo_set()` does not error if called with values
-    that are already set."""
+    that are already set.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"some_key": "some_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -302,7 +304,8 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
     r"""Calling `onyo_set()` with a list containing the same asset multiple
-    times does not error."""
+    times does not error.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
     old_hexsha = inventory.repo.git.get_hexsha()

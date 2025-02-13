@@ -56,7 +56,8 @@ def test_onyo_get_errors(inventory: Inventory) -> None:
 def test_onyo_get_empty_keys(inventory: Inventory,
                              capsys) -> None:
     r"""Verify `onyo_get()` prints values for non-existing keys as unset,
-    and values for keys that exist but have an empty value correctly."""
+    and values for keys that exist but have an empty value correctly.
+    """
     from onyo.lib.consts import UNSET_VALUE
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
@@ -100,7 +101,8 @@ def test_onyo_get_on_empty_directory(inventory: Inventory) -> None:
 def test_onyo_get_reserved_keys(inventory: Inventory,
                                 capsys) -> None:
     r"""`onyo_get()` allows to specify all reserved keys to query
-    and display information for."""
+    and display information for.
+    """
     from onyo.lib.consts import RESERVED_KEYS
     from onyo.lib.pseudokeys import PSEUDO_KEYS
     reserved = ["type", "make", "model.name", "serial"] + list(PSEUDO_KEYS.keys()) + RESERVED_KEYS
@@ -123,7 +125,8 @@ def test_onyo_get_reserved_keys(inventory: Inventory,
 def test_onyo_get_name_keys(inventory: Inventory,
                             capsys) -> None:
     r"""If no keys are specified when calling `onyo_get()`
-    the name keys are printed by default."""
+    the name keys are printed by default.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     name_keys = ["type", "make", "model.name", "serial"]
 
@@ -184,7 +187,8 @@ def test_onyo_get_simple(inventory: Inventory,
 def test_onyo_get_machine_readable(inventory: Inventory,
                                    capsys) -> None:
     r"""`onyo_get()` with machine_readable=True gives different
-    output that contains all requested information."""
+    output that contains all requested information.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     get_key = "some_key"
 
@@ -215,7 +219,8 @@ def test_onyo_get_machine_readable(inventory: Inventory,
 def test_onyo_get_sorting(inventory: Inventory,
                           capsys) -> None:
     r"""`onyo_get()` allows different types of sorting the output,
-    but errors if illegal sorting is specified."""
+    but errors if illegal sorting is specified.
+    """
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     get_key = "some_key"
@@ -312,7 +317,7 @@ def test_onyo_get_no_matches(inventory: Inventory,
 
     # verify output contains no assets because nothing matched
     output = capsys.readouterr().out
-    assert "No assets matching the filter(s) were found" in output
+    assert "No inventory items matching the filter(s) were found" in output
     assert asset_path1.name not in output
     assert asset_path2.name not in output
     assert "onyo.path.relative" not in output
@@ -395,7 +400,8 @@ def test_onyo_get_depth_zero(inventory: Inventory,
 def test_onyo_get_default_inventory_root(inventory: Inventory,
                                          capsys) -> None:
     r"""Calling `onyo_get()` without path uses inventory.root as default
-    and selects all assets of the inventory."""
+    and selects all assets of the inventory.
+    """
     onyo_get(inventory, machine_readable=True)
 
     # verify output contains all assets and "onyo.path.relative" as default key
@@ -408,7 +414,8 @@ def test_onyo_get_default_inventory_root(inventory: Inventory,
 def test_onyo_get_allows_duplicates(inventory: Inventory,
                                     capsys) -> None:
     r"""Calling `onyo_get()` with a list containing the same asset multiple
-    times does not error, but displays information just once."""
+    times does not error, but displays information just once.
+    """
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
     # call `onyo_get()` with `include` containing duplicates
@@ -434,7 +441,9 @@ def test_onyo_get_asset_dir(inventory: Inventory,
     inventory.add_asset(asset)
     asset_dir = inventory.root / "TYPE_MAKER_MODEL.SERIAL2"
     inventory.commit("add an asset dir")
-    onyo_get(inventory, match=[Filter("other=1").match], keys=["onyo.path.relative", "onyo.is.directory"])
+    onyo_get(inventory,
+             match=[Filter("other=1").match],  # pyre-ignore[6]
+             keys=["onyo.path.relative", "onyo.is.directory"])
     output = capsys.readouterr().out
     assert str(asset_dir.relative_to(inventory.root)) in output
     assert str(True) in output
@@ -512,7 +521,7 @@ def test_onyo_get_match_empty_dict(inventory: Inventory,
     inventory.commit("test assets w/ dicts and lists")
 
     onyo_get(inventory,
-             match=[Filter("some_key={}").match],
+             match=[Filter("some_key={}").match],  # pyre-ignore[6]
              keys=["onyo.path.relative", "some_key"])
     output = capsys.readouterr().out
     assert "SERIAL2" in output
@@ -545,7 +554,7 @@ def test_onyo_get_match_empty_list(inventory: Inventory,
     inventory.commit("test assets w/ dicts and lists")
 
     onyo_get(inventory,
-             match=[Filter("some_key=[]").match],
+             match=[Filter("some_key=[]").match],  # pyre-ignore[6]
              keys=["onyo.path.relative", "some_key"])
     output = capsys.readouterr().out
     assert "SERIAL2" in output

@@ -181,7 +181,8 @@ def test_unset_interactive(repo: OnyoRepo,
 def test_unset_key_does_not_exist(repo: OnyoRepo,
                                   asset: str) -> None:
     r"""Test that `onyo unset --keys KEY --asset ASSET` does not error when one of the KEYs does not
-    exist."""
+    exist.
+    """
     no_key = "non_existing"
 
     # test un-setting a non-existing key from an empty file

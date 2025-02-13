@@ -244,11 +244,12 @@ def test_rename_asset(repo: OnyoRepo) -> None:
     inventory.add_asset(asset)
     inventory.commit("First asset added")
 
-    # invalid name according to default config:
-    pytest.raises(ValueError, inventory.rename_asset, asset, "new_name")
-
     # rename to itself raises:
-    pytest.raises(NoopError, inventory.rename_asset, asset, "TYPE_MAKER_MODEL.SERIAL")
+    pytest.raises(NoopError, inventory.rename_asset, asset)
+
+    # invalid name according to default config:
+    del asset['type']
+    pytest.raises(ValueError, inventory.rename_asset, asset)
 
     # Note: No commit here. Valid rename only via modify ATM. Hence, tested in modify asset instead.
     # Alternative: Modify file directly instead and rename here?

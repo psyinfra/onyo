@@ -580,22 +580,21 @@ class OnyoRepo(object):
                        depth: int = 0,
                        types: List[Literal['assets', 'directories', 'templates']] | None = None
                        ) -> List[Path]:
-        r"""Select all items in the repository that are relative to the given
-        ``subtrees`` descending at most ``depth`` directories.
+        r"""Get the Paths of all items matching paths and filters.
 
         Parameters
         ----------
         include
-            Paths under which to look for items. Defaults to inventory root.
+            Paths under which to look for items. Default is to inventory root.
         exclude
             Paths to exclude (i.e. items underneath will not be returned).
-            Defaults to ``None``.
         depth
-            Number of levels to descend into. Must be greater equal 0.
-            If 0, descend recursively without limit. Defaults to 0.
+            Number of levels to descend into the directories specified by
+            ``include``. A depth of ``0`` descends recursively without limit.
         types
-            List of types of inventory items to consider. Valid types are
-            'assets', 'directories' and 'templates'. Defaults to ['assets'].
+            List of types of inventory items to consider. Equivalent to
+            ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
+            ``onyo.is.template=True``. Default is ``['assets']``.
         """
 
         if types is None:
