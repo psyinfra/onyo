@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 from _pytest.mark.structures import MarkDecorator
-from faker.providers import python
 
+from onyo.lib.faker import OnyoProvider
 from onyo.lib.git import GitRepo
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
@@ -25,6 +25,24 @@ if TYPE_CHECKING:
         Type,
     )
 
+
+########################################
+#
+# general
+#
+########################################
+@pytest.fixture(scope="function", autouse=True)
+def clean_env(request) -> None:
+    r"""Ensure that ``$EDITOR`` is unset.
+
+    Makes sure that the ``$EDITOR`` environment variable is not inherited from
+    the user environment nor other tests.
+    """
+
+    try:
+        del os.environ['EDITOR']
+    except KeyError:
+        pass
 
 def params(d: dict) -> MarkDecorator:
     r"""Parameterize a dictionary with human-friendly names.
@@ -47,14 +65,11 @@ def params(d: dict) -> MarkDecorator:
         ids=d.keys(),
     )
 
-
-# TODO: - This should get content specification  (worktree vs committed??)
-#       - Have the yielded object provide info for assertions
-#       - what is/isn't an asset?
-#       - asset content specified and accessible as dict
-#       - other file content as string
-#       - we'd want that for GitRepo, OnyoRepo, Inventory. How?
-
+########################################
+#
+# gitrepo
+#
+########################################
 class AnnotatedGitRepo(GitRepo):
     r"""Annotate a ``GitRepo`` object to ease testing.
 
@@ -78,36 +93,6 @@ class AnnotatedGitRepo(GitRepo):
 
         super().__init__(path, find_root)
         self.test_annotation = None
-
-
-class AnnotatedOnyoRepo(OnyoRepo):
-    r"""Annotate an ``OnyoRepo`` object to ease testing.
-
-    Populated inventory items are stored in ``.test_annotation``.
-    """
-
-    def __init__(self,
-                 path: Path,
-                 init: bool = False,
-                 find_root: bool = False) -> None:
-        r"""Instantiate an ``AnnotatedOnyoRepo`` object with ``path`` as the root directory.
-
-        Parameters
-        ----------
-        path
-            Absolute path to the root of the Onyo Repository.
-        init
-            Initialize ``path`` as a git repo and create/populate the subdir
-            ``.onyo/``. Cannot be used with ``find_root=True``.
-        find_root
-            Replace ``path`` with the results of :py:func:`onyo.lib.onyo.OnyoRepo.find_root`.
-            Thus any directory of a git repository can be passed as ``path``,
-            not just the repo root. Cannot be used with ``init==True``.
-        """
-
-        super().__init__(path, init, find_root)
-        self.test_annotation = None
-
 
 @contextmanager
 def fixture_gitrepo(tmp_path: Path,
@@ -193,6 +178,39 @@ def gitrepo_session_scope(tmp_path: Path,
 
     with fixture_gitrepo(tmp_path, request) as result:
         yield result
+
+########################################
+#
+# onyorepo
+#
+########################################
+class AnnotatedOnyoRepo(OnyoRepo):
+    r"""Annotate an ``OnyoRepo`` object to ease testing.
+
+    Populated inventory items are stored in ``.test_annotation``.
+    """
+
+    def __init__(self,
+                 path: Path,
+                 init: bool = False,
+                 find_root: bool = False) -> None:
+        r"""Instantiate an ``AnnotatedOnyoRepo`` object with ``path`` as the root directory.
+
+        Parameters
+        ----------
+        path
+            Absolute path to the root of the Onyo Repository.
+        init
+            Initialize ``path`` as a git repo and create/populate the subdir
+            ``.onyo/``. Cannot be used with ``find_root=True``.
+        find_root
+            Replace ``path`` with the results of :py:func:`onyo.lib.onyo.OnyoRepo.find_root`.
+            Thus any directory of a git repository can be passed as ``path``,
+            not just the repo root. Cannot be used with ``init==True``.
+        """
+
+        super().__init__(path, init, find_root)
+        self.test_annotation = None
 
 
 @contextmanager
@@ -327,6 +345,11 @@ def onyorepo_session_scope(gitrepo,
         yield result
 
 
+########################################
+#
+# repo
+#
+########################################
 @contextmanager
 def fixture_repo(tmp_path: Path,
                  monkeypatch,
@@ -440,6 +463,11 @@ def repo_session_scope(tmp_path: Path,
         yield result
 
 
+########################################
+#
+# inventory
+#
+########################################
 @contextmanager
 def fixture_inventory(repo: OnyoRepo) -> Generator[Inventory, None, None]:
     r"""Yield a populated Inventory object.
@@ -506,20 +534,11 @@ def inventory_session_scope(repo: OnyoRepo) -> Generator:
         yield result
 
 
-@pytest.fixture(scope="function", autouse=True)
-def clean_env(request) -> None:
-    r"""Ensure that ``$EDITOR`` is unset.
-
-    Makes sure that the ``$EDITOR`` environment variable is not inherited from
-    the user environment nor other tests.
-    """
-
-    try:
-        del os.environ['EDITOR']
-    except KeyError:
-        pass
-
-
+########################################
+#
+# helpers
+#
+########################################
 class Helpers:
     r"""A collection of helper utilities for tests."""
 
@@ -601,6 +620,11 @@ def helpers_session_scope() -> Generator:
         yield result
 
 
+########################################
+#
+# ui
+#
+########################################
 @contextmanager
 def fixture_ui(request) -> Generator:
     r"""Configure :py:class:`onyo.lib.ui.UI`.
@@ -658,152 +682,18 @@ def ui_session_scope(request) -> Generator:
         yield result
 
 
-class OnyoProvider(python.Provider):
-    r"""Faker Provider for Onyo.
-
-    Onyo-related provider functions are all prefixed with ``onyo_``.
-    """
-
-    def onyo_asset_dicts(self,
-                         num: int = 1,
-                         override: dict | None = None) -> Generator[dict, None, None]:
-        r"""Yield asset dictionaries suitable for populating realistic assets."""
-
-        if override is None:
-            override = {}
-
-        for _ in range(num):
-            yield {
-                'type': next(self.onyo_types()),
-                'make': next(self.onyo_manufacturers()),
-                'model': { 'name': self.numerify(text='Wizbang %##!') },
-                'serial': self.pystr(min_chars=15),
-                'keyboard': next(self.onyo_keyboards()),
-                'display': {
-                    'size': self.numerify(text='%#'),
-                    'resolution': self.numerify(text='%##! x %##!'),
-                    'hz': self.numerify(text='%#!'),
-                },
-                'RAM': self.numerify(text='%#!!G'),
-                'CPU': {
-                    'vendor': next(self.onyo_cpu_vendors()),
-                    'cores': self.numerify(text='%#!'),
-                    'arch': next(self.onyo_cpu_archs()),
-                    'model': self.numerify(text='Speedy % %%##Z'),
-                },
-                'disk': { 'size': self.numerify(text='%#!T') },
-            } | override
-
-
-    def onyo_cpu_archs(self,
-                       num: int = 1) -> Generator[str, None, None]:
-        r"""Yield CPU architectures."""
-
-        cpu_archs = (
-            'aarch64',
-            'amd64',
-            'ppc64',
-            'x86',
-        )
-        yield self.random_element(elements=cpu_archs)
-
-
-    def onyo_cpu_vendors(self,
-                         num: int = 1) -> Generator[str, None, None]:
-        r"""Yield CPU vendors."""
-
-        cpu_vendors = (
-            'amd',
-            'apple',
-            'intel',
-            'ibm',
-        )
-        yield self.random_element(elements=cpu_vendors)
-
-
-    def onyo_directories(self,
-                         num: int = 1) -> Generator[str, None, None]:
-        r"""Yield directory names.
-
-        Useful for ``onyo.path.directory``.
-        """
-
-        locations = (
-            'repair',
-            'shelf',
-            'warehouse',
-            'group',
-            'group/Accounting',
-            'group/Creative',
-            'group/HR',
-            'group/IT',
-            'group/Operations',
-            'group/Purchasing',
-            'group/Sales',
-        )
-        for _ in range(num):
-            yield self.random_element(elements=locations)
-
-
-    def onyo_keyboards(self,
-                       num: int = 1) -> Generator[str, None, None]:
-        r"""Yield keyboard layout names."""
-
-        keyboards = (
-            'azerty',
-            'qwerty',
-            'qwertz',
-            'qzerty',
-            'qüerty',
-            'ąžerty',
-        )
-        yield self.random_element(elements=keyboards)
-
-
-    def onyo_manufacturers(self,
-                           num: int = 1) -> Generator[str, None, None]:
-        r"""Yield manufacturers."""
-
-        manufacturers = (
-            'apple',
-            'asus',
-            'cisco',
-            'dell',
-            'eizo',
-            'framework',
-            'hp',
-            'lenovo',
-            'samsung',
-            'sun',
-            'toshiba',
-            'zebra',
-        )
-        yield self.random_element(elements=manufacturers)
-
-
-    def onyo_types(self,
-                   num: int = 1) -> Generator[str, None, None]:
-        r"""Yield asset types."""
-
-        types = (
-            'desktop',
-            'display',
-            'laptop',
-            'pdu',
-            'server',
-            'switch',
-            'ups',
-        )
-        yield self.random_element(elements=types)
-
-
+########################################
+#
+# fake
+#
+########################################
 @contextmanager
 def fixture_fake() -> Generator:
     r"""Yield a Faker object with the Onyo provider loaded.
 
     See Also
     --------
-    OnyoProvider
+    onyo.lib.faker.OnyoProvider
     """
 
     from faker import Faker
