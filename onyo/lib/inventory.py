@@ -473,8 +473,8 @@ class Inventory(object):
         return [self._add_operation('remove_assets', (asset,))]
 
     def move_asset(self,
-                   src: Path | dict | UserDict,
-                   dst: Path) -> list[InventoryOperation]:
+                   src: Item,
+                   dst: Item) -> list[InventoryOperation]:
         r"""Move an asset to a new parent directory.
 
         To rename an asset under the same parent, see :py:func:`rename_asset`.
@@ -495,19 +495,20 @@ class Inventory(object):
             ``dst`` would be an invalid location.
         """
 
-        if not isinstance(src, Path):
-            src = Path(src.get('onyo.path.absolute'))
-        if not self.repo.is_asset_path(src):
-            raise NotAnAssetError(f"No such asset: {src}.")
-        if src.parent == dst:
+        if not src['onyo.is.asset']:
+            raise NotAnAssetError(f"No such asset: {src['onyo.path.absolute']}.")
+        if src['onyo.path.parent'] == dst['onyo.path.relative']:
             # TODO: Instead of raise could be a silent noop.
-            raise ValueError(f"Cannot move {src}: Destination {dst} is the current location.")
-        if not self.repo.is_inventory_dir(dst) and dst not in self._get_pending_dirs():
-            raise ValueError(f"Cannot move {src}: Destination {dst} is not an inventory directory.")
-        if (dst / src.name).exists():
-            raise ValueError(f"Target {dst / src.name} already exists.")
+            raise ValueError(f"Cannot move {src['onyo.path.absolute']}: "
+                             f"Destination {dst['onyo.path.absolute']} is the current location.")
+        if not dst['onyo.is.directory'] and dst['onyo.path.absolute'] not in self._get_pending_dirs():
+            raise ValueError(f"Cannot move {src['onyo.path.absolute']}: "
+                             f"Destination {dst['onyo.path.absolute']} is not an inventory directory.")
+        target = dst['onyo.path.absolute'] / src['onyo.path.name']
+        if target.exists():
+            raise ValueError(f"Target {str(target)} already exists.")
 
-        return [self._add_operation('move_assets', (src, dst))]
+        return [self._add_operation('move_assets', (src['onyo.path.absolute'], dst['onyo.path.absolute']))]
 
     def rename_asset(self,
                      asset: Item) -> list[InventoryOperation]:
