@@ -28,7 +28,6 @@ from onyo.lib.exceptions import (
     InvalidAssetError,
     InventoryDirNotEmpty,
     NotADirError,
-    NotAnAssetError,
     NoopError,
     OnyoInvalidRepoError,
     OnyoRepoError,
@@ -736,7 +735,7 @@ def _move_asset_or_dir(inventory: Inventory,
     if source['onyo.is.asset']:
         inventory.move_asset(source, destination)
         return
-    inventory.move_directory(source, destination['onyo.path.absolute'])
+    inventory.move_directory(source, destination)
 
 
 def _maybe_rename(inventory: Inventory,
@@ -820,7 +819,7 @@ def onyo_mv(inventory: Inventory,
             # Move + Rename Mode: different parents (rename) and different source/dest names
             # e.g. mv example dir/different
             subject_prefix = "mv + ren"
-            inventory.move_directory(inventory.get_item(sources[0]), destination.parent)
+            inventory.move_directory(inventory.get_item(sources[0]), inventory.get_item(destination.parent))
             _maybe_rename(inventory, destination.parent / sources[0].name, destination)
             # TODO: Replace - see issue #546:
             inventory._ignore_for_commit.append(destination.parent / sources[0].name)
