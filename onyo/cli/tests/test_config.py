@@ -46,9 +46,8 @@ def test_config_get_onyo(repo: OnyoRepo) -> None:
 
 
 def test_config_get_pristine(repo: OnyoRepo) -> None:
-    r"""
-    onyo should not alter git config's output (newline, etc)
-    """
+    r"""Onyo should not alter git config's output (newline, etc)"""
+
     ret = subprocess.run(["onyo", "config", "onyo.test.get-pristine",
                           "get-pristine-test"],
                          capture_output=True, text=True)

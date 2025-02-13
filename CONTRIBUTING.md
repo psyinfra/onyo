@@ -79,7 +79,6 @@ To compare to previous runs:
 pytest-benchmark compare .benchmarks/[...] [...]
 ```
 
-
 ### Building documentation
 
 ```bash
@@ -100,13 +99,13 @@ sections describe conventions followed in this project, additionally to the
 - Functions have type hinting for parameters and return types.
 - Code style follows [PEP 8](https://peps.python.org/pep-0008/).
 
-### lib Tests (`tests/lib/`):
+### lib Tests (`tests/lib/`)
 
 - define the public Python API behavior
   - comprehensively test combinations of parameters
 - use only the Python API (no usage of `subprocess.run(["onyo", ...])`)
 
-### CLI Tests (`tests/cli/`):
+### CLI Tests (`tests/cli/`)
 
 - define the CLI behavior
   - comprehensively test combinations of arguments/flags

@@ -430,7 +430,6 @@ def onyo_edit(inventory: Inventory,
         _edit_asset(inventory, asset, partial(inventory.modify_asset, asset), editor)
 
     if inventory.operations_pending():
-        # display changes
         ui.print('\n' + inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -700,7 +699,6 @@ def onyo_mkdir(inventory: Inventory,
         inventory.add_directory(Item(d, repo=inventory.repo))
 
     if inventory.operations_pending():
-        # display changes
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -829,7 +827,6 @@ def onyo_mv(inventory: Inventory,
         raise ValueError("Can only move into an existing directory/asset, or rename a single directory.")
 
     if inventory.operations_pending():
-        # display changes
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -997,7 +994,6 @@ def onyo_new(inventory: Inventory,
             inventory.add_asset(asset)
 
     if inventory.operations_pending():
-        # display changes
         if not edit:
             # If `edit` was given, per-asset diffs were already approved. Don't ask again.
             print_diff(inventory)
@@ -1066,7 +1062,6 @@ def onyo_rm(inventory: Inventory,
                 raise InventoryDirNotEmpty(f"{str(e)}\nDid you forget '--recursive'?") from e
 
     if inventory.operations_pending():
-        # display changes
         ui.print(inventory.operations_summary())
 
         if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
@@ -1149,7 +1144,6 @@ def onyo_set(inventory: Inventory,
             pass
 
     if inventory.operations_pending():
-        # display changes
         print_diff(inventory)
         ui.print('\n' + inventory.operations_summary())
 
@@ -1166,6 +1160,7 @@ def onyo_set(inventory: Inventory,
                     operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
             return
+
     ui.print("No assets updated.")
 
 
@@ -1375,7 +1370,6 @@ def onyo_unset(inventory: Inventory,
             pass
 
     if inventory.operations_pending():
-        # display changes
         print_diff(inventory)
         ui.print('\n' + inventory.operations_summary())
 

@@ -25,8 +25,8 @@ if TYPE_CHECKING:
         TypeVar,
     )
 
-    _KT = TypeVar("_KT")  # Key type.
-    _VT = TypeVar("_VT")  # Value type.
+    _KT = TypeVar("_KT")  # Key type
+    _VT = TypeVar("_VT")  # Value type
 
 
 def get_patched_yaml() -> YAML:  # pyre-ignore[11] pyre can't deal with the import hence can't figure `YAML` as type here
@@ -107,6 +107,7 @@ class DotNotationWrapper(UserDict):
 
         Note, that this forces the returned keys to be strings no matter their original type.
         """
+
         def recursive_keys(d: dict):
             for k in d.keys():
                 if hasattr(d[k], "keys"):
@@ -173,6 +174,7 @@ class DotNotationWrapper(UserDict):
 
         Note, that this is `True` for intermediate keys (dicts), although `self.__iter__` wouldn't yield them.
         """
+
         try:
             self.__getitem__(key)
             return True
@@ -199,6 +201,7 @@ def deduplicate(sequence: list | None) -> list | None:
     sequence
         List to deduplicate.
     """
+
     if not sequence:
         return sequence
     seen = set()
@@ -220,6 +223,7 @@ def dict_to_asset_yaml(d: Dict | UserDict) -> str:
     d
         Dictionary to strip of reserved-keys and convert to a YAML string.
     """
+
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
     for key in RESERVED_KEYS + list(PSEUDO_KEYS.keys()):
@@ -273,8 +277,8 @@ def get_asset_content(asset_file: Path) -> dict:
 
 
 def get_temp_file() -> Path:
-    r"""Create and return the Path of a new temporary file.
-    """
+    r"""Create and return the Path of a new temporary file."""
+
     from tempfile import mkstemp
     fd, tmp_path = mkstemp(prefix='onyo_', suffix='.yaml', text=True)
     return Path(tmp_path)
@@ -290,6 +294,7 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
     asset_files
         A list of files to check for valid YAML.
     """
+
     # Note: Does not (and cannot) account for asset dirs automatically in this form.
     #       Thus needs to be done by caller.
     # Note: assumes absolute paths!
@@ -323,6 +328,7 @@ def write_asset_file(path: Path,
     asset
         A dictionary of content to write to the path.
     """
+
     # TODO: Get file path from onyo.path.file?
     path.open('w').write(dict_to_asset_yaml(asset))
 
@@ -333,6 +339,7 @@ class YAMLDumpWrapper(UserDict):
     This works around the issue that something like `serial: 001234` yields a `{'serial': 1234}` but is dumped as
     `serial: 001234`, which messes up onyo's comparisons for whether there's a modification of an asset.
     """
+
     def __init__(self, d: dict | UserDict):
         super().__init__(d)
 
@@ -359,6 +366,7 @@ def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
 
     This also accounts for nested dicts recursively.
     """
+
     # TODO: This entire function may become part of the Item class instead (__eq__?)
 
     # Note: Checking types here, because of potential recursive calls.
@@ -423,4 +431,5 @@ def is_equal_assets_dict(a: Dict | UserDict, b: Dict | UserDict) -> bool:
                         (b_v.value, b_v.start_mark.line, b_v.start_mark.column):
                     return False
         return True
+
     return contains_all_comments(b_comment, a_comment) and contains_all_comments(a_comment, b_comment)
