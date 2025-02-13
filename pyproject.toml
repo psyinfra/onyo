@@ -40,6 +40,8 @@ tests = [
     'ruff',
 ]
 docs = [
+    'Faker',
+    'pytest',
     'sphinx',
     'sphinx-argparse',
     'sphinx-autodoc-typehints',

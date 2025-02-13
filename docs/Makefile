@@ -26,7 +26,7 @@ clean:
 	@$(SPHINXBUILD) -M clean "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 generate:
-	sphinx-apidoc --force --output-dir "$(SOURCEDIR)" --separate --maxdepth 2 --no-toc ../onyo '../onyo/cli/*' '../*tests*' '../onyo/conftest.py' '../onyo/shared_arguments.py' '../onyo/onyo_arguments.py'
+	sphinx-apidoc --force --output-dir "$(SOURCEDIR)" --separate --maxdepth 2 --no-toc ../onyo '../onyo/cli/*' '../*tests*' '../onyo/shared_arguments.py' '../onyo/onyo_arguments.py'
 	ex -sc ':1s/onyo package/Python API/|x' "$(SOURCEDIR)/onyo.rst"
 	ex -sc ':2s/============/==========/|x' "$(SOURCEDIR)/onyo.rst"
 
