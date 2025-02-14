@@ -844,7 +844,7 @@ def onyo_mv(inventory: Inventory,
                     # from inventory.operations (e.g. inventory.operations[0].operator.recorder()),
                     # but recorders are currently inconvenient to use (they even
                     # have a TODO to simplify them to use Inventory).
-                    # Furthermore, record_move() explicitly notes that it
+                    # Furthermore, _record_move() explicitly notes that it
                     # assumes that it's passed the complete paths, which is the
                     # exact same problem that we have here, so it actually
                     # doesn't help us. :-/
