@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.lib.differs import (
-    differ_new_assets,
-    differ_new_directories,
     differ_modify_assets,
     differ_move_assets,
     differ_move_directories,
+    differ_new_assets,
+    differ_new_directories,
     differ_remove_assets,
     differ_remove_directories,
     differ_rename_assets,

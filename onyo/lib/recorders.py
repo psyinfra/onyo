@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 def _record_item(repo: OnyoRepo,
                  item: Path | Item) -> str:
-    r"""Helper for {new,modify,remove}_{assets,directories}() recorders.
+    r"""Helper for ``{new,modify,remove}_{assets,directories}()`` recorders.
 
     Parameters
     ----------
@@ -27,7 +27,7 @@ def _record_item(repo: OnyoRepo,
 def _record_move(repo: OnyoRepo,
                  src: Path | Item,
                  dst: Path) -> str:
-    r"""Helper for move_{assets,directories}() recorders.
+    r"""Helper for ``move_{assets,directories}()`` recorders.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ def _record_move(repo: OnyoRepo,
 def _record_rename(repo: OnyoRepo,
                    src: Path | Item,
                    dst: Path) -> str:
-    r"""Helper for rename_{assets,directories}() recorders.
+    r"""Helper for ``rename_{assets,directories}()`` recorders.
 
     Parameters
     ----------
@@ -65,6 +65,85 @@ def _record_rename(repo: OnyoRepo,
     dst_path = dst.relative_to(repo.git.root).as_posix()
 
     return f"- {src_path} -> {dst_path}\n"
+
+
+def record_modify_assets(repo: OnyoRepo,
+                         operands: tuple[Item, Item]
+                         ) -> dict[str, list[str]]:
+    r"""Recorder for the 'modify_assets' operation.
+
+    Not intended for direct use. It is called from an Operator, which is assumed
+    to have validated all input passed to this (trusting) recorder.
+
+    Returns a dict in the format:
+    ``key``: title of the Inventory Operations section
+    ``value``: list of textual records of Inventory Operations
+
+    Parameters
+    ----------
+    repo
+        Onyo repository to operate on.
+    operands
+        Items of the original and updated asset.
+    """
+
+    return {"Modified assets:\n": [_record_item(repo, operands[0])]}
+
+
+def record_move_assets(repo: OnyoRepo,
+                       operands: tuple[Path, Path]
+                       ) -> dict[str, list[str]]:
+    r"""Recorder for the 'move_assets' operation.
+
+    Not intended for direct use. It is called from an Operator, which is assumed
+    to have validated all input passed to this (trusting) recorder.
+
+    Returns a dict in the format:
+    ``key``: title of the Inventory Operations section
+    ``value``: list of textual records of Inventory Operations
+
+    Parameters
+    ----------
+    repo
+        Onyo repository to operate on.
+    operands
+        Absolute Paths of the source and destination parent.
+    """
+
+    records = {"Moved assets:\n": [_record_move(repo, operands[0], operands[1])]}
+    if repo.is_asset_dir(operands[0]):
+        # In case of an asset dir, we need to record an operation for both aspects
+        records.update({"Moved directories:\n": [_record_move(repo, operands[0], operands[1])]})
+
+    return records
+
+
+def record_move_directories(repo: OnyoRepo,
+                            operands: tuple[Path, Path]
+                            ) -> dict[str, list[str]]:
+    r"""Recorder for the 'move_directories' operation.
+
+    Not intended for direct use. It is called from an Operator, which is assumed
+    to have validated all input passed to this (trusting) recorder.
+
+    Returns a dict in the format:
+    ``key``: title of the Inventory Operations section
+    ``value``: list of textual records of Inventory Operations
+
+    Parameters
+    ----------
+    repo
+        Onyo repository to operate on.
+    operands
+        Absolute Paths of the source and destination parent.
+    """
+
+    records = {"Moved directories:\n": [_record_move(repo, operands[0], operands[1])]}
+    if repo.is_asset_dir(operands[0]):
+        # In case of an asset dir, we need to record an operation for both aspects
+        records.update({"Moved assets:\n": [_record_move(repo, operands[0], operands[1])]})
+
+    return records
 
 
 def record_new_assets(repo: OnyoRepo,
@@ -159,85 +238,6 @@ def record_remove_directories(repo: OnyoRepo,
     return {"Removed directories:\n": [_record_item(repo, operands[0])]}
 
 
-def record_move_assets(repo: OnyoRepo,
-                       operands: tuple[Path, Path]
-                       ) -> dict[str, list[str]]:
-    r"""Recorder for the 'move_assets' operation.
-
-    Not intended for direct use. It is called from an Operator, which is assumed
-    to have validated all input passed to this (trusting) recorder.
-
-    Returns a dict in the format:
-    ``key``: title of the Inventory Operations section
-    ``value``: list of textual records of Inventory Operations
-
-    Parameters
-    ----------
-    repo
-        Onyo repository to operate on.
-    operands
-        Absolute Paths of the source and destination parent.
-    """
-
-    records = {"Moved assets:\n": [_record_move(repo, operands[0], operands[1])]}
-    if repo.is_asset_dir(operands[0]):
-        # In case of an asset dir, we need to record an operation for both aspects
-        records.update({"Moved directories:\n": [_record_move(repo, operands[0], operands[1])]})
-
-    return records
-
-
-def record_move_directories(repo: OnyoRepo,
-                            operands: tuple[Path, Path]
-                            ) -> dict[str, list[str]]:
-    r"""Recorder for the 'move_directories' operation.
-
-    Not intended for direct use. It is called from an Operator, which is assumed
-    to have validated all input passed to this (trusting) recorder.
-
-    Returns a dict in the format:
-    ``key``: title of the Inventory Operations section
-    ``value``: list of textual records of Inventory Operations
-
-    Parameters
-    ----------
-    repo
-        Onyo repository to operate on.
-    operands
-        Absolute Paths of the source and destination parent.
-    """
-
-    records = {"Moved directories:\n": [_record_move(repo, operands[0], operands[1])]}
-    if repo.is_asset_dir(operands[0]):
-        # In case of an asset dir, we need to record an operation for both aspects
-        records.update({"Moved assets:\n": [_record_move(repo, operands[0], operands[1])]})
-
-    return records
-
-
-def record_rename_directories(repo: OnyoRepo,
-                              operands: tuple[Path, Path]
-                              ) -> dict[str, list[str]]:
-    r"""Recorder for the 'rename_directories' operation.
-
-    Not intended for direct use. It is called from an Operator, which is assumed
-    to have validated all input passed to this (trusting) recorder.
-
-    Returns a dict in the format:
-    ``key``: title of the Inventory Operations section
-    ``value``: list of textual records of Inventory Operations
-
-    Parameters
-    ----------
-    repo
-        Onyo repository to operate on.
-    operands
-        Absolute Paths of the source and destination.
-    """
-
-    return {"Renamed directories:\n": [_record_rename(repo, operands[0], operands[1])]}
-
-
 def record_rename_assets(repo: OnyoRepo,
                          operands: tuple[Path, Path]
                          ) -> dict[str, list[str]]:
@@ -266,10 +266,10 @@ def record_rename_assets(repo: OnyoRepo,
     return records
 
 
-def record_modify_assets(repo: OnyoRepo,
-                         operands: tuple[Item, Item]
-                         ) -> dict[str, list[str]]:
-    r"""Recorder for the 'modify_assets' operation.
+def record_rename_directories(repo: OnyoRepo,
+                              operands: tuple[Path, Path]
+                              ) -> dict[str, list[str]]:
+    r"""Recorder for the 'rename_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
     to have validated all input passed to this (trusting) recorder.
@@ -283,7 +283,7 @@ def record_modify_assets(repo: OnyoRepo,
     repo
         Onyo repository to operate on.
     operands
-        Items of the original and updated asset.
+        Absolute Paths of the source and destination.
     """
 
-    return {"Modified assets:\n": [_record_item(repo, operands[0])]}
+    return {"Renamed directories:\n": [_record_rename(repo, operands[0], operands[1])]}

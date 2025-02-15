@@ -10,6 +10,107 @@ if TYPE_CHECKING:
     from typing import Callable
 
 
+def _mover(src: Path,
+           dst: Path) -> list[Path]:
+    r"""Helper for ``move_{assets,directories}()`` executors.
+
+    Parameters
+    ----------
+    src
+        Absolute Path of source location.
+    dst
+        Absolute Path of destination parent.
+    """
+
+    src.rename(dst / src.name)
+    return [src, dst / src.name]
+
+
+def _renamer(src: Path,
+             dst: Path) -> list[Path]:
+    r"""Helper for ``rename_{assets,directories}()`` executors.
+
+    Parameters
+    ----------
+    src
+        Absolute Path of source location.
+    dst
+        Absolute Path of destination location.
+    """
+
+    src.rename(dst)
+    return [src, dst]
+
+
+def exec_modify_assets(repo: OnyoRepo,
+                       operands: tuple[Item, Item]
+                       ) -> tuple[list[Path], list[Path]]:
+    r"""Executor for the 'modify_assets' operation.
+
+    Not intended for direct use. It is called from an Operator, which is assumed
+    to have validated all input passed to this (trusting) executor.
+
+    Returns two lists:
+    1) Paths to be committed 2) Paths to be staged (not previously tracked)
+
+    Parameters
+    ----------
+    repo
+        Onyo repository to operate on.
+    operands
+        Items of the original and updated asset.
+    """
+
+    # expected: (Asset, Asset)
+    new = operands[1]
+    repo.write_asset_content(new)
+    return [new['onyo.path.absolute']], []
+
+
+def exec_move_assets(repo: OnyoRepo,
+                     operands: tuple[Path, Path]
+                     ) -> tuple[list[Path], list[Path]]:
+    r"""Executor for the 'move_assets' operation.
+
+    Not intended for direct use. It is called from an Operator, which is assumed
+    to have validated all input passed to this (trusting) executor.
+
+    Returns two lists:
+    1) Paths to be committed 2) Paths to be staged (not previously tracked)
+
+    Parameters
+    ----------
+    repo
+        Onyo repository to operate on.
+    operands
+        Absolute Paths of the source and destination parent.
+    """
+
+    return _mover(operands[0], operands[1]), []
+
+
+def exec_move_directories(repo: OnyoRepo,
+                          operands: tuple[Path, Path]
+                          ) -> tuple[list[Path], list[Path]]:
+    r"""Executor for the 'move_directories' operation.
+
+    Not intended for direct use. It is called from an Operator, which is assumed
+    to have validated all input passed to this (trusting) executor.
+
+    Returns two lists:
+    1) Paths to be committed 2) Paths to be staged (not previously tracked)
+
+    Parameters
+    ----------
+    repo
+        Onyo repository to operate on.
+    operands
+        Absolute Paths of the source and destination parent.
+    """
+
+    return _mover(operands[0], operands[1]), []
+
+
 def exec_new_assets(repo: OnyoRepo,
                     operands: tuple[Item]
                     ) -> tuple[list[Path], list[Path]]:
@@ -151,104 +252,6 @@ def exec_remove_directories(repo: OnyoRepo,
     return paths, []
 
 
-def _mover(src: Path,
-           dst: Path) -> list[Path]:
-    r"""Helper for move_{assets,directories}() executors.
-
-    Parameters
-    ----------
-    src
-        Absolute Path of source location.
-    dst
-        Absolute Path of destination parent.
-    """
-
-    src.rename(dst / src.name)
-    return [src, dst / src.name]
-
-
-def exec_move_assets(repo: OnyoRepo,
-                     operands: tuple[Path, Path]
-                     ) -> tuple[list[Path], list[Path]]:
-    r"""Executor for the 'move_assets' operation.
-
-    Not intended for direct use. It is called from an Operator, which is assumed
-    to have validated all input passed to this (trusting) executor.
-
-    Returns two lists:
-    1) Paths to be committed 2) Paths to be staged (not previously tracked)
-
-    Parameters
-    ----------
-    repo
-        Onyo repository to operate on.
-    operands
-        Absolute Paths of the source and destination parent.
-    """
-
-    return _mover(operands[0], operands[1]), []
-
-
-def exec_move_directories(repo: OnyoRepo,
-                          operands: tuple[Path, Path]
-                          ) -> tuple[list[Path], list[Path]]:
-    r"""Executor for the 'move_directories' operation.
-
-    Not intended for direct use. It is called from an Operator, which is assumed
-    to have validated all input passed to this (trusting) executor.
-
-    Returns two lists:
-    1) Paths to be committed 2) Paths to be staged (not previously tracked)
-
-    Parameters
-    ----------
-    repo
-        Onyo repository to operate on.
-    operands
-        Absolute Paths of the source and destination parent.
-    """
-
-    return _mover(operands[0], operands[1]), []
-
-
-def _renamer(src: Path,
-             dst: Path) -> list[Path]:
-    r"""Helper for rename_{assets,directories}() executors.
-
-    Parameters
-    ----------
-    src
-        Absolute Path of source location.
-    dst
-        Absolute Path of destination location.
-    """
-
-    src.rename(dst)
-    return [src, dst]
-
-
-def exec_rename_directories(repo: OnyoRepo,
-                            operands: tuple[Path, Path]
-                            ) -> tuple[list[Path], list[Path]]:
-    r"""Executor for the 'rename_directories' operation.
-
-    Not intended for direct use. It is called from an Operator, which is assumed
-    to have validated all input passed to this (trusting) executor.
-
-    Returns two lists:
-    1) Paths to be committed 2) Paths to be staged (not previously tracked)
-
-    Parameters
-    ----------
-    repo
-        Onyo repository to operate on.
-    operands
-        Absolute Paths of the source and destination.
-    """
-
-    return _renamer(operands[0], operands[1]), []
-
-
 def exec_rename_assets(repo: OnyoRepo,
                        operands: tuple[Path, Path]
                        ) -> tuple[list[Path], list[Path]]:
@@ -271,10 +274,10 @@ def exec_rename_assets(repo: OnyoRepo,
     return _renamer(operands[0], operands[1]), []
 
 
-def exec_modify_assets(repo: OnyoRepo,
-                       operands: tuple[Item, Item]
-                       ) -> tuple[list[Path], list[Path]]:
-    r"""Executor for the 'modify_assets' operation.
+def exec_rename_directories(repo: OnyoRepo,
+                            operands: tuple[Path, Path]
+                            ) -> tuple[list[Path], list[Path]]:
+    r"""Executor for the 'rename_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
     to have validated all input passed to this (trusting) executor.
@@ -287,13 +290,10 @@ def exec_modify_assets(repo: OnyoRepo,
     repo
         Onyo repository to operate on.
     operands
-        Items of the original and updated asset.
+        Absolute Paths of the source and destination.
     """
 
-    # expected: (Asset, Asset)
-    new = operands[1]
-    repo.write_asset_content(new)
-    return [new['onyo.path.absolute']], []
+    return _renamer(operands[0], operands[1]), []
 
 
 def generic_executor(func: Callable,
