@@ -6,15 +6,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.lib.differs import (
-    differ_modify_assets,
-    differ_move_assets,
-    differ_move_directories,
-    differ_new_assets,
-    differ_new_directories,
-    differ_remove_assets,
-    differ_remove_directories,
-    differ_rename_assets,
-    differ_rename_directories,
+    differ_modify_asset,
+    differ_move_asset,
+    differ_move_directory,
+    differ_new_asset,
+    differ_new_directory,
+    differ_remove_asset,
+    differ_remove_directory,
+    differ_rename_asset,
+    differ_rename_directory,
 )
 from onyo.lib.exceptions import (
     InvalidInventoryOperationError,
@@ -24,30 +24,30 @@ from onyo.lib.exceptions import (
     NotAnAssetError,
 )
 from onyo.lib.executors import (
-    exec_modify_assets,
-    exec_move_assets,
-    exec_move_directories,
-    exec_new_assets,
-    exec_new_directories,
-    exec_remove_assets,
-    exec_remove_directories,
-    exec_rename_assets,
-    exec_rename_directories,
+    exec_modify_asset,
+    exec_move_asset,
+    exec_move_directory,
+    exec_new_asset,
+    exec_new_directory,
+    exec_remove_asset,
+    exec_remove_directory,
+    exec_rename_asset,
+    exec_rename_directory,
     generic_executor,
 )
 from onyo.lib.items import Item
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.recorders import (
-    record_modify_assets,
-    record_move_assets,
-    record_move_directories,
-    record_new_assets,
-    record_new_directories,
-    record_remove_assets,
-    record_remove_directories,
-    record_rename_assets,
-    record_rename_directories,
+    record_modify_asset,
+    record_move_asset,
+    record_move_directory,
+    record_new_asset,
+    record_new_directory,
+    record_remove_asset,
+    record_remove_directory,
+    record_rename_asset,
+    record_rename_directory,
 )
 from onyo.lib.utils import (
     deduplicate,
@@ -104,54 +104,54 @@ class InventoryOperation(object):
 
 OPERATIONS_MAPPING: dict = {
     'modify_assets': InventoryOperator(
-        executor=exec_modify_assets,
-        differ=differ_modify_assets,
-        recorder=record_modify_assets,
+        executor=exec_modify_asset,
+        differ=differ_modify_asset,
+        recorder=record_modify_asset,
     ),
     'move_assets': InventoryOperator(
-        executor=exec_move_assets,
-        differ=differ_move_assets,
-        recorder=record_move_assets,
+        executor=exec_move_asset,
+        differ=differ_move_asset,
+        recorder=record_move_asset,
     ),
     'move_directories': InventoryOperator(
-        executor=exec_move_directories,
-        differ=differ_move_directories,
-        recorder=record_move_directories,
+        executor=exec_move_directory,
+        differ=differ_move_directory,
+        recorder=record_move_directory,
     ),
     'new_assets': InventoryOperator(
-        executor=exec_new_assets,
-        differ=differ_new_assets,
-        recorder=record_new_assets,
+        executor=exec_new_asset,
+        differ=differ_new_asset,
+        recorder=record_new_asset,
     ),
     'new_directories': InventoryOperator(
-        executor=exec_new_directories,
-        differ=differ_new_directories,
-        recorder=record_new_directories,
+        executor=exec_new_directory,
+        differ=differ_new_directory,
+        recorder=record_new_directory,
     ),
     'remove_assets': InventoryOperator(
-        executor=exec_remove_assets,
-        differ=differ_remove_assets,
-        recorder=record_remove_assets,
+        executor=exec_remove_asset,
+        differ=differ_remove_asset,
+        recorder=record_remove_asset,
     ),
     'remove_directories': InventoryOperator(
-        executor=exec_remove_directories,
-        differ=differ_remove_directories,
-        recorder=record_remove_directories,
+        executor=exec_remove_directory,
+        differ=differ_remove_directory,
+        recorder=record_remove_directory,
     ),
     'remove_generic_file': InventoryOperator(
         executor=partial(generic_executor, lambda x: x[0].unlink()),
-        differ=differ_remove_assets,
+        differ=differ_remove_asset,
         recorder=lambda x: dict()  # no operations record for this, not an inventory item
     ),
     'rename_assets': InventoryOperator(
-        executor=exec_rename_assets,
-        differ=differ_rename_assets,
-        recorder=record_rename_assets,
+        executor=exec_rename_asset,
+        differ=differ_rename_asset,
+        recorder=record_rename_asset,
     ),
     'rename_directories': InventoryOperator(
-        executor=exec_rename_directories,
-        differ=differ_rename_directories,
-        recorder=record_rename_directories,
+        executor=exec_rename_directory,
+        differ=differ_rename_directory,
+        recorder=record_rename_directory,
     ),
 }
 r"""Mapping of Inventory Operation types with the appropriate operators."""

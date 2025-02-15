@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 def _mover(src: Path,
            dst: Path) -> list[Path]:
-    r"""Helper for ``move_{assets,directories}()`` executors.
+    r"""Helper for ``move_{asset,directory}()`` executors.
 
     Parameters
     ----------
@@ -28,7 +28,7 @@ def _mover(src: Path,
 
 def _renamer(src: Path,
              dst: Path) -> list[Path]:
-    r"""Helper for ``rename_{assets,directories}()`` executors.
+    r"""Helper for ``rename_{asset,directory}()`` executors.
 
     Parameters
     ----------
@@ -42,9 +42,9 @@ def _renamer(src: Path,
     return [src, dst]
 
 
-def exec_modify_assets(repo: OnyoRepo,
-                       operands: tuple[Item, Item]
-                       ) -> tuple[list[Path], list[Path]]:
+def exec_modify_asset(repo: OnyoRepo,
+                      operands: tuple[Item, Item]
+                      ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'modify_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -67,9 +67,9 @@ def exec_modify_assets(repo: OnyoRepo,
     return [new['onyo.path.absolute']], []
 
 
-def exec_move_assets(repo: OnyoRepo,
-                     operands: tuple[Path, Path]
-                     ) -> tuple[list[Path], list[Path]]:
+def exec_move_asset(repo: OnyoRepo,
+                    operands: tuple[Path, Path]
+                    ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'move_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -89,9 +89,9 @@ def exec_move_assets(repo: OnyoRepo,
     return _mover(operands[0], operands[1]), []
 
 
-def exec_move_directories(repo: OnyoRepo,
-                          operands: tuple[Path, Path]
-                          ) -> tuple[list[Path], list[Path]]:
+def exec_move_directory(repo: OnyoRepo,
+                        operands: tuple[Path, Path]
+                        ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'move_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -111,9 +111,9 @@ def exec_move_directories(repo: OnyoRepo,
     return _mover(operands[0], operands[1]), []
 
 
-def exec_new_assets(repo: OnyoRepo,
-                    operands: tuple[Item]
-                    ) -> tuple[list[Path], list[Path]]:
+def exec_new_asset(repo: OnyoRepo,
+                   operands: tuple[Item]
+                   ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'new_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -139,9 +139,9 @@ def exec_new_assets(repo: OnyoRepo,
     return [path], [path]
 
 
-def exec_new_directories(repo: OnyoRepo,
-                         operands: tuple[Path]
-                         ) -> tuple[list[Path], list[Path]]:
+def exec_new_directory(repo: OnyoRepo,
+                       operands: tuple[Path]
+                       ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'new_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -174,9 +174,9 @@ def exec_new_directories(repo: OnyoRepo,
     return paths, paths
 
 
-def exec_remove_assets(repo: OnyoRepo,
-                       operands: tuple[Item]
-                       ) -> tuple[list[Path], list[Path]]:
+def exec_remove_asset(repo: OnyoRepo,
+                      operands: tuple[Item]
+                      ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'remove_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -211,9 +211,9 @@ def exec_remove_assets(repo: OnyoRepo,
     return paths, []
 
 
-def exec_remove_directories(repo: OnyoRepo,
-                            operands: tuple[Item]
-                            ) -> tuple[list[Path], list[Path]]:
+def exec_remove_directory(repo: OnyoRepo,
+                          operands: tuple[Item]
+                          ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'remove_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -252,9 +252,9 @@ def exec_remove_directories(repo: OnyoRepo,
     return paths, []
 
 
-def exec_rename_assets(repo: OnyoRepo,
-                       operands: tuple[Path, Path]
-                       ) -> tuple[list[Path], list[Path]]:
+def exec_rename_asset(repo: OnyoRepo,
+                      operands: tuple[Path, Path]
+                      ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'rename_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -274,9 +274,9 @@ def exec_rename_assets(repo: OnyoRepo,
     return _renamer(operands[0], operands[1]), []
 
 
-def exec_rename_directories(repo: OnyoRepo,
-                            operands: tuple[Path, Path]
-                            ) -> tuple[list[Path], list[Path]]:
+def exec_rename_directory(repo: OnyoRepo,
+                          operands: tuple[Path, Path]
+                          ) -> tuple[list[Path], list[Path]]:
     r"""Executor for the 'rename_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed

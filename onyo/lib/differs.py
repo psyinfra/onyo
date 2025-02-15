@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def _diff_assets(asset_old: Item,
                  asset_new: Item
                  ) -> Generator[str, None, None]:
-    r"""Helper for ``{modify,new}_assets()`` differs.
+    r"""Helper for ``{modify,new}_asset()`` differs.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ def _diff_assets(asset_old: Item,
 def _diff_path_change(src: Path,
                       dst: Path
                       ) -> Generator[str, None, None]:
-    r"""Helper for ``{move,rename}_{assets,directories}()`` differs.
+    r"""Helper for ``{move,rename}_{asset,directory}()`` differs.
 
     Parameters
     ----------
@@ -48,9 +48,9 @@ def _diff_path_change(src: Path,
     yield f"{str(src)} -> {str(dst)}"
 
 
-def differ_modify_assets(repo: OnyoRepo,
-                         operands: tuple[Item, Item]
-                         ) -> Generator[str, None, None]:
+def differ_modify_asset(repo: OnyoRepo,
+                        operands: tuple[Item, Item]
+                        ) -> Generator[str, None, None]:
     r"""Differ for the 'modify_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -69,9 +69,9 @@ def differ_modify_assets(repo: OnyoRepo,
     yield from _diff_assets(operands[0], operands[1])
 
 
-def differ_move_assets(repo: OnyoRepo,
-                       operands: tuple[Path, Path]
-                       ) -> Generator[str, None, None]:
+def differ_move_asset(repo: OnyoRepo,
+                      operands: tuple[Path, Path]
+                      ) -> Generator[str, None, None]:
     r"""Differ for the 'move_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -90,9 +90,9 @@ def differ_move_assets(repo: OnyoRepo,
     yield from _diff_path_change(operands[0], operands[1])
 
 
-def differ_move_directories(repo: OnyoRepo,
-                            operands: tuple[Path, Path]
-                            ) -> Generator[str, None, None]:
+def differ_move_directory(repo: OnyoRepo,
+                          operands: tuple[Path, Path]
+                          ) -> Generator[str, None, None]:
     r"""Differ for the 'move_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -111,9 +111,9 @@ def differ_move_directories(repo: OnyoRepo,
     yield from _diff_path_change(operands[0], operands[1])
 
 
-def differ_new_assets(repo: OnyoRepo,
-                      operands: tuple[Item]
-                      ) -> Generator[str, None, None]:
+def differ_new_asset(repo: OnyoRepo,
+                     operands: tuple[Item]
+                     ) -> Generator[str, None, None]:
     r"""Differ for the 'new_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -132,9 +132,9 @@ def differ_new_assets(repo: OnyoRepo,
     yield from _diff_assets(asset_old=Item({}, repo=repo), asset_new=operands[0])
 
 
-def differ_new_directories(repo: OnyoRepo,
-                           operands: tuple[Path]
-                           ) -> Generator[str, None, None]:
+def differ_new_directory(repo: OnyoRepo,
+                         operands: tuple[Path]
+                         ) -> Generator[str, None, None]:
     r"""Differ for the 'new_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -153,9 +153,9 @@ def differ_new_directories(repo: OnyoRepo,
     yield f"+{str(operands[0])}"
 
 
-def differ_remove_assets(repo: OnyoRepo,
-                         operands: tuple[Item]
-                         ) -> Generator[str, None, None]:
+def differ_remove_asset(repo: OnyoRepo,
+                        operands: tuple[Item]
+                        ) -> Generator[str, None, None]:
     r"""Differ for the 'remove_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -174,9 +174,9 @@ def differ_remove_assets(repo: OnyoRepo,
     yield f"-{operands[0].get('onyo.path.absolute')}"
 
 
-def differ_remove_directories(repo: OnyoRepo,
-                              operands: tuple[Item]
-                              ) -> Generator[str, None, None]:
+def differ_remove_directory(repo: OnyoRepo,
+                            operands: tuple[Item]
+                            ) -> Generator[str, None, None]:
     r"""Differ for the 'remove_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -195,9 +195,9 @@ def differ_remove_directories(repo: OnyoRepo,
     yield f"-{operands[0].get('onyo.path.absolute')}"
 
 
-def differ_rename_assets(repo: OnyoRepo,
-                         operands: tuple[Path, Path]
-                         ) -> Generator[str, None, None]:
+def differ_rename_asset(repo: OnyoRepo,
+                        operands: tuple[Path, Path]
+                        ) -> Generator[str, None, None]:
     r"""Differ for the 'rename_assets' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
@@ -216,9 +216,9 @@ def differ_rename_assets(repo: OnyoRepo,
     yield from _diff_path_change(operands[0], operands[1])
 
 
-def differ_rename_directories(repo: OnyoRepo,
-                              operands: tuple[Path, Path]
-                              ) -> Generator[str, None, None]:
+def differ_rename_directory(repo: OnyoRepo,
+                            operands: tuple[Path, Path]
+                            ) -> Generator[str, None, None]:
     r"""Differ for the 'rename_directories' operation.
 
     Not intended for direct use. It is called from an Operator, which is assumed
