@@ -563,38 +563,32 @@ def main() -> None:
         try:
             args.run(args)
         except InvalidArgumentError as e:
-            # special treatment for this error b/c it's meant to capture
-            # malformed calls, that aren't covered by argparse itself.
+            # Captures malformed calls that aren't covered by argparse itself.
             # Same style of reporting as any other argparse error:
             subcmds._name_parser_map[args.cmd].print_usage(file=sys.stderr)
             parser.error(str(e))
-        except CalledProcessError as e:
-            # CalledProcessError itself is not informative to the user.
-            # As far as there was something useful in that process' stdout/stderr
-            # we usually let it through. If not, it should result in a dedicated exception,
-            # that we can treat here accordingly.
-            ui.log_debug(str(e))
-            sys.exit(e.returncode)
         except OnyoCLIExitCode as e:
             ui.log_debug(ui.format_traceback(e))
             sys.exit(e.returncode)
         except UIInputError as e:
             ui.error(e)
             ui.error("Use the --yes switch for non-interactive mode.")
-        except Exception as e:
-            # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
-            #       non-zero here, in order to have this generic last catcher.
+        except (CalledProcessError, Exception) as e:
+            # Generic catcher-of-last-resort: print the exception/error and exit
+            # non-zero.
             ui.error(e)
-            code = e.returncode if hasattr(e, 'returncode') else error_returncode  # pyre-ignore
+            code = getattr(e, 'returncode', error_returncode)
             sys.exit(code)
         except KeyboardInterrupt:
             ui.error("User interrupted.")
             sys.exit(1)
         finally:
             os.chdir(old_cwd)
+
         if ui.error_count > 0:
-            # We may have reported errors while being able to proceed (hence no exception bubbled up).
-            # That's fine, but still exit non-zero.
+            # Errors may have been encountered while still being able to proceed
+            # (hence no exception bubbled up).
+            # Exit non-zero.
             sys.exit(error_returncode)
     else:
         parser.print_help()
