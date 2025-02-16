@@ -4,7 +4,10 @@ import argparse
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Sequence
+    from typing import (
+        Literal,
+        Sequence,
+    )
 
 
 class StoreMultipleKeyValuePairs(argparse.Action):
@@ -117,8 +120,9 @@ class StoreSortOption(argparse.Action):
     def __init__(self,
                  option_strings: Sequence[str],
                  dest: str | None = None,
+                 sort_direction: Literal['ascending', 'descending'] = 'ascending',
                  **kwargs) -> None:
-        r"""Instantiate a ``StoreSortOption``.
+        r"""Instantiate a ``StoreSortOption`` with its sort direction.
 
         The ``dest`` attribute is ignored and is hardcoded to ``'sort'``.
 
@@ -133,6 +137,8 @@ class StoreSortOption(argparse.Action):
             Passed to :py:meth:`argparse.Action`
         dest
             This attribute is ignored and is hardcoded to ``'sort'``.
+        sort_direction
+            Sort direction.
         **kwargs
             Passed to :py:meth:`argparse.Action`
 
@@ -145,9 +151,7 @@ class StoreSortOption(argparse.Action):
         if 'default' in kwargs.keys():
             raise ValueError("'default' must not be used with `StoreSortOption`")
 
-        for option in option_strings:
-            if option.startswith('--sort-'):
-                self._sorting = option.removeprefix('--sort-')
+        self._sorting = sort_direction
 
         super().__init__(option_strings, "sort", **kwargs)
 
