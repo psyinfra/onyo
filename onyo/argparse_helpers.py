@@ -15,22 +15,6 @@ class StoreMultipleKeyValuePairs(argparse.Action):
     StoreSingleKeyValuePairs
     """
 
-    def __init__(self,
-                 option_strings: Sequence[str],
-                 dest: str,
-                 nargs: int | str | None = None,
-                 **kwargs) -> None:
-        r"""
-        Parameters
-        ----------
-        option_strings
-        dest
-        nargs
-        **kwargs
-        """
-        self._nargs = nargs
-        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
-
     def __call__(self,
                  parser: argparse.ArgumentParser,
                  namespace: argparse.Namespace,
@@ -89,22 +73,6 @@ class StoreSingleKeyValuePairs(argparse.Action):
     --------
     StoreMultipleKeyValuePairs
     """
-
-    def __init__(self,
-                 option_strings: Sequence[str],
-                 dest: str,
-                 nargs: int | str | None = None,
-                 **kwargs) -> None:
-        r"""
-        Parameters
-        ----------
-        option_strings
-        dest
-        nargs
-        **kwargs
-        """
-        self._nargs = nargs
-        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
     def __call__(self,
                  parser: argparse.ArgumentParser,
