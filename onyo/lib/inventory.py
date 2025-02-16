@@ -51,7 +51,6 @@ from onyo.lib.recorders import (
 )
 from onyo.lib.utils import (
     deduplicate,
-    is_equal_assets_dict,
 )
 from onyo.lib.ui import ui
 
@@ -593,7 +592,7 @@ class Inventory(object):
 
         # We keep the old path - if it needs to change, this will be done by a rename operation down the road
         new_asset['onyo.path.absolute'] = path
-        if is_equal_assets_dict(asset, new_asset):
+        if asset == new_asset:
             raise NoopError
 
         # If a change in is.directory is implied, do this first:

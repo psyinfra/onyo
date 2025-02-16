@@ -2,17 +2,14 @@ from __future__ import annotations
 
 import copy
 from collections import UserDict
-from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
-from ruamel.yaml.representer import RoundTripRepresenter  # pyre-ignore[21]
-from ruamel.yaml.dumper import RoundTripDumper  # pyre-ignore[21]
 
 from onyo.lib.consts import RESERVED_KEYS
-from onyo.lib.pseudokeys import PSEUDO_KEYS, PseudoKey
+from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
@@ -21,12 +18,9 @@ if TYPE_CHECKING:
         Any,
         Dict,
         Generator,
-        Hashable,
         Mapping,
         TypeVar,
     )
-
-    from onyo.lib.items import Item
 
     _KT = TypeVar("_KT")  # Key type
     _VT = TypeVar("_VT")  # Value type
@@ -384,107 +378,3 @@ def write_asset_file(path: Path,
 
     # TODO: Get file path from onyo.path.file?
     path.open('w').write(dict_to_asset_yaml(asset))
-
-
-class YAMLDumpWrapper(UserDict):
-    r"""Wrapper class to access ruamel's representation of data.
-
-    This addresses the issue that ``serial: 001234`` yields ``{'serial': 1234}``,
-    but is dumped as ``serial: 001234``, interfering with comparisons assessing
-    whether there's a modification.
-    """
-
-    def __init__(self,
-                 d: dict | UserDict):
-        r"""Initialize a YAMLDumpWrapper."""
-
-        super().__init__(d)
-
-    def __getitem__(self,
-                    item: Hashable):
-        r"""Get the value of a key."""
-
-        data = self.data[item]  # potentially raises KeyError
-        if isinstance(data, dict) and data:
-            # non-empty dict: recurse
-            return YAMLDumpWrapper(data)
-        if isinstance(data, list) and data:
-            # non-empty list: Implement analogous wrapper
-            raise NotImplementedError
-        if isinstance(data, (Path, PseudoKey)):
-            return data  # no representer for `Path` and `PseudoKey`
-
-        return RoundTripRepresenter(dumper=RoundTripDumper(stream=StringIO())).represent_data(data).value
-
-
-def is_equal_assets_dict(a: Item,
-                         b: Item) -> bool:
-    r"""Whether two Items have the same content and comments."""
-
-    # TODO: This entire function may become part of the Item class instead (__eq__?)
-
-    # Note: Checking types here, because of potential recursive calls.
-    if not isinstance(a, (dict, UserDict)) or not isinstance(b, (dict, UserDict)):
-        return False
-
-    if isinstance(a, DotNotationWrapper):
-        a = a.data
-    if isinstance(b, DotNotationWrapper):
-        b = b.data
-
-    # TODO: Problem:
-    #   In test_edit_single_asset second invocation of edit, is_equal_asset_dict comparison returns False
-    #   for the wrong reason (unresolved `PseudoKey` instance, b/c we were looking at the python dict, not the Item.)
-    #   While the trigger is fixed, this is still wrong in this recursion here:
-
-    # Recurse into nested dicts:
-    for k, v in a.items():
-        if isinstance(v, (dict, UserDict)):
-            try:
-                eq_ = is_equal_assets_dict(a[k], b[k])
-            except (KeyError, TypeError):
-                eq_ = False
-            if not eq_:
-                return False
-
-    if not isinstance(a, CommentedMap) and not isinstance(b, CommentedMap):
-        return a == b
-
-    if YAMLDumpWrapper(a) != YAMLDumpWrapper(b):
-        # not accounting for comments yet
-        return False
-
-    # The ruamel implementation of `__eq__` and `__contains__` breaks when
-    # comparing across files, because the `start_mark` attribute of a
-    # `CommentToken` is a `FileMark` that holds the path of the file the content
-    # was read from.
-    # Thus, our own comparison, ignoring the path.
-    from ruamel.yaml.comments import Comment, comment_attrib  # pyre-ignore[21]
-    from ruamel.yaml import CommentToken
-    a_comment = getattr(a, comment_attrib, Comment())
-    b_comment = getattr(b, comment_attrib, Comment())
-
-    def contains_all_comments(container: Comment,
-                              comment: Comment) -> bool:  # pyre-ignore[11]
-        for a_key, a_values in comment.items.items():
-            try:
-                b_values = container.items.get(a_key)
-            except KeyError:
-                # `a` has an annotation at a key that's not in `b`'s annotations
-                return False
-            if not b_values:
-                return False
-            if len(a_values) != len(b_values):
-                # Not sure whether this is necessary (may be a defined, fixed length),
-                # but better be safe.
-                return False
-            for a_v, b_v in zip(a_values, b_values):
-                if type(a_v) is not type(b_v):
-                    return False
-                if isinstance(a_v, CommentToken) and \
-                        (a_v.value, a_v.start_mark.line, a_v.start_mark.column) != \
-                        (b_v.value, b_v.start_mark.line, b_v.start_mark.column):
-                    return False
-        return True
-
-    return contains_all_comments(b_comment, a_comment) and contains_all_comments(a_comment, b_comment)

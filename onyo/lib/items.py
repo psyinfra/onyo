@@ -9,7 +9,10 @@ from ruamel.yaml import CommentedMap  # pyre-ignore[21]
 import onyo.lib.onyo
 import onyo.lib.inventory
 import onyo.lib.pseudokeys
-from onyo.lib.utils import DotNotationWrapper
+from onyo.lib.utils import (
+    DotNotationWrapper,
+    dict_to_asset_yaml,
+)
 
 
 if TYPE_CHECKING:
@@ -101,10 +104,58 @@ class Item(DotNotationWrapper):
                      key):
         return super().__contains__(resolve_alias(key))
 
+    def __eq__(self,
+               other: Any) -> bool:
+        r"""Whether another Item and self have the same content, comments, and paths.
+
+        Pseudokeys are ignored with the exception of:
+
+        - `'onyo.is.asset'`
+        - `'onyo.is.directory'`
+        - `'onyo.path.absolute'`
+        - `'onyo.path.file'`
+        - `'onyo.path.name'`
+        - `'onyo.path.relative'`
+        """
+
+        if not isinstance(other, Item):
+            return False
+
+        # NOTE: 'onyo.path.file' is checked first because it actually covers all
+        #       other tests. The other keys are kept to be self-documenting and
+        #       to protect against future implementation changes causing bugs.
+        pseudo_keys_to_check = [
+            'onyo.path.file',
+            'onyo.is.asset',
+            'onyo.is.directory',
+            'onyo.path.absolute',
+            'onyo.path.name',
+            'onyo.path.relative',
+        ]
+        for k in pseudo_keys_to_check:
+            if self.get(k, None) != other.get(k, None):
+                return False
+
+        return self.equal_content(other)
+
     def get(self,
             key,
             default=None):
         return super().get(resolve_alias(key), default=default)
+
+    def equal_content(self,
+                      other: Item) -> bool:
+        r"""Whether another Item and self have the same content and comments.
+
+        Pseudokeys are ignored entirely.
+
+        Parameters
+        ----------
+        other
+            Item to compare with self.
+        """
+
+        return dict_to_asset_yaml(self) == dict_to_asset_yaml(other)
 
     def update_from_path(self,
                          path: Path) -> None:
@@ -304,4 +355,3 @@ class Item(DotNotationWrapper):
 # - Probably/Maybe: Stop passing dicts and Path objects around. All things relevant at higher level are Items, right?
 # - suck in DotNotationWrapper instead of deriving!? Probably not, because we have asset/template specs that should
 #   behave with dot notation, but can't or even must not have pseudo-keys.
-# - What about `__eq__` (see the horrible is_equal_dict helper)?
