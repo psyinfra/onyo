@@ -28,11 +28,10 @@ assets: List[str] = [f"{d}/{f}.{i}" for f in files for i, d in enumerate(directo
 
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
-def test_rm(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test that `onyo rm ASSET` deletes assets and leaves the repository in a
-    clean state.
-    """
+def test_rm(repo: OnyoRepo,
+            asset: str) -> None:
+    r"""Delete an asset."""
+
     ret = subprocess.run(['onyo', '--yes', 'rm', asset],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -46,10 +45,8 @@ def test_rm(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_rm_multiple_inputs(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo rm ASSET` deletes a list of assets all at once and leaves
-    the repository in a clean state.
-    """
+    r"""Delete a list of assets all at once."""
+
     ret = subprocess.run(['onyo', '--yes', 'rm', *assets],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -65,10 +62,8 @@ def test_rm_multiple_inputs(repo: OnyoRepo) -> None:
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('directory', directories[1:])  # do not use "." as dir
 def test_rm_single_dirs_with_files(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo rm DIRECTORY` deletes directories successfully and leaves
-    the repository in a clean state.
-    """
+    r"""Delete a directory."""
+
     ret = subprocess.run(['onyo', '--yes', 'rm', '--recursive', directory],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -82,10 +77,8 @@ def test_rm_single_dirs_with_files(repo: OnyoRepo, directory: str) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_rm_multiple_directories(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo rm DIRECTORY` deletes a list of directories all at once and
-    leaves the repository in a clean state.
-    """
+    r"""Delete a list of directories all at once."""
+
     ret = subprocess.run(['onyo', '--yes', 'rm', '--recursive', *directories[1:]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -100,10 +93,8 @@ def test_rm_multiple_directories(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_dirs(*directories[1:])  # skip "." for directory creation
 def test_rm_empty_directories(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo rm DIRECTORY` deletes empty directories and leaves the
-    repository in a clean state.
-    """
+    r"""Delete empty directories."""
+
     ret = subprocess.run(['onyo', '--yes', 'rm', *directories[1:]],
                          capture_output=True, text=True)
     assert ret.returncode == 0
@@ -118,9 +109,11 @@ def test_rm_empty_directories(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_rm_interactive_missing_y(repo: OnyoRepo) -> None:
-    r"""
-    Default mode is interactive. It requires a "y" to approve.
+    r"""Default mode is interactive.
+
+    The user must respond with "y" to approve.
     """
+
     ret = subprocess.run(['onyo', 'rm', *assets], capture_output=True, text=True)
     assert ret.returncode == 1
     assert "Save changes? No discards all changes. (y/n) " in ret.stdout
@@ -134,10 +127,8 @@ def test_rm_interactive_missing_y(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_rm_interactive_abort(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo rm ASSET` does not delete any asset, when the user provides
-    "n" as response in interactive mode.
-    """
+    r"""Do not delete anything when the user responds with "n"."""
+
     ret = subprocess.run(['onyo', 'rm', *assets], input='n', capture_output=True, text=True)
     assert ret.returncode == 0
     assert "Save changes? No discards all changes. (y/n) " in ret.stdout
@@ -152,10 +143,8 @@ def test_rm_interactive_abort(repo: OnyoRepo) -> None:
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 def test_rm_interactive(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test that `onyo rm ASSET` deletes ASSET successfully, when the user provides
-    "y" as the response in interactive mode.
-    """
+    r"""Delete when the user responds with "y"."""
+
     ret = subprocess.run(['onyo', 'rm', asset], input='y', capture_output=True, text=True)
     assert ret.returncode == 0
     assert "Save changes? No discards all changes. (y/n) " in ret.stdout

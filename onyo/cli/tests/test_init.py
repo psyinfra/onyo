@@ -6,9 +6,8 @@ from onyo.lib.onyo import OnyoRepo
 
 
 def fully_populated_dot_onyo(directory: Path) -> bool:
-    r"""
-    Assert whether a .onyo dir is fully populated.
-    """
+    r"""Assert whether a .onyo dir is fully populated."""
+
     dot_onyo = directory / '.onyo'
 
     if not dot_onyo.is_dir() or \
@@ -25,10 +24,8 @@ def fully_populated_dot_onyo(directory: Path) -> bool:
 
 
 def test_init_cwd(tmp_path: Path) -> None:
-    r"""
-    Test that `onyo init` without a path argument uses the cwd to initialize a
-    new onyo repository.
-    """
+    r"""``onyo init`` without a path inits CWD."""
+
     os.chdir(tmp_path)
     ret = subprocess.run(["onyo", "init"], capture_output=True, text=True)
 
@@ -42,10 +39,8 @@ def test_init_cwd(tmp_path: Path) -> None:
 
 
 def test_init_with_path(tmp_path: Path) -> None:
-    r"""
-    Test that `onyo init PATH` uses a provided path to initialize a new onyo
-    repository.
-    """
+    r"""``onyo init PATH`` inits the passed path."""
+
     repo_path = tmp_path.resolve()
     ret = subprocess.run(["onyo", "init", repo_path], capture_output=True, text=True)
 
@@ -59,10 +54,8 @@ def test_init_with_path(tmp_path: Path) -> None:
 
 
 def test_init_error_on_existing_repository(tmp_path: Path) -> None:
-    r"""
-    Test that `onyo init PATH` errors correctly, when called on an existing
-    repository.
-    """
+    r"""Error when passed an existing repository."""
+
     repo_path = tmp_path.resolve()
     ret = subprocess.run(["onyo", "init", repo_path], capture_output=True, text=True)
     ret = subprocess.run(["onyo", "init", repo_path], capture_output=True, text=True)

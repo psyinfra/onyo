@@ -37,7 +37,8 @@ description: |
 
 
 def test_dict_to_asset_yaml() -> None:
-    r"""Test Dict, CommentedMap, and empty dict."""
+    r"""``dict_to_asset_yaml`` accepts Dict, CommentedMap, and empty dict."""
+
     # normal python dict
     d = {'type': 'TYPE', 'make': 'MAKE', 'model': 'MODEL', 'serial': '008675309', 'explicit': 123}
     d_expected_output = "---\ntype: TYPE\nmake: MAKE\nmodel: MODEL\nserial: 008675309\nexplicit: !!int '123'\n"
@@ -56,7 +57,8 @@ def test_dict_to_asset_yaml() -> None:
 
 @pytest.mark.parametrize('rkey', list(PSEUDO_KEYS.keys()) + RESERVED_KEYS)
 def test_redaction_dict_to_asset_yaml(rkey: str) -> None:
-    r"""Reserved- and Pseudo-Keys should not be serialized."""
+    r"""Reserved- and Pseudo-Keys are not serialized."""
+
     d = DotNotationWrapper({'type': 'TYPE', 'make': 'MAKE', 'model': 'MODEL', 'serial': '008675309', 'explicit': 123})
     d[rkey] = 'REDACT_ME'
     d_expected_output = "---\ntype: TYPE\nmake: MAKE\nmodel: MODEL\nserial: 008675309\nexplicit: !!int '123'\n"
@@ -91,7 +93,8 @@ def test_get_asset_content(tmp_path) -> None:
 
 
 def test_roundtrip(tmp_path) -> None:
-    """Test roundtrip get_asset_content->dict_to_asset_yaml"""
+    """Test roundtrip get_asset_content->dict_to_asset_yaml."""
+
     asset_file = tmp_path / "asset-file"
     asset_file.write_text(asset_file_content)
 

@@ -26,10 +26,12 @@ def test_get_subcmd_index_valid(helpers: Helpers) -> None:
             assert idx == full_cmd.index('config')
 
 
-def test_get_subcmd_index_overlap(helpers: Helpers) -> None:
-    r"""
-    Arg values overlap with onyo or its subcommands. Borderline pathological.
+def test_get_subcmd_index_overlap() -> None:
+    r"""Argument values are named the same as "onyo" or its subcommands.
+
+    Borderline pathological.
     """
+
     full_cmd = ['onyo', '-C', 'onyo', '-d', 'mv', 'onyo', 'mv']
     idx = main.get_subcmd_index(full_cmd)
     assert idx == 4

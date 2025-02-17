@@ -8,6 +8,7 @@ from ..commands import onyo_tree
 def test_onyo_tree_errors(inventory: Inventory,
                           capsys) -> None:
     r"""Raise the correct error for illegal or impossible calls."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / 'empty'
 
@@ -39,6 +40,7 @@ def test_onyo_tree_errors(inventory: Inventory,
 def test_onyo_tree(inventory: Inventory,
                    capsys) -> None:
     r"""Display a tree for a directory."""
+
     directory_path = inventory.root / "somewhere" / "nested"
 
     onyo_tree(inventory,
@@ -62,6 +64,7 @@ def test_onyo_tree_description(inventory: Inventory,
                                desc: str,
                                capsys) -> None:
     r"""The description should be used and unaltered."""
+
     directory_path = inventory.root / "somewhere" / "nested"
 
     onyo_tree(inventory,
@@ -76,7 +79,8 @@ def test_onyo_tree_description(inventory: Inventory,
 
 def test_onyo_tree_dirs_only(inventory: Inventory,
                              capsys) -> None:
-    r"""Display a tree w/o any files"""
+    r"""Display a tree without any files."""
+
     asset = Item(type="atype",
                  make="someone",
                  model=dict(name="fancy"),

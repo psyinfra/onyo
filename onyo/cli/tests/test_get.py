@@ -119,7 +119,8 @@ asset_contents = [
 
 def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
-    r"""Convert content dictionary to a plain-text string"""
+    r"""Convert content dictionary to a plain-text string."""
+
     from onyo.lib.utils import dict_to_asset_yaml
     for file, raw_contents in raw_assets:
         yield [file, dict_to_asset_yaml(raw_contents)]
@@ -130,7 +131,8 @@ def convert_contents(
                                                           'one/laptop_dell_precision.2',
                                                           'one/two/headphones_apple_pro.3']]))
 def test_get_defaults(repo: OnyoRepo) -> None:
-    r"""Test `onyo get` using default values"""
+    r"""Test ``onyo get`` using default values."""
+
     cmd = ['onyo', 'get']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     keys = ['type', 'make', 'model.name', 'serial', 'onyo.path.relative']
@@ -153,13 +155,14 @@ def test_get_defaults(repo: OnyoRepo) -> None:
     [], ['make', 'serial'], ['num', 'str', 'bool']])
 @pytest.mark.parametrize('paths', [['.'], ['one/two', 'abc/def']])
 @pytest.mark.parametrize('machine_readable', ['-H', None])
-def test_get_all(
-        repo: OnyoRepo, matches: list[str], depth: str, keys: list[str],
-        paths: list[str], machine_readable: str | None) -> None:
-    r"""
-    Test `onyo get` with a combination of valid arguments to ensure no error
-    occurs.
-    """
+def test_get_all(repo: OnyoRepo,
+                 matches: list[str],
+                 depth: str,
+                 keys: list[str],
+                 paths: list[str],
+                 machine_readable: str | None) -> None:
+    r"""Test ``onyo get`` with a combination of valid arguments to ensure no error occurs."""
+
     keys = keys if keys else repo.get_asset_name_keys()
     cmd = ['onyo', 'get', '--include', *paths, '--depth', depth]
     cmd += ['--keys', *keys + ["onyo.path.relative"]] if keys else []
@@ -205,12 +208,11 @@ def test_get_all(
     (['str=foo', 'unset=bar'], 0),
     (['str=foo=bar'], 1),
     ([], 4)])
-def test_get_filter(
-        repo: OnyoRepo, matches: list[str], expected: int) -> None:
-    r"""
-    Test that `onyo get --match KEY=VALUE` retrieves the expected
-    files.
-    """
+def test_get_filter(repo: OnyoRepo,
+                    matches: list[str],
+                    expected: int) -> None:
+    r"""``onyo get --match KEY=VALUE`` retrieves the expected files."""
+
     keys = repo.get_asset_name_keys() + ['num', 'str', 'bool', 'unset']
     cmd = ['onyo', 'get', '--keys', *keys, '-H']
     cmd += ['--match', *matches] if matches else []
@@ -243,12 +245,11 @@ def test_get_filter(
     (['num=8.*'], 2),
     (['str=foo.*'], 1),
     ([r'num=9\d*|\d{1,}'], 3)])
-def test_get_filter_regex(
-        repo: OnyoRepo, matches: list[str], expected: int) -> None:
-    r"""
-    Test that `onyo get --match KEY=VALUE` retrieves the expected
-    files using a regular expression as value
-    """
+def test_get_filter_regex(repo: OnyoRepo,
+                          matches: list[str],
+                          expected: int) -> None:
+    r"""``onyo get --match KEY=VALUE`` retrieves the expected files matching a regex."""
+
     keys = repo.get_asset_name_keys() + ['num', 'str', 'bool', 'unset']
     cmd = ['onyo', 'get', '--match', *matches, '--keys', *keys, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
@@ -278,11 +279,10 @@ def test_get_filter_regex(
 @pytest.mark.parametrize('matches', [
     ['num'],
     ['']])
-def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
-    r"""
-    Test that `onyo get --match KEY=VALUE` returns an error if
-    missing a value.
-    """
+def test_get_filter_errors(repo: OnyoRepo,
+                           matches: list[str]) -> None:
+    r"""``onyo get --match KEY=VALUE`` returns an error if missing a value."""
+
     cmd = ['onyo', 'get', '--match', *matches, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
 
@@ -305,12 +305,11 @@ def test_get_filter_errors(repo: OnyoRepo, matches: list[str]) -> None:
     ['num', 'str', 'bool', 'onyo.path.relative'],
     ['TyPe', 'MAKE', 'moDEL', 'NuM', 'STR', 'onyo.path.relative'],
     []])
-def test_get_keys(
-        repo: OnyoRepo, raw_assets: list[tuple[str, dict[str, Any]]],
-        keys: list) -> None:
-    r"""
-    Test that `onyo get --keys x y z` retrieves the expected keys.
-    """
+def test_get_keys(repo: OnyoRepo,
+                  raw_assets: list[tuple[str, dict[str, Any]]],
+                  keys: list) -> None:
+    r"""Test that ``onyo get --keys x y z`` retrieves the expected keys."""
+
     from onyo.lib.pseudokeys import PSEUDO_KEYS
     cmd = ['onyo', 'get', '-H']
     cmd += ['--keys', *keys, ] if keys else []
@@ -344,10 +343,11 @@ def test_get_keys(
                                                           'one/two/three/four/headphones_apple_pro.5']]))
 @pytest.mark.parametrize('depth,expected', [
     ('0', 5), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('999', 5)])
-def test_get_depth(repo: OnyoRepo, depth: str, expected: int) -> None:
-    r"""
-    Test that `onyo get --depth x` retrieves the expected assets.
-    """
+def test_get_depth(repo: OnyoRepo,
+                   depth: str,
+                   expected: int) -> None:
+    r"""Test that ``onyo get --depth x`` retrieves the expected assets."""
+
     cmd = ['onyo', 'get', '--depth', depth, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     output = [output.split('\t') for output in ret.stdout.split('\n')][:-1]
@@ -370,10 +370,8 @@ def test_get_depth(repo: OnyoRepo, depth: str, expected: int) -> None:
                                                           'one/two/three/headphones_apple_pro.4',
                                                           'one/two/three/four/headphones_apple_pro.5']]))
 def test_get_depth_error(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo get --depth x` when a negative integer is used returns the
-    expected exception
-    """
+    r"""``onyo get --depth x`` must be a non-negative integer."""
+
     cmd = ['onyo', 'get', '--depth', '-1', '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.stderr
@@ -402,16 +400,16 @@ def test_get_depth_error(repo: OnyoRepo) -> None:
     (['.', './one', './one/two/three/four'], None, 6),
     (['./one/two/three/four', './another/dir'], None, 2),
     ([], None, 6)])
-def test_get_path_at_depth(
-        repo: OnyoRepo, paths: str, depth: str | None,
-        expected: int) -> None:
-    r"""
-    Test that `onyo get --include x --depth y` retrieves the expected assets by
-    ensuring that `depth` is assessed relative to the given paths.
+def test_get_path_at_depth(repo: OnyoRepo,
+                           paths: str,
+                           depth: str | None,
+                           expected: int) -> None:
+    r"""``--depth`` is relative to the given paths.
 
-    A portion of the parameters tests the usage of path with the default
-    value of depth, when no depth is specified.
+    A portion of the parameters tests the usage of path with the default value
+    of depth, when no depth is specified.
     """
+
     cmd = ['onyo', 'get', '-H']
     cmd += ['--include', *paths] if paths else []
     cmd += ['--depth', depth] if depth else []
@@ -443,11 +441,10 @@ def test_get_path_at_depth(
     '/path/that/does/not/exist/and/does/not/start/with/dot',
     'path/that/does/not/exist/and/does/not/start/with/dot/slash',
     'def/ghi'])
-def test_get_path_error(repo: OnyoRepo, path: str) -> None:
-    r"""
-    Test that `onyo get --include x --depth y` returns an exception if an invalid
-    path is being used
-    """
+def test_get_path_error(repo: OnyoRepo,
+                        path: str) -> None:
+    r"""Error if an invalid path is passed to `--include``."""
+
     cmd = ['onyo', 'get', '--include', path, '-H']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert f"The following paths are not part of the inventory:\n{repo.git.root / path}" in ret.stderr
@@ -465,13 +462,11 @@ def test_get_path_error(repo: OnyoRepo, path: str) -> None:
     (['-S', 'make',
       '-s', 'type'], [2, 1, 3, 4])
 ])
-def test_get_sort(
-        repo: OnyoRepo, sort: list[str],
-        expected_order: list[int]) -> None:
-    r"""
-    Test the `-s` (ascending) and `-S` (descending)
-    sorting options for `onyo get`.
-    """
+def test_get_sort(repo: OnyoRepo,
+                  sort: list[str],
+                  expected_order: list[int]) -> None:
+    r"""Test ``-s`` (ascending) and ``-S`` (descending) sorting options."""
+
     # Note: This test has fewer test cases than `test_natural_sort`
     #       below. This is b/c here we are testing CLI and rely on
     #       reading assets from a repository. That implies we
@@ -504,8 +499,10 @@ def test_get_sort(
     ({'make': SORT_DESCENDING,
       'type': SORT_ASCENDING}, [2, 1, 3, 4])
 ])
-def test_natural_sort(keys: dict[str, sort_t], expected: list[int]) -> None:
-    r"""Test implementation of natural sorting algorithm"""
+def test_natural_sort(keys: dict[str, sort_t],
+                      expected: list[int]) -> None:
+    r"""Test implementation of natural sorting algorithm."""
+
     assets = [DotNotationWrapper(t[1]) for t in asset_contents
               if t[0] in ['a13bc_foo_bar.1',
                           'a2cd_foo_bar.2',

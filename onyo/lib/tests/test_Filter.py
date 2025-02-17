@@ -7,10 +7,7 @@ from onyo.lib.items import Item
 
 @pytest.mark.parametrize('filt', ['type=laptop', 'key=value', 'foo=<unset>'])
 def test_filter(filt: str) -> None:
-    """
-    Test whether instances of the Filter object are set up properly, including
-    post-initialization behavior
-    """
+    """Test whether ``Filter`` object are set up, including post-initialization."""
 
     def read_asset(name: str) -> Item:
         if name == 'laptop_make_model.1':
@@ -63,9 +60,7 @@ def test_filter(filt: str) -> None:
 
 @pytest.mark.parametrize('filt', ['key=<list>', 'key=<dict>'])
 def test_filter_match_type(filt: str) -> None:
-    """
-    Test filtering by string type (e.g., <list> or <dict>)
-    """
+    """Filtering by variable type (e.g., <list> or <dict>)."""
 
     def read_asset(name: str):
         if name == 'type_make_model.1':
@@ -92,7 +87,8 @@ def test_filter_match_type(filt: str) -> None:
 
 
 def test_filter_re_match() -> None:
-    """Test filtering by regular expression"""
+    """Filtering with regular expressions."""
+
     assert not Filter._re_match(text='foo(', r='foo(')
     assert Filter._re_match(text='foo', r='foo')
     assert Filter._re_match(text='foobar', r='foo.*')
@@ -101,7 +97,7 @@ def test_filter_re_match() -> None:
 @pytest.mark.parametrize('filter_arg', [
     'key', 'key!value', '┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻'])
 def test_filter_invalid(filter_arg: str) -> None:
-    """Test whether invalid filters raise the expected exception"""
+    """Invalid filters raise the correct exception."""
 
     with pytest.raises(OnyoInvalidFilterError) as exc:
         Filter('key')
@@ -110,8 +106,7 @@ def test_filter_invalid(filter_arg: str) -> None:
 
 
 def test_filter_format() -> None:
-    """Test whether the input argument 'key=value' is properly formatted into
-    the `key` and `value` properties
-    """
+    """The input argument 'key=value' is formatted into ``key`` and ``value`` properties."""
+
     assert Filter._format('key=value') == ['key', 'value']
     assert Filter._format('key=value=value') == ['key', 'value=value']

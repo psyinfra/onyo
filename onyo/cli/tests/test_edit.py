@@ -19,9 +19,8 @@ assets = [['laptop_apple_macbookpro.0',
 
 @pytest.mark.parametrize('variant', ['local', 'onyo'])
 def test_get_editor_onyo(repo: OnyoRepo, variant: str) -> None:
-    r"""
-    Get the editor from onyo configuration.
-    """
+    r"""Get the editor from onyo configuration."""
+
     repo.set_config('onyo.core.editor', variant, location=variant)  # pyre-ignore[6]
 
     # test
@@ -30,9 +29,8 @@ def test_get_editor_onyo(repo: OnyoRepo, variant: str) -> None:
 
 
 def test_get_editor_git(repo: OnyoRepo) -> None:
-    r"""
-    Get the editor from git configuration
-    """
+    r"""Get the editor from git configuration."""
+
     repo.set_config('core.editor', 'git-edit', location='local')
     assert "git-edit" in (repo.git.root / '.git' / 'config').read_text()
     editor = repo.get_editor()
@@ -40,9 +38,8 @@ def test_get_editor_git(repo: OnyoRepo) -> None:
 
 
 def test_get_editor_envvar(repo: OnyoRepo) -> None:
-    r"""
-    Get the editor from $EDITOR.
-    """
+    r"""Get the editor from $EDITOR."""
+
     # verify that onyo.core.editor is not set
     assert not repo.get_config('onyo.core.editor')
 
@@ -52,9 +49,8 @@ def test_get_editor_envvar(repo: OnyoRepo) -> None:
 
 
 def test_get_editor_fallback(repo: OnyoRepo) -> None:
-    r"""
-    When no editor is set, nano is the fallback.
-    """
+    r"""Fallback to ``nano`` when no editor is set."""
+
     # verify that onyo.core.editor is not set
     assert not repo.get_config('onyo.core.editor')
     try:
@@ -67,9 +63,8 @@ def test_get_editor_fallback(repo: OnyoRepo) -> None:
 
 
 def test_get_editor_precedence(repo: OnyoRepo) -> None:
-    r"""
-    The order of precedence should be git > onyo > $EDITOR.
-    """
+    r"""The order of editor precedence is git > onyo > $EDITOR."""
+
     # set locations
     repo.set_config('onyo.core.editor', 'local', location='local')
     # Use onyo-config to also commit and not end up with a modified worktree here:
@@ -93,10 +88,8 @@ def test_get_editor_precedence(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test that for different paths it is possible to call `onyo edit` on a single
-    asset file.
-    """
+    r"""``edit`` a single asset file."""
+
     edit_str = "key: single_asset\nnested:\n  some: value"
     os.environ['EDITOR'] = f"printf '{edit_str}' >>"
 
@@ -130,10 +123,8 @@ def test_edit_single_asset(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_edit_multiple_assets(repo: OnyoRepo) -> None:
-    r"""
-    Test that it is possible to call `onyo edit` with a list of multiple assets
-    containing different file names at once.
-    """
+    r"""``edit`` multiple assets at once."""
+
     os.environ['EDITOR'] = "printf 'key: multiple_assets' >>"
     repo_assets = repo.asset_paths
 
@@ -152,10 +143,8 @@ def test_edit_multiple_assets(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_edit_with_user_response(repo: OnyoRepo) -> None:
-    r"""
-    Test that without the --yes flag, `onyo edit` requests a user response
-    before saving changes.
-    """
+    r"""``edit`` (without `--yes``) requests a user response before saving changes."""
+
     os.environ['EDITOR'] = "printf 'key: user_response' >>"
 
     # abort command
@@ -182,9 +171,8 @@ def test_edit_with_user_response(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_quiet_flag(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo edit --yes --quiet` does not print anything.
-    """
+    r"""``onyo edit --yes --quiet`` does not print anything."""
+
     os.environ['EDITOR'] = "printf 'key: quiet' >>"
 
     # edit a list of assets all at once
@@ -204,9 +192,8 @@ def test_quiet_flag(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo edit --quiet` does error without --yes flag.
-    """
+    r"""``onyo edit --quiet`` errors without ``--yes``."""
+
     os.environ['EDITOR'] = "printf 'key: quiet' >>"
 
     # edit a list of assets all at once
@@ -223,10 +210,8 @@ def test_quiet_errors_without_yes_flag(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_discard(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test that if an asset got correctly changed, but the user answers to the
-    "Save changes?" dialog with 'n', that the changes get discarded.
-    """
+    r"""Throw away changes when the user answers "no" to the prompt."""
+
     os.environ['EDITOR'] = "printf 'key: discard' >>"
 
     # change asset with `onyo edit` but don't save it
@@ -255,9 +240,8 @@ def test_edit_discard(repo: OnyoRepo, asset: str) -> None:
     '.git/index'
 ])
 def test_edit_protected(repo: OnyoRepo, no_asset: str) -> None:
-    r"""
-    Test the error behavior when called on protected files.
-    """
+    r"""Error when passed protected files."""
+
     os.environ['EDITOR'] = "printf 'key: NOT_USED' >>"
 
     ret = subprocess.run(['onyo', 'edit', no_asset],
@@ -277,10 +261,8 @@ def test_edit_protected(repo: OnyoRepo, no_asset: str) -> None:
     "very/very/very/deep/non_existing_asset.0"
 ])
 def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
-    r"""
-    Test the error behavior when called on non-existing files, that Onyo does
-    not create the files, and the repository stays valid.
-    """
+    r"""Error when passed non-exitsing files."""
+
     os.environ['EDITOR'] = "printf 'key: DOES_NOT_EXIST' >>"
 
     ret = subprocess.run(['onyo', 'edit', no_asset],
@@ -295,10 +277,8 @@ def test_edit_non_existing_file(repo: OnyoRepo, no_asset: str) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test that Onyo detects yaml-errors, and responds correctly if the user
-    answers the "abort command?" dialog with 'a' to discard the changes
-    """
+    r"""Error on YAML errors;, and abort cleanly when instructed by user."""
+
     os.environ['EDITOR'] = "printf 'key: YAML: ERROR' >>"
 
     # Change the asset to invalid yaml, and respond 'y' to "cancel edit" dialog
@@ -327,8 +307,8 @@ def test_continue_edit_no(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_contents(*assets)
 def test_edit_without_changes(repo: OnyoRepo) -> None:
-    r"""
-    Test that onyo does not fail when no changes were made.
+    r"""Do not error when no changes are made.
+
     This still requires a confirmation after editing an asset.
     """
     os.environ['EDITOR'] = "cat"
@@ -344,10 +324,8 @@ def test_edit_without_changes(repo: OnyoRepo) -> None:
 @pytest.mark.repo_contents(*assets)
 @pytest.mark.parametrize('asset', [a[0] for a in assets])
 def test_edit_with_dot_dot(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Check that in an onyo repository it is possible to call `onyo edit` on an
-    asset path that contains ".." leading outside and back into the repository.
-    """
+    r"""``edit`` a relative path that exits the repo with ``../`` and re-enters."""
+
     os.environ['EDITOR'] = "printf 'key: dot_dot' >>"
 
     # check edit with a path containing a ".." that leads outside the onyo repo
