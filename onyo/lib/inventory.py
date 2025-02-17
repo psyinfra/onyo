@@ -327,8 +327,11 @@ class Inventory(object):
     # Operations
     #
 
-    def _add_operation(self, name: str, operands: tuple) -> InventoryOperation:
-        r"""Internal convenience helper to register an operation."""
+    def _add_operation(self,
+                       name: str,
+                       operands: tuple) -> InventoryOperation:
+        r"""Helper to register an operation."""
+
         op = InventoryOperation(operator=OPERATIONS_MAPPING[name],
                                 operands=operands,
                                 repo=self.repo)
@@ -823,8 +826,11 @@ class Inventory(object):
                 # report the error, and proceed
                 ui.error(e)
 
-    def get_asset_from_template(self, template: Path | str | None) -> Item:
-        # TODO: Possibly join with get_asset (path optional)
+    def get_asset_from_template(self,
+                                template: Path | str | None) -> Item:
+        r"""Get a template as an Item."""
+
+        # TODO: Possibly join with get_asset_content()
         return Item(self.repo.get_template(template))  # , repo=self.repo ?? Probably not. Template is not yet bound.
 
     def generate_asset_name(self,

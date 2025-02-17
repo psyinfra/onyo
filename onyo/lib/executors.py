@@ -61,7 +61,6 @@ def exec_modify_asset(repo: OnyoRepo,
         Items of the original and updated asset.
     """
 
-    # expected: (Asset, Asset)
     new = operands[1]
     repo.write_asset_content(new)
     return [new['onyo.path.absolute']], []
@@ -130,8 +129,7 @@ def exec_new_asset(repo: OnyoRepo,
         Asset to create.
     """
 
-    # NOTE: No need to implicitly create parent dirs. That is done previously in
-    #       its own operation.
+    # No need to check/create parent dirs. That's done prior in its own operation.
     asset = operands[0]
     repo.write_asset_content(asset)  # TODO: a = ...; reassignment for potential updates on metadata
     path = asset.get('onyo.path.absolute')

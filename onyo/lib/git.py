@@ -19,7 +19,7 @@ log: logging.Logger = logging.getLogger('onyo.git')
 
 
 class GitRepo(object):
-    r"""An object representing a Git repository.
+    r"""Representation of a Git repository.
 
     Uses :py:mod:`subprocess` to execute git commands on a repository.
 
@@ -156,14 +156,12 @@ class GitRepo(object):
         return files
 
     def is_clean_worktree(self) -> bool:
-        r"""Whether the git worktree is clean.
-        """
+        r"""Whether the git worktree is clean."""
 
         return not bool(self._git(['status', '--porcelain']))
 
     def init_without_reinit(self) -> None:
-        r"""Initialize ``self.root`` as a git repo, but not if it's already one.
-        """
+        r"""Initialize ``self.root`` as a git repo, but not if it's already one."""
 
         # make sure target dir exists
         self.root.mkdir(exist_ok=True)
