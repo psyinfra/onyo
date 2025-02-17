@@ -1,30 +1,43 @@
+from __future__ import annotations
+
 import random
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
 from onyo.lib.commands import (
-        onyo_cat,
-        onyo_get,
-        onyo_new,
-        onyo_set,
-    )
+    onyo_cat,
+    onyo_get,
+    onyo_new,
+    onyo_set,
+)
 from onyo.lib.inventory import Inventory
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import DotNotationWrapper
+
+if TYPE_CHECKING:
+    from typing import Generator
 
 
 @pytest.mark.ui({'yes': True, 'quiet': True})
 @pytest.mark.parametrize('num', [100, 1000])
 class TestOnyoBenchmark:
+    r"""Run a suite of benchmarks for Onyo."""
+
     @pytest.fixture(scope='function')
     def benchmark_inventory(self,
                             num: int,
                             request,
                             tmp_path: Path,
                             fake,
-                            monkeypatch):
+                            monkeypatch) -> Generator[Inventory, None, None]:
+        r"""Yield an Inventory, populated with ``num`` of fake assets.
+
+        The generated repositories are cached. A clone is produced for
+        subsequent requests of Inventories with the same population count.
+        """
 
         repo_path = tmp_path
 
@@ -74,6 +87,7 @@ class TestOnyoBenchmark:
                                 benchmark,
                                 fake) -> None:
         r"""Create 50 assets in the repo."""
+
         inventory = benchmark_inventory
         # fifty additional assets
         fifty_assets = [DotNotationWrapper(a) for a in fake.onyo_asset_dicts(num=50)]
@@ -86,6 +100,7 @@ class TestOnyoBenchmark:
             The benchmarked function is run multiple times, but without re-running
             the entire test function. This can create conflicts, etc.
             """
+
             inventory.repo.git._git(["reset", "--hard", self._class_old_hexsha[num]])
             # gc the repo
             inventory.repo.git._git(["gc", "--aggressive", "--quiet", "--prune=now"])
@@ -105,6 +120,7 @@ class TestOnyoBenchmark:
                               benchmark_inventory: Inventory,
                               benchmark) -> None:
         r"""Get all assets in the repo."""
+
         inventory = benchmark_inventory
 
         # Per default, this will return all keys in the asset name + path and
@@ -122,6 +138,7 @@ class TestOnyoBenchmark:
                                 benchmark_inventory: Inventory,
                                 benchmark) -> None:
         r"""Get 50 assets from the repo."""
+
         from onyo.lib.filters import Filter
 
         inventory = benchmark_inventory
@@ -148,6 +165,7 @@ class TestOnyoBenchmark:
                                 benchmark_inventory: Inventory,
                                 benchmark) -> None:
         r"""Set 50 assets in the repo."""
+
         from onyo.lib.filters import Filter
 
         inventory = benchmark_inventory
@@ -162,6 +180,7 @@ class TestOnyoBenchmark:
             The benchmarked function is run multiple times, but without re-running
             the entire test function. This can create conflicts, etc.
             """
+
             inventory.repo.git._git(["reset", "--hard", self._class_old_hexsha[num]])
             # gc the repo
             inventory.repo.git._git(["gc", "--aggressive", "--quiet", "--prune=now"])
@@ -183,6 +202,7 @@ class TestOnyoBenchmark:
                               benchmark_inventory: Inventory,
                               benchmark) -> None:
         r"""Cat 1 asset in the repo."""
+
         inventory = benchmark_inventory
         # get 1 asset
         assets = [a["onyo.path.absolute"]
@@ -199,6 +219,7 @@ class TestOnyoBenchmark:
                               benchmark_inventory: Inventory,
                               benchmark) -> None:
         r"""Cat 1 asset from the CLI."""
+
         inventory = benchmark_inventory
         # get 1 asset
         asset = random.sample(onyo_get(inventory, keys=["onyo.path.absolute"]), k=1)[0]['onyo.path.absolute']
