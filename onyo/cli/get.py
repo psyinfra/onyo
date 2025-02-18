@@ -85,6 +85,7 @@ args_get = {
 
     'sort_ascending': dict(
         args=('-s', '--sort-ascending'),
+        sort_direction='ascending',
         metavar='SORT_KEY',
         action=StoreSortOption,
         nargs='+',
@@ -98,6 +99,7 @@ args_get = {
 
     'sort_descending': dict(
         args=('-S', '--sort-descending'),
+        sort_direction='descending',
         metavar='SORT_KEY',
         action=StoreSortOption,
         nargs='+',

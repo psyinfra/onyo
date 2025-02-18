@@ -28,9 +28,8 @@ assets: List[str] = [f"{d}/{f}.{i}" for f in files
 
 @pytest.mark.repo_files(*assets)
 def test_tree(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo tree` works without input paths.
-    """
+    r"""``onyo tree`` works when passed no arguments."""
+
     ret = subprocess.run(['onyo', 'tree'], capture_output=True, text=True)
 
     # verify output
@@ -46,9 +45,8 @@ def test_tree(repo: OnyoRepo) -> None:
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('directory', directories)
 def test_tree_with_directory(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo tree DIRECTORY` displays directories correctly.
-    """
+    r"""Pass a single directory."""
+
     ret = subprocess.run(['onyo', 'tree', directory], capture_output=True, text=True)
 
     # verify output
@@ -67,10 +65,8 @@ def test_tree_with_directory(repo: OnyoRepo, directory: str) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_tree_multiple_inputs(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo tree <dirs>` displays all directories when given a list of
-    paths in one call.
-    """
+    r"""Pass multiple directories in one call."""
+
     ret = subprocess.run(['onyo', 'tree', *directories],
                          capture_output=True, text=True)
 
@@ -87,10 +83,8 @@ def test_tree_multiple_inputs(repo: OnyoRepo) -> None:
 @pytest.mark.parametrize('directory', ["does_not_exist"] + [
     d + "/subdir" for d in directories])
 def test_tree_error_dir_does_not_exist(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test the correct error behavior when `onyo tree <path>` is called on
-    non-existing directories and sub-directories.
-    """
+    r"""Error when passed a non-existing directory."""
+
     ret = subprocess.run(['onyo', 'tree', directory], capture_output=True, text=True)
 
     # verify output
@@ -103,9 +97,8 @@ def test_tree_error_dir_does_not_exist(repo: OnyoRepo, directory: str) -> None:
 @pytest.mark.repo_files(*assets)
 @pytest.mark.parametrize('asset', assets)
 def test_tree_error_is_file(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Test the correct error behavior when `onyo tree ASSET` is called on assets.
-    """
+    r"""Error when passed a file."""
+
     ret = subprocess.run(['onyo', 'tree', asset], capture_output=True, text=True)
 
     # verify output
@@ -117,9 +110,8 @@ def test_tree_error_is_file(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_tree_relative_path(repo: OnyoRepo) -> None:
-    r"""
-    Test `onyo tree <path>` with a relative path given as input.
-    """
+    r"""Relative paths work."""
+
     ret = subprocess.run(["onyo", "tree", "simple/../s p a c e s"], capture_output=True, text=True)
 
     # verify output
@@ -130,10 +122,8 @@ def test_tree_relative_path(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_tree_error_relative_path_outside_repo(repo: OnyoRepo) -> None:
-    r"""
-    Test `onyo tree <path>` gives error with a relative path that leads outside
-    of the repository.
-    """
+    r"""Error when path is outside of the repository."""
+
     ret = subprocess.run(["onyo", "tree", ".."], capture_output=True, text=True)
 
     # verify output

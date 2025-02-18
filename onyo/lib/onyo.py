@@ -29,7 +29,7 @@ log: logging.Logger = logging.getLogger('onyo.onyo')
 
 
 class OnyoRepo(object):
-    r"""An object representing an Onyo repository.
+    r"""Representation of an Onyo repository.
 
     Identify and work with asset paths and directories. Get and set onyo config
     information.
@@ -164,8 +164,7 @@ class OnyoRepo(object):
 
     @property
     def auto_message(self) -> bool:
-        r"""The configured value of ``onyo.commit.auto-message``.
-        """
+        r"""The configured value of ``onyo.commit.auto-message``."""
 
         raw = self.get_config("onyo.commit.auto-message")
         if raw:
@@ -771,7 +770,7 @@ class OnyoRepo(object):
         Parameters
         ----------
         path
-            The Path to get the history of. Defaults to ``HEAD`` (default).
+            The Path to get the history of. Defaults to the repo root.
         n
             Limit history to ``n`` commits. ``None`` for no limit (default).
         """

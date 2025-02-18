@@ -27,16 +27,26 @@ class PseudoKey:
     :py:class:`onyo.lib.items.Item`.
     """
 
-    def __eq__(self, other):
+    def __eq__(self,
+               other) -> bool:
+        r"""Whether another ``PseudoKey`` matches self."""
+
         if not isinstance(other, PseudoKey):
             return False
 
         # TODO: This isn't clean yet, since it relies on `implementation` being a `partial`:
-        return self.description == other.description and self.implementation.func == other.implementation.func
+        return self.description == other.description and self.implementation.func == other.implementation.func  # pyre-ignore[16]
 
 
-def delegate(self: Item, attribute: str, *args, **kwargs):
-    # This is to avoid circular imports ATM.
+def delegate(self: Item,
+             attribute: str,
+             *args,
+             **kwargs):
+    r"""Call function ``attribute`` and pass all args.
+
+    To avoid circular imports between this file and :py:data`onyo.lib.inventory.OPERATIONS_MAPPING`.
+    """
+
     return self.__getattribute__(attribute)(*args, **kwargs)
 
 

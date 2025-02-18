@@ -11,7 +11,8 @@ from ..commands import onyo_set
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_errors(inventory: Inventory) -> None:
-    r"""`onyo_set()` must raise the correct error in different illegal or impossible calls."""
+    r"""Raise the correct error in different illegal or impossible calls."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
 
@@ -70,7 +71,8 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
-    r"""Verify the correct behavior for empty keys or values in `onyo_set()`."""
+    r"""Verify the correct behavior for empty keys or values in ``onyo_set()``."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -105,9 +107,8 @@ def test_onyo_set_empty_keys_or_values(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
-    r"""`onyo_set()` must raise an error when attempting to set an
-    illegal/reserved field.
-    """
+    r"""Raise when attempting to set an illegal/reserved field."""
+
     from onyo.lib.consts import RESERVED_KEYS
     from onyo.lib.pseudokeys import PSEUDO_KEYS
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
@@ -134,9 +135,8 @@ def test_onyo_set_illegal_fields(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_errors_before_set(inventory: Inventory) -> None:
-    r"""`onyo_set()` must raise the correct error and is not allowed to
-    modify/commit anything, if one of the specified paths is not valid.
-    """
+    r"""Raise and don't modify/commit when one of paths is not valid."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     non_existing_asset_path = inventory.root / "non-existing" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
@@ -164,7 +164,8 @@ def test_onyo_set_errors_before_set(inventory: Inventory) -> None:
 def test_onyo_set_simple(inventory: Inventory,
                          message,
                          auto_message) -> None:
-    r"""`onyo_set()` sets a value in an asset."""
+    r"""Set a value in an asset."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -188,9 +189,8 @@ def test_onyo_set_simple(inventory: Inventory,
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_already_set(inventory: Inventory) -> None:
-    r"""`onyo_set()` does not error if called with values
-    that are already set.
-    """
+    r"""Do not error if called with values that are already set."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"some_key": "some_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -215,7 +215,8 @@ def test_onyo_set_already_set(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_overwrite_existing_value(inventory: Inventory) -> None:
-    r"""`onyo_set()` overwrites an existing value with a new one in an asset."""
+    r"""Overwrite an existing value with a new one in an asset."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     new_key_value = {"some_key": "that_new_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -243,10 +244,8 @@ def test_onyo_set_overwrite_existing_value(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
-    r"""When `onyo_set()` is called with two key value pairs, and one
-    is already set and the other not, onyo changes the second one
-    without error.
-    """
+    r"""Do not error when two key-value pairs result in one change and the other no-op."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     new_key_values = {"some_key": "some_value",  # exists in asset
                       "new_key": "new_value"}  # exists not in asset
@@ -279,6 +278,7 @@ def test_onyo_set_some_values_already_set(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_multiple(inventory: Inventory) -> None:
     r"""Modify multiple assets in a single call and with one commit."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     key_value = {"this_key": "that_value"}
@@ -303,9 +303,8 @@ def test_onyo_set_multiple(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_set_allows_duplicates(inventory: Inventory) -> None:
-    r"""Calling `onyo_set()` with a list containing the same asset multiple
-    times does not error.
-    """
+    r"""Do not error when the same asset is passed multiple times."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key_value = {"this_key": "that_value"}
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -369,7 +368,8 @@ def test_onyo_set_asset_dir(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_set_empty_dictlist(inventory: Inventory) -> None:
-    r"""`onyo_set` can set empty dicts and lists as values"""
+    r"""Set empty dicts and lists as values."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     onyo_set(inventory, assets=[asset_path], keys={"new_key": dict()})
     assert inventory.repo.git.is_clean_worktree()

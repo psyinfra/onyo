@@ -25,10 +25,10 @@ asset_spec = ['type=laptop', 'make=apple', 'model.name=macbookpro', 'serial=0']
 
 @pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
-def test_new(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new` can create an asset in different directories.
-    """
+def test_new(repo: OnyoRepo,
+             directory: str) -> None:
+    r"""Create an asset in a directory."""
+
     file_ = f'{directory}/laptop_apple_macbookpro.0'
     ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
@@ -47,10 +47,8 @@ def test_new(repo: OnyoRepo, directory: str) -> None:
 
 @pytest.mark.repo_dirs(*directories)
 def test_new_interactive(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new` can create an asset in different directories when given
-    'y' as input in the dialog, instead of using the flag '--yes'.
-    """
+    r"""Create an asset when user responds "y" interactively."""
+
     file_ = f'{directories[0]}/laptop_apple_macbookpro.0'
     ret = subprocess.run(['onyo', 'new', '--directory', directories[0], '--keys'] + asset_spec,
                          input='y', capture_output=True, text=True)
@@ -69,11 +67,12 @@ def test_new_interactive(repo: OnyoRepo) -> None:
 
 
 def test_new_top_level(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new` can create an asset on the top level of
-    the repository. This relies on CWD being the default for `--directory`
-    and on the `repo` fixture CD'ing into the repo's root dir.
+    r"""Create an asset in the repo root.
+
+    This relies on CWD being the default for ``--directory`` and the ``repo``
+    fixture ``cd``ing into the repo's root dir.
     """
+
     file_ = 'laptop_apple_macbookpro.0'
     ret = subprocess.run(['onyo', '--yes', 'new', '--keys'] + asset_spec,
                          capture_output=True, text=True)
@@ -92,10 +91,8 @@ def test_new_top_level(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_dirs(*directories)
 def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new --directory <path>` can create an asset in sub-directories of
-    the repository while the cwd is inside a different sub-directory.
-    """
+    r"""Create an asset outside of the CWD with absolute path."""
+
     # Change cwd to sub-directory
     cwd = repo.git.root / 'spe\"cial\\char\'acteஞrs'
     os.chdir(cwd)
@@ -120,11 +117,8 @@ def test_new_sub_dir_absolute_path(repo: OnyoRepo) -> None:
 
 @pytest.mark.repo_dirs(*directories)
 def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new --directory <path>` can create an asset in sub-directories of
-    the repository while the cwd is inside a different sub-directory with a
-    relative path.
-    """
+    r"""Create an asset outside of the CWD with relative path."""
+
     # Change cwd to sub-directory
     cwd = repo.git.root / 'r/e/c/u/r/s/i/v/e'
     os.chdir(cwd)
@@ -152,11 +146,8 @@ def test_new_sub_dir_relative_path(repo: OnyoRepo) -> None:
 @pytest.mark.repo_dirs('overlap')  # to test sub-dir creation for existing dir
 @pytest.mark.parametrize('directory', directories)
 def test_folder_creation_with_new(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new` can create new folders for assets.
-    Tests that folders are created when a sub-folder already exist, too, through
-    existing dir 'overlap'.
-    """
+    r"""Automatically create parent directories."""
+
     asset = f"{directory}/laptop_apple_macbookpro.0"
     ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
@@ -176,12 +167,8 @@ def test_folder_creation_with_new(repo: OnyoRepo, directory: str) -> None:
 
 
 def test_with_faux_serial_number(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new` can create multiple assets with faux serial numbers in
-    multiple directories at once. To specify several assets, at least one key-value-pair
-    has to be given multiple times. This test also needs to use the 'directory'
-    (reserved) key instead of `--directory` in order to specify the directory per asset.
-    """
+    r"""Create multiple assets with faux serials in multiple directories."""
+
     filename_prefix = "laptop_apple_macbookpro.faux"  # created asset files are expected to be this plus a random suffix
 
     num = 10
@@ -204,10 +191,8 @@ def test_with_faux_serial_number(repo: OnyoRepo) -> None:
 
 
 def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new` cat create new assets in multiple different
-    directories in one call.
-    """
+    r"""Create assets in multiple different directories."""
+
     assets = [f'{directory}/laptop_apple_macbookpro.{i}'
               for i, directory in enumerate(directories)]
     keys = ['--keys', 'type=laptop', 'make=apple', 'model.name=macbookpro']
@@ -233,10 +218,10 @@ def test_new_assets_in_multiple_directories_at_once(repo: OnyoRepo) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_yes_flag(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new --yes` creates assets in different directories.
-    """
+def test_yes_flag(repo: OnyoRepo,
+                  directory: str) -> None:
+    r"""``onyo new --yes`` creates assets in different directories."""
+
     asset = f'{directory}/laptop_apple_macbookpro.0'
     ret = subprocess.run(['onyo', '--yes', 'new', '--directory', directory, '--keys'] + asset_spec,
                          capture_output=True, text=True)
@@ -259,10 +244,10 @@ def test_yes_flag(repo: OnyoRepo, directory: str) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new --keys KEY=VALUE` creates assets with contents added.
-    """
+def test_keys_flag(repo: OnyoRepo,
+                   directory: str) -> None:
+    r"""``onyo new --keys KEY=VALUE`` creates assets with contents added."""
+
     # set `key=value` for --keys, and asset name
     asset = f"{directory}/laptop_apple_macbookpro.0"
     key_values = "mode=keys_flag"
@@ -285,10 +270,8 @@ def test_keys_flag(repo: OnyoRepo, directory: str) -> None:
 
 
 def test_error_keys_flag_mismatch_count(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new --keys KEY=VALUE` requires that repeated keys are given
-    the same number of times.
-    """
+    r"""Error when repeated keys passed to ``--keys`` are not given the same number of times."""
+
     key_values = asset_spec + ['serial=1', 'mode=0', 'mode=1', 'mode=2']
 
     # create asset with --keys
@@ -307,10 +290,10 @@ def test_error_keys_flag_mismatch_count(repo: OnyoRepo) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_discard_changes(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo new` can discard new assets and the repository stays clean.
-    """
+def test_discard_changes(repo: OnyoRepo,
+                         directory: str) -> None:
+    r"""Discard and don't modify when user responds with "n"."""
+
     asset = f'{directory}/laptop_apple_macbookpro.0'
     ret = subprocess.run(['onyo', 'new', '--directory', directory, '--keys'] + asset_spec,
                          input='n', capture_output=True, text=True)
@@ -339,11 +322,10 @@ def test_discard_changes(repo: OnyoRepo, directory: str) -> None:
     '.git/hooks',
     '.git/info'
 ])
-def test_new_protected_folder(repo: OnyoRepo, protected_folder: str) -> None:
-    r"""
-    Test that `onyo new` when called on protected folders errors correctly
-    instead of creating an asset.
-    """
+def test_new_protected_folder(repo: OnyoRepo,
+                              protected_folder: str) -> None:
+    r"""Error when called on protected directories."""
+
     asset = f"{protected_folder}/laptop_apple_macbookpro.0"
     ret = subprocess.run(['onyo', 'new', '--directory', protected_folder, '--keys'] + asset_spec,
                          capture_output=True, text=True)
@@ -357,11 +339,10 @@ def test_new_protected_folder(repo: OnyoRepo, protected_folder: str) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test `onyo new --edit --keys KEY=VALUE --template <TEMPLATE>` works when
-    called and all flags get executed together and modify the output correctly.
-    """
+def test_new_with_flags_edit_keys_template(repo: OnyoRepo,
+                                           directory: str) -> None:
+    r"""All flags waterfall correctly."""
+
     # set editor, template, key=value and asset
     os.environ['EDITOR'] = "printf 'key: value' >>"
     template = repo.git.root / repo.TEMPLATE_DIR / "laptop.example"
@@ -412,11 +393,10 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo, directory: str) -> No
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_new_with_keys_overwrite_template(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test `onyo new --keys <KEY=VALUE> --template <TEMPLATE>` does overwrite the
-    contents of <TEMPLATE> with <KEY=VALUE>
-    """
+def test_new_with_keys_overwrite_template(repo: OnyoRepo,
+                                          directory: str) -> None:
+    r"""Overwrite keys in a template."""
+
     # set asset, --template and --keys
     template = "laptop.example"
     asset = Path(f"{directory}/laptop_apple_macbookpro.0")
@@ -453,11 +433,11 @@ def test_new_with_keys_overwrite_template(repo: OnyoRepo, directory: str) -> Non
     ['escapes', 'in', 'asset', 'na\\me'],
     ['lap\"top', 'appஞle', 'mac\\book\'pro', '0']
 ])
-def test_with_special_characters(
-        repo: OnyoRepo, directory: str, variant: str) -> None:
-    r"""
-    Test `onyo new` with names containing special characters.
-    """
+def test_with_special_characters(repo: OnyoRepo,
+                                 directory: str,
+                                 variant: str) -> None:
+    r"""Test special characters."""
+
     asset = f'{directory}/{variant[0]}_{variant[1]}_{variant[2]}.{variant[3]}'
     keys = [f"type={variant[0]}", f"make={variant[1]}",
             f"model.name={variant[2]}", f"serial={variant[3]}"]
@@ -477,7 +457,8 @@ def test_with_special_characters(
 
 @pytest.mark.repo_files('laptop_apple_macbookpro.0')
 @pytest.mark.parametrize('directory', directories)
-def test_identical_asset_exists(repo: OnyoRepo, directory: str) -> None:
+def test_identical_asset_exists(repo: OnyoRepo,
+                                directory: str) -> None:
     r"""Allow an asset identical to an existing one, but in a different directory."""
 
     asset = f"{directory}/laptop_apple_macbookpro.0"
@@ -496,8 +477,8 @@ def test_identical_asset_exists(repo: OnyoRepo, directory: str) -> None:
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_two_identical_assets_in_input(
-        repo: OnyoRepo, directory: str) -> None:
+def test_two_identical_assets_in_input(repo: OnyoRepo,
+                                       directory: str) -> None:
     r"""Create two identical assets in two different target directories."""
 
     asset = "laptop_apple_macbookpro.0"
@@ -516,9 +497,9 @@ def test_two_identical_assets_in_input(
 
 
 @pytest.mark.parametrize('directory', directories)
-def test_error_two_identical_assets_in_input(
-        repo: OnyoRepo, directory: str) -> None:
-    r"""Error when two assets would result in identical name and location."""
+def test_error_two_identical_assets_in_input(repo: OnyoRepo,
+                                             directory: str) -> None:
+    r"""Error when two assets result in identical name and location."""
 
     asset = "laptop_apple_macbookpro.0"
     ret = subprocess.run(['onyo', 'new', '--keys'] + asset_spec + [f"directory={directory}", f"directory={directory}"],
@@ -535,10 +516,8 @@ def test_error_two_identical_assets_in_input(
 
 
 def test_error_template_does_not_exist(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo new --template` errors when it is called with a non-existing
-    template name.
-    """
+    r"""Error when called with a non-existing template name."""
+
     no_template = "no_template"
     ret = subprocess.run(['onyo', 'new', '--template', no_template, '--keys'] + asset_spec,
                          capture_output=True, text=True)
@@ -554,11 +533,8 @@ def test_error_template_does_not_exist(repo: OnyoRepo) -> None:
 
 
 def test_conflicting_and_missing_arguments(repo: OnyoRepo) -> None:
-    r"""
-    Onyo should inform the user with specific error messages when arguments are
-    either missing or conflicting:
-    - error if `onyo new` without key/values or template/clone
-    """
+    r"""Inform the user when arguments are missing or conflicting."""
+
     # error if `onyo new` gets neither temaplte, clone, edit, or keys
     ret = subprocess.run(['onyo', 'new'], capture_output=True, text=True)
     assert not ret.stdout

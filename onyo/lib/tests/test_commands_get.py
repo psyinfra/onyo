@@ -11,7 +11,7 @@ from ..commands import onyo_get
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_errors(inventory: Inventory) -> None:
-    r"""`onyo_get()` must raise the correct error in different illegal or impossible calls."""
+    r"""Raise the correct error in different illegal or impossible calls."""
 
     # get on non-existing asset
     pytest.raises(ValueError,
@@ -55,9 +55,8 @@ def test_onyo_get_errors(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_empty_keys(inventory: Inventory,
                              capsys) -> None:
-    r"""Verify `onyo_get()` prints values for non-existing keys as unset,
-    and values for keys that exist but have an empty value correctly.
-    """
+    r"""Print <unset> for non-existing keys and keys with an empty value."""
+
     from onyo.lib.consts import UNSET_VALUE
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
@@ -89,7 +88,8 @@ def test_onyo_get_empty_keys(inventory: Inventory,
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_on_empty_directory(inventory: Inventory) -> None:
-    r"""`onyo_get()` does not error when called on a valid but empty directory."""
+    r"""No error when called on a valid but empty directory."""
+
     dir_path = inventory.root / 'empty'
 
     # `onyo_get()` on a directory without assets does not error
@@ -100,9 +100,8 @@ def test_onyo_get_on_empty_directory(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_reserved_keys(inventory: Inventory,
                                 capsys) -> None:
-    r"""`onyo_get()` allows to specify all reserved keys to query
-    and display information for.
-    """
+    r"""Get all reserved keys."""
+
     from onyo.lib.consts import RESERVED_KEYS
     from onyo.lib.pseudokeys import PSEUDO_KEYS
     reserved = ["type", "make", "model.name", "serial"] + list(PSEUDO_KEYS.keys()) + RESERVED_KEYS
@@ -124,9 +123,8 @@ def test_onyo_get_reserved_keys(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_name_keys(inventory: Inventory,
                             capsys) -> None:
-    r"""If no keys are specified when calling `onyo_get()`
-    the name keys are printed by default.
-    """
+    r"""Print asset-name keys by default."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     name_keys = ["type", "make", "model.name", "serial"]
 
@@ -151,9 +149,8 @@ def test_onyo_get_name_keys(inventory: Inventory,
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_errors_before_get(inventory: Inventory) -> None:
-    r"""`onyo_get()` must raise the correct error if one of
-    the specified paths is not valid.
-    """
+    r"""Raise the correct error if one of the specified paths is not valid."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     non_existing_asset_path = inventory.root / "non-existing" / "TYPE_MAKER_MODEL.SERIAL"
 
@@ -168,7 +165,8 @@ def test_onyo_get_errors_before_get(inventory: Inventory) -> None:
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_simple(inventory: Inventory,
                          capsys) -> None:
-    r"""`onyo_get()` gets a value in an asset."""
+    r"""Get a value in an asset."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     get_key = "some_key"
 
@@ -186,9 +184,8 @@ def test_onyo_get_simple(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_machine_readable(inventory: Inventory,
                                    capsys) -> None:
-    r"""`onyo_get()` with machine_readable=True gives different
-    output that contains all requested information.
-    """
+    r"""Get machine readable output."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     get_key = "some_key"
 
@@ -218,9 +215,8 @@ def test_onyo_get_machine_readable(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_sorting(inventory: Inventory,
                           capsys) -> None:
-    r"""`onyo_get()` allows different types of sorting the output,
-    but errors if illegal sorting is specified.
-    """
+    r"""Sort the output, and error on illegal sorting type."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     get_key = "some_key"
@@ -257,7 +253,8 @@ def test_onyo_get_sorting(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_on_directory(inventory: Inventory,
                                capsys) -> None:
-    r"""`onyo_get()` gets a value in assets inside a directory."""
+    r"""Get a value from assets inside a directory."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     dir_path = inventory.root / "somewhere"
     get_key = "some_key"
@@ -278,7 +275,8 @@ def test_onyo_get_on_directory(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_match(inventory: Inventory,
                         capsys) -> None:
-    r"""`onyo_get()` lists just matching assets when `match` is used."""
+    r"""List only only matching assets."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     matches = [Filter("other=1").match]
@@ -306,7 +304,8 @@ def test_onyo_get_match(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_no_matches(inventory: Inventory,
                              capsys) -> None:
-    r"""`onyo_get()` behaves correctly when `match` matches no assets."""
+    r"""Get a list with no matching assets."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     matches = [Filter("unfound=values").match]
@@ -328,7 +327,8 @@ def test_onyo_get_no_matches(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_multiple(inventory: Inventory,
                            capsys) -> None:
-    r"""`onyo_get()` finds information about multiple assets in a single call."""
+    r"""Get multiple assets in a single call."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     get_key = "some_key"
@@ -352,7 +352,8 @@ def test_onyo_get_multiple(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_limited(inventory: Inventory,
                           capsys) -> None:
-    r"""`onyo_get()` with limits (--exclude/--depth) selects the correct assets."""
+    r"""Limit with --exclude and --depth."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
 
@@ -382,7 +383,8 @@ def test_onyo_get_limited(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_depth_zero(inventory: Inventory,
                              capsys) -> None:
-    r"""Calling `onyo_get(depth=0)` is legal and selects all assets from all subpaths."""
+    r"""``depth=0`` selects all assets from all subpaths."""
+
     onyo_get(inventory,
              include=[inventory.root],
              depth=0,
@@ -399,9 +401,8 @@ def test_onyo_get_depth_zero(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_default_inventory_root(inventory: Inventory,
                                          capsys) -> None:
-    r"""Calling `onyo_get()` without path uses inventory.root as default
-    and selects all assets of the inventory.
-    """
+    r"""Empty ``include`` uses ``inventory.root`` as default."""
+
     onyo_get(inventory, machine_readable=True)
 
     # verify output contains all assets and "onyo.path.relative" as default key
@@ -413,9 +414,8 @@ def test_onyo_get_default_inventory_root(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_allows_duplicates(inventory: Inventory,
                                     capsys) -> None:
-    r"""Calling `onyo_get()` with a list containing the same asset multiple
-    times does not error, but displays information just once.
-    """
+    r"""The same asset twice in ``include`` will produce it only once."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
 
     # call `onyo_get()` with `include` containing duplicates
@@ -430,6 +430,8 @@ def test_onyo_get_allows_duplicates(inventory: Inventory,
 
 def test_onyo_get_asset_dir(inventory: Inventory,
                             capsys) -> None:
+    r"""Get keys from an asset directory."""
+
     asset = Item(some_key="some_value",
                  type="TYPE",
                  make="MAKER",
@@ -458,7 +460,8 @@ def test_onyo_get_is_asset_dir(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_type_matching(inventory: Inventory,
                                 capsys) -> None:
-    r"""`onyo_get()` allows matching types instead of values."""
+    r"""Match variable type (e.g. dict)."""
+
     inventory.add_asset(Item(some_key=dict(),
                              type="TYPE",
                              make="MAKE",
@@ -503,7 +506,8 @@ def test_onyo_get_type_matching(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_match_empty_dict(inventory: Inventory,
                                    capsys) -> None:
-    r"""onyo_get can match `{}` (empty dict)"""
+    r"""Match an empty dict (e.g. ``{}``)."""
+
     inventory.add_asset(Item(some_key=dict(),
                              type="TYPE",
                              make="MAKER",
@@ -534,7 +538,8 @@ def test_onyo_get_match_empty_dict(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_match_empty_list(inventory: Inventory,
                                    capsys) -> None:
-    r"""onyo_get can match `[]` (empty list)"""
+    r"""Match an empty list (e.g. ``[]``)."""
+
     inventory.add_asset(Item({"some_key": list(),
                               "type": "TYPE",
                               "make": "MAKER",
@@ -567,7 +572,8 @@ def test_onyo_get_match_empty_list(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_unset_values(inventory: Inventory,
                                capsys) -> None:
-    """`get` does return `<unset>` value"""
+    """Unset keys and values return as ``<unset>``."""
+
     from onyo.lib.consts import UNSET_VALUE
     asset = Item(type="TYPE",
                  make="MAKE",
@@ -597,7 +603,7 @@ def test_onyo_get_unset_values(inventory: Inventory,
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_get_items(inventory: Inventory, capsys) -> None:
-    """`get` can also query dirs and templates"""
+    """Get directories and templates."""
 
     onyo_get(inventory,
              keys=["onyo.path.relative"],

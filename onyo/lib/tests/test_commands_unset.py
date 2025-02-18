@@ -12,7 +12,8 @@ from ..commands import onyo_unset
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_errors(inventory: Inventory) -> None:
-    """`onyo_unset` must raise the correct error in different illegal or impossible calls."""
+    """Raise the correct error in different illegal or impossible calls."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key = "some_key"
 
@@ -64,9 +65,8 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
-    """`onyo_unset` must raise an error when requested to unset a
-    reserved name field.
-    """
+    """Raise when requested to unset a reserved name field."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
     illegal_fields = ["type",
@@ -91,9 +91,8 @@ def test_onyo_unset_name_fields_error(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_illegal_fields(inventory: Inventory) -> None:
-    """`onyo_unset` must raise an error when requested to unset an
-    illegal/reserverd field.
-    """
+    """Raise an error when requested to unset an illegal/reserverd field."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     old_hexsha = inventory.repo.git.get_hexsha()
 
@@ -114,9 +113,8 @@ def test_onyo_unset_illegal_fields(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_errors_before_unset(inventory: Inventory) -> None:
-    """`onyo_unset` must raise the correct error and is not allowed to
-    modify/commit anything, if one of the specified paths is not valid.
-    """
+    """Raise an error and do not modify/commit if a path is not valid."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     non_existing_asset_path = inventory.root / "non-existing" / "TYPE_MAKER_MODEL.SERIAL"
     key = "some_key"
@@ -147,6 +145,7 @@ def test_onyo_unset_simple(inventory: Inventory,
                            message,
                            auto_message) -> None:
     """Unset a key in an asset."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key = "some_key"
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -175,6 +174,7 @@ def test_onyo_unset_simple(inventory: Inventory,
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_multiple(inventory: Inventory) -> None:
     """Modify multiple assets in a single call and with one commit."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     key = "some_key"
@@ -201,9 +201,8 @@ def test_onyo_unset_multiple(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
-    """Calling `onyo_unset()` with a list containing the same asset
-    multiple times does not error.
-    """
+    """Do not error when the same asset is passed multiple times."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key = "some_key"
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -225,7 +224,8 @@ def test_onyo_unset_allows_asset_duplicates(inventory: Inventory) -> None:
     ["one_that_exists.test", "type: one\nmake: that\nmodel:\n  name: exists\nserial: test\nother_key: value"])
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
-    """Calling `onyo_unset()` on a non-existing key does not error."""
+    """Unset a non-existing key does not error."""
+
     asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     asset_path2 = inventory.root / "one_that_exists.test"
     other_key = "other_key"
@@ -258,7 +258,8 @@ def test_onyo_unset_non_existing_keys(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_allows_key_duplicates(inventory: Inventory) -> None:
-    """Calling `onyo_unset()` with the same key multiple times does not error."""
+    """Unsetting the same key multiple times does not error."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     key = "some_key"
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -302,7 +303,8 @@ def test_onyo_unset_asset_dir(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_unset_empty(inventory: Inventory) -> None:
-    """`unset` does work on empty dicts and lists, and None values"""
+    """Cannot unset empty dicts, empty lists, and None values."""
+
     # Note: This is making sure onyo does not confuse an "empty value",
     #       w/ the key not being present.
 

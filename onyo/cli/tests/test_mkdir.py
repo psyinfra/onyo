@@ -17,10 +17,8 @@ directories = ['simple',
 
 @pytest.mark.parametrize('directory', directories)
 def test_mkdir(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test that `onyo mkdir <dir>` creates new directories correctly for different
-    depths and directory names.
-    """
+    r"""Create new directories correctly for different depths and directory names."""
+
     ret = subprocess.run(['onyo', '--yes', 'mkdir', directory], capture_output=True, text=True)
 
     # verify output
@@ -40,10 +38,8 @@ def test_mkdir(repo: OnyoRepo, directory: str) -> None:
 
 
 def test_mkdir_multiple_inputs(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo mkdir <dirs>` creates new directories all in one call when
-    given a list of inputs.
-    """
+    r"""Create new directories all in one call when given a list of inputs."""
+
     ret = subprocess.run(['onyo', '--yes', 'mkdir', *directories], capture_output=True, text=True)
 
     assert not ret.stderr
@@ -63,10 +59,8 @@ def test_mkdir_multiple_inputs(repo: OnyoRepo) -> None:
 
 
 def test_mkdir_no_response(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo mkdir <dirs>` creates no new directories when user responds
-    with "no".
-    """
+    r"""Do not create directories when the user responds "no" to prompt."""
+
     ret = subprocess.run(['onyo', 'mkdir', *directories], input='n',
                          capture_output=True, text=True)
 
@@ -85,10 +79,8 @@ def test_mkdir_no_response(repo: OnyoRepo) -> None:
 
 
 def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
-    r"""
-    Test that `onyo mkdir --yes --quiet <dirs>` creates new directories without
-    printing output.
-    """
+    r"""Do not print output when passed ``--quiet``."""
+
     ret = subprocess.run(['onyo', '--yes', '--quiet', 'mkdir', *directories],
                          capture_output=True, text=True)
 
@@ -112,10 +104,8 @@ def test_mkdir_quiet_flag(repo: OnyoRepo) -> None:
 @pytest.mark.repo_dirs(*directories)
 @pytest.mark.parametrize('directory', directories)
 def test_dir_exists(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Test the correct behavior when `onyo mkdir <path>` is called on an
-    existing directory.
-    """
+    r"""Do not error when passed an existing directory."""
+
     ret = subprocess.run(['onyo', 'mkdir', directory], capture_output=True, text=True)
 
     # verify output
@@ -152,9 +142,8 @@ protected_paths = [".anchor",
 @pytest.mark.repo_dirs("simple")
 @pytest.mark.parametrize('protected_path', protected_paths)
 def test_dir_protected(repo: OnyoRepo, protected_path: str) -> None:
-    r"""
-    Test the correct error behavior of `onyo mkdir <path>` on protected paths.
-    """
+    r"""Error when passed protected paths."""
+
     ret = subprocess.run(["onyo", "mkdir", protected_path], capture_output=True, text=True)
 
     # verify output
@@ -169,9 +158,8 @@ def test_dir_protected(repo: OnyoRepo, protected_path: str) -> None:
 
 @pytest.mark.repo_dirs("simple")
 def test_mkdir_relative_path(repo: OnyoRepo) -> None:
-    r"""
-    Test `onyo mkdir <path>` with a relative path given as input.
-    """
+    r"""Create relative paths."""
+
     ret = subprocess.run(["onyo", "--yes", "mkdir", "simple/../relative"], capture_output=True, text=True)
 
     # verify output

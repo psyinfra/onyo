@@ -4,32 +4,14 @@ import argparse
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Sequence
+    from typing import (
+        Literal,
+        Sequence,
+    )
 
 
 class StoreMultipleKeyValuePairs(argparse.Action):
-    r"""Store a list of dictionaries of key-value pairs.
-
-    See Also
-    --------
-    StoreSingleKeyValuePairs
-    """
-
-    def __init__(self,
-                 option_strings: Sequence[str],
-                 dest: str,
-                 nargs: int | str | None = None,
-                 **kwargs) -> None:
-        r"""
-        Parameters
-        ----------
-        option_strings
-        dest
-        nargs
-        **kwargs
-        """
-        self._nargs = nargs
-        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+    r"""Store a list of dictionaries of key-value pairs."""
 
     def __call__(self,
                  parser: argparse.ArgumentParser,
@@ -38,22 +20,25 @@ class StoreMultipleKeyValuePairs(argparse.Action):
                  option_string: str | None = None) -> None:
         r"""Turn a list of 'KEY=VALUE' pairs into a list of dictionaries.
 
-        Each KEY can be defined either 1 or N times (where N is the number of
+        Each key can be defined either 1 or N times (where N is the number of
         dictionaries to be created).
 
-        A KEY that is declared once will apply to all dictionaries.
+        A key that is declared once will apply to all dictionaries.
 
-        All KEYs appearing N times must appear the same number of times. If not,
+        All keys appearing N times must appear the same number of times. If not,
         a message will print to standard error and the program will exit with
         status code 2.
 
         Parameters
         ----------
         parser
+            ArgumentParser object that contains this action.
         namespace
+            Namespace object returned by :py:meth:`argparse.ArgumentParser.parse_args`.
         key_values
             List of strings containing key-value pairs.
         option_string
+            Option string used to invoke this action.
         """
 
         for kv in key_values:
@@ -79,32 +64,12 @@ class StoreMultipleKeyValuePairs(argparse.Action):
                 v = values[0] if len(values) == 1 else values[i]
                 d[k] = v
             results.append(d)
+
         setattr(namespace, self.dest, results)
 
 
 class StoreSingleKeyValuePairs(argparse.Action):
-    r"""Store a dictionary of key-value pairs.
-
-    See Also
-    --------
-    StoreMultipleKeyValuePairs
-    """
-
-    def __init__(self,
-                 option_strings: Sequence[str],
-                 dest: str,
-                 nargs: int | str | None = None,
-                 **kwargs) -> None:
-        r"""
-        Parameters
-        ----------
-        option_strings
-        dest
-        nargs
-        **kwargs
-        """
-        self._nargs = nargs
-        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+    r"""Store a dictionary of key-value pairs."""
 
     def __call__(self,
                  parser: argparse.ArgumentParser,
@@ -119,10 +84,13 @@ class StoreSingleKeyValuePairs(argparse.Action):
         Parameters
         ----------
         parser
+            ArgumentParser object that contains this action.
         namespace
+            Namespace object returned by :py:meth:`argparse.ArgumentParser.parse_args`.
         key_values
             List of strings containing key-value pairs.
         option_string
+            Option string used to invoke this action.
         """
 
         for kv in key_values:
@@ -142,40 +110,74 @@ class StoreSingleKeyValuePairs(argparse.Action):
 
 
 class StoreSortOption(argparse.Action):
+    r"""Store keys-to-sort and retain their order across multiple invoking options.
+
+    The results destination is hardcoded to ``sort``. This allows multiple
+    argparse options to use this action and retain the order of arguments passed
+    at the CLI across option flags.
+    """
 
     def __init__(self,
                  option_strings: Sequence[str],
-                 dest: str,
+                 dest: str | None = None,
+                 sort_direction: Literal['ascending', 'descending'] = 'ascending',
                  **kwargs) -> None:
-        r"""
+        r"""Instantiate a ``StoreSortOption`` with its sort direction.
+
+        The ``dest`` attribute is ignored and is hardcoded to ``'sort'``.
+
+        The ``default`` attribute is incompatible with this Action, as it's not
+        possible to know when to use/vs discard the default across multiple
+        options.
+
         Parameters
         ----------
         option_strings
+            List of option strings to associate with this action.
+            Passed to :py:meth:`argparse.Action`
         dest
+            This attribute is ignored and is hardcoded to ``'sort'``.
+        sort_direction
+            Sort direction.
         **kwargs
+            Passed to :py:meth:`argparse.Action`
+
+        Raises
+        ------
+        ValueError
+            The ``default`` attribute is used.
         """
-        # This is a hack.
-        # We want sorting options where -s and -S take keys (to sort by) while
-        # capitalization determines whether it's ascending or descending order.
-        # Both are supposed to be intermixable.
-        # For a proper specification and help for both options, they need to be
-        # defined separately. But if we want to keep order in the intermixed case,
-        # they need to be stored into the same object to maintain order.
-        # Our way of specifying `dest` as the key in a dict defining the options
-        # per command, prevents that, though.
-        # With this hack we ignore the generated `dest` and set it to a fixed 'sort'.
+
         if 'default' in kwargs.keys():
-            # We can't deal with defaults while accounting for two different
-            # arguments, b/c we don't know when to discard the default.
             raise ValueError("'default' must not be used with `StoreSortOption`")
-        for option in option_strings:
-            if option.startswith('--sort-'):
-                self._sorting = option[7:]
+
+        self._sorting = sort_direction
+
         super().__init__(option_strings, "sort", **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
-        partial_dict = {k: self._sorting for k in values}
+    def __call__(self,
+                 parser: argparse.ArgumentParser,
+                 namespace: argparse.Namespace,
+                 keys: list[str],
+                 option_string: str | None = None) -> None:
+        r"""Store keys in a dictionary with the associated sort direction.
+
+        Parameters
+        ----------
+        parser
+            ArgumentParser object that contains this action.
+        namespace
+            Namespace object returned by :py:meth:`argparse.ArgumentParser.parse_args`.
+        keys
+            List of strings containing keys to sort.
+        option_string
+            Option string used to invoke this action.
+        """
+
+        partial_dict = {k: self._sorting for k in keys}
+
         items = getattr(namespace, self.dest, None)
         items = dict() if items is None else items
         items.update(partial_dict)
+
         setattr(namespace, self.dest, items)

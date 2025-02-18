@@ -21,22 +21,9 @@ log: logging.Logger = logging.getLogger('onyo')
 
 
 class UI(object):
-    r"""
-    An object handling user interaction, including printing, errors, requests,
-    and others.
+    r"""An object to handle user interaction.
 
-    Attributes
-    ----------
-    logger: Logger
-        The logger to display information with.
-
-    quiet: bool
-        Activate the quiet mode (requires that `yes=True`).
-        This will suppresses all output generation.
-
-    yes: bool
-        Activate the yes mode, which suppresses all interactive requests to the
-        user, and instead answers them with yes.
+    Includes printing, errors, requests, etc.
     """
 
     def __init__(self,
@@ -52,19 +39,20 @@ class UI(object):
         debug
             Activate the debug mode to display additional information via Onyo,
             and to print the full traceback stack if errors occur.
-
         quiet
-            Activate the quiet mode (requires that `yes=True`) to suppress all
-            output generation.
-
+            Suppress all output. Requires ``yes=True``.
         yes
-            Activate the yes mode to suppress all interactive requests to the
-            user, and instead answers them with yes.
+            Answer "yes" to all user-interactive prompts.
         """
+
         # set the attributes of the UI object
-        self.quiet = quiet
-        self.yes = yes
-        self.logger = logging.getLogger('onyo')
+        self.logger: logging.Logger = logging.getLogger('onyo')
+        r"""The logger to display information with."""
+        self.quiet: bool = quiet
+        r"""Suppress all output. Requires ``yes=True``.
+        """
+        self.yes: bool = yes
+        r"""Answer "yes" to all user-interactive prompts."""
 
         self.debug = debug
         # set the debug level
@@ -87,8 +75,9 @@ class UI(object):
         Parameters
         ----------
         debug
-            Activates debug mode, and configures the log level of the logger.
+            Activate debug mode, and configure the log level of the logger.
         """
+
         if debug:
             self.logger.setLevel(logging.DEBUG)
         else:
@@ -101,29 +90,30 @@ class UI(object):
         Parameters
         ----------
         quiet
-            `True` suppresses of all user output.
-            Requires `yes` mode to be active.
+            Suppress all output. Requires ``yes=True``.
 
         Raises
         ------
         ValueError
-            If tried to activate quiet mode without `yes=True`.
+            Tried to activate quiet mode without ``yes=True``.
         """
+
         if quiet and not self.yes:
             # TODO: This condition would need to be triggered from __init__ as well.
             raise ValueError("The --quiet flag requires --yes.")
+
         self.quiet = quiet
 
     def set_yes(self,
                 yes: bool = False) -> None:
-        r"""Toggle auto-response 'yes' to all questions.
+        r"""Toggle auto-response "yes" to all user-interactive prompts.
 
         Parameters
         ----------
         yes
-            Activate yes mode, which suppresses all user requests and answers
-            them positively. Allows the activation of the quiet mode.
+            Answer "yes" to all user-interactive prompts.
         """
+
         self.yes = yes
 
     def format_traceback(self,
@@ -141,6 +131,7 @@ class UI(object):
         )
         if e.__traceback__:
             traceback.clear_frames(e.__traceback__)
+
         return ''.join(tb.format())
 
     def error(self,
@@ -148,17 +139,17 @@ class UI(object):
               end: str = '\n') -> None:
         r"""Print an error message.
 
-        Nothing will be printed when ``UI`` is set to quiet mode.
-
         When provided, Exceptions will print tracebacks in debug mode.
+
+        Nothing is printed when :py:data:`quiet` is ``True``.
 
         Parameters
         ----------
         error
-            Error message to print. Exceptions will have their message printed
-            and traceback added to the debug log.
+            Error message to print. Exceptions will have their ``message``
+            printed and traceback added to the debug log.
         end
-            String to end the message with. Defaults to "\n".
+            String to end the message with. Default is ``"\n"``.
         """
 
         self.error_count += 1
@@ -170,45 +161,48 @@ class UI(object):
     def log(self,
             message: str,
             level: int = logging.INFO) -> None:
-        r"""Log a message at `level`.
+        r"""Log a message.
 
         Parameters
         ----------
         message
-            The message to log.
+            Message to log.
         level
             Level to log at.
         """
+
         self.logger.log(level=level, msg=message)
 
     def log_debug(self,
                   *args,
                   **kwargs) -> None:
-        r"""Log at `logging.DEBUG` level.
+        r"""Log at ``DEBUG`` level.
 
         Parameters
         ----------
         args
-            passed to Logger.debug
-
+            Passed to :py:meth:`logging.Logger.debug`
         kwargs
-            passed to Logger.debug
+            Passed to :py:meth:`logging.Logger.debug`
         """
+
         self.logger.debug(*args, **kwargs)
 
     def print(self,
               *args,
               **kwargs) -> None:
-        r"""Print a message, if the `UI` is not set to quiet mode.
+        r"""Print a message.
+
+        Nothing is printed when :py:data:`quiet` is ``True``.
 
         Parameters
         ----------
         args
-            passed on to builtin `print`.
-
+            Passed to builtin :py:func:`print`
         kwargs
-            passed on to builtin `print`.
+            Passed to builtin :py:func:`print`
         """
+
         if not self.quiet:
             print(*args, **kwargs)
 
@@ -216,30 +210,31 @@ class UI(object):
                               question: str,
                               default: str = 'yes',
                               answers: list[tuple] | None = None) -> Any:
-        r"""Print `question` and read a response from `stdin`.
+        r"""Print a question and read a response from ``stdin``.
 
-        Returns True when user answers yes, False when no, and asks again if the
-        input is neither.
+        When :py:data:`yes` is ``True``, the ``default`` answer is used without
+        prompting the user.
 
-        If the UI is set to `yes=True` the `default` answer is assumed without
-        asking the user.
+        When a user's response matches any of the ``answers``, the corresponding
+        return value is returned. If the user's response doesn't match any
+        answers, the question is repeated.
 
         Parameters
         ----------
-        question: str
-            The question to which the user should respond. This is appended by an indication of
-            what is the default response (just hit enter).
-        default: str
-            Define a default answer. This is answer is assumed when `self.yes` is set
-            (non-interactive mode) or when the response was empty, i.e. user just hit enter.
-        answers: list of tuple
-            Defined ways to answer the question and what to return accordingly.
-            First element of a tuple is the return value, second element a list of strings.
-            If the user's response matches any of these strings, the return value is returned.
-            If the user's response doesn't match any, the question is repeated.
-            By default, this function poses a yes-no question, where 'y,'Y','yes' are returned
-            as `True`, and 'n', 'N', 'no' as `False`.
+        question
+            Question that the user should respond to.
+        default
+            Default answer used when the answer is empty (user hit only enter)
+            or :py:data:`yes` is ``True``.
+        answers
+            List of answers and corresponding value to return for those answers.
+            The first element is the return value, and the second is a list of
+            strings.
+
+            Default is 'y', 'Y', or 'yes' return ``True`` and 'n', 'N', or 'no'
+            return ``False``.
         """
+
         # TODO: When use of rich is streamlined, we'd probably want to change how the default
         #       and possible ways to respond are indicated.
         answers = answers or [(True, ['y', 'Y', 'yes']),
@@ -253,25 +248,34 @@ class UI(object):
                     answer = input(question) or default  # empty answer (hit return) gives the default answer
                 except EOFError as e:
                     raise UIInputError("Failed to read user input.") from e
+
             for response, options in answers:
                 if answer in options:
                     return response
+
             self.log_debug(f"Invalid user response: {answer}. Retry.")
 
     def rich_print(self, *args, **kwargs) -> None:
-        r"""Refactoring helper to print via the `rich` package.
+        r"""Print via the ``rich`` module.
 
-        Proxy for `rich.Console.print`.
-        Takes `stderr: bool` option to use a stderr `Console`
-        instead of a stdout Console.
+        A proxy for ``rich.Console.print``.
 
-        Notes
-        -----
-        This is to be fused with the regular `UI.print`, `UI.error`,
-        etc. so that `UI` decides whether and how to use `rich`.
-        The stderr option should consequently be replaced by `print`'s
-        standard `file` option.
+        Parameters
+        ----------
+        stderr
+            Bool to use a ``stderr`` Rich Console instead of a ``stdout`` Rich
+            Console.
+        args
+            Passed to :py:func:`rich.Console.print`
+        kwargs
+            Passed to :py:func:`rich.Console.print`
         """
+
+        # TODO: This should be fused with the regular `UI.print` and `UI.error`,
+        #       so that `UI` decides whether and how to use `rich`. The stderr
+        #       option should consequently be replaced by `print`'s standard
+        #       `file` option.
+
         if not self.quiet:
             stderr = kwargs.pop('stderr') if 'stderr' in kwargs.keys() else False
             console = self.stderr_console if stderr else self.stdout_console

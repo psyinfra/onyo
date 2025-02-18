@@ -38,8 +38,8 @@ class OnyoArgumentParser(ArgumentParser):
     def _print_message(self,
                        message: str,
                        file: IO[str] | None = None) -> None:
-        r"""Print help text with Rich.
-        """
+        r"""Print help text with Rich."""
+
         if message:
             rich.print(message, file=file)
 
@@ -69,6 +69,7 @@ class OnyoRawTextHelpFormatter(RawTextHelpFormatter):
         indent
             Indentation text to precede lines with.
         """
+
         text = rst_to_rich(text)
         return super()._fill_text(text, width, indent)
 
@@ -101,6 +102,7 @@ class OnyoRawTextHelpFormatter(RawTextHelpFormatter):
         action
             ArgParse Action.
         """
+
         if action.option_strings:
             # -s, --long
             rendered_options = ', '.join([f"[cyan]{x}[/cyan]" for x in action.option_strings])
@@ -132,6 +134,7 @@ class OnyoRawTextHelpFormatter(RawTextHelpFormatter):
         width
             Max character length to wrap lines at.
         """
+
         text = rst_to_rich(text)
         return super()._split_lines(text, width)
 
@@ -146,6 +149,7 @@ class OnyoRawTextHelpFormatter(RawTextHelpFormatter):
         heading
             Heading text.
         """
+
         if heading:
             heading = f'[orange1]{heading.title()}[/orange1]'
         super().start_section(heading)
@@ -162,6 +166,7 @@ def rst_to_rich(text: str) -> str:
     text
         reStructuredText to convert.
     """
+
     # de-indent text
     text = textwrap.dedent(text).strip()
 
@@ -231,6 +236,7 @@ def build_parser(parser: ArgumentParser,
         }
         build_parser(parser, args)
     """
+
     for cmd in args:
         args[cmd]['dest'] = cmd
         try:  # option flag
@@ -246,9 +252,8 @@ subcmds = None
 
 
 def setup_parser() -> OnyoArgumentParser:
-    r"""Setup and return a fully populated OnyoArgumentParser for Onyo and all subcommands.
-    """
-    from onyo.onyo_arguments import args_onyo
+    r"""Return a fully populated OnyoArgumentParser for Onyo and all subcommands."""
+
     from onyo.cli.cat import args_cat, epilog_cat
     from onyo.cli.config import args_config, epilog_config
     from onyo.cli.edit import args_edit, epilog_edit
@@ -265,6 +270,7 @@ def setup_parser() -> OnyoArgumentParser:
     from onyo.cli.tree import args_tree, epilog_tree
     from onyo.cli.tsv_to_yaml import args_tsv_to_yaml, epilog_tsv_to_yaml
     from onyo.cli.unset import args_unset, epilog_unset
+    from onyo.onyo_arguments import args_onyo
 
     global subcmds
 
@@ -491,6 +497,7 @@ def get_subcmd_index(arglist: list,
     -------
     >>> subcmd_index = get_subcmd_index(sys.argv)
     """
+
     onyo_flags_with_args = ['-C', '--onyopath']
 
     try:
@@ -508,8 +515,8 @@ def get_subcmd_index(arglist: list,
 
 
 def main() -> None:
-    r"""Execute Onyo's CLI.
-    """
+    r"""Execute Onyo's CLI."""
+
     #
     # ARGPARSE Hack #1
     #
@@ -563,38 +570,32 @@ def main() -> None:
         try:
             args.run(args)
         except InvalidArgumentError as e:
-            # special treatment for this error b/c it's meant to capture
-            # malformed calls, that aren't covered by argparse itself.
+            # Captures malformed calls that aren't covered by argparse itself.
             # Same style of reporting as any other argparse error:
             subcmds._name_parser_map[args.cmd].print_usage(file=sys.stderr)
             parser.error(str(e))
-        except CalledProcessError as e:
-            # CalledProcessError itself is not informative to the user.
-            # As far as there was something useful in that process' stdout/stderr
-            # we usually let it through. If not, it should result in a dedicated exception,
-            # that we can treat here accordingly.
-            ui.log_debug(str(e))
-            sys.exit(e.returncode)
         except OnyoCLIExitCode as e:
             ui.log_debug(ui.format_traceback(e))
             sys.exit(e.returncode)
         except UIInputError as e:
             ui.error(e)
             ui.error("Use the --yes switch for non-interactive mode.")
-        except Exception as e:
-            # TODO: This may need to be nicer, but in any case: Turn any exception/error into a message and exit
-            #       non-zero here, in order to have this generic last catcher.
+        except (CalledProcessError, Exception) as e:
+            # Generic catcher-of-last-resort: print the exception/error and exit
+            # non-zero.
             ui.error(e)
-            code = e.returncode if hasattr(e, 'returncode') else error_returncode  # pyre-ignore
+            code = getattr(e, 'returncode', error_returncode)
             sys.exit(code)
         except KeyboardInterrupt:
             ui.error("User interrupted.")
             sys.exit(1)
         finally:
             os.chdir(old_cwd)
+
         if ui.error_count > 0:
-            # We may have reported errors while being able to proceed (hence no exception bubbled up).
-            # That's fine, but still exit non-zero.
+            # Errors may have been encountered while still being able to proceed
+            # (hence no exception bubbled up).
+            # Exit non-zero.
             sys.exit(error_returncode)
     else:
         parser.print_help()

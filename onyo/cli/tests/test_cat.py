@@ -38,9 +38,8 @@ contents: List[List[str]] = [[x, content_str] for x in assets]
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 def test_cat(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Single file is cat successfully, and stdout matches file content.
-    """
+    r"""``cat`` a single file."""
+
     ret = subprocess.run(["onyo", "cat", asset], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -49,9 +48,8 @@ def test_cat(repo: OnyoRepo, asset: str) -> None:
 
 @pytest.mark.repo_contents(*contents)
 def test_cat_multiple_inputs(repo: OnyoRepo) -> None:
-    r"""
-    Multiple files are cat successfully, and stdout matches file content.
-    """
+    r"""``cat`` multiple files."""
+
     ret = subprocess.run(["onyo", "cat", *assets], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -65,9 +63,8 @@ def test_cat_multiple_inputs(repo: OnyoRepo) -> None:
                                      ]
                          )
 def test_cat_non_existing_path(repo: OnyoRepo, variant: str) -> None:
-    r"""
-    Error (2) on path that doesn't exist.
-    """
+    r"""Error (2) when the path does not exist."""
+
     ret = subprocess.run(['onyo', 'cat', variant], capture_output=True, text=True)
     assert ret.returncode == 2
     assert not ret.stdout
@@ -81,9 +78,8 @@ def test_cat_non_existing_path(repo: OnyoRepo, variant: str) -> None:
     ['one_that_exists.test', 'dir/two_that_exists.test', 'does_not_exist.test']]
 )
 def test_cat_multiple_paths_missing(repo: OnyoRepo, variant: list[str]) -> None:
-    r"""
-    Errors (2) with multiple paths when at least one doesn't exist.
-    """
+    r"""Error (2) with multiple paths when at least one doesn't exist."""
+
     ret = subprocess.run(['onyo', 'cat', *variant], capture_output=True, text=True)
     assert ret.returncode == 2
     assert not ret.stdout
@@ -93,9 +89,8 @@ def test_cat_multiple_paths_missing(repo: OnyoRepo, variant: list[str]) -> None:
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('directory', directories)
 def test_cat_error_with_directory(repo: OnyoRepo, directory: str) -> None:
-    r"""
-    Error (2) if path provided is a plain directory.
-    """
+    r"""Error (2) if path provided is a plain directory."""
+
     ret = subprocess.run(['onyo', 'cat', directory], capture_output=True, text=True)
     assert ret.returncode == 2
     assert not ret.stdout
@@ -105,9 +100,8 @@ def test_cat_error_with_directory(repo: OnyoRepo, directory: str) -> None:
 @pytest.mark.repo_contents(*contents)
 @pytest.mark.parametrize('asset', assets)
 def test_same_target(repo: OnyoRepo, asset: str) -> None:
-    r"""
-    Succeed if the same path is provided more than once.
-    """
+    r"""Provide same path more than once."""
+
     ret = subprocess.run(['onyo', 'cat', asset, asset], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -119,10 +113,11 @@ def test_same_target(repo: OnyoRepo, asset: str) -> None:
 @pytest.mark.parametrize('variant', [["no_trailing_newline.test",
                                       "---\nRAM:\nSize:\nUSB:"]])
 def test_no_trailing_newline(repo: OnyoRepo, variant: list[str]) -> None:
-    r"""
-    The output matches the file content /exactly/, without spurious newlines,
-    formatting, or other characters.
+    r"""Output matches the file content /exactly/.
+
+    Without spurious newlines, formatting, or other characters.
     """
+
     ret = subprocess.run(['onyo', 'cat', variant[0]], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -131,12 +126,12 @@ def test_no_trailing_newline(repo: OnyoRepo, variant: list[str]) -> None:
 
 @pytest.mark.repo_files(*assets)
 def test_no_trailing_newline_with_many_empty_assets(repo: OnyoRepo) -> None:
-    r"""
-    No empty lines when given a list of empty files.
+    r"""No empty lines when given a list of empty files.
 
-    Because `onyo cat` uses `print(path.read_text(), end='')` this test
+    Because ``onyo cat`` uses ``print(path.read_text(), end='')``, this test
     verifies that empty assets do not print empty new lines.
     """
+
     ret = subprocess.run(['onyo', 'cat', *assets], capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
@@ -147,9 +142,7 @@ def test_no_trailing_newline_with_many_empty_assets(repo: OnyoRepo) -> None:
 @pytest.mark.parametrize('variant',
                          [["bad_yaml_file.test", "I: \nam:bad:\nbad:yaml\n"]])
 def test_invalid_yaml(repo: OnyoRepo, variant: list[str]) -> None:
-    r"""
-    Invalid content prints to stdout, error message to stderr, and exit 1.
-    """
+    r"""Invalid content prints to stdout, error message to stderr, and exit 1."""
 
     # check that yaml is invalid
     with pytest.raises(OnyoInvalidRepoError):

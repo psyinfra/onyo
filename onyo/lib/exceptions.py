@@ -7,9 +7,20 @@ class UIInputError(Exception):
 
 class OnyoCLIExitCode(Exception):
     r"""Raise if the Onyo CLI should exit with a specific value."""
+
     def __init__(self,
                  message: str,
                  returncode: int):
+        r"""Instantiate an ``OnyoCLIExitCode`` with a message and exit code.
+
+        Parameters
+        ----------
+        message
+            The exception message
+        returncode
+            The code to exit the command as.
+        """
+
         self.message = message
         self.returncode = returncode
 
