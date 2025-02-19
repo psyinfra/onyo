@@ -478,10 +478,23 @@ class OnyoRepo(object):
             Path to check.
         """
 
-        return path.is_relative_to(self.git.root) and \
+        return self.git.root in path.parents and \
             not self.git.is_git_path(path) and \
             not self.is_onyo_path(path) and \
             not self.is_onyo_ignored(path)
+
+    def is_item_path(self, path: Path) -> bool:
+        r"""Whether ``path`` is a valid path for an item.
+        """
+        return path == self.git.root or self.is_inventory_path(path) or self.is_template_path(path)
+
+    def is_template_path(self, path) -> bool:
+        r"""Whether ``path`` is a valid template location.
+        """
+        template_dir = self.git.root / self.TEMPLATE_DIR
+        return not self.is_onyo_ignored(path) and \
+            not self.git.is_git_path(path) and \
+            (template_dir == path) or (template_dir in path.parents)
 
     def is_onyo_ignored(self,
                         path: Path) -> bool:
@@ -577,7 +590,7 @@ class OnyoRepo(object):
                        include: Iterable[Path] | None = None,
                        exclude: Iterable[Path] | Path | None = None,
                        depth: int = 0,
-                       types: List[Literal['assets', 'directories', 'templates']] | None = None
+                       types: List[Literal['assets', 'directories']] | None = None
                        ) -> List[Path]:
         r"""Get the Paths of all items matching paths and filters.
 
@@ -592,8 +605,8 @@ class OnyoRepo(object):
             ``include``. A depth of ``0`` descends recursively without limit.
         types
             List of types of inventory items to consider. Equivalent to
-            ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
-            ``onyo.is.template=True``. Default is ``['assets']``.
+            ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
+            Default is ``['assets']``.
         """
 
         if types is None:
@@ -603,31 +616,34 @@ class OnyoRepo(object):
         if depth < 0:
             raise ValueError(f"depth must be greater or equal 0, but is '{depth}'")
 
-        # Note: The if-else here doesn't change result, but utilizes `GitRepo`'s cache:
-        files = self.git.get_files(include) if include else self.git.files
+        exclude = [exclude] if isinstance(exclude, Path) else exclude
+        if not any(self.is_template_path(p) for p in include):
+            # if no template dir is explicitly given, remove the template subdir entirely:
+            if exclude:
+                exclude += [self.git.root / self.TEMPLATE_DIR]
+            else:
+                exclude = [self.git.root / self.TEMPLATE_DIR]
+
+        files = self.git.get_files(include)
+
         if depth:
             files = [f
                      for f in files
                      for root in include
                      if root in f.parents and (len(f.parents) - len(root.parents) <= depth)]
         if exclude:
-            exclude = [exclude] if isinstance(exclude, Path) else exclude
             files = [f for f in files if all(f != p and p not in f.parents for p in exclude)]
 
         paths = []
         if 'assets' in types:
-            paths.extend([f for f in files if self.is_inventory_path(f)] +
+            paths.extend([f for f in files if not f.name == self.ANCHOR_FILE_NAME and self.is_item_path(f)] +
                          [f.parent for f in files if f.name == self.ASSET_DIR_FILE_NAME])
         if 'directories' in types:
             paths.extend([f.parent for f in files
-                          if f.name == self.ANCHOR_FILE_NAME and self.is_inventory_path(f.parent)])
+                          if f.name == self.ANCHOR_FILE_NAME and self.is_item_path(f.parent)])
             # special case root - has no anchor file that would show up in `files`:
             if self.git.root in include:
                 paths.append(self.git.root)
-        if 'templates' in types:
-            # TODO: This does not yet account for directory-templates.
-            paths.extend([f for f in files
-                          if self.git.root / self.TEMPLATE_DIR in f.parents and not f.name.startswith('.')])
 
         return paths
 

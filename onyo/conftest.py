@@ -268,7 +268,7 @@ def fixture_onyorepo(gitrepo,
         for spec in list(m.args):
             spec['onyo.path.absolute'] = gitrepo.root / spec['onyo.path.relative']
             implicit_dirs = [d for d in spec['onyo.path.absolute'].parents
-                             if d.is_relative_to(gitrepo.root)]
+                             if gitrepo.root in d.parents]
             if spec.get('onyo.is.directory'):
                 implicit_dirs.append(spec['onyo.path.absolute'])
             to_commit += onyo.mk_inventory_dirs(implicit_dirs)

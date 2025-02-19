@@ -36,12 +36,13 @@ def test_get_items_types(inventory: Inventory, capsys) -> None:
 
     fixture_templates = [OnyoRepo.TEMPLATE_DIR / "empty",
                          OnyoRepo.TEMPLATE_DIR / "laptop.example"]
-    templates = [t for t in inventory.get_items(types=['templates'])]
+
+    templates = [t for t in inventory.get_items(include=[inventory.root / OnyoRepo.TEMPLATE_DIR])]
     assert len(templates) == len(fixture_templates)
     assert all(t["onyo.path.relative"] in fixture_templates for t in templates)
     assert all(p in [t["onyo.path.relative"] for t in templates] for p in fixture_templates)
     for t in templates:
         assert isinstance(t, Item)
-        assert t["onyo.is.asset"] is False
+        assert t["onyo.is.asset"] is (t["onyo.path.name"] != "empty")
         assert t["onyo.is.directory"] is False
         assert t["onyo.is.template"] is True

@@ -540,12 +540,13 @@ def test_natural_sort(keys: dict[str, sort_t],
 def test_get_types(repo: OnyoRepo):
 
     # get all assets, directories, and templates
-    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', 'templates', '--keys', 'onyo.path.relative']
+    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', '--keys', 'onyo.path.relative',
+           '--include', '.', '.onyo/templates']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr
     output_lines = ret.stdout.splitlines()
-    assert len(output_lines) == 9
+    assert len(output_lines) == 10
     # 3 assets (see decorator),
     # 3 templates (2 default + 1 from decorator),
     # 3 dirs (two from decorator + root)
@@ -554,6 +555,7 @@ def test_get_types(repo: OnyoRepo):
                    '.',
                    'one',
                    'one/two',
+                   '.onyo/templates',
                    '.onyo/templates/empty',
                    '.onyo/templates/laptop.example',
                    '.onyo/templates/laptop_dell_precision',
@@ -563,8 +565,8 @@ def test_get_types(repo: OnyoRepo):
                ])
 
     # get a match across assets and templates:
-    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', 'templates', '--keys', 'onyo.path.relative',
-           '--match', 'make=dell']
+    cmd = ['onyo', 'get', '-H', '--types', 'assets', 'directories', '--keys', 'onyo.path.relative',
+           '--include', '.', '.onyo/templates', '--match', 'make=dell']
     ret = subprocess.run(cmd, capture_output=True, text=True)
     assert ret.returncode == 0
     assert not ret.stderr

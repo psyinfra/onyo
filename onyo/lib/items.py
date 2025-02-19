@@ -185,9 +185,9 @@ class Item(DotNotationWrapper):
 
         self._path = path
 
-        if self['onyo.is.asset'] and self.repo:
+        if self.repo and self.repo.is_asset_path(path):
             loader = self.repo.get_asset_content
-        elif self['onyo.is.asset'] or self['onyo.is.template']:
+        elif path.is_file():
             loader = get_asset_content
         else:
             return
@@ -319,11 +319,15 @@ class Item(DotNotationWrapper):
 
     def is_asset(self) -> bool | None:
         """Initializer for the ``'onyo.is.asset'`` pseudo-key."""
-
         if not self.repo or not self._path:
             return None
 
-        return self.repo.is_asset_path(self._path)
+        # True, if it's either an existing asset in the inventory or
+        # it's "instructions" for creating one. The latter implies there
+        # are non-pseudokeys (or "onyo.is.asset" is defined in it and would overwrite
+        # this evaluation anyway)
+        return self.repo.is_asset_path(self._path) or \
+            any(k not in onyo.lib.pseudokeys.PSEUDO_KEYS for k in self.keys())
 
     def is_directory(self) -> bool | None:
         """Initializer for the ``'onyo.is.directory'`` pseudo-key."""
@@ -331,7 +335,9 @@ class Item(DotNotationWrapper):
         if not self.repo or not self._path:
             return None
 
-        return self.repo.is_inventory_dir(self._path)
+        # True, if it's either an existing inventory dir or a template dir.
+        # TODO: `is_dir()` should be looking up git-committed dirs instead. -> Property at OnyoRepo
+        return self.repo.is_inventory_dir(self._path) or (self._path.is_dir() and self["onyo.is.template"])
 
     def is_template(self) -> bool | None:
         """Initializer for the ``'onyo.is.template'`` pseudo-key."""
@@ -339,7 +345,8 @@ class Item(DotNotationWrapper):
         if not self.repo or not self._path:
             return None
 
-        return self.repo.git.root / self.repo.TEMPLATE_DIR in self._path.parents
+        template_root = self.repo.git.root / self.repo.TEMPLATE_DIR
+        return self._path == template_root or template_root in self._path.parents
 
     def is_empty(self) -> bool | None:
         """Initializer for the ``'onyo.is.empty'`` pseudo-key."""
@@ -355,13 +362,9 @@ class Item(DotNotationWrapper):
 #   ensured to return bool/Path objects that the codebase acts upon when their values are coming in from
 #   CLI or (template-)files, since everything is stringified now.
 # - We need plain files/directories represented for --yaml
-# - Templates can be (asset-) dirs  -> a dir is an item. If it has the dot yaml file, it's an asset dir
 # - values in templates maybe to be evaluated matching expression or even plugin calls  #714
 # - Path attribute caching at git/onyo layers (is_file, etc.):
 #   We actually know that everything we get from
 #   git ls-tree is in fact a file or symlink. And we can derive
 #   dirs from that path list (.anchor). That may be a lot faster.
 #   Implement cache dict at GitRepo level.
-# - Probably/Maybe: Stop passing dicts and Path objects around. All things relevant at higher level are Items, right?
-# - suck in DotNotationWrapper instead of deriving!? Probably not, because we have asset/template specs that should
-#   behave with dot notation, but can't or even must not have pseudo-keys.

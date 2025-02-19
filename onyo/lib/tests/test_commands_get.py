@@ -607,8 +607,8 @@ def test_onyo_get_items(inventory: Inventory, capsys) -> None:
 
     onyo_get(inventory,
              keys=["onyo.path.relative"],
-             machine_readable=True,
-             types=['templates'])
+             include=[Path(inventory.root / OnyoRepo.TEMPLATE_DIR)],
+             machine_readable=True)
     output = capsys.readouterr().out
     assert len(output.splitlines()) == 2
     assert str(OnyoRepo.TEMPLATE_DIR / "empty") in output

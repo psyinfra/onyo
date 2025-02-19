@@ -781,7 +781,7 @@ class Inventory(object):
                   exclude: Iterable[Path] | Path | None = None,
                   depth: int | None = 0,
                   match: list[Callable[[Item], bool]] | None = None,
-                  types: list[Literal['assets', 'directories', 'templates']] | None = None
+                  types: list[Literal['assets', 'directories']] | None = None
                   ) -> Generator[Item, None, None] | filter:
         r"""Yield all Items matching paths and filters.
 
@@ -807,8 +807,8 @@ class Inventory(object):
             a ``bool``.
         types
             Types of inventory items to consider. Equivalent to
-            ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
-            ``onyo.is.template=True``. Default is ``['assets']``.
+            ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
+            Default is ``['assets']``.
             Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         """
 

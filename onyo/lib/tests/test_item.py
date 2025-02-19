@@ -78,7 +78,9 @@ def test_item_init(onyorepo) -> None:
             assert item['onyo.is.template'] is None
             assert item['onyo.is.empty'] is None
         else:
-            assert item['onyo.is.asset'] is (item['onyo.path.absolute'] in [a['onyo.path.absolute'] for a in onyorepo.test_annotation['assets']])
+            assert item['onyo.is.asset'] is (
+                item['onyo.path.absolute'] in [a['onyo.path.absolute'] for a in (onyorepo.test_annotation['assets'])]) or \
+                item['onyo.path.absolute'] in onyorepo.test_annotation['templates']
             assert item['onyo.is.directory'] is (item['onyo.path.absolute'] in onyorepo.test_annotation['dirs'])
             assert item['onyo.is.template'] is (onyorepo.git.root / onyorepo.TEMPLATE_DIR in item['onyo.path.absolute'].parents)
 

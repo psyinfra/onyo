@@ -456,7 +456,7 @@ def onyo_get(inventory: Inventory,
              match: list[Callable[[dict], bool]] | None = None,
              keys: list[str] | None = None,
              sort: dict[str, sort_t] | None = None,
-             types: list[Literal['assets', 'directories', 'templates']] | None = None,
+             types: list[Literal['assets', 'directories']] | None = None,
              ) -> list[dict]:
     r"""Query the key-values of inventory items.
 
@@ -499,8 +499,8 @@ def onyo_get(inventory: Inventory,
         Default is ``{'onyo.path.relative': SORT_ASCENDING}``
     types
         Types of inventory items to consider. Equivalent to
-        ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
-        ``onyo.is.template=True``. Default is ``['assets']``.
+        ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
+        Default is ``['assets']``.
         Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
 
     Raises
@@ -516,8 +516,8 @@ def onyo_get(inventory: Inventory,
 
     # validate path arguments
     invalid_paths = set(p
-                        for p in include  # pyre-ignore[16]  `paths` not Optional anymore here
-                        if not (inventory.repo.is_inventory_dir(p) or inventory.repo.is_asset_path(p)))
+                        for p in include  # pyre-ignore[16]  `include` not Optional anymore here
+                        if not p.exists() or not inventory.repo.is_item_path(p.resolve()))
     if invalid_paths:
         err_str = '\n'.join([str(x) for x in invalid_paths])
         raise ValueError(f"The following paths are not part of the inventory:\n{err_str}")
@@ -1048,7 +1048,8 @@ def onyo_rm(inventory: Inventory,
         if p.name in [OnyoRepo.ANCHOR_FILE_NAME, OnyoRepo.ASSET_DIR_FILE_NAME]:
             raise InvalidArgumentError(f"Cannot remove onyo-managed files ({p}).\n"
                                        f"You may want to remove {p.parent} instead.")
-        if not item['onyo.is.asset'] and not item['onyo.is.directory']:
+        if (not item['onyo.is.asset'] and not item['onyo.is.directory']) or \
+                item['onyo.is.template']:
             raise InvalidArgumentError(f"{p} is neither an asset nor an inventory directory.\n"
                                        f"You may want to remove this by other means than onyo.")
 
