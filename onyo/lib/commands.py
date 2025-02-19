@@ -19,6 +19,9 @@ from onyo.lib.command_utils import (
     print_diff,
 )
 from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    ASSET_DIR_FILE_NAME,
+    ONYO_CONFIG,
     RESERVED_KEYS,
     SORT_ASCENDING,
     SORT_DESCENDING,
@@ -170,7 +173,6 @@ def onyo_cat(inventory: Inventory,
     """
 
     from rich.syntax import Syntax
-    from onyo.lib.onyo import OnyoRepo
     from onyo.lib.utils import validate_yaml
 
     if not assets:
@@ -181,7 +183,7 @@ def onyo_cat(inventory: Inventory,
         raise ValueError("The following paths are not assets:\n%s" %
                          "\n".join(non_asset_paths))
 
-    files = list(a / OnyoRepo.ASSET_DIR_FILE_NAME
+    files = list(a / ASSET_DIR_FILE_NAME
                  if inventory.repo.is_asset_dir(a)
                  else a
                  for a in assets)
@@ -229,13 +231,13 @@ def onyo_config(inventory: Inventory,
     if v2_cfg is not None and inventory.repo.version == '1':
         config_args = config_args[:v2_cfg] + ['onyo.assets.filename'] + config_args[v2_cfg + 1:]
     # end repo version shim
-    subprocess.run(["git", 'config', '-f', str(inventory.repo.ONYO_CONFIG)] +
+    subprocess.run(["git", 'config', '-f', str(ONYO_CONFIG)] +
                    config_args, cwd=inventory.repo.git.root, check=True)
 
     if not any(a.startswith('--get') or a == '--list' for a in config_args):
         # commit if there are any changes
         try:
-            inventory.repo.commit(inventory.repo.ONYO_CONFIG,
+            inventory.repo.commit(ONYO_CONFIG,
                                   'config: modify repository config')
         except subprocess.CalledProcessError as e:
             if "no changes added to commit" in e.stdout or "nothing to commit" in e.stdout:
@@ -1045,7 +1047,7 @@ def onyo_rm(inventory: Inventory,
     paths = [paths] if not isinstance(paths, list) else paths
     for p in paths:
         item = inventory.get_item(p)
-        if p.name in [OnyoRepo.ANCHOR_FILE_NAME, OnyoRepo.ASSET_DIR_FILE_NAME]:
+        if p.name in [ANCHOR_FILE_NAME, ASSET_DIR_FILE_NAME]:
             raise InvalidArgumentError(f"Cannot remove onyo-managed files ({p}).\n"
                                        f"You may want to remove {p.parent} instead.")
         if (not item['onyo.is.asset'] and not item['onyo.is.directory']) or \

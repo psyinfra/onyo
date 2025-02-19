@@ -1,12 +1,12 @@
 import pytest
 
+from onyo.lib.consts import ANCHOR_FILE_NAME
 from onyo.lib.exceptions import (
     InvalidArgumentError,
     InvalidInventoryOperationError,
 )
 from onyo.lib.items import Item
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from . import check_commit_msg
 from ..commands import onyo_rm
 
@@ -30,7 +30,7 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
     pytest.raises(InvalidArgumentError,
                   onyo_rm,
                   inventory,
-                  paths=inventory.root / OnyoRepo.ANCHOR_FILE_NAME)
+                  paths=inventory.root / ANCHOR_FILE_NAME)
 
     # delete outside onyo repository
     pytest.raises(InvalidArgumentError,
@@ -158,7 +158,7 @@ def test_onyo_rm_delete_directory(inventory: Inventory) -> None:
 
     # directory was deleted
     assert not dir_path.exists()
-    assert dir_path / OnyoRepo.ANCHOR_FILE_NAME not in inventory.repo.git.files
+    assert dir_path / ANCHOR_FILE_NAME not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -180,7 +180,7 @@ def test_onyo_rm_list(inventory: Inventory) -> None:
     assert asset_path not in inventory.repo.git.files
     # dir was deleted
     assert not dir_path.exists()
-    assert dir_path / OnyoRepo.ANCHOR_FILE_NAME not in inventory.repo.git.files
+    assert dir_path / ANCHOR_FILE_NAME not in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -200,10 +200,10 @@ def test_onyo_rm_subpath_and_contents(inventory: Inventory) -> None:
 
     # "somewhere" NOT deleted
     assert (inventory.root / "somewhere").is_dir
-    assert (inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (inventory.root / "somewhere" / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # dir "nested" was deleted, and it's contents, too
     assert not nested.exists()
-    assert (nested / OnyoRepo.ANCHOR_FILE_NAME) not in inventory.repo.git.files
+    assert (nested / ANCHOR_FILE_NAME) not in inventory.repo.git.files
     assert not asset_path.exists()
     assert asset_path not in inventory.repo.git.files
     # exactly one commit added

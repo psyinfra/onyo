@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
+from onyo.lib.consts import ANCHOR_FILE_NAME
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.items import Item
 from . import check_commit_msg
 from ..commands import onyo_set
@@ -48,7 +48,7 @@ def test_onyo_set_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_set,
                   inventory,
-                  assets=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
+                  assets=[inventory.root / "somewhere" / ANCHOR_FILE_NAME],
                   keys=key_value)
 
     # set on .git/

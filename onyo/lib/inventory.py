@@ -5,6 +5,10 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    ASSET_DIR_FILE_NAME,
+)
 from onyo.lib.differs import (
     differ_modify_asset,
     differ_move_asset,
@@ -655,7 +659,7 @@ class Inventory(object):
 
         operations = []
         for p in item['onyo.path.absolute'].iterdir():
-            if p.name in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
+            if p.name in [ANCHOR_FILE_NAME, ASSET_DIR_FILE_NAME]:
                 # These files belong to `item` and are handled with it already.
                 continue
             if not recursive:

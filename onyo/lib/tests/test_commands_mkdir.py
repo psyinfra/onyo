@@ -1,7 +1,7 @@
 import pytest
 
+from onyo.lib.consts import ANCHOR_FILE_NAME
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from . import check_commit_msg
 from ..commands import onyo_mkdir
 from ..exceptions import NoopError
@@ -82,8 +82,8 @@ def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
 
     # no new directory/anchor was created
     assert not dir_path_new.is_dir()
-    assert not (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert not (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files  # noqa: E713
+    assert not (dir_path_new / ANCHOR_FILE_NAME).is_file()
+    assert not (dir_path_new / ANCHOR_FILE_NAME) in inventory.repo.git.files  # noqa: E713
     # no commit was added
     assert inventory.repo.git.get_hexsha() == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -108,8 +108,8 @@ def test_onyo_mkdir_simple(inventory: Inventory,
     # directory was created and anchor exists
     assert dir_path_new.is_dir()
     assert inventory.repo.is_inventory_dir(dir_path_new)
-    assert (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_path_new / ANCHOR_FILE_NAME).is_file()
+    assert (dir_path_new / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -133,18 +133,18 @@ def test_onyo_mkdir_multiple(inventory: Inventory) -> None:
     # directories were created and anchor exists for 1.
     assert dir_path_new1.is_dir()
     assert inventory.repo.is_inventory_dir(dir_path_new1)
-    assert (dir_path_new1 / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_path_new1 / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_path_new1 / ANCHOR_FILE_NAME).is_file()
+    assert (dir_path_new1 / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # directories were created and anchor exists for 2.
     assert dir_path_new2.is_dir()
     assert inventory.repo.is_inventory_dir(dir_path_new2)
-    assert (dir_path_new2 / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_path_new2 / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_path_new2 / ANCHOR_FILE_NAME).is_file()
+    assert (dir_path_new2 / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # directories were created and anchor exists for 3.
     assert dir_path_new3.is_dir()
     assert inventory.repo.is_inventory_dir(dir_path_new3)
-    assert (dir_path_new3 / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_path_new3 / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_path_new3 / ANCHOR_FILE_NAME).is_file()
+    assert (dir_path_new3 / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -166,18 +166,18 @@ def test_onyo_mkdir_create_multiple_subdirectories(inventory: Inventory) -> None
     # directory x was created and anchor exists
     assert dir_x.is_dir()
     assert inventory.repo.is_inventory_dir(dir_x)
-    assert (dir_x / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_x / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_x / ANCHOR_FILE_NAME).is_file()
+    assert (dir_x / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # directory x was created and anchor exists
     assert dir_y.is_dir()
     assert inventory.repo.is_inventory_dir(dir_y)
-    assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_y / ANCHOR_FILE_NAME).is_file()
+    assert (dir_y / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # directory x was created and anchor exists
     assert dir_z.is_dir()
     assert inventory.repo.is_inventory_dir(dir_z)
-    assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_z / ANCHOR_FILE_NAME).is_file()
+    assert (dir_z / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -200,18 +200,18 @@ def test_onyo_mkdir_add_multiple_subdirectories(inventory: Inventory) -> None:
     # directory x was added and anchor exists
     assert dir_x.is_dir()
     assert inventory.repo.is_inventory_dir(dir_x)
-    assert (dir_x / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_x / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_x / ANCHOR_FILE_NAME).is_file()
+    assert (dir_x / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # directory x was added and anchor exists
     assert dir_y.is_dir()
     assert inventory.repo.is_inventory_dir(dir_y)
-    assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_y / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_y / ANCHOR_FILE_NAME).is_file()
+    assert (dir_y / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # directory x was added and anchor exists
     assert dir_z.is_dir()
     assert inventory.repo.is_inventory_dir(dir_z)
-    assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_z / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_z / ANCHOR_FILE_NAME).is_file()
+    assert (dir_z / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -230,8 +230,8 @@ def test_onyo_mkdir_allows_duplicates(inventory: Inventory) -> None:
     # the new directory was created and anchor exists
     assert dir_path_new.is_dir()
     assert inventory.repo.is_inventory_dir(dir_path_new)
-    assert (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME).is_file()
-    assert (dir_path_new / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (dir_path_new / ANCHOR_FILE_NAME).is_file()
+    assert (dir_path_new / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()

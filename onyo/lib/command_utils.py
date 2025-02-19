@@ -29,7 +29,7 @@ def allowed_config_args(git_config_args: list[str]) -> bool:
 
     ``git-config`` stores configuration information in a variety of locations
     using location flags (e.g. ``--system``). Onyo uses ``--file`` to write to
-    :py:data:`onyo.lib.onyo.OnyoRepo.ONYO_CONFIG`.
+    :py:data:`onyo.lib.consts.ONYO_CONFIG`.
 
     This function makes sure that such flags (and ``--help``) aren't in the
     list.

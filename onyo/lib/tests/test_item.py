@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from onyo.lib.onyo import OnyoRepo
+from onyo.lib.consts import ANCHOR_FILE_NAME
 from ..items import Item
 from ..pseudokeys import PSEUDO_KEYS, PSEUDOKEY_ALIASES
 
@@ -58,7 +58,7 @@ def test_item_init(onyorepo) -> None:
             assert item.get('onyo.path.absolute') == onyorepo.test_annotation['dirs'][0]
             assert item.get('onyo.path.relative') == onyorepo.test_annotation['dirs'][0].relative_to(onyorepo.git.root)
             assert item.get('onyo.path.parent') == onyorepo.test_annotation['dirs'][0].parent.relative_to(onyorepo.git.root)
-            assert item.get('onyo.path.file') == onyorepo.test_annotation['dirs'][0].relative_to(onyorepo.git.root) / OnyoRepo.ANCHOR_FILE_NAME
+            assert item.get('onyo.path.file') == onyorepo.test_annotation['dirs'][0].relative_to(onyorepo.git.root) / ANCHOR_FILE_NAME
             assert item.get('onyo.is.empty') is not None
         elif idx == 5:
             assert item.get('onyo.path.absolute') == onyorepo.test_annotation['assets'][0]['onyo.path.absolute']
@@ -82,7 +82,7 @@ def test_item_init(onyorepo) -> None:
                 item['onyo.path.absolute'] in [a['onyo.path.absolute'] for a in (onyorepo.test_annotation['assets'])]) or \
                 item['onyo.path.absolute'] in onyorepo.test_annotation['templates']
             assert item['onyo.is.directory'] is (item['onyo.path.absolute'] in onyorepo.test_annotation['dirs'])
-            assert item['onyo.is.template'] is (onyorepo.git.root / onyorepo.TEMPLATE_DIR in item['onyo.path.absolute'].parents)
+            assert item['onyo.is.template'] is (onyorepo.template_dir in item['onyo.path.absolute'].parents)
 
         # Aliases
         for k in PSEUDOKEY_ALIASES:

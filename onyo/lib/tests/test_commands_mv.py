@@ -1,7 +1,7 @@
 import pytest
 
+from onyo.lib.consts import ANCHOR_FILE_NAME
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.items import Item
 from . import check_commit_msg
 from ..commands import onyo_mv
@@ -108,12 +108,12 @@ def test_onyo_mv_src_to_dest_with_same_name(inventory: Inventory) -> None:
 
     # source
     assert not source_path.exists()
-    assert (source_path / OnyoRepo.ANCHOR_FILE_NAME) not in inventory.repo.git.files
+    assert (source_path / ANCHOR_FILE_NAME) not in inventory.repo.git.files
     # directory was moved
     assert (destination_path / source_path.name).is_dir()
-    assert (destination_path / source_path.name / OnyoRepo.ANCHOR_FILE_NAME).is_file()
+    assert (destination_path / source_path.name / ANCHOR_FILE_NAME).is_file()
     assert inventory.repo.is_inventory_dir(destination_path / source_path.name)
-    assert (destination_path / source_path.name / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (destination_path / source_path.name / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -145,9 +145,9 @@ def test_onyo_mv_move_simple(inventory: Inventory,
     assert asset_path not in inventory.repo.git.files
     # dir was moved
     assert inventory.repo.is_inventory_dir(destination_path / dir_path.name)
-    assert (destination_path / dir_path.name / OnyoRepo.ANCHOR_FILE_NAME).is_file()
+    assert (destination_path / dir_path.name / ANCHOR_FILE_NAME).is_file()
     assert not dir_path.exists()
-    assert (destination_path / dir_path.name / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (destination_path / dir_path.name / ANCHOR_FILE_NAME) in inventory.repo.git.files
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -171,12 +171,12 @@ def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
             destination=destination_path)
 
     # source is moved
-    assert (src / OnyoRepo.ANCHOR_FILE_NAME) not in inventory.repo.git.files
+    assert (src / ANCHOR_FILE_NAME) not in inventory.repo.git.files
     assert not src.exists()
     # destination is correct
     assert inventory.repo.is_inventory_dir(destination_path)
-    assert (destination_path / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
-    assert (destination_path / OnyoRepo.ANCHOR_FILE_NAME).is_file()
+    assert (destination_path / ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (destination_path / ANCHOR_FILE_NAME).is_file()
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
     assert inventory.repo.git.is_clean_worktree()
@@ -195,11 +195,11 @@ def test_onyo_mv_rename_directory(inventory: Inventory) -> None:
 
     # source
     assert not dir_path.exists()
-    assert (dir_path / OnyoRepo.ANCHOR_FILE_NAME) not in inventory.repo.git.files
+    assert (dir_path / ANCHOR_FILE_NAME) not in inventory.repo.git.files
     assert not inventory.repo.is_inventory_dir(dir_path)
     # destination is correct
     assert destination_path.is_dir()
-    assert (destination_path / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (destination_path / ANCHOR_FILE_NAME) in inventory.repo.git.files
     assert inventory.repo.is_inventory_dir(destination_path)
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha

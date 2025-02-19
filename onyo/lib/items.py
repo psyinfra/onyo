@@ -6,6 +6,10 @@ from typing import TYPE_CHECKING
 
 from ruamel.yaml import CommentedMap  # pyre-ignore[21]
 
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    ASSET_DIR_FILE_NAME
+)
 import onyo.lib.onyo
 import onyo.lib.inventory
 import onyo.lib.pseudokeys
@@ -272,7 +276,7 @@ class Item(DotNotationWrapper):
     def get_path_absolute(self) -> Path | None:
         """Initializer for the ``'onyo.path.absolute'`` pseudo-key."""
 
-        if self.repo and self._path and self._path.name == self.repo.ASSET_DIR_FILE_NAME:
+        if self.repo and self._path and self._path.name == ASSET_DIR_FILE_NAME:
             return self._path.parent
 
         return self._path
@@ -304,8 +308,8 @@ class Item(DotNotationWrapper):
             if not self['onyo.is.directory']:
                 return self['onyo.path.relative']
             if self['onyo.is.asset'] or self['onyo.is.template']:
-                return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ASSET_DIR_FILE_NAME
-            return self['onyo.path.relative'] / onyo.lib.onyo.OnyoRepo.ANCHOR_FILE_NAME
+                return self['onyo.path.relative'] / ASSET_DIR_FILE_NAME
+            return self['onyo.path.relative'] / ANCHOR_FILE_NAME
 
         return None
 
@@ -337,7 +341,7 @@ class Item(DotNotationWrapper):
 
         # True, if it's either an existing inventory dir or a template dir.
         # TODO: `is_dir()` should be looking up git-committed dirs instead. -> Property at OnyoRepo
-        return self.repo.is_inventory_dir(self._path) or (self._path.is_dir() and self["onyo.is.template"])
+        return self.repo.is_inventory_dir(self._path) or (self._path.is_dir() and self["onyo.is.template"])  # pyre-ignore[16]
 
     def is_template(self) -> bool | None:
         """Initializer for the ``'onyo.is.template'`` pseudo-key."""
@@ -345,8 +349,7 @@ class Item(DotNotationWrapper):
         if not self.repo or not self._path:
             return None
 
-        template_root = self.repo.git.root / self.repo.TEMPLATE_DIR
-        return self._path == template_root or template_root in self._path.parents
+        return self._path == self.repo.template_dir or self.repo.template_dir in self._path.parents   # pyre-ignore[16]
 
     def is_empty(self) -> bool | None:
         """Initializer for the ``'onyo.is.empty'`` pseudo-key."""

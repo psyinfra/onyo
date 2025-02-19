@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
+from onyo.lib.consts import ANCHOR_FILE_NAME
 from onyo.lib.exceptions import InvalidAssetError
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.items import Item
 from ..commands import onyo_cat
 
@@ -57,7 +57,7 @@ def test_onyo_cat_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_cat,
                   inventory,
-                  assets=[dir_path / OnyoRepo.ANCHOR_FILE_NAME])
+                  assets=[dir_path / ANCHOR_FILE_NAME])
 
     # cat on a template file
     pytest.raises(ValueError,
