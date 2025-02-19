@@ -402,6 +402,7 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     emptydir = newdir1 / "empty"
+    does_not_exist = repo.git.root / 'does' / 'not' / 'exist'
     asset_file = newdir2 / "TYPE_MAKE_MODEL.SERIAL"
     asset = Item(
         some_key="some_value",
@@ -415,8 +416,10 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
 
+    # raise on asset file
+    pytest.raises(NoopError, inventory.remove_directory, Item(asset_file, repo=repo))
     # raise on non-dir
-    pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, Item(asset_file, repo=repo))
+    pytest.raises(InvalidInventoryOperationError, inventory.remove_directory, Item(does_not_exist, repo=repo))
 
     emptydir_item = inventory.get_item(emptydir)
     inventory.remove_directory(emptydir_item)
