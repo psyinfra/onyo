@@ -613,8 +613,7 @@ def test_onyo_get_items(inventory: Inventory, capsys) -> None:
              include=[inventory.repo.template_dir],
              machine_readable=True)
     output = capsys.readouterr().out
-    assert len(output.splitlines()) == 2
-    assert str(TEMPLATE_DIR / "empty") in output
+    assert len(output.splitlines()) == 1
     assert str(TEMPLATE_DIR / "laptop.example") in output
 
     onyo_get(inventory,

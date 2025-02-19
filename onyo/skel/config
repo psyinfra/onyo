@@ -1,8 +1,6 @@
 [onyo "history"]
 	interactive = tig --follow
 	non-interactive = git --no-pager log --follow
-[onyo "new"]
-	template = empty
 [onyo "assets"]
 	name-format = "{type}_{make}_{model}.{serial}"
 [onyo "repo"]

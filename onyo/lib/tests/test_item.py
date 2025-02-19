@@ -27,7 +27,7 @@ def test_item_init(onyorepo) -> None:
                          Item(onyorepo.test_annotation['dirs'][0]),
                          Item(onyorepo.test_annotation['dirs'][0], onyorepo),
                          Item(onyorepo.test_annotation['assets'][0]['onyo.path.absolute'], onyorepo),
-                         Item(onyorepo.test_annotation['templates'][1], onyorepo),
+                         Item(onyorepo.test_annotation['templates'][0], onyorepo),
                          ]
 
     for item, idx in zip(constructor_calls, range(len(constructor_calls))):
@@ -67,9 +67,9 @@ def test_item_init(onyorepo) -> None:
             assert item.get('onyo.path.file') == item.get('onyo.path.relative')
             assert item['onyo.is.empty'] is None
         elif idx == 6:
-            assert item.get('onyo.path.absolute') == onyorepo.test_annotation['templates'][1]
-            assert item.get('onyo.path.relative') == onyorepo.test_annotation['templates'][1].relative_to(onyorepo.git.root)
-            assert item.get('onyo.path.parent') == onyorepo.test_annotation['templates'][1].parent.relative_to(onyorepo.git.root)
+            assert item.get('onyo.path.absolute') == onyorepo.test_annotation['templates'][0]
+            assert item.get('onyo.path.relative') == onyorepo.test_annotation['templates'][0].relative_to(onyorepo.git.root)
+            assert item.get('onyo.path.parent') == onyorepo.test_annotation['templates'][0].parent.relative_to(onyorepo.git.root)
             assert item.get('onyo.path.file') == item.get('onyo.path.relative')
             assert item['onyo.is.empty'] is None
         if item.repo is None:

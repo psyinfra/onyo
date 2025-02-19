@@ -175,8 +175,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     directory = inventory.root / "edited"
     monkeypatch.setenv('EDITOR', "printf 'key: value  #w/ comment' >>")
 
-    specs = [{'template': 'empty',
-              'model': {'name': 'MODEL'},
+    specs = [{'model': {'name': 'MODEL'},
               'make': 'MAKER',
               'type': 'TYPE',
               'serial': 'totally_random'}]
@@ -194,23 +193,18 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     # file already exists:
     edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
-    specs = [{'template': 'empty',
-              'serial': 'totally_random'}]
+    specs = [{'serial': 'totally_random'}]
 
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
 
     # missing required fields:
-    specs = [{'template': 'empty'}]
     monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
+    pytest.raises(ValueError, onyo_new, inventory, directory=directory, edit=True)
 
     # content should be exactly as expected
-    # (empty files used to serialize to '{}')
     edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\nserial: 8675309\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
-    specs = [{'template': 'empty'}]
     onyo_new(inventory,
-             keys=specs,  # pyre-ignore[6]
              directory=directory,
              edit=True)
     expected_content = '---\n' + edit_str

@@ -546,7 +546,7 @@ def test_get_types(repo: OnyoRepo):
     assert ret.returncode == 0
     assert not ret.stderr
     output_lines = ret.stdout.splitlines()
-    assert len(output_lines) == 10
+    assert len(output_lines) == 9
     # 3 assets (see decorator),
     # 3 templates (2 default + 1 from decorator),
     # 3 dirs (two from decorator + root)
@@ -556,7 +556,6 @@ def test_get_types(repo: OnyoRepo):
                    'one',
                    'one/two',
                    '.onyo/templates',
-                   '.onyo/templates/empty',
                    '.onyo/templates/laptop.example',
                    '.onyo/templates/laptop_dell_precision',
                    'laptop_apple_macbookpro.1',

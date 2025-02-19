@@ -143,8 +143,7 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
     If a relative path is specified, it looks in ``.onyo/templates/`` first and
     then CWD.
 
-    With no config and no name given, returns an empty dict (from the default
-    template ``empty``).
+    With no config and no name given, returns an empty dict.
     """
 
     # Call the function without parameter to get the empty template:
@@ -160,10 +159,7 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
         for given_path in [path, path.name, path.relative_to(onyorepo.git.root)]:
             template = onyorepo.get_template(path.name)
             assert isinstance(template, dict)  # allow wrapper?
-            if path.name != 'empty':  # TODO: Make issue about removing `empty` file. That's pointless.
-                assert template != dict()  # TODO: compare content
-            else:
-                assert template == dict()
+            assert template != dict()  # TODO: compare content
 
     # verify the correct error response when called with a template name that
     # does not exist

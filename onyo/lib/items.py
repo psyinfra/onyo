@@ -323,13 +323,14 @@ class Item(DotNotationWrapper):
 
     def is_asset(self) -> bool | None:
         """Initializer for the ``'onyo.is.asset'`` pseudo-key."""
+
         if not self.repo or not self._path:
             return None
 
-        # True, if it's either an existing asset in the inventory or
-        # it's "instructions" for creating one. The latter implies there
-        # are non-pseudokeys (or "onyo.is.asset" is defined in it and would overwrite
-        # this evaluation anyway)
+        # True, if the item is either an existing asset in the inventory or
+        # it's representing "instructions" for creating one.
+        # The latter implies it has non-pseudo-keys, or it is specifying "onyo.is.asset"
+        # itself in which case this implementation here will be overruled anyway.
         return self.repo.is_asset_path(self._path) or \
             any(k not in onyo.lib.pseudokeys.PSEUDO_KEYS for k in self.keys())
 

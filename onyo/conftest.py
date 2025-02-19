@@ -258,8 +258,7 @@ def fixture_onyorepo(gitrepo,
     onyo = AnnotatedOnyoRepo(gitrepo.root, init=True)
     onyo.test_annotation = {'assets': [],
                             'dirs': [],
-                            'templates': [onyo.template_dir / "empty",
-                                          onyo.template_dir / "laptop.example"],
+                            'templates': [onyo.template_dir / "laptop.example"],
                             'git': gitrepo}
 
     to_commit = []

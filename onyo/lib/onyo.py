@@ -472,17 +472,21 @@ class OnyoRepo(object):
             not self.is_onyo_path(path) and \
             not self.is_onyo_ignored(path)
 
-    def is_item_path(self, path: Path) -> bool:
+    def is_item_path(self,
+                     path: Path) -> bool:
         r"""Whether ``path`` is a valid path for an item.
 
         This checks whether ``path`` is valid for reading an item from
         or creating an item at in principle.
         It's not checking whether ``path`` actually exists.
         """
+
         return path == self.git.root or self.is_inventory_path(path) or self.is_template_path(path)
 
-    def is_template_path(self, path) -> bool:
+    def is_template_path(self,
+                         path: Path) -> bool:
         r"""Whether ``path`` is a valid template location."""
+
         return not self.is_onyo_ignored(path) and \
             not self.git.is_git_path(path) and \
             (self.template_dir == path) or (self.template_dir in path.parents)
