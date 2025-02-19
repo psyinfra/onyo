@@ -61,7 +61,7 @@ _onyo() {
         'get:return matching ASSET values corresponding to the requested KEYs'
         'history:display the history of an ASSET or DIRECTORY'
         'init:initialize a new Onyo repository'
-        'mkdir:create DIRECTORYs'
+        'mkdir:create DIRECTORYs or convert Asset Files to Asset Directories'
         'mv:move SOURCEs (assets and/or directories) to the DEST directory, or rename a SOURCE directory to DEST'
         'new:create new ASSETs and populate with KEY-VALUE pairs'
         'rm:delete ASSETs and DIRECTORYs'

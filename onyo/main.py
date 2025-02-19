@@ -377,7 +377,7 @@ def setup_parser() -> OnyoArgumentParser:
         description=cli.mkdir.__doc__,
         epilog=epilog_mkdir,
         formatter_class=parser.formatter_class,
-        help='Create directories.'
+        help='Create directories and/or convert Asset Files to Asset Directories.'
     )
     cmd_mkdir.set_defaults(run=cli.mkdir)
     build_parser(cmd_mkdir, args_mkdir)
