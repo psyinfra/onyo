@@ -686,7 +686,7 @@ def onyo_mkdir(inventory: Inventory,
 
     Raises
     ------
-    ValueError
+    NoopError
         ``dirs`` is empty.
     """
 
@@ -694,7 +694,7 @@ def onyo_mkdir(inventory: Inventory,
         auto_message = inventory.repo.auto_message
 
     if not dirs:
-        raise ValueError("At least one directory path must be specified.")
+        raise NoopError("At least one directory path must be specified.")
 
     for d in deduplicate(dirs):  # pyre-ignore[16]
         inventory.add_directory(Item(d, repo=inventory.repo))
