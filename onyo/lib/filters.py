@@ -14,7 +14,9 @@ from onyo.lib.consts import (
 from onyo.lib.exceptions import OnyoInvalidFilterError
 
 if TYPE_CHECKING:
+    from typing import Tuple
     from onyo.lib.items import Item
+
 
 @dataclass
 class Filter:
@@ -33,6 +35,7 @@ class Filter:
     _arg: str = field(repr=False)
     key: str = field(init=False)
     value: str = field(init=False)
+    operand: str = field(init=False)
 
     def __post_init__(self) -> None:
         r"""Set up a ``key=value`` conditional as a filter.
@@ -40,23 +43,54 @@ class Filter:
         ``value`` must be a valid Python regular expression.
         """
 
-        self.key, self.value = self._format(self._arg)
+        self.key, self.operand, self.value = self._format(self._arg)
 
     @staticmethod
-    def _format(arg: str) -> list[str]:
-        r"""Split filters on the first occurrence of ``=``.
+    def _format(arg: str) -> Tuple[str, str, str]:
+        r"""Split filters on the first occurrence of an operand.
+
+        Valid operands are ``=``, ``!=``, ``>``, ``>=``, ``<``, and ``<=``.
 
         Parameters
         ----------
         arg
             Raw string to split
+
+        Raises
+        ------
+        OnyoInvalidFilterError
+            No valid operand was found.
         """
 
-        if not isinstance(arg, str) or '=' not in arg:
+        index = None
+        for c in ['=', '!=', '>', '<']:
+            if c in arg:
+                idx = arg.index(c)
+                index = idx if index is None or idx < index else index
+
+        if index is None:
+            # TODO: fix error message
             raise OnyoInvalidFilterError(
                 'Filters must be formatted as `key=value`')
 
-        return arg.split('=', 1)
+        match arg[index:index + 2]:  # TODO: overflow bug
+            case "<=":
+                operand = "<="
+            case ">=":
+                operand = ">="
+            case "!=":
+                operand = "!="
+            case _:
+                operand = arg[index]
+
+        if index in (0, len(arg) - len(operand)):
+            # TODO: fix error message
+            raise OnyoInvalidFilterError(
+                'Filters must be formatted as `key=value`')
+
+        key, value = arg.split(operand, 1)
+
+        return key, operand, value
 
     @staticmethod
     def _re_match(text: str,

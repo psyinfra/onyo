@@ -44,6 +44,7 @@ def test_filter(filt: str) -> None:
 
     f = Filter(filt)
     assert f.key == filt.split('=', 1)[0]
+    assert f.operand == '='
     assert f.value == filt.split('=', 1)[1]
     assert f.match(read_asset('laptop_make_model.1'))
     assert not f.match(read_asset('monitor_make_model.2'))
@@ -95,7 +96,11 @@ def test_filter_re_match() -> None:
 
 
 @pytest.mark.parametrize('filter_arg', [
-    'key', 'key!value', '┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻'])
+    'key', 'key!value', '┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻',
+    'key=', '=value', 'key!=', '!=value',
+    'key>', '>value', 'key>=', '>=value',
+    'key<', '<value', 'key<=', '<=value',
+])
 def test_filter_invalid(filter_arg: str) -> None:
     """Invalid filters raise the correct exception."""
 
@@ -108,5 +113,37 @@ def test_filter_invalid(filter_arg: str) -> None:
 def test_filter_format() -> None:
     """The input argument 'key=value' is formatted into ``key`` and ``value`` properties."""
 
-    assert Filter._format('key=value') == ['key', 'value']
-    assert Filter._format('key=value=value') == ['key', 'value=value']
+    # =
+    assert Filter._format('key=value') == ('key', '=', 'value')
+    assert Filter._format('key=<unset>') == ('key', '=', '<unset>')
+    assert Filter._format('key=value=value') == ('key', '=', 'value=value')
+
+    # !=
+    assert Filter._format('key!=value') == ('key', '!=', 'value')
+    assert Filter._format('key!=<unset>') == ('key', '!=', '<unset>')
+    assert Filter._format('key!=value=value') == ('key', '!=', 'value=value')
+
+    # >
+    assert Filter._format('key>value') == ('key', '>', 'value')
+    assert Filter._format('key><unset>') == ('key', '>', '<unset>')
+    assert Filter._format('key>value=value') == ('key', '>', 'value=value')
+
+    # >=
+    assert Filter._format('key>=value') == ('key', '>=', 'value')
+    assert Filter._format('key>=<unset>') == ('key', '>=', '<unset>')
+    assert Filter._format('key>=value=value') == ('key', '>=', 'value=value')
+
+    # <
+    assert Filter._format('key<value') == ('key', '<', 'value')
+    assert Filter._format('key<<unset>') == ('key', '<', '<unset>')
+    assert Filter._format('key<value=value') == ('key', '<', 'value=value')
+
+    # <=
+    assert Filter._format('key<=value') == ('key', '<=', 'value')
+    assert Filter._format('key<=<unset>') == ('key', '<=', '<unset>')
+    assert Filter._format('key<=value=value') == ('key', '<=', 'value=value')
+
+    # pathological
+    assert Filter._format('key<=<==>') == ('key', '<=', '<==>')
+    assert Filter._format('key=>==<') == ('key', '=', '>==<')
+    assert Filter._format('key!!=!==<') == ('key!', '!=', '!==<')
