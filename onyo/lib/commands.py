@@ -686,7 +686,7 @@ def onyo_mkdir(inventory: Inventory,
 
     Raises
     ------
-    ValueError
+    NoopError
         ``dirs`` is empty.
     """
 
@@ -694,7 +694,7 @@ def onyo_mkdir(inventory: Inventory,
         auto_message = inventory.repo.auto_message
 
     if not dirs:
-        raise ValueError("At least one directory path must be specified.")
+        raise NoopError("At least one directory path must be specified.")
 
     for d in deduplicate(dirs):  # pyre-ignore[16]
         inventory.add_directory(Item(d, repo=inventory.repo))
@@ -1082,6 +1082,67 @@ def onyo_rm(inventory: Inventory,
             return
 
     ui.print('Nothing was deleted.')
+
+
+@raise_on_inventory_state
+def onyo_rmdir(inventory: Inventory,
+               dirs: list[Path] | Path,
+               message: str | None = None,
+               auto_message: bool | None = None) -> None:
+    r"""Delete empty directories or convert empty Asset Directories into Asset Files.
+
+    If the directory does not exist, the path is protected, or the asset is
+    already an Asset File, then an error is raised nothing is modified.
+
+    Parameters
+    ----------
+    inventory
+        The Inventory in which to delete directories or convert asset directories.
+    dirs
+        Paths of directories to delete or convert.
+    message
+        Commit message to append to the auto-generated message.
+    auto_message
+        Generate a commit-message subject line.
+        If ``None``, lookup the config value from ``onyo.commit.auto-message``.
+
+    Raises
+    ------
+    NoopError
+        ``dirs`` is empty.
+    """
+
+    if auto_message is None:
+        auto_message = inventory.repo.auto_message
+
+    if not dirs:
+        raise NoopError("At least one directory path must be specified.")
+
+    dirs = [dirs] if not isinstance(dirs, list) else dirs
+    for d in deduplicate(dirs):  # pyre-ignore[16]
+        try:
+            inventory.remove_directory(inventory.get_item(d), recursive=False)
+        except InventoryDirNotEmpty as e:
+            raise InventoryDirNotEmpty(f"{str(e)}\nCannot remove a non-empty directory.") from e
+
+    if inventory.operations_pending():
+        ui.print(inventory.operations_summary())
+
+        if ui.request_user_response("Save changes? No discards all changes. (y/n) "):
+            if auto_message:
+                operation_paths = sorted(deduplicate([  # pyre-ignore[6]
+                    op.operands[0].get("onyo.path.relative")
+                    for op in inventory.operations
+                    if op.operator == OPERATIONS_MAPPING['remove_directories']]))
+                message = inventory.repo.generate_commit_subject(
+                    format_string="rmdir [{len}]: {operation_paths}\n",
+                    len=len(operation_paths),
+                    operation_paths=sorted(operation_paths)) + (message or "")
+
+            inventory.commit(message=message)
+            return
+
+    ui.print('No directories were removed.')
 
 
 @raise_on_inventory_state

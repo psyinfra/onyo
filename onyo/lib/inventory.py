@@ -646,6 +646,10 @@ class Inventory(object):
         ------
         InvalidInventoryOperationError
             ``item['onyo.path.absolute']`` is invalid.
+        InventoryDirNotEmpty
+            ``item['onyo.path.absolute']`` has children on the filesystem.
+        NoopError
+            ``item['onyo.path.absolute']`` is already an Asset File.
         """
 
         if item['onyo.path.absolute'] in [d['onyo.path.absolute'] for d in self._get_pending_removals(mode='dirs')]:
@@ -654,6 +658,8 @@ class Inventory(object):
             return []
         if item['onyo.path.absolute'] == self.root:
             raise InvalidInventoryOperationError("Can't remove inventory root.")
+        if item['onyo.is.asset'] and not item['onyo.is.directory']:
+            raise NoopError(f"{item['onyo.path.absolute']} is already an Asset File.")
         if not item['onyo.is.directory']:
             raise InvalidInventoryOperationError(f"Not an inventory directory: {item['onyo.path.absolute']}")
 

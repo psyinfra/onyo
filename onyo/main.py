@@ -265,6 +265,7 @@ def setup_parser() -> OnyoArgumentParser:
     from onyo.cli.mv import args_mv, epilog_mv
     from onyo.cli.new import args_new, epilog_new
     from onyo.cli.rm import args_rm, epilog_rm
+    from onyo.cli.rmdir import args_rmdir, epilog_rmdir
     from onyo.cli.set import args_set, epilog_set
     from onyo.cli.shell_completion import args_shell_completion, epilog_shell_completion
     from onyo.cli.tree import args_tree, epilog_tree
@@ -377,7 +378,7 @@ def setup_parser() -> OnyoArgumentParser:
         description=cli.mkdir.__doc__,
         epilog=epilog_mkdir,
         formatter_class=parser.formatter_class,
-        help='Create directories.'
+        help='Create directories and/or convert Asset Files to Asset Directories.'
     )
     cmd_mkdir.set_defaults(run=cli.mkdir)
     build_parser(cmd_mkdir, args_mkdir)
@@ -417,6 +418,18 @@ def setup_parser() -> OnyoArgumentParser:
     )
     cmd_rm.set_defaults(run=cli.rm)
     build_parser(cmd_rm, args_rm)
+    #
+    # subcommand "rmdir"
+    #
+    cmd_rmdir = subcmds.add_parser(
+        'rmdir',
+        description=cli.rmdir.__doc__,
+        epilog=epilog_rmdir,
+        formatter_class=parser.formatter_class,
+        help='Delete empty directories or convert empty Asset Directories into Asset Files.'
+    )
+    cmd_rmdir.set_defaults(run=cli.rmdir)
+    build_parser(cmd_rmdir, args_rmdir)
     #
     # subcommand "set"
     #

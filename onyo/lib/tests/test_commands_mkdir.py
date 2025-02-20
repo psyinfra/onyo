@@ -25,7 +25,7 @@ def test_onyo_mkdir_errors(inventory: Inventory) -> None:
                   dirs=[(inventory.root / ".." / "outside").resolve()])
 
     # mkdir with empty list
-    pytest.raises(ValueError,
+    pytest.raises(NoopError,
                   onyo_mkdir,
                   inventory,
                   dirs=[])
