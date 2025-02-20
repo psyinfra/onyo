@@ -8,13 +8,18 @@ from dataclasses import (
 from typing import TYPE_CHECKING
 
 from onyo.lib.consts import (
+    SORT_ASCENDING,
+    SORT_DESCENDING,
     TYPE_SYMBOL_MAPPING,
     UNSET_VALUE,
 )
 from onyo.lib.exceptions import OnyoInvalidFilterError
+from onyo.lib.items import Item
+from onyo.lib.command_utils import natural_sort
 
 if TYPE_CHECKING:
-    from onyo.lib.items import Item
+    from typing import Tuple
+
 
 @dataclass
 class Filter:
@@ -44,7 +49,7 @@ class Filter:
         self.key, self.operand, self.value = self._format(self._arg)
 
     @staticmethod
-    def _format(arg: str) -> Tuple(str, str, str):
+    def _format(arg: str) -> Tuple[str, str, str]:
         r"""Split filters on the first occurrence of an operand.
 
         Valid operands are ``=``, ``<``, ``>``, ``>=``, and ``<=``.
@@ -67,11 +72,10 @@ class Filter:
                 index = idx if index is None or idx < index else index
 
         if index is None:
-            # TODO: fix error message
             raise OnyoInvalidFilterError(
                 'Filters must be formatted as `key=value`')
 
-        match arg[index:index + 2]:  # TODO: overflow bug
+        match arg[index:index + 2]:
             case "<=":
                 operand = "<="
             case ">=":
@@ -80,7 +84,6 @@ class Filter:
                 operand = arg[index]
 
         if index in (0, len(arg) - len(operand)):
-            # TODO: fix error message
             raise OnyoInvalidFilterError(
                 'Filters must be formatted as `key=value`')
 
@@ -106,14 +109,16 @@ class Filter:
         except re.error:
             return False
 
-    def match(self,
-              item: Item) -> bool:
-        r"""Does ``item`` match this ``Filter``.
+    def _match_equal(self,
+                     item: Item) -> bool:
+        r"""Whether ``self.value`` equals ``Item[self.key]``.
+
+        Regex is supported.
 
         Parameters
         ----------
         item
-            Item to match against.
+            Item to compare against.
         """
 
         if self.value == UNSET_VALUE:
@@ -139,3 +144,132 @@ class Filter:
 
         # equivalence and regex match
         return item_value == self.value or self._re_match(str(item_value), self.value)
+
+    def _match_greater_than(self,
+                            item: Item) -> bool:
+        r"""Whether ``self.value`` is > ``Item[self.key]``.
+
+        A natural sort is used (i.e. '300' > '5').
+
+        Parameters
+        ----------
+        item
+            Item to compare against.
+        """
+
+        if self.value == UNSET_VALUE:
+            # match if:
+            #   - key is present (even if it is `None` or an empty string)
+            return self.key in item
+
+        if self.key not in item:
+            return False
+
+        # Type representation (<list>, <dict>, etc)
+        # a comparison is not really possible.
+        if self.value in TYPE_SYMBOL_MAPPING:
+            raise ValueError
+
+        # literal empty structures ([], {})
+        item_value = item[self.key]
+        empty_structs = {'[]': list, '{}': dict}
+        if self.value in empty_structs:
+            if isinstance(item_value, empty_structs[self.value]):
+                # an non-empty dict/list is indeed greater than an empty one
+                return bool(item_value)
+            else:
+                # a comparison is not really possible.
+                raise ValueError
+
+        # A second key is added as an explicit tie-breaker, in the event that
+        # the compared key values match.
+        tagged_item = item
+        tagged_item['tag'] = 2
+
+        item_list = [
+            Item({self.key: self.value, 'anchor': 1}),
+            tagged_item,
+        ]
+        keys = {
+            self.key: SORT_DESCENDING,
+            'tag': SORT_ASCENDING,
+        }
+        sorted_item_list = natural_sort(item_list, keys=keys)  # pyre-ignore[6]
+
+        return sorted_item_list[0] == tagged_item
+
+    def _match_greater_than_or_equal(self,
+                                     item: Item) -> bool:
+        r"""Whether ``self.value`` is >= ``Item[self.key]``.
+
+        A natural sort is used (i.e. '300' > '5').
+
+        Parameters
+        ----------
+        item
+            Item to compare against.
+        """
+
+        if self._match_equal(item):
+            return True
+
+        return self._match_greater_than(item)
+
+    def _match_less_than(self,
+                         item: Item) -> bool:
+        r"""Whether ``self.value`` is < ``Item[self.key]``.
+
+        A natural sort is used (i.e. '5' < '300').
+
+        Parameters
+        ----------
+        item
+            Item to compare against.
+        """
+
+        return not self._match_greater_than_or_equal(item)
+
+    def _match_less_than_or_equal(self,
+                                  item: Item) -> bool:
+        r"""Whether ``self.value`` is <= ``Item[self.key]``.
+
+        A natural sort is used (i.e. '5' < '300').
+
+        Parameters
+        ----------
+        item
+            Item to compare against.
+        """
+
+        if self._match_equal(item):
+            return True
+
+        return not self._match_greater_than(item)
+
+    def match(self,
+              item: Item) -> bool:
+        r"""Does ``item`` match this ``Filter``.
+
+        Parameters
+        ----------
+        item
+            Item to match against.
+        """
+
+        try:
+            match self.operand:
+                case "=":
+                    return self._match_equal(item)
+                case ">":
+                    return self._match_greater_than(item)
+                case ">=":
+                    return self._match_greater_than_or_equal(item)
+                case "<":
+                    return self._match_less_than(item)
+                case "<=":
+                    return self._match_less_than_or_equal(item)
+                case _:
+                    return False
+        except ValueError:
+            # when the question makes no sense, return False
+            return False
