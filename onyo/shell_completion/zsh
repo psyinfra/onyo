@@ -119,7 +119,7 @@ _onyo() {
                     '(-e --exclude)'{-e,--exclude}'[assets and/or directories to exclude from the query]:*-*:PATH:_files -W "$(_onyo_dir)"'
                     '(-s --sort-ascending -S --sort-descending)'{-s,--sort-ascending}'[sort output in ascending order]'
                     '(-S --sort-descending -s --sort-ascending)'{-S,--sort-descending}'[sort output in descending order]'
-                    '(-t --types)'{-t,--types}'[item types to query]:*-*:TYPES:(assets directories templates)'
+                    '(-t --types)'{-t,--types}'[item types to query]:*-*:TYPES:(assets directories)'
                 )
                 ;;
             history)

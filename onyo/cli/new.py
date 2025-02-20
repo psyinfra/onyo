@@ -167,7 +167,7 @@ def new(args: argparse.Namespace) -> None:
     if args.template:
         template = Path(args.template)
         if not template.is_absolute():
-            probe_template = inventory.root / inventory.repo.TEMPLATE_DIR / template
+            probe_template = inventory.repo.template_dir / template
             if probe_template.exists():
                 template = probe_template
     else:

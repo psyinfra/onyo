@@ -115,12 +115,11 @@ args_get = {
         args=('-t', '--types'),
         metavar="TYPES",
         nargs='+',
-        choices=('assets', 'directories', 'templates'),
+        choices=('assets', 'directories'),
         default=["assets"],
         help=r"""
-            Item types to query. Equivalent to ``onyo.is.asset=True``,
-            ``onyo.is.directory=True``, and ``onyo.is.template=True``.
-            Default is ``assets``.
+            Item types to query. Equivalent to ``onyo.is.asset=True`` and
+            ``onyo.is.directory=True``. Default is ``assets``.
         """
     ),
 }

@@ -57,7 +57,7 @@ class TestOnyoBenchmark:
             # initialize new repo
             repo = OnyoRepo(repo_path, init=True)
             repo.set_config("onyo.assets.name-format", "{type}_{make}_{model.name}.{serial}")
-            repo.git.commit(repo.git.root / repo.ONYO_CONFIG, message="Asset name config w/ dot")
+            repo.git.commit(repo.onyo_config, message="Asset name config w/ dot")
             inventory = Inventory(repo=repo)
 
             # populate the repo

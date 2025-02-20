@@ -2,9 +2,13 @@ from pathlib import Path
 
 import pytest
 
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    TEMPLATE_DIR,
+    UNSET_VALUE,
+)
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.items import Item
 from ..commands import onyo_get
 
@@ -35,7 +39,7 @@ def test_onyo_get_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_get,
                   inventory,
-                  include=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME])
+                  include=[inventory.root / "somewhere" / ANCHOR_FILE_NAME])
 
     # get on .git/
     pytest.raises(ValueError,
@@ -574,7 +578,6 @@ def test_onyo_get_unset_values(inventory: Inventory,
                                capsys) -> None:
     """Unset keys and values return as ``<unset>``."""
 
-    from onyo.lib.consts import UNSET_VALUE
     asset = Item(type="TYPE",
                  make="MAKE",
                  model=dict(name="MODEL"),
@@ -607,12 +610,11 @@ def test_onyo_get_items(inventory: Inventory, capsys) -> None:
 
     onyo_get(inventory,
              keys=["onyo.path.relative"],
-             machine_readable=True,
-             types=['templates'])
+             include=[inventory.repo.template_dir],
+             machine_readable=True)
     output = capsys.readouterr().out
-    assert len(output.splitlines()) == 2
-    assert str(OnyoRepo.TEMPLATE_DIR / "empty") in output
-    assert str(OnyoRepo.TEMPLATE_DIR / "laptop.example") in output
+    assert len(output.splitlines()) == 1
+    assert str(TEMPLATE_DIR / "laptop.example") in output
 
     onyo_get(inventory,
              keys=["onyo.path.relative"],

@@ -1,9 +1,11 @@
 import pytest
 
-from onyo.lib.consts import RESERVED_KEYS
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    RESERVED_KEYS,
+)
 from onyo.lib.items import Item
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.pseudokeys import PSEUDO_KEYS
 
 from . import check_commit_msg
@@ -42,7 +44,7 @@ def test_onyo_unset_errors(inventory: Inventory) -> None:
     pytest.raises(ValueError,
                   onyo_unset,
                   inventory,
-                  assets=[inventory.root / "somewhere" / OnyoRepo.ANCHOR_FILE_NAME],
+                  assets=[inventory.root / "somewhere" / ANCHOR_FILE_NAME],
                   keys=[key])
 
     # unset on .git/

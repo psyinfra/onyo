@@ -1,4 +1,5 @@
 from collections import UserDict
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from onyo.lib.pseudokeys import PSEUDOKEY_ALIASES
@@ -46,3 +47,24 @@ r"""Mapping of Onyo type-symbols with Python types.
 
 Use for type matching (:py:func:`onyo_get`) and output.
 """
+
+ONYO_DIR = Path('.onyo')
+r"""The Path of the "dot onyo" directory that contains the onyo configuration, templates, etc."""
+
+ONYO_CONFIG = ONYO_DIR / 'config'
+r"""Path of the Onyo config file."""
+
+TEMPLATE_DIR = ONYO_DIR / 'templates'
+r"""Path of the directory that stores templates."""
+
+ANCHOR_FILE_NAME = '.anchor'
+r"""Name of the empty file created in all directories to "anchor" them.
+
+This is necessary because git only tracks files and not directories.
+"""
+
+ASSET_DIR_FILE_NAME = '.onyo-asset-dir'
+r"""Name of the file that asset-content is stored in for Asset Directories."""
+
+IGNORE_FILE_NAME = '.onyoignore'
+r"""Name of the file that is Onyo's version of Git's ``.gitignore`` file."""

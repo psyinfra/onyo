@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 
+from onyo.lib.consts import TEMPLATE_DIR
 from onyo.lib.inventory import Inventory
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.items import Item
 
 
@@ -34,14 +34,14 @@ def test_get_items_types(inventory: Inventory, capsys) -> None:
         assert d["onyo.is.asset"] is False
         assert d["onyo.is.template"] is False
 
-    fixture_templates = [OnyoRepo.TEMPLATE_DIR / "empty",
-                         OnyoRepo.TEMPLATE_DIR / "laptop.example"]
-    templates = [t for t in inventory.get_items(types=['templates'])]
+    fixture_templates = [TEMPLATE_DIR / "laptop.example"]
+
+    templates = [t for t in inventory.get_items(include=[inventory.repo.template_dir])]
     assert len(templates) == len(fixture_templates)
     assert all(t["onyo.path.relative"] in fixture_templates for t in templates)
     assert all(p in [t["onyo.path.relative"] for t in templates] for p in fixture_templates)
     for t in templates:
         assert isinstance(t, Item)
-        assert t["onyo.is.asset"] is False
+        assert t["onyo.is.asset"] is True
         assert t["onyo.is.directory"] is False
         assert t["onyo.is.template"] is True

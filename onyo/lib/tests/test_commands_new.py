@@ -2,9 +2,9 @@ import subprocess
 
 import pytest
 
+from onyo.lib.consts import ANCHOR_FILE_NAME
 from onyo.lib.inventory import Inventory
 from onyo.lib.items import Item
-from onyo.lib.onyo import OnyoRepo
 from onyo.lib.utils import DotNotationWrapper
 from . import check_commit_msg
 from ..commands import onyo_new
@@ -88,7 +88,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     for s in specs:
         files = [p
                  for p in (inventory.root / f"{s['directory']}").iterdir()
-                 if p.name != OnyoRepo.ANCHOR_FILE_NAME
+                 if p.name != ANCHOR_FILE_NAME
                  ]
         assert len(files) == 1
         # expected filename (except serial):
@@ -156,8 +156,8 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 
     # the new directories exist
     assert new_directory.is_dir()
-    assert (new_directory / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
-    assert (inventory.root / "does" / OnyoRepo.ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (new_directory / ANCHOR_FILE_NAME) in inventory.repo.git.files
+    assert (inventory.root / "does" / ANCHOR_FILE_NAME) in inventory.repo.git.files
 
     # new assets are added
     for s in specs:
@@ -175,8 +175,7 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     directory = inventory.root / "edited"
     monkeypatch.setenv('EDITOR', "printf 'key: value  #w/ comment' >>")
 
-    specs = [{'template': 'empty',
-              'model': {'name': 'MODEL'},
+    specs = [{'model': {'name': 'MODEL'},
               'make': 'MAKER',
               'type': 'TYPE',
               'serial': 'totally_random'}]
@@ -194,23 +193,18 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     # file already exists:
     edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
-    specs = [{'template': 'empty',
-              'serial': 'totally_random'}]
+    specs = [{'serial': 'totally_random'}]
 
     pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
 
     # missing required fields:
-    specs = [{'template': 'empty'}]
     monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
+    pytest.raises(ValueError, onyo_new, inventory, directory=directory, edit=True)
 
     # content should be exactly as expected
-    # (empty files used to serialize to '{}')
     edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\nserial: 8675309\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
-    specs = [{'template': 'empty'}]
     onyo_new(inventory,
-             keys=specs,  # pyre-ignore[6]
              directory=directory,
              edit=True)
     expected_content = '---\n' + edit_str

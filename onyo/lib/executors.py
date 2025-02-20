@@ -3,6 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    ASSET_DIR_FILE_NAME,
+)
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.items import Item
 
@@ -167,7 +171,7 @@ def exec_new_directory(repo: OnyoRepo,
     if turn_asset_dir:
         asset['onyo.is.directory'] = True
         repo.write_asset_content(asset)
-        paths.append(p / OnyoRepo.ASSET_DIR_FILE_NAME)
+        paths.append(p / ASSET_DIR_FILE_NAME)
 
     return paths, paths
 
@@ -196,7 +200,7 @@ def exec_remove_asset(repo: OnyoRepo,
 
     if p.is_dir():
         # we were told p is an asset. It's also a dir, ergo an asset dir
-        paths.append(p / OnyoRepo.ASSET_DIR_FILE_NAME)
+        paths.append(p / ASSET_DIR_FILE_NAME)
     else:
         paths = [p]
 
@@ -231,8 +235,8 @@ def exec_remove_directory(repo: OnyoRepo,
     p: Path = operands[0]['onyo.path.absolute']
     paths = []
 
-    is_asset_dir = (p / OnyoRepo.ASSET_DIR_FILE_NAME).exists()  # required after dir was removed, therefore store
-    anchor = p / repo.ANCHOR_FILE_NAME
+    is_asset_dir = (p / ASSET_DIR_FILE_NAME).exists()  # required after dir was removed, therefore store
+    anchor = p / ANCHOR_FILE_NAME
     anchor.unlink()
     paths.append(anchor)
 

@@ -36,8 +36,8 @@ class OnyoInvalidRepoError(OnyoRepoError):
 class OnyoProtectedPathError(Exception):
     r"""Raise if path is protected.
 
-    For example: ``.git/``, :py:data:`onyo.lib.onyo.OnyoRepo.ANCHOR_FILE_NAME`,
-    :py:data:`onyo.lib.onyo.OnyoRepo.ONYO_DIR`, etc.
+    For example: ``.git/``, :py:data:`onyo.lib.consts.ANCHOR_FILE_NAME`,
+    :py:data:`onyo.lib.consts.ONYO_DIR`, etc.
     """
 
 

@@ -241,9 +241,9 @@ def fixture_onyorepo(gitrepo,
                      Path('1/2/3/'),
                      )
       inventory_templates()
-      inventory_templates((Path(OnyoRepo.TEMPLATE_DIR) / "generic" / "laptop",
+      inventory_templates((onyo.lib.consts.TEMPLATE_DIR / "generic" / "laptop",
                            "---\ntype: laptop\n"),
-                          (Path(OnyoRepo.TEMPLATE_DIR) / "generic" / "display",
+                          (onyo.lib.consts.TEMPLATE_DIR / "generic" / "display",
                            "---\ntype: display\n"),
                           )
 
@@ -258,8 +258,7 @@ def fixture_onyorepo(gitrepo,
     onyo = AnnotatedOnyoRepo(gitrepo.root, init=True)
     onyo.test_annotation = {'assets': [],
                             'dirs': [],
-                            'templates': [gitrepo.root / OnyoRepo.TEMPLATE_DIR / "empty",
-                                          gitrepo.root / OnyoRepo.TEMPLATE_DIR / "laptop.example"],
+                            'templates': [onyo.template_dir / "laptop.example"],
                             'git': gitrepo}
 
     to_commit = []
@@ -268,7 +267,7 @@ def fixture_onyorepo(gitrepo,
         for spec in list(m.args):
             spec['onyo.path.absolute'] = gitrepo.root / spec['onyo.path.relative']
             implicit_dirs = [d for d in spec['onyo.path.absolute'].parents
-                             if d.is_relative_to(gitrepo.root)]
+                             if gitrepo.root in d.parents]
             if spec.get('onyo.is.directory'):
                 implicit_dirs.append(spec['onyo.path.absolute'])
             to_commit += onyo.mk_inventory_dirs(implicit_dirs)
@@ -376,7 +375,7 @@ def fixture_repo(tmp_path: Path,
     # initialize repo
     repo_ = OnyoRepo(repo_path, init=True)
     repo_.set_config("onyo.assets.name-format", "{type}_{make}_{model.name}.{serial}")
-    repo_.git.commit(repo_.git.root / repo_.ONYO_CONFIG, message="Asset name config w/ dot")
+    repo_.git.commit(repo_.onyo_config, message="Asset name config w/ dot")
     # collect files to populate the repo
     m = request.node.get_closest_marker('repo_files')
     if m:

@@ -2,6 +2,11 @@ from pathlib import Path
 
 import pytest
 
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    IGNORE_FILE_NAME,
+    TEMPLATE_DIR,
+)
 from onyo.lib.onyo import OnyoRepo, OnyoInvalidRepoError
 from onyo.lib.items import Item
 
@@ -22,10 +27,10 @@ def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
     assert (new_repo.git.root / '.git').is_dir()
     # assert dirs/files in .onyo/ exist and are cached correctly
     assert all(x in new_repo.git.files for x in [new_repo.dot_onyo / f for f in [
-        new_repo.dot_onyo / OnyoRepo.ANCHOR_FILE_NAME,
-        new_repo.dot_onyo / OnyoRepo.ONYO_CONFIG.name,
-        new_repo.dot_onyo / new_repo.TEMPLATE_DIR.name / OnyoRepo.ANCHOR_FILE_NAME,
-        new_repo.dot_onyo / 'validation' / OnyoRepo.ANCHOR_FILE_NAME,
+        new_repo.dot_onyo / ANCHOR_FILE_NAME,
+        new_repo.onyo_config,
+        new_repo.template_dir / ANCHOR_FILE_NAME,
+        new_repo.dot_onyo / 'validation' / ANCHOR_FILE_NAME,
     ]])
     assert new_repo.git.is_clean_worktree()
     new_repo.validate_onyo_repo()
@@ -113,9 +118,9 @@ def test_is_onyo_path(onyorepo) -> None:
     # True for the directory `.onyo/` itself
     assert onyorepo.is_onyo_path(onyorepo.dot_onyo)
     # True for the directory `templates` inside of `.onyo/`
-    assert onyorepo.is_onyo_path(onyorepo.git.root / OnyoRepo.TEMPLATE_DIR)
+    assert onyorepo.is_onyo_path(onyorepo.template_dir)
     # True for a file inside `.onyo/`
-    assert onyorepo.is_onyo_path(onyorepo.git.root / OnyoRepo.TEMPLATE_DIR / 'empty')
+    assert onyorepo.is_onyo_path(onyorepo.template_dir / 'empty')
 
     # other files/directories beginning with .onyo should be recognized too
     assert onyorepo.is_onyo_path(onyorepo.git.root / '.onyoignore')
@@ -138,8 +143,7 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
     If a relative path is specified, it looks in ``.onyo/templates/`` first and
     then CWD.
 
-    With no config and no name given, returns an empty dict (from the default
-    template ``empty``).
+    With no config and no name given, returns an empty dict.
     """
 
     # Call the function without parameter to get the empty template:
@@ -147,18 +151,15 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
 
     # from the 'templates' dir, use the filename of each template to find the
     # corresponding template file as a path.
-    for path in (onyorepo.git.root / OnyoRepo.TEMPLATE_DIR).iterdir():
-        if path.name == OnyoRepo.ANCHOR_FILE_NAME:
+    for path in onyorepo.template_dir.iterdir():
+        if path.name == ANCHOR_FILE_NAME:
             continue
 
         # specify path as absolute, relative to template dir and relative to CWD (repo root):
         for given_path in [path, path.name, path.relative_to(onyorepo.git.root)]:
             template = onyorepo.get_template(path.name)
             assert isinstance(template, dict)  # allow wrapper?
-            if path.name != 'empty':  # TODO: Make issue about removing `empty` file. That's pointless.
-                assert template != dict()  # TODO: compare content
-            else:
-                assert template == dict()
+            assert template != dict()  # TODO: compare content
 
     # verify the correct error response when called with a template name that
     # does not exist
@@ -178,7 +179,7 @@ def test_Repo_validate_anchors(onyorepo) -> None:
 
     for d in onyorepo.test_annotation['dirs']:
         # Delete an .anchor, commit changes, re-validate
-        anchor = (d / OnyoRepo.ANCHOR_FILE_NAME)
+        anchor = (d / ANCHOR_FILE_NAME)
         anchor.unlink()
         onyorepo.commit(anchor, "TEST")
         # Must return False, because an .anchor is missing
@@ -187,8 +188,8 @@ def test_Repo_validate_anchors(onyorepo) -> None:
 
 @pytest.mark.gitrepo_contents((Path('.gitignore'), "idea/"),
                               (Path("subdir") / ".gitignore", "i_*"),
-                              (Path(OnyoRepo.IGNORE_FILE_NAME), "*.pdf\ndocs/"),
-                              (Path("subdir") / OnyoRepo.IGNORE_FILE_NAME, "untracked*\n"),
+                              (Path(IGNORE_FILE_NAME), "*.pdf\ndocs/"),
+                              (Path("subdir") / IGNORE_FILE_NAME, "untracked*\n"),
                               (Path("dirty"), ""),
                               (Path("i_dirty"), ""),
                               (Path("idea") / "something", "blubb"),
@@ -212,7 +213,7 @@ def test_onyo_ignore(onyorepo) -> None:
         assert not onyorepo.is_onyo_ignored(a['onyo.path.absolute'])
     for d in onyorepo.test_annotation['dirs']:
         assert not onyorepo.is_onyo_ignored(d)
-        assert not onyorepo.is_onyo_ignored(d / OnyoRepo.ANCHOR_FILE_NAME)
+        assert not onyorepo.is_onyo_ignored(d / ANCHOR_FILE_NAME)
     for f in onyorepo.test_annotation['git'].test_annotation['files']:
         if f.name.endswith('pdf'):
             assert onyorepo.is_onyo_ignored(f)
@@ -251,13 +252,13 @@ def test_onyo_auto_message(onyorepo, caplog) -> None:
 
 @pytest.mark.gitrepo_contents((Path('.gitignore'), "idea/"),
                               (Path("subdir") / ".gitignore", "i_*"),
-                              (Path(OnyoRepo.IGNORE_FILE_NAME), "*.pdf\ndocs/"),
-                              (Path("subdir") / OnyoRepo.IGNORE_FILE_NAME, "untracked*\n"),
+                              (Path(IGNORE_FILE_NAME), "*.pdf\ndocs/"),
+                              (Path("subdir") / IGNORE_FILE_NAME, "untracked*\n"),
                               (Path("idea") / "something", "blubb"),
                               (Path("some.pdf"), "bla"),
                               (Path("subdir") / "another.pdf", "content"),
                               (Path("subdir") / "i_untracked", ""),
-                              (Path("subdir") / "subsub" / "untracked_som.txt", ""),
+                              (Path("subdir") / "subsub" / "untracked_some.txt", ""),
                               (Path("docs") / "regular", "whatever")
                               )
 @pytest.mark.inventory_assets(Item(type="atype",
@@ -267,24 +268,23 @@ def test_onyo_auto_message(onyorepo, caplog) -> None:
                                    path=Path("subdir") / "atype_amake_amodel.1"))
 @pytest.mark.inventory_dirs(Path('a/test/directory/structure/'),
                             Path('another/dir/'))
-@pytest.mark.inventory_templates((Path(OnyoRepo.TEMPLATE_DIR) / "t_dir" / "atemplate", "--\nkey: value\n"))
+@pytest.mark.inventory_templates((TEMPLATE_DIR / "t_dir" / "atemplate", "--\nkey: value\n"))
 def test_get_item_paths(onyorepo) -> None:
     assert set(onyorepo.get_item_paths(types=['assets'])) == set(a['onyo.path.absolute'] for a in onyorepo.test_annotation['assets'])
-    assert set(onyorepo.get_item_paths(types=['templates'])) == set(onyorepo.test_annotation['templates'])
+    assert set(onyorepo.get_item_paths(types=['assets'],
+                                       include=[onyorepo.template_dir])) == set(onyorepo.test_annotation['templates'])
     assert set(onyorepo.get_item_paths(types=['directories'])) == set(onyorepo.test_annotation['dirs'] + [onyorepo.git.root])
 
-    # listing several types is equivalent to summing of separate calls:
-    assert set(onyorepo.get_item_paths(types=['assets', 'templates'])) == set(
-        [a['onyo.path.absolute'] for a in onyorepo.test_annotation['assets']] + onyorepo.test_annotation['templates']
-    )
-    assert set(onyorepo.get_item_paths(types=['templates', 'directories'])) == set(
-        onyorepo.test_annotation['templates'] + onyorepo.test_annotation['dirs']
+    # listing both types is equivalent to summing of separate calls:
+    assert set(onyorepo.get_item_paths(types=['assets', 'directories'])) == set(
+        [a['onyo.path.absolute'] for a in onyorepo.test_annotation['assets']] +
+        onyorepo.test_annotation['dirs'] + [onyorepo.git.root]
     )
 
     # Explicitly double-check onyoignored stuff:
-    ignored_path = onyorepo.git.root / "subdir" / "subsub" / "untracked_som.txt"
-    assert ignored_path not in onyorepo.get_item_paths(types=['assets', 'directories', 'templates'])
+    ignored_path = onyorepo.git.root / "subdir" / "subsub" / "untracked_some.txt"
+    assert ignored_path not in onyorepo.get_item_paths(types=['assets', 'directories'])
     assert all(onyorepo.git.root / "docs" not in p.parents
-               for p in onyorepo.get_item_paths(types=['assets', 'directories', 'templates']))
+               for p in onyorepo.get_item_paths(types=['assets', 'directories']))
 
     # TODO: Test include/exclude/depth. This is currently only done at higher level (onyo get command).

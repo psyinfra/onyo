@@ -5,6 +5,10 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    ASSET_DIR_FILE_NAME,
+)
 from onyo.lib.differs import (
     differ_modify_asset,
     differ_move_asset,
@@ -655,7 +659,7 @@ class Inventory(object):
 
         operations = []
         for p in item['onyo.path.absolute'].iterdir():
-            if p.name in [self.repo.ANCHOR_FILE_NAME, self.repo.ASSET_DIR_FILE_NAME]:
+            if p.name in [ANCHOR_FILE_NAME, ASSET_DIR_FILE_NAME]:
                 # These files belong to `item` and are handled with it already.
                 continue
             if not recursive:
@@ -781,7 +785,7 @@ class Inventory(object):
                   exclude: Iterable[Path] | Path | None = None,
                   depth: int | None = 0,
                   match: list[Callable[[Item], bool]] | None = None,
-                  types: list[Literal['assets', 'directories', 'templates']] | None = None
+                  types: list[Literal['assets', 'directories']] | None = None
                   ) -> Generator[Item, None, None] | filter:
         r"""Yield all Items matching paths and filters.
 
@@ -807,8 +811,8 @@ class Inventory(object):
             a ``bool``.
         types
             Types of inventory items to consider. Equivalent to
-            ``onyo.is.asset=True``, ``onyo.is.directory=True``, and
-            ``onyo.is.template=True``. Default is ``['assets']``.
+            ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
+            Default is ``['assets']``.
             Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         """
 
