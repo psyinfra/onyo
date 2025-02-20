@@ -685,15 +685,22 @@ class OnyoRepo(object):
             files = [f for f in files if all(f != p and p not in f.parents for p in exclude)]
 
         paths = []
-        if 'assets' in types:
-            paths.extend([f for f in files if not f.name == ANCHOR_FILE_NAME and self.is_item_path(f)] +
-                         [f.parent for f in files if f.name == ASSET_DIR_FILE_NAME])
-        if 'directories' in types:
-            paths.extend([f.parent for f in files
-                          if f.name == ANCHOR_FILE_NAME and self.is_item_path(f.parent)])
-            # special case root - has no anchor file that would show up in `files`:
-            if self.git.root in include:
-                paths.append(self.git.root)
+        # special case root - has no anchor file that would show up in `files`:
+        if "directories" in types and self.git.root in include:
+            paths.append(self.git.root)
+
+        for f in files:
+            if "assets" in types and f.name == ASSET_DIR_FILE_NAME:
+                if f.parent not in paths:
+                    paths.append(f.parent)
+                continue
+            if "assets" in types and f.name != ANCHOR_FILE_NAME and self.is_item_path(f):
+                paths.append(f)
+                continue
+            if "directories" in types and f.name == ANCHOR_FILE_NAME and self.is_item_path(f.parent):
+                if f.parent not in paths:
+                    paths.append(f.parent)
+                continue
 
         return paths
 
