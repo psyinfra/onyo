@@ -100,7 +100,7 @@ def test_filter_invalid(filter_arg: str) -> None:
     """Invalid filters raise the correct exception."""
 
     with pytest.raises(OnyoInvalidFilterError) as exc:
-        Filter('key')
+        Filter(filter_arg)
 
     assert 'Filters must be formatted as `key=value`' in str(exc.value)
 
