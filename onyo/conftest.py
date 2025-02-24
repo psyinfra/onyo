@@ -65,6 +65,36 @@ def params(d: dict) -> MarkDecorator:
         ids=d.keys(),
     )
 
+
+########################################
+#
+# tmp_path
+#
+########################################
+@pytest.fixture(scope="class")
+def tmp_path_class_scope(tmp_path_factory,
+                         request):
+    r"""Scope the ``tmp_path`` parameter fixture for classes."""
+
+    yield tmp_path_factory.mktemp(request.node.name)
+
+
+@pytest.fixture(scope="module")
+def tmp_path_module_scope(tmp_path_factory,
+                          request):
+    r"""Scope the ``tmp_path`` parameter fixture for modules."""
+
+    yield tmp_path_factory.mktemp(request.node.name)
+
+
+@pytest.fixture(scope="session")
+def tmp_path_session_scope(tmp_path_factory,
+                           request):
+    r"""Scope the ``tmp_path`` parameter fixture for sessions."""
+
+    yield tmp_path_factory.mktemp(request.node.name)
+
+
 ########################################
 #
 # gitrepo
@@ -154,20 +184,20 @@ def gitrepo_function_scope(tmp_path: Path,
 
 
 @pytest.fixture(scope='class')
-def gitrepo_class_scope(tmp_path: Path,
+def gitrepo_class_scope(tmp_path_class_scope: Path,
                         request) -> Generator:
     r"""Scope the ``gitrepo`` parameter fixture for classes."""
 
-    with fixture_gitrepo(tmp_path, request) as result:
+    with fixture_gitrepo(tmp_path_class_scope, request) as result:
         yield result
 
 
 @pytest.fixture(scope='module')
-def gitrepo_module_scope(tmp_path: Path,
+def gitrepo_module_scope(tmp_path_module_scope: Path,
                          request) -> Generator:
     r"""Scope the ``gitrepo`` parameter fixture for modules."""
 
-    with fixture_gitrepo(tmp_path, request) as result:
+    with fixture_gitrepo(tmp_path_module_scope, request) as result:
         yield result
 
 
@@ -433,32 +463,32 @@ def repo_function_scope(tmp_path: Path,
 
 
 @pytest.fixture(scope='class')
-def repo_class_scope(tmp_path: Path,
+def repo_class_scope(tmp_path_class_scope: Path,
                      monkeypatch,
                      request) -> Generator:
     r"""Scope the ``repo`` parameter fixture for classes."""
 
-    with fixture_repo(tmp_path, monkeypatch, request) as result:
+    with fixture_repo(tmp_path_class_scope, monkeypatch, request) as result:
         yield result
 
 
 @pytest.fixture(scope='module')
-def repo_module_scope(tmp_path: Path,
+def repo_module_scope(tmp_path_module_scope: Path,
                       monkeypatch,
                       request) -> Generator:
     r"""Scope the ``repo`` parameter fixture for modules."""
 
-    with fixture_repo(tmp_path, monkeypatch, request) as result:
+    with fixture_repo(tmp_path_module_scope, monkeypatch, request) as result:
         yield result
 
 
 @pytest.fixture(scope='session')
-def repo_session_scope(tmp_path: Path,
+def repo_session_scope(tmp_path_session_scope: Path,
                        monkeypatch,
                        request) -> Generator:
     r"""Scope the ``repo`` parameter fixture for sessions."""
 
-    with fixture_repo(tmp_path, monkeypatch, request) as result:
+    with fixture_repo(tmp_path_session_scope, monkeypatch, request) as result:
         yield result
 
 
