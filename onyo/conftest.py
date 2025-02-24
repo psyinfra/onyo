@@ -345,32 +345,32 @@ def onyorepo_function_scope(gitrepo,
 
 
 @pytest.fixture(scope='class')
-def onyorepo_class_scope(gitrepo,
+def onyorepo_class_scope(gitrepo_class_scope,
                          request,
                          monkeypatch) -> Generator:
     r"""Scope the ``onyorepo`` parameter fixture for classes."""
 
-    with fixture_onyorepo(gitrepo, request, monkeypatch) as result:
+    with fixture_onyorepo(gitrepo_class_scope, request, monkeypatch) as result:
         yield result
 
 
 @pytest.fixture(scope='module')
-def onyorepo_module_scope(gitrepo,
+def onyorepo_module_scope(gitrepo_module_scope,
                           request,
                           monkeypatch) -> Generator:
     r"""Scope the ``onyorepo`` parameter fixture for modules."""
 
-    with fixture_onyorepo(gitrepo, request, monkeypatch) as result:
+    with fixture_onyorepo(gitrepo_module_scope, request, monkeypatch) as result:
         yield result
 
 
 @pytest.fixture(scope='session')
-def onyorepo_session_scope(gitrepo,
+def onyorepo_session_scope(gitrepo_session_scope,
                            request,
                            monkeypatch) -> Generator:
     r"""Scope the ``onyorepo`` parameter fixture for sessions."""
 
-    with fixture_onyorepo(gitrepo, request, monkeypatch) as result:
+    with fixture_onyorepo(gitrepo_session_scope, request, monkeypatch) as result:
         yield result
 
 
@@ -540,26 +540,26 @@ def inventory_function_scope(repo: OnyoRepo) -> Generator:
 
 
 @pytest.fixture(scope='class')
-def inventory_class_scope(repo: OnyoRepo) -> Generator:
+def inventory_class_scope(repo_class_scope: OnyoRepo) -> Generator:
     r"""Scope the ``inventory`` parameter fixture for classes."""
 
-    with fixture_inventory(repo) as result:
+    with fixture_inventory(repo_class_scope) as result:
         yield result
 
 
 @pytest.fixture(scope='module')
-def inventory_module_scope(repo: OnyoRepo) -> Generator:
+def inventory_module_scope(repo_module_scope: OnyoRepo) -> Generator:
     r"""Scope the ``inventory`` parameter fixture for modules."""
 
-    with fixture_inventory(repo) as result:
+    with fixture_inventory(repo_module_scope) as result:
         yield result
 
 
 @pytest.fixture(scope='session')
-def inventory_session_scope(repo: OnyoRepo) -> Generator:
+def inventory_session_scope(repo_session_scope: OnyoRepo) -> Generator:
     r"""Scope the ``inventory`` parameter fixture for sessions."""
 
-    with fixture_inventory(repo) as result:
+    with fixture_inventory(repo_session_scope) as result:
         yield result
 
 
