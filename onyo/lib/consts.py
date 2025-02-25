@@ -1,8 +1,10 @@
 from collections import UserDict
 from pathlib import Path
+from types import NoneType
 from typing import TYPE_CHECKING
 
 from onyo.lib.pseudokeys import PSEUDOKEY_ALIASES
+
 if TYPE_CHECKING:
     from typing import Literal
     sort_t = Literal['ascending', 'descending']
@@ -35,17 +37,82 @@ r"""Sort descending.
 Use to sort the output of :py:func:`onyo_get`.
 """
 
-UNSET_VALUE = '<unset>'
-r"""Type-symbol for unset keys.
+TAG_BOOL = '<bool>'
+r"""Tag symbol for keys with a boolean as the value.
+
+Use for type matching (:py:func:`onyo_get`).
+"""
+
+TAG_DICT = '<dict>'
+r"""Tag symbol for keys with a dict as the value.
 
 Use for type matching (:py:func:`onyo_get`) and output.
 """
 
-TYPE_SYMBOL_MAPPING = {"<dict>": (dict, UserDict),
-                       "<list>": list}
-r"""Mapping of Onyo type-symbols with Python types.
+TAG_EMPTY = '<empty>'
+r"""Tag symbol for keys set to null or are an empty string, dictionary, or list.
+
+Use for type matching (:py:func:`onyo_get`).
+"""
+
+TAG_FALSE = '<false>'
+r"""Tag symbol for keys with False as the value.
+
+Use for type matching (:py:func:`onyo_get`).
+"""
+
+TAG_LIST = '<list>'
+r"""Tag symbol for keys with a list as the value.
 
 Use for type matching (:py:func:`onyo_get`) and output.
+"""
+
+TAG_NULL = '<null>'
+r"""Tag symbol for keys with a null value.
+
+Use for type matching (:py:func:`onyo_get`) and output.
+"""
+
+TAG_TRUE = '<true>'
+r"""Tag symbol for keys with True as the value.
+
+Use for type matching (:py:func:`onyo_get`).
+"""
+
+TAG_UNSET = '<unset>'
+r"""Tag symbol for unset keys.
+
+Use for type matching (:py:func:`onyo_get`) and output.
+"""
+
+TAG_MAP_TYPES = {
+    TAG_BOOL: bool,
+    TAG_DICT: (dict, UserDict),
+    TAG_LIST: list,
+}
+r"""Mapping of Onyo type-symbols with Python types.
+
+Use for type matching (:py:func:`onyo_get`) queries.
+"""
+
+TAG_MAP_VALUES = {
+    TAG_FALSE: False,
+    TAG_NULL: None,
+    TAG_TRUE: True,
+}
+r"""Mapping of Onyo value symbols with Python values.
+
+Use for type matching (:py:func:`onyo_get`) queries.
+"""
+
+TAG_MAP_OUTPUT = {
+    TAG_DICT: (dict, UserDict),
+    TAG_LIST: list,
+    TAG_NULL: NoneType,
+}
+r"""Mapping of Onyo types/values for user-oriented output.
+
+Use for :py:func:`onyo_get` output.
 """
 
 ONYO_DIR = Path('.onyo')
