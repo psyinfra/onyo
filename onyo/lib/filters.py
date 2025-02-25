@@ -9,8 +9,10 @@ from typing import TYPE_CHECKING
 
 from onyo.lib.consts import (
     SORT_DESCENDING,
-    TYPE_SYMBOL_MAPPING,
-    UNSET_VALUE,
+    TAG_MAP_TYPES,
+    TAG_EMPTY,
+    TAG_UNSET,
+    TAG_MAP_VALUES,
 )
 from onyo.lib.exceptions import OnyoInvalidFilterError
 from onyo.lib.items import Item
@@ -110,8 +112,67 @@ class Filter:
         except re.error:
             return False
 
+    def _tags_or_types_match(self,
+                             item: Item) -> bool | None:
+        r"""Whether the tags or types of ``self.value`` equals ``Item[self.key]``.
+
+        Parameters
+        ----------
+        item
+            Item to compare against.
+        """
+
+        if self.value == TAG_UNSET:
+            # match if the key is not present
+            return self.key not in item
+
+        if self.key not in item:
+            # we can't match anything other than TAG_UNSET, if key is not present
+            raise ValueError
+
+        item_value = item[self.key]
+
+        # onyo type representation match (<list>, <dict>, etc)
+        if self.value in TAG_MAP_TYPES:
+            return isinstance(item_value, TAG_MAP_TYPES[self.value])
+
+        # onyo value representation match (<false>, <null>, <true>, etc)
+        if self.value in TAG_MAP_VALUES:
+            return item_value is TAG_MAP_VALUES[self.value]
+
+        # <empty> is special
+        if self.value == TAG_EMPTY:
+            return any(item_value == x for x in [None, '', [], {}])
+
+        # literal empty structure representations
+        match self.value:
+            case '[]' | '{}':
+                return str(item_value) == self.value
+            case '""' | "''":
+                return str(item_value) == ''
+
+        return None
+
     def _match_equal(self,
-                     item: Item) -> bool:
+                     item: Item) -> bool:  # pyre-ignore[7]
+        r"""Whether ``self.value`` equals ``Item[self.key]``.
+
+        Parameters
+        ----------
+        item
+            Item to compare against.
+        """
+
+        result = self._tags_or_types_match(item)
+
+        match result:
+            case True|False:
+                return result
+            case None:
+                return item[self.key] == self.value
+
+    def _match_equal_with_re(self,
+                             item: Item) -> bool:  # pyre-ignore[7]
         r"""Whether ``self.value`` equals ``Item[self.key]``.
 
         Regex is supported.
@@ -122,29 +183,16 @@ class Filter:
             Item to compare against.
         """
 
-        if self.value == UNSET_VALUE:
-            # match if:
-            #   - key is not present or
-            #   - value is `None` or an empty string
-            return self.key not in item or item[self.key] in [None, '']
+        result = self._tags_or_types_match(item)
 
-        if self.key not in item:
-            # we can't match anything other than UNSET_VALUE, if key is not present
-            return False
+        match result:
+            case True|False:
+                return result
+            case None:
+                # equivalence and regex match
+                item_value = item[self.key]
+                return item_value == self.value or self._re_match(str(item_value), self.value)
 
-        item_value = item[self.key]
-
-        # onyo type representation match (<list>, <dict>, etc)
-        if self.value in TYPE_SYMBOL_MAPPING:
-            return isinstance(item_value, TYPE_SYMBOL_MAPPING[self.value])
-
-        # match literal empty structure representations
-        empty_structs = ['[]', '{}']
-        if self.value in empty_structs:
-            return str(item_value) == self.value
-
-        # equivalence and regex match
-        return item_value == self.value or self._re_match(str(item_value), self.value)
 
     def _match_not_equal(self,
                      item: Item) -> bool:
@@ -158,7 +206,7 @@ class Filter:
             Item to compare against.
         """
 
-        return not self._match_equal(item)
+        return not self._match_equal_with_re(item)
 
     def _match_greater_than(self,
                             item: Item) -> bool:
@@ -172,7 +220,7 @@ class Filter:
             Item to compare against.
         """
 
-        if self.value in TYPE_SYMBOL_MAPPING or self.value == UNSET_VALUE:
+        if self.value in [*TAG_MAP_TYPES, *TAG_MAP_VALUES, TAG_EMPTY, TAG_UNSET]:
             # type comparisons are not possible
             raise ValueError
 
@@ -183,10 +231,10 @@ class Filter:
         item_value = item[self.key]
 
         # literal empty structures ([], {})
-        empty_structs = {'[]': list, '{}': dict}
+        empty_structs = {'[]': list, '{}': dict, '""': str, "''": str}
         if self.value in empty_structs:
             if isinstance(item_value, empty_structs[self.value]):
-                # an non-empty dict/list is indeed greater than an empty one
+                # an non-empty dict/list/string is indeed greater than an empty one
                 return bool(item_value)
             else:
                 # comparison is not possible
@@ -217,6 +265,10 @@ class Filter:
         item
             Item to compare against.
         """
+
+        if self.value in [*TAG_MAP_TYPES, *TAG_MAP_VALUES, TAG_EMPTY, TAG_UNSET]:
+            # type comparisons are not possible
+            raise ValueError
 
         if self._match_equal(item):
             return True
@@ -249,6 +301,10 @@ class Filter:
             Item to compare against.
         """
 
+        if self.value in [*TAG_MAP_TYPES, *TAG_MAP_VALUES, TAG_EMPTY, TAG_UNSET]:
+            # type comparisons are not possible
+            raise ValueError
+
         if self._match_equal(item):
             return True
 
@@ -272,7 +328,7 @@ class Filter:
         try:
             match self.operand:
                 case "=":
-                    return self._match_equal(item)
+                    return self._match_equal_with_re(item)
                 case "!=":
                     return self._match_not_equal(item)
                 case ">":
