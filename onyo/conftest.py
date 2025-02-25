@@ -245,8 +245,7 @@ class AnnotatedOnyoRepo(OnyoRepo):
 
 @contextmanager
 def fixture_onyorepo(gitrepo,
-                     request,
-                     monkeypatch) -> Generator[AnnotatedOnyoRepo, None, None]:
+                     request) -> Generator[AnnotatedOnyoRepo, None, None]:
     r"""Yield an AnnotatedOnyoRepo object, populated from fixtures.
 
     A fresh repository is created in a unique temporary directory. It is
@@ -329,48 +328,45 @@ def fixture_onyorepo(gitrepo,
     if to_commit:
         onyo.commit(deduplicate(to_commit), "onyorepo: setup")  # pyre-ignore[6] - not None if `to_commit` is not None
 
-    # cd into repo; to ease testing
-    monkeypatch.chdir(gitrepo.root)
-    yield onyo
+    with pytest.MonkeyPatch.context() as m:
+        m.chdir(gitrepo.root)
+
+        yield onyo
 
 
 @pytest.fixture(scope='function', name='onyorepo')
 def onyorepo_function_scope(gitrepo,
-                            request,
-                            monkeypatch) -> Generator:
+                            request) -> Generator:
     r"""Scope the ``onyorepo`` parameter fixture for functions."""
 
-    with fixture_onyorepo(gitrepo, request, monkeypatch) as result:
+    with fixture_onyorepo(gitrepo, request) as result:
         yield result
 
 
 @pytest.fixture(scope='class')
 def onyorepo_class_scope(gitrepo_class_scope,
-                         request,
-                         monkeypatch) -> Generator:
+                         request) -> Generator:
     r"""Scope the ``onyorepo`` parameter fixture for classes."""
 
-    with fixture_onyorepo(gitrepo_class_scope, request, monkeypatch) as result:
+    with fixture_onyorepo(gitrepo_class_scope, request) as result:
         yield result
 
 
 @pytest.fixture(scope='module')
 def onyorepo_module_scope(gitrepo_module_scope,
-                          request,
-                          monkeypatch) -> Generator:
+                          request) -> Generator:
     r"""Scope the ``onyorepo`` parameter fixture for modules."""
 
-    with fixture_onyorepo(gitrepo_module_scope, request, monkeypatch) as result:
+    with fixture_onyorepo(gitrepo_module_scope, request) as result:
         yield result
 
 
 @pytest.fixture(scope='session')
 def onyorepo_session_scope(gitrepo_session_scope,
-                           request,
-                           monkeypatch) -> Generator:
+                           request) -> Generator:
     r"""Scope the ``onyorepo`` parameter fixture for sessions."""
 
-    with fixture_onyorepo(gitrepo_session_scope, request, monkeypatch) as result:
+    with fixture_onyorepo(gitrepo_session_scope, request) as result:
         yield result
 
 
@@ -381,7 +377,6 @@ def onyorepo_session_scope(gitrepo_session_scope,
 ########################################
 @contextmanager
 def fixture_repo(tmp_path: Path,
-                 monkeypatch,
                  request) -> Generator[OnyoRepo, None, None]:
     r"""Yield an OnyoRepo object, populated from fixtures.
 
@@ -443,52 +438,45 @@ def fixture_repo(tmp_path: Path,
         repo_.commit(paths=files,
                      message="populate files for tests")
 
-    # TODO: Do we still need/want that? CWD should only ever be relevant for CLI tests.
-    #       Hence, should probably be done there.
-    # cd into repo; to ease testing
-    monkeypatch.chdir(repo_path)
+    with pytest.MonkeyPatch.context() as m:
+        m.chdir(repo_path)
 
-    # hand it off
-    yield repo_
+        yield repo_
 
 
 @pytest.fixture(scope='function', name='repo')
 def repo_function_scope(tmp_path: Path,
-                        monkeypatch,
                         request) -> Generator:
     r"""Scope the ``repo`` parameter fixture for functions."""
 
-    with fixture_repo(tmp_path, monkeypatch, request) as result:
+    with fixture_repo(tmp_path, request) as result:
         yield result
 
 
 @pytest.fixture(scope='class')
 def repo_class_scope(tmp_path_class_scope: Path,
-                     monkeypatch,
                      request) -> Generator:
     r"""Scope the ``repo`` parameter fixture for classes."""
 
-    with fixture_repo(tmp_path_class_scope, monkeypatch, request) as result:
+    with fixture_repo(tmp_path_class_scope, request) as result:
         yield result
 
 
 @pytest.fixture(scope='module')
 def repo_module_scope(tmp_path_module_scope: Path,
-                      monkeypatch,
                       request) -> Generator:
     r"""Scope the ``repo`` parameter fixture for modules."""
 
-    with fixture_repo(tmp_path_module_scope, monkeypatch, request) as result:
+    with fixture_repo(tmp_path_module_scope, request) as result:
         yield result
 
 
 @pytest.fixture(scope='session')
 def repo_session_scope(tmp_path_session_scope: Path,
-                       monkeypatch,
                        request) -> Generator:
     r"""Scope the ``repo`` parameter fixture for sessions."""
 
-    with fixture_repo(tmp_path_session_scope, monkeypatch, request) as result:
+    with fixture_repo(tmp_path_session_scope, request) as result:
         yield result
 
 
