@@ -71,9 +71,8 @@ def test_onyo_mv_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_errors_before_mv(inventory: Inventory) -> None:
-    r"""`onyo_mv` must raise the correct error and is not allowed to move/commit anything, if one of
-    the sources does not exist.
-    """
+    r"""Raise and do not move/commit anything, if a source does not exist."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     destination_path = inventory.root / 'empty'
     old_hexsha = inventory.repo.git.get_hexsha()
@@ -156,9 +155,9 @@ def test_onyo_mv_move_simple(inventory: Inventory,
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mv_move_to_explicit_destination(inventory: Inventory) -> None:
-    r"""Allow moving a source to a destination stating the
-    destination name explicitely, e.g.:
-    inventory.root/dir1/asset -> inventory.root/dir2/asset.
+    r"""Move with an explicit destination name.
+
+    For example: inventory.root/dir1/asset -> inventory.root/dir2/asset
     """
     dir_path = inventory.root / 'somewhere' / 'nested'
     # move by explicitly restating the source's name:

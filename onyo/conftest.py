@@ -44,6 +44,7 @@ def clean_env(request) -> None:
     except KeyError:
         pass
 
+
 def params(d: dict) -> MarkDecorator:
     r"""Parameterize a dictionary with human-friendly names.
 
@@ -123,6 +124,7 @@ class AnnotatedGitRepo(GitRepo):
 
         super().__init__(path, find_root)
         self.test_annotation = None
+
 
 @contextmanager
 def fixture_gitrepo(tmp_path: Path,
@@ -208,6 +210,7 @@ def gitrepo_session_scope(tmp_path: Path,
 
     with fixture_gitrepo(tmp_path, request) as result:
         yield result
+
 
 ########################################
 #
@@ -739,6 +742,7 @@ def fake_class_scope() -> Generator:
 @pytest.fixture(scope='module')
 def fake_module_scope() -> Generator:
     r"""Scope the ``fake`` parameter fixture for modules."""
+
     with fixture_fake() as result:
         yield result
 
@@ -746,5 +750,6 @@ def fake_module_scope() -> Generator:
 @pytest.fixture(scope='session')
 def fake_session_scope() -> Generator:
     r"""Scope the ``fake`` parameter fixture for sessions."""
+
     with fixture_fake() as result:
         yield result
