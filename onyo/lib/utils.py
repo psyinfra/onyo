@@ -385,4 +385,4 @@ def write_asset_file(path: Path,
     """
 
     # TODO: Get file path from onyo.path.file?
-    path.open('w').write(dict_to_asset_yaml(asset))
+    path.write_text(dict_to_asset_yaml(asset))

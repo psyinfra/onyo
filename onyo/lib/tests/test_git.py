@@ -133,7 +133,7 @@ def test_GitRepo_is_clean_worktree(gitrepo) -> None:
     assert gitrepo.is_clean_worktree()
 
     # a file modified but not commit-ed (i.e. changed) must lead to return False
-    test_file.open('w').write('Test: content')
+    test_file.write_text('Test: content')
     subprocess.run(['git', 'add', str(test_file)], check=True, cwd=gitrepo.root)
     assert not gitrepo.is_clean_worktree()
 
@@ -197,7 +197,7 @@ def test_GitRepo_commit(gitrepo) -> None:
     assert test_file in gitrepo.files
 
     # modify an existing file, and add it
-    test_file.open('w').write('Test: content')
+    test_file.write_text('Test: content')
     gitrepo.commit(test_file, "Test commit message")
     assert hexsha == gitrepo.get_hexsha('HEAD~1')
     assert test_file in gitrepo.files
