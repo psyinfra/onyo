@@ -351,12 +351,12 @@ class TestFilterRegex:
     @pytest.mark.parametrize('filt',
                              [''.join(x) for x in product(
                                  ['type', 'missing'],
-                                 ['>'],
+                                 ['>', '>='],
                                  ['.*', '.*no-match.*', '.*eel.*', '(?i)LAPTOP'],
                              )])
     def test_filter_regex_greater_than(self,
                                        filt: str) -> None:
-        """Regex greater than.
+        """Regex greater than and greater than or equal.
 
         Regular expressions are weird when used with greater than and less than.
 
@@ -368,9 +368,6 @@ class TestFilterRegex:
         """
 
         f = Filter(filt)
-        assert f.key == filt.split('>', 1)[0]
-        assert f.operand == '>'
-        assert f.value == filt.split('>', 1)[1]
 
         if f.key == 'missing':
             # cannot match against an unset key
@@ -380,99 +377,21 @@ class TestFilterRegex:
             assert not f.match(self.read_asset('wheelchair_make_model.4'))
             assert not f.match(self.read_asset('wheelchair_make_model.5'))
         else:
-            match f.value:
-                case '.*':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*no-match.*':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*eel.*':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
-                case '(?i)LAPTOP':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
+            assert f.match(self.read_asset('laptop_make_model.1'))
+            assert f.match(self.read_asset('monitor_make_model.2'))
+            assert f.match(self.read_asset('headphones_make_model.3'))
+            assert f.match(self.read_asset('wheelchair_make_model.4'))
+            assert f.match(self.read_asset('wheelchair_make_model.5'))
 
     @pytest.mark.parametrize('filt',
                              [''.join(x) for x in product(
                                  ['type', 'missing'],
-                                 ['>='],
-                                 ['.*', '.*no-match.*', '.*eel.*', '(?i)LAPTOP'],
-                             )])
-    def test_filter_regex_greater_than_or_equal(self,
-                                                filt: str) -> None:
-        """Regex greater than or equal.
-
-        Regular expressions are weird when used with greater than and less than.
-
-        If it were possible, it would be disallowed (like tags).
-
-        ``>``, ``>=``, ``<``, and ``<=`` treat the regular expression as a
-        literal string, but sort it using natsort's humansort, which can lead to
-        surprising results.
-        """
-
-        f = Filter(filt)
-        assert f.key == filt.split('>=', 1)[0]
-        assert f.operand == '>='
-        assert f.value == filt.split('>=', 1)[1]
-
-        if f.key == 'missing':
-            # cannot match against an unset key
-            assert not f.match(self.read_asset('laptop_make_model.1'))
-            assert not f.match(self.read_asset('monitor_make_model.2'))
-            assert not f.match(self.read_asset('headphones_make_model.3'))
-            assert not f.match(self.read_asset('wheelchair_make_model.4'))
-            assert not f.match(self.read_asset('wheelchair_make_model.5'))
-        else:
-            match f.value:
-                case '.*':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*no-match.*':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*eel.*':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
-                case '(?i)LAPTOP':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert f.match(self.read_asset('wheelchair_make_model.5'))
-
-    @pytest.mark.parametrize('filt',
-                             [''.join(x) for x in product(
-                                 ['type', 'missing'],
-                                 ['<'],
+                                 ['<', '<='],
                                  ['.*', '.*no-match.*', '.*eel.*', '(?i)LAPTOP'],
                              )])
     def test_filter_regex_less_than(self,
                                     filt: str) -> None:
-        """Regex less than.
+        """Regex less than and less than or equal.
 
         Regular expressions are weird when used with greater than and less than.
 
@@ -484,9 +403,6 @@ class TestFilterRegex:
         """
 
         f = Filter(filt)
-        assert f.key == filt.split('<', 1)[0]
-        assert f.operand == '<'
-        assert f.value == filt.split('<', 1)[1]
 
         if f.key == 'missing':
             # cannot match against an unset key
@@ -496,89 +412,12 @@ class TestFilterRegex:
             assert not f.match(self.read_asset('wheelchair_make_model.4'))
             assert not f.match(self.read_asset('wheelchair_make_model.5'))
         else:
-            match f.value:
-                case '.*':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*no-match.*':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*eel.*':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
-                case '(?i)LAPTOP':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
-
-    @pytest.mark.parametrize('filt',
-                             [''.join(x) for x in product(
-                                 ['type', 'missing'],
-                                 ['<='],
-                                 ['.*', '.*no-match.*', '.*eel.*', '(?i)LAPTOP'],
-                             )])
-    def test_filter_regex_less_than_or_equal(self,
-                                             filt: str) -> None:
-        """Regex less than or equal.
-
-        Regular expressions are weird when used with greater than and less than.
-
-        If it were possible, it would be disallowed (like tags).
-
-        ``>``, ``>=``, ``<``, and ``<=`` treat the regular expression as a
-        literal string, but sort it using natsort's humansort, which can lead to
-        surprising results.
-        """
-
-        f = Filter(filt)
-        assert f.key == filt.split('<=', 1)[0]
-        assert f.operand == '<='
-        assert f.value == filt.split('<=', 1)[1]
-
-        if f.key == 'missing':
-            # cannot match against an unset key
             assert not f.match(self.read_asset('laptop_make_model.1'))
             assert not f.match(self.read_asset('monitor_make_model.2'))
             assert not f.match(self.read_asset('headphones_make_model.3'))
             assert not f.match(self.read_asset('wheelchair_make_model.4'))
             assert not f.match(self.read_asset('wheelchair_make_model.5'))
-        else:
-            match f.value:
-                case '.*':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*no-match.*':
-                    assert f.match(self.read_asset('laptop_make_model.1'))
-                    assert f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
-                case '.*eel.*':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert not f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
-                case '(?i)LAPTOP':
-                    assert not f.match(self.read_asset('laptop_make_model.1'))
-                    assert not f.match(self.read_asset('monitor_make_model.2'))
-                    assert f.match(self.read_asset('headphones_make_model.3'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.4'))
-                    assert not f.match(self.read_asset('wheelchair_make_model.5'))
+
 
 class TestFilterTags:
     r"""Filter with tags.
