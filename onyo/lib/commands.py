@@ -511,7 +511,7 @@ def onyo_get(inventory: Inventory,
         Invalid argument
     """
 
-    from .consts import TYPE_SYMBOL_MAPPING, UNSET_VALUE
+    from onyo.lib.consts import TAG_MAP_OUTPUT, TAG_UNSET
 
     selected_keys = keys.copy() if keys else None
     include = include or [inventory.root]
@@ -541,13 +541,13 @@ def onyo_get(inventory: Inventory,
         keys=sort or {'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
 
     # reduce results to just the `selected_keys`
-    results = [{k: r[k] if k in r and r[k] not in [None, ""] else UNSET_VALUE
+    results = [{k: r[k] if k in r else TAG_UNSET
                 for k in selected_keys}
                for r in results]
 
     # replace structures with an indication of type.
-    for symbol in TYPE_SYMBOL_MAPPING:
-        results = [{k: symbol if isinstance(v, TYPE_SYMBOL_MAPPING[symbol]) else v
+    for symbol in TAG_MAP_OUTPUT:
+        results = [{k: symbol if isinstance(v, TAG_MAP_OUTPUT[symbol]) else v
                     for k, v in r.items()}
                    for r in results]
 

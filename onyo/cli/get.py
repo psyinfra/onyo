@@ -55,13 +55,21 @@ args_get = {
         default=None,
         help=r"""
             Criteria to match in the form ``KEY=VALUE`` — where **VALUE** is a
-            literal string or a python regular expression. All keys can be
+            literal string or a python regular expression. Valid operands are
+            ``=``, ``!=``, ``>``, ``>=``, ``<``, and ``<=``. All keys can be
             matched, and are not limited to those specified by ``--keys``.
-            Special values supported are:
+            Tags supported are:
 
-              * ``<dict>``
-              * ``<list>``
-              * ``<unset>``
+              * ``<bool>``: a boolean
+              * ``<dict>``: a dictionary
+              * ``<empty>``: null or an empty string, dictionary, or list
+              * ``<false>``: ``false``, ``False`` or ``FALSE``
+              * ``<list>``: a list
+              * ``<null>``: ``null``, ``Null``, ``NULL``, ``~``, or nothing
+              * ``<true>``: ``true``, ``True``, or ``TRUE``
+              * ``<unset>``: the key does not exist
+
+            Tags and regular expressions work only with ``=`` and ``!=``.
         """
     ),
 
