@@ -42,15 +42,23 @@ def get_patched_yaml() -> YAML:  # pyre-ignore[11]
     yaml = YAML(typ='rt', pure=True)
 
     # YAML nulls are `None`
-    yaml.resolver.add_implicit_resolver(tag="tag:yaml.org,2002:null",
-                                        regexp=RegExp('''^(?: ~
-                                                      |null|Null|NULL
-                                                      | )$''', re.X),
-                                        first=['~', 'n', 'N', ''])
+    yaml.resolver.add_implicit_resolver(
+            tag="tag:yaml.org,2002:null",
+            regexp=RegExp('''^(?: ~|null|Null|NULL| )$''', re.X),
+            first=['~', 'n', 'N', '']
+    )
+    # true/false are booleans (and ignore YAML's on/off yes/no madness)
+    yaml.resolver.add_implicit_resolver(
+            tag='tag:yaml.org,2002:bool',
+            regexp=RegExp(r'''^(?:true|True|TRUE|false|False|FALSE)$''', re.X),
+            first=['t', 'T', 'f', 'F']
+    )
     # everything else is a string
-    yaml.resolver.add_implicit_resolver(tag="tag:yaml.org,2002:str",
-                                        regexp=RegExp('^.*$'),
-                                        first=None)
+    yaml.resolver.add_implicit_resolver(
+            tag="tag:yaml.org,2002:str",
+            regexp=RegExp('^.*$'),
+            first=None
+    )
 
     return yaml
 
