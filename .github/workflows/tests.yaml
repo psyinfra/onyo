@@ -27,6 +27,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        # get proper PyICU (for natsort)
+        sudo apt-get install pkg-config libicu-dev
+        pip install --no-binary=:pyicu: pyicu
+        # install onyo
         pip install -e ".[tests]"
         sudo apt-get install -y zsh
     - name: ruff linting
