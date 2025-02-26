@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import locale
 import os
 import subprocess
 from collections.abc import Iterable
@@ -43,6 +44,25 @@ def clean_env(request) -> None:
         del os.environ['EDITOR']
     except KeyError:
         pass
+
+
+@pytest.fixture(scope="function", autouse=True)
+def clean_locale(request) -> None:
+    r"""Ensure that the locale is set to 'en_US.UTF-8'.
+
+    Tests that involve sorting can be impacted by the locale. This sets it to a
+    known, static target.
+    """
+
+    lc = 'en_US.UTF-8'
+
+    locale.setlocale(locale.LC_ALL, lc)
+    locale.setlocale(locale.LC_COLLATE, lc)
+    locale.setlocale(locale.LC_CTYPE, lc)
+    locale.setlocale(locale.LC_MESSAGES, lc)
+    locale.setlocale(locale.LC_MONETARY, lc)
+    locale.setlocale(locale.LC_NUMERIC, lc)
+    locale.setlocale(locale.LC_TIME, lc)
 
 
 def params(d: dict) -> MarkDecorator:
