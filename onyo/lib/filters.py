@@ -39,7 +39,7 @@ class Filter:
     _arg: str = field(repr=False)
     key: str = field(init=False)
     value: str = field(init=False)
-    operand: str = field(init=False)
+    operator: str = field(init=False)
 
     def __post_init__(self) -> None:
         r"""Set up a ``key=value`` conditional as a filter.
@@ -47,13 +47,13 @@ class Filter:
         ``value`` must be a valid Python regular expression.
         """
 
-        self.key, self.operand, self.value = self._format(self._arg)
+        self.key, self.operator, self.value = self._format(self._arg)
 
     @staticmethod
     def _format(arg: str) -> Tuple[str, str, str]:
-        r"""Split filters on the first occurrence of an operand.
+        r"""Split filters on the first occurrence of an operator.
 
-        Valid operands are ``=``, ``!=``, ``>``, ``>=``, ``<``, and ``<=``.
+        Valid operators are ``=``, ``!=``, ``>``, ``>=``, ``<``, and ``<=``.
 
         Parameters
         ----------
@@ -63,7 +63,7 @@ class Filter:
         Raises
         ------
         OnyoInvalidFilterError
-            No valid operand was found.
+            No valid operator was found.
         """
 
         index = None
@@ -78,21 +78,21 @@ class Filter:
 
         match arg[index:index + 2]:
             case "<=":
-                operand = "<="
+                operator = "<="
             case ">=":
-                operand = ">="
+                operator = ">="
             case "!=":
-                operand = "!="
+                operator = "!="
             case _:
-                operand = arg[index]
+                operator = arg[index]
 
-        if index in (0, len(arg) - len(operand)):
+        if index in (0, len(arg) - len(operator)):
             raise OnyoInvalidFilterError(
                 'Filters must be formatted as `key=value`')
 
-        key, value = arg.split(operand, 1)
+        key, value = arg.split(operator, 1)
 
-        return key, operand, value
+        return key, operator, value
 
     @staticmethod
     def _re_match(text: str,
@@ -322,11 +322,11 @@ class Filter:
         Raises
         ------
         OnyoInvalidFilterError
-            No valid operand was found.
+            No valid operator was found.
         """
 
         try:
-            match self.operand:
+            match self.operator:
                 case "=":
                     return self._match_equal_with_re(item)
                 case "!=":

@@ -46,7 +46,7 @@ class TestFilter:
 
         f = Filter(filt)
         assert f.key == filt.split('=', 1)[0]
-        assert f.operand == '='
+        assert f.operator == '='
         assert f.value == filt.split('=', 1)[1]
 
         match filt.split('=', 1)[1]:
@@ -76,7 +76,7 @@ class TestFilter:
 
         f = Filter(filt)
         assert f.key == filt.split('!=', 1)[0]
-        assert f.operand == '!='
+        assert f.operator == '!='
         assert f.value == filt.split('!=', 1)[1]
 
         match filt.split('=', 1)[1]:
@@ -106,7 +106,7 @@ class TestFilter:
 
         f = Filter(filt)
         assert f.key == filt.split('>', 1)[0]
-        assert f.operand == '>'
+        assert f.operator == '>'
         assert f.value == filt.split('>', 1)[1]
         assert not f.match(self.read_asset('laptop_make_model.1'))
 
@@ -134,7 +134,7 @@ class TestFilter:
 
         f = Filter(filt)
         assert f.key == filt.split('>=', 1)[0]
-        assert f.operand == '>='
+        assert f.operator == '>='
         assert f.value == filt.split('>=', 1)[1]
 
         match filt.split('>=', 1)[1]:
@@ -164,7 +164,7 @@ class TestFilter:
 
         f = Filter(filt)
         assert f.key == filt.split('<', 1)[0]
-        assert f.operand == '<'
+        assert f.operator == '<'
         assert f.value == filt.split('<', 1)[1]
 
         match filt.split('<', 1)[1]:
@@ -194,7 +194,7 @@ class TestFilter:
 
         f = Filter(filt)
         assert f.key == filt.split('<=', 1)[0]
-        assert f.operand == '<='
+        assert f.operator == '<='
         assert f.value == filt.split('<=', 1)[1]
 
         match filt.split('<=', 1)[1]:
@@ -262,7 +262,7 @@ class TestFilterRegex:
 
         f = Filter(filt)
         assert f.key == filt.split('=', 1)[0]
-        assert f.operand == '='
+        assert f.operator == '='
         assert f.value == filt.split('=', 1)[1]
 
         if f.key == 'missing':
@@ -311,7 +311,7 @@ class TestFilterRegex:
 
         f = Filter(filt)
         assert f.key == filt.split('!=', 1)[0]
-        assert f.operand == '!='
+        assert f.operator == '!='
         assert f.value == filt.split('!=', 1)[1]
 
         if f.key == 'missing':
@@ -475,7 +475,7 @@ class TestFilterTags:
 
         f = Filter(filt)
         assert f.key == filt.split('=', 1)[0]
-        assert f.operand == '='
+        assert f.operator == '='
         assert f.value == filt.split('=', 1)[1]
 
         if f.key == 'missing':
@@ -534,7 +534,7 @@ class TestFilterTags:
 
         f = Filter(filt)
         assert f.key == filt.split('!=', 1)[0]
-        assert f.operand == '!='
+        assert f.operator == '!='
         assert f.value == filt.split('!=', 1)[1]
 
         if f.key == 'missing':
@@ -619,7 +619,7 @@ class TestFilterTags:
 
         f = Filter(filt)
         assert f.key == filt.split('=', 1)[0]
-        assert f.operand == '='
+        assert f.operator == '='
         assert f.value == filt.split('=', 1)[1]
 
         if f.key == 'missing':
@@ -688,7 +688,7 @@ class TestFilterTags:
 
         f = Filter(filt)
         assert f.key == filt.split('!=', 1)[0]
-        assert f.operand == '!='
+        assert f.operator == '!='
         assert f.value == filt.split('!=', 1)[1]
 
         if f.key == 'missing':
@@ -783,7 +783,7 @@ class TestFilterTags:
 
         f = Filter(filt)
         assert f.key == filt.split('=', 1)[0]
-        assert f.operand == '='
+        assert f.operator == '='
         assert f.value == filt.split('=', 1)[1]
 
         match f.key:
@@ -820,7 +820,7 @@ class TestFilterTags:
 
         f = Filter(filt)
         assert f.key == filt.split('!=', 1)[0]
-        assert f.operand == '!='
+        assert f.operator == '!='
         assert f.value == filt.split('!=', 1)[1]
 
         match f.key:
@@ -927,7 +927,7 @@ class TestFilterLiterals:
 
         f = Filter(filt)
         assert f.key == filt.split('=', 1)[0]
-        assert f.operand == '='
+        assert f.operator == '='
         assert f.value == filt.split('=', 1)[1]
 
         if f.key == 'missing':
@@ -986,7 +986,7 @@ class TestFilterLiterals:
 
         f = Filter(filt)
         assert f.key == filt.split('!=', 1)[0]
-        assert f.operand == '!='
+        assert f.operator == '!='
         assert f.value == filt.split('!=', 1)[1]
 
         if f.key == 'missing':
@@ -1045,7 +1045,7 @@ class TestFilterLiterals:
 
         f = Filter(filt)
         assert f.key == filt.split('>', 1)[0]
-        assert f.operand == '>'
+        assert f.operator == '>'
         assert f.value == filt.split('>', 1)[1]
 
         if f.key == 'missing':
@@ -1104,7 +1104,7 @@ class TestFilterLiterals:
 
         f = Filter(filt)
         assert f.key == filt.split('>=', 1)[0]
-        assert f.operand == '>='
+        assert f.operator == '>='
         assert f.value == filt.split('>=', 1)[1]
 
         if f.key == 'missing':
@@ -1163,7 +1163,7 @@ class TestFilterLiterals:
 
         f = Filter(filt)
         assert f.key == filt.split('<', 1)[0]
-        assert f.operand == '<'
+        assert f.operator == '<'
         assert f.value == filt.split('<', 1)[1]
 
         # nothing can be less than empty
@@ -1189,7 +1189,7 @@ class TestFilterLiterals:
 
         f = Filter(filt)
         assert f.key == filt.split('<=', 1)[0]
-        assert f.operand == '<='
+        assert f.operator == '<='
         assert f.value == filt.split('<=', 1)[1]
 
         if f.key == 'missing':
@@ -1253,7 +1253,7 @@ def test_filter_invalid(filter_arg: str) -> None:
 
 
 def test_filter_format() -> None:
-    """Split filter string into ``key``, ``operand``, and ``value`` properties."""
+    """Split filter string into ``key``, ``operator``, and ``value`` properties."""
 
     # =
     assert Filter._format('key=value') == ('key', '=', 'value')
