@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import (
+    Callable,
+    TYPE_CHECKING,
+)
 
 from onyo.lib.consts import (
     ANCHOR_FILE_NAME,
@@ -60,7 +63,6 @@ from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     from typing import (
-        Callable,
         Generator,
         Iterable,
         Literal,
@@ -790,7 +792,7 @@ class Inventory(object):
                   include: Iterable[Path] | None = None,
                   exclude: Iterable[Path] | Path | None = None,
                   depth: int | None = 0,
-                  match: list[Callable[[Item], bool]] | None = None,
+                  match: list[Callable[[Item], bool]] | list[list[Callable[[Item], bool]]] | None = None,
                   types: list[Literal['assets', 'directories']] | None = None
                   ) -> Generator[Item, None, None] | filter:
         r"""Yield all Items matching paths and filters.
@@ -803,33 +805,44 @@ class Inventory(object):
         ----------
         include
             Paths under which to look for Items. Default is inventory root.
+
             Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         exclude
             Paths to exclude (i.e. Items underneath will not be returned).
+
             Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         depth
             Number of levels to descend into the directories specified by
             ``include``. A depth of ``0`` descends recursively without limit.
+
             Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         match
             Callables suited for use with builtin :py:func:`filter`. They are
             passed an :py:class:`onyo.lib.items.Item` and are expected to return
             a ``bool``.
+
+            Within a list of Callables, all must return True for an Item to
+            match. When multiple lists are passed, only one list of Callables
+            must match for an Item to match (e.g. each list of Callables is
+            connected with a logical ``or``).
         types
             Types of inventory items to consider. Equivalent to
             ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
             Default is ``['assets']``.
+
             Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
         """
 
         depth = 0 if depth is None else depth
-        match = [] if match is None else match
+
+        match = [[]] if match is None else match
+        match = [match] if isinstance(match[0], Callable) else match  # pyre-ignore [9]
 
         for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=types):
             try:
                 item = self.get_item(p)
                 # check against filters
-                if all([f(item) for f in match]):
+                if any([all([f(item) for f in m]) for m in match]):  # pyre-ignore [16]
                     yield item
 
             except NotAnAssetError as e:

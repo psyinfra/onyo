@@ -109,6 +109,39 @@ class StoreSingleKeyValuePairs(argparse.Action):
         setattr(namespace, self.dest, results)
 
 
+class StoreMatchOption(argparse.Action):
+    r"""Store match statements and retain their order across multiple invocations."""
+
+    def __call__(self,
+                 parser: argparse.ArgumentParser,
+                 namespace: argparse.Namespace,
+                 keys: list[str],
+                 option_string: str | None = None) -> None:
+        r"""Store a list of match statements in a list.
+
+        This way multiple invocations of ``--match``  won't have their lists
+        merged together, and can be considered independently of one another
+        (i.e. ``OR``).
+
+        Parameters
+        ----------
+        parser
+            ArgumentParser object that contains this action.
+        namespace
+            Namespace object returned by :py:meth:`argparse.ArgumentParser.parse_args`.
+        keys
+            List of strings containing match statements.
+        option_string
+            Option string used to invoke this action.
+        """
+
+        items = getattr(namespace, self.dest, None)
+        items = list() if items is None else items
+        items.append(keys)
+
+        setattr(namespace, self.dest, items)
+
+
 class StoreSortOption(argparse.Action):
     r"""Store keys-to-sort and retain their order across multiple invoking options.
 

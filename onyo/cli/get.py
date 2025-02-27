@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from onyo.argparse_helpers import StoreSortOption
+from onyo.argparse_helpers import (
+    StoreMatchOption,
+    StoreSortOption,
+)
 from onyo.lib.commands import onyo_get
 from onyo.lib.exceptions import OnyoCLIExitCode
 from onyo.lib.filters import Filter
@@ -50,14 +53,16 @@ args_get = {
     'match': dict(
         args=('-M', '--match'),
         metavar='MATCH',
+        action=StoreMatchOption,
         nargs='+',
         type=str,
         default=None,
         help=r"""
             Criteria to match in the form ``KEY=VALUE`` — where **VALUE** is a
-            literal string or a python regular expression. Valid operands are
-            ``=``, ``!=``, ``>``, ``>=``, ``<``, and ``<=``. All keys can be
-            matched, and are not limited to those specified by ``--keys``.
+            literal string or a python regular expression. Valid operators
+            are ``=``, ``!=``, ``>``, ``>=``, ``<``, and ``<=``. All keys can be matched, and are
+            not limited to those specified by ``--keys``.
+
             Tags supported are:
 
               * ``<bool>``: a boolean
@@ -70,6 +75,21 @@ args_get = {
               * ``<unset>``: the key does not exist
 
             Tags and regular expressions work only with ``=`` and ``!=``.
+
+            An item must meet the criteria of all match statements for it to be
+            printed (i.e. each statement is connected with a logical **and**).
+
+            When ``--match`` is invoked multiple times, an item must meet the
+            criteria of only one invocation for it to be printed (i.e. each
+            invocation is connected with a logical **or**).
+
+            For example
+
+            ``--match type=laptop make=apple --match type=display make=eizo``
+
+            results logically to
+
+            (``type=laptop`` **and** ``make=apple``) **or** (``type=display`` **and** ``make=eizo``)
         """
     ),
 
@@ -190,7 +210,7 @@ def get(args: argparse.Namespace) -> None:
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
 
-    filters = [Filter(f).match for f in args.match] if args.match else None
+    filters = [[Filter(f).match for f in m] for m in args.match] if args.match else None
 
     results = onyo_get(inventory=inventory,
                        sort=args.sort,
