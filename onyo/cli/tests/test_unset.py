@@ -180,9 +180,8 @@ def test_unset_interactive(repo: OnyoRepo,
 @pytest.mark.parametrize('asset', [t[0] for t in asset_contents if "num" not in t[1]])
 def test_unset_key_does_not_exist(repo: OnyoRepo,
                                   asset: str) -> None:
-    r"""Test that `onyo unset --keys KEY --asset ASSET` does not error when one of the KEYs does not
-    exist.
-    """
+    r"""Do not error when one of the KEYs does not exist."""
+
     no_key = "non_existing"
 
     # test un-setting a non-existing key from an empty file
@@ -285,10 +284,8 @@ def test_unset_discard_changes_single_assets(repo: OnyoRepo,
     ["num", "type"]])
 def test_unset_error_unset_name_fields(repo: OnyoRepo,
                                        name_field: list[str]) -> None:
-    r"""Test that `onyo unset KEY --asset <asset>` raises the correct error without printing the usual
-    information (e.g. diff output), when called with a KEY that is a name field (type, make, model
-    or/and serial number), not a content field.
-    """
+    r"""Error without printing a diff (etc) when called with a KEY that is a name field."""
+
     asset = 'laptop_apple_macbookpro.1'
     ret = subprocess.run(['onyo', '--yes', 'unset', '--keys', *name_field,
                           '--asset', asset],

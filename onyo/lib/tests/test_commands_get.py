@@ -1,16 +1,24 @@
-from pathlib import Path
+from __future__ import annotations
+
+from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import pytest
 
 from onyo.lib.consts import (
     ANCHOR_FILE_NAME,
+    SORT_ASCENDING,
     TEMPLATE_DIR,
-    UNSET_VALUE,
 )
 from onyo.lib.filters import Filter
 from onyo.lib.inventory import Inventory
 from onyo.lib.items import Item
 from ..commands import onyo_get
+
+if TYPE_CHECKING:
+    from typing import (
+        Generator,
+    )
 
 
 @pytest.mark.ui({'yes': True})
@@ -54,40 +62,107 @@ def test_onyo_get_errors(inventory: Inventory) -> None:
                   include=[inventory.root / ".onyo"])
 
 
-@pytest.mark.repo_contents(
-    ["one_that_exists.test", "type: one\nmake: that\nmodel: exists\nserial: test\nempty_key: ''"])
-@pytest.mark.ui({'yes': True})
-def test_onyo_get_empty_keys(inventory: Inventory,
-                             capsys) -> None:
-    r"""Print <unset> for non-existing keys and keys with an empty value."""
+class TestOnyoGetTags():
+    r"""Tags and output."""
 
-    from onyo.lib.consts import UNSET_VALUE
-    asset_path1 = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset_path2 = inventory.root / "one_that_exists.test"
-    missing_key = "asdf"
-    empty_key = "empty_key"
+    @pytest.fixture(scope='class')
+    def populated_inventory(self,
+                            onyorepo_class_scope) -> Generator[Inventory, None, None]:
+        r"""Yield a populated Inventory object."""
 
-    # call `onyo_get()` requesting a key that does not exist
-    assert missing_key not in Path.read_text(asset_path1)
-    onyo_get(inventory,
-             include=[asset_path1],
-             keys=[missing_key, "onyo.path.relative"])
+        inventory = Inventory(repo=onyorepo_class_scope)
 
-    # verify output
-    output1 = capsys.readouterr().out
-    assert UNSET_VALUE in output1
-    assert asset_path1.name in output1
+        item = Item(
+            {'type': 'type', 'make': 'make', 'model': 'model', 'serial': '<to-set>', 'onyo.path.parent': inventory.root},
+            repo=inventory.repo,
+        )
 
-    # call `onyo_get()` requesting a key that exists, but has no value set
-    assert empty_key in Path.read_text(asset_path2)
-    onyo_get(inventory,
-             include=[asset_path2],
-             keys=[empty_key, "onyo.path.relative"])
+        # type_make_model.1
+        item1 = deepcopy(item)
+        item1.update({'serial': '1', 'key': True})
+        inventory.add_asset(item1)
 
-    # verify output
-    output2 = capsys.readouterr().out
-    assert UNSET_VALUE in output2
-    assert asset_path2.name in output2
+        # type_make_model.2
+        item2 = deepcopy(item)
+        item2.update({'serial': '2', 'key': False})
+        inventory.add_asset(item2)
+
+        # type_make_model.3
+        item3 = deepcopy(item)
+        item3.update({'serial': '3', 'key': None})
+        inventory.add_asset(item3)
+
+        # type_make_model.4
+        item4 = deepcopy(item)
+        item4.update({'serial': '4'})
+        inventory.add_asset(item4)
+
+        # type_make_model.5
+        item5 = deepcopy(item)
+        item5.update({'serial': '5', 'key': 'value'})
+        inventory.add_asset(item5)
+
+        # type_make_model.6
+        item6 = deepcopy(item)
+        item6.update({'serial': '6', 'key': ''})
+        inventory.add_asset(item6)
+
+        # type_make_model.7
+        item7 = deepcopy(item)
+        item7.update({'serial': '7', 'key': ['a', 'b']})
+        inventory.add_asset(item7)
+
+        # type_make_model.8
+        item8 = deepcopy(item)
+        item8.update({'serial': '8', 'key': []})
+        inventory.add_asset(item8)
+
+        # type_make_model.9
+        item9 = deepcopy(item)
+        item9.update({'serial': '9', 'key': {'a': '1', 'b': '2'}})
+        inventory.add_asset(item9)
+
+        # type_make_model.10
+        item10 = deepcopy(item)
+        item10.update({'serial': '10', 'key': {}})
+        inventory.add_asset(item10)
+
+        inventory.commit("Populated")
+
+        yield inventory
+
+
+    def test_get_tag_output(self,
+                            capsys,
+                            populated_inventory) -> None:
+        r"""Output renders the correct tags.
+
+        Only a subset of tags are used in the output. The rest are only for
+        queries.
+        """
+
+        keys = ['onyo.path.relative', 'key']
+        sort = {'onyo.path.relative': SORT_ASCENDING}
+        onyo_get(populated_inventory,
+                 machine_readable=True,
+                 keys=keys,
+                 sort=sort,  # pyre-ignore[6]
+        )
+
+        expected_output = (
+            "type_make_model.1	True\n"
+            "type_make_model.2	False\n"
+            "type_make_model.3	<null>\n"
+            "type_make_model.4	<unset>\n"
+            "type_make_model.5	value\n"
+            "type_make_model.6	\n"
+            "type_make_model.7	<list>\n"
+            "type_make_model.8	<list>\n"
+            "type_make_model.9	<dict>\n"
+            "type_make_model.10	<dict>\n"
+        )
+
+        assert expected_output == capsys.readouterr().out
 
 
 @pytest.mark.ui({'yes': True})
@@ -571,37 +646,6 @@ def test_onyo_get_match_empty_list(inventory: Inventory,
 
     assert "<unset>" not in output
     assert "<list>" in output
-
-
-@pytest.mark.ui({'yes': True})
-def test_onyo_get_unset_values(inventory: Inventory,
-                               capsys) -> None:
-    """Unset keys and values return as ``<unset>``."""
-
-    asset = Item(type="TYPE",
-                 make="MAKE",
-                 model=dict(name="MODEL"),
-                 serial="SERIAL2",
-                 directory=inventory.root)
-    test_pairs = dict(novalue=None,
-                      emptystring="")
-    asset.update(**test_pairs)
-    inventory.add_asset(asset)
-    inventory.commit("add asset w/ empty values")
-    asset1_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
-    asset2_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL2"
-
-    onyo_get(inventory,
-             keys=["onyo.path.relative", "novalue", "emptystring"],
-             machine_readable=True)
-    output = capsys.readouterr().out
-
-    # asset1 is brought in by fixture and doesn't have the keys we print,
-    # asset2 has those keys, but they have values that are supposed to be UNSET_VALUE.
-    expected_lines = [f"{str(p.relative_to(inventory.root))}\t{UNSET_VALUE}\t{UNSET_VALUE}"
-                      for p in [asset1_path, asset2_path]]
-    assert expected_lines[0] in output.splitlines()
-    assert expected_lines[1] in output.splitlines()
 
 
 @pytest.mark.ui({'yes': True})

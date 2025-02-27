@@ -22,6 +22,185 @@ if TYPE_CHECKING:
     )
     from onyo.lib.consts import sort_t
 
+
+def convert_contents(
+        raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
+    r"""Convert content dictionary to a plain-text string."""
+
+    from onyo.lib.utils import dict_to_asset_yaml
+    for file, raw_contents in raw_assets:
+        yield [file, dict_to_asset_yaml(raw_contents)]
+
+
+tag_asset_contents = [
+    ('type_make_model.1', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '1', 'key': True,
+    }),
+    ('type_make_model.2', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '2', 'key': False,
+    }),
+    ('type_make_model.3', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '3', 'key': None,
+    }),
+    ('type_make_model.4', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '4',
+    }),
+    ('type_make_model.5', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '5', 'key': 'value',
+    }),
+    ('type_make_model.6', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '6', 'key': '',
+    }),
+    ('type_make_model.7', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '7', 'key': ['a', 'b'],
+    }),
+    ('type_make_model.8', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '8', 'key': [],
+    }),
+    ('type_make_model.9', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '9', 'key': {'a': '1', 'b': '2'},
+    }),
+    ('type_make_model.10', {
+        'type': 'type', 'make': 'make', 'model': 'model', 'serial': '10', 'key': {},
+    }),
+]
+
+
+@pytest.mark.repo_contents(*convert_contents(tag_asset_contents))
+def test_get_tag_output(repo: OnyoRepo) -> None:
+    r"""Query with tags and check output.
+
+    Only a subset of tags are used in the output. The rest are only for queries.
+    """
+
+    cmd = ['onyo', 'get', '--machine-readable', '--keys', 'onyo.path.relative', 'key', '--sort-ascending', 'onyo.path.relative']
+
+    #
+    # all
+    #
+    ret = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.1	True\n"
+        "type_make_model.2	False\n"
+        "type_make_model.3	<null>\n"
+        "type_make_model.4	<unset>\n"
+        "type_make_model.5	value\n"
+        "type_make_model.6	\n"
+        "type_make_model.7	<list>\n"
+        "type_make_model.8	<list>\n"
+        "type_make_model.9	<dict>\n"
+        "type_make_model.10	<dict>\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # <bool>
+    #
+    match = ['--match', 'key=<bool>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.1	True\n"
+        "type_make_model.2	False\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # <dict>
+    #
+    match = ['--match', 'key=<dict>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.9	<dict>\n"
+        "type_make_model.10	<dict>\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # <empty>
+    #
+    match = ['--match', 'key=<empty>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.3	<null>\n"
+        "type_make_model.6	\n"
+        "type_make_model.8	<list>\n"
+        "type_make_model.10	<dict>\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # <false>
+    #
+    match = ['--match', 'key=<false>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.2	False\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # <null>
+    #
+    match = ['--match', 'key=<null>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.3	<null>\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # <true>
+    #
+    match = ['--match', 'key=<true>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.1	True\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # <unset>
+    #
+    match = ['--match', 'key=<unset>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "type_make_model.4	<unset>\n"
+    )
+    assert expected_output == ret.stdout
+
+
 asset_contents = [
     ('laptop_apple_macbookpro.1', {'num': 8,
                                    'str': 'foo',
@@ -115,15 +294,6 @@ asset_contents = [
                           'str': 'jkl',
                           'id': 4}),
 ]
-
-
-def convert_contents(
-        raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
-    r"""Convert content dictionary to a plain-text string."""
-
-    from onyo.lib.utils import dict_to_asset_yaml
-    for file, raw_contents in raw_assets:
-        yield [file, dict_to_asset_yaml(raw_contents)]
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents

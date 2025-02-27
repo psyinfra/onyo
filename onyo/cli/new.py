@@ -131,8 +131,9 @@ message:
 
 def new(args: argparse.Namespace) -> None:
     r"""
-    Create new **ASSET**\ s and populate with **KEY-VALUE** pairs. Destination
-    directories are created if they are missing.
+    Create new **ASSET**\ s and populate with **KEY-VALUE** pairs.
+
+    Destination directories are created if they are missing.
 
     Asset contents are populated in a waterfall pattern and can overwrite
     values from previous steps:

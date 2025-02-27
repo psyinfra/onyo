@@ -56,8 +56,7 @@ class OnyoRepo(object):
                  path: Path,
                  init: bool = False,
                  find_root: bool = False) -> None:
-        r"""Instantiate an ``OnyoRepo`` object with ``path`` as the root
-        directory.
+        r"""Instantiate an ``OnyoRepo`` object with ``path`` as the root directory.
 
         Parameters
         ----------
@@ -227,8 +226,7 @@ class OnyoRepo(object):
         return editor
 
     def clear_cache(self) -> None:
-        r"""Clear the cache of this instance of OnyoRepo (and the
-        sub-:py:class:`onyo.lib.git.GitRepo`).
+        r"""Clear the cache of this instance of OnyoRepo (and the sub-:py:class:`onyo.lib.git.GitRepo`).
 
         When the repository is modified using only the public API functions, the
         cache is consistent. This method is only necessary if the repository is

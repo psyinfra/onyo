@@ -46,12 +46,11 @@ Convert an empty Asset Directory into an Asset File:
 
 def rmdir(args: argparse.Namespace) -> None:
     r"""
-    Delete empty **DIRECTORY**\ s or convert empty Asset Directories into Asset
-    Files.
+    Delete **DIRECTORY**\ s or convert Asset Directories into Asset Files.
 
-    If the **DIRECTORY** does not exist, the path is protected, or the asset is
-    already an Asset File, then Onyo will error and leave everything
-    unmodified.
+    If the **DIRECTORY** is not empty, does not exist, the path is protected, or
+    the asset is already an Asset File, then Onyo will error and leave
+    everything unmodified.
     """
 
     dirs = [Path(d).resolve() for d in args.directory]

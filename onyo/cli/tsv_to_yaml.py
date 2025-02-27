@@ -37,8 +37,7 @@ desired) using ``csplit``.
 
 def tsv_to_yaml(args: argparse.Namespace) -> None:
     r"""
-    Convert a tabular file (e.g. TSV, CSV) to YAML suitable for passing to
-    ``onyo new`` and ``onyo set``.
+    Convert a TSV file into YAML suitable to pass to ``onyo new`` and ``onyo set``.
 
     The header declares the key names to be populated. The values to populate
     documents are declared with one line per YAML document.

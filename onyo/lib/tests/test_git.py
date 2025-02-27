@@ -14,10 +14,8 @@ from onyo.lib.git import GitRepo
 
 
 def test_GitRepo_instantiation(tmp_path: Path) -> None:
-    """
-    The `GitRepo` class must instantiate and set the root correctly for paths
-    to existing repositories.
-    """
+    """Instantiate and set the root correctly for paths to existing repositories."""
+
     # initialize the temp_path as a git repository
     subprocess.run(['git', 'init', tmp_path])
 
@@ -54,9 +52,10 @@ def test_GitRepo_init_without_reinit(tmp_path: Path) -> None:
 
 
 def test_GitRepo_find_root(tmp_path: Path) -> None:
-    """
-    `GitRepo.find_root()` MUST identify the root of a repository for the root
-    itself and sub-directories of a repository.
+    """``find_root()`` discovers the repo root correctly.
+
+    Both when passed the root itself and subdirectories of a repository.
+
     If called on a Path which is not a git repository it must raise an
     `OnyoInvalidRepoError`.
     """
@@ -88,10 +87,9 @@ def test_GitRepo_find_root(tmp_path: Path) -> None:
 
 
 def test_GitRepo_clear_cache(gitrepo) -> None:
-    """
-    The function `GitRepo.clear_cache()` must allow to empty the cache of the
-    GitRepo, so that an invalid cache can be re-loaded by a new call of the
-    property.
+    """``clear_cache()`` empties the cache of GitRepo.
+
+    So that an invalid cache can be re-loaded by a new call of the property.
     """
     # create+add a file so it is cached in the gitrepo.files
     file = gitrepo.root / 'asset_for_test.0'
@@ -113,9 +111,9 @@ def test_GitRepo_clear_cache(gitrepo) -> None:
 
 
 def test_GitRepo_is_clean_worktree(gitrepo) -> None:
-    """
-    `GitRepo.is_clean_worktree()´ must return True when the worktree is clean,
-    and otherwise (i.e. for changed, staged, and unstracked files) return False.
+    """``is_clean_worktree()`´ returns ``True`` when the worktree is clean and ``False`` otherwise.
+
+    Changed, staged, and untracked files return ``False``.
     """
     test_file = gitrepo.root / "test_file.txt"
 
@@ -135,7 +133,7 @@ def test_GitRepo_is_clean_worktree(gitrepo) -> None:
     assert gitrepo.is_clean_worktree()
 
     # a file modified but not commit-ed (i.e. changed) must lead to return False
-    test_file.open('w').write('Test: content')
+    test_file.write_text('Test: content')
     subprocess.run(['git', 'add', str(test_file)], check=True, cwd=gitrepo.root)
     assert not gitrepo.is_clean_worktree()
 
@@ -155,10 +153,9 @@ def test_GitRepo_is_clean_worktree(gitrepo) -> None:
 
 
 def test_GitRepo_is_git_path(gitrepo) -> None:
-    """
-    `GitRepo.is_git_path()` needs to identify and return True for `.git/*`,
-    `.gitignore`, `.gitattributes`, `.gitmodules`, etc., and otherwise return
-    False.
+    """``is_git_path()`` identifies git paths.
+
+    Such as ``.git/*``, ``.gitignore``, ``.gitattributes``, ``.gitmodules``, etc.
     """
     directory = gitrepo.root / 'existing' / 'directory'
     directory.mkdir(parents=True, exist_ok=True)
@@ -182,8 +179,7 @@ def test_GitRepo_is_git_path(gitrepo) -> None:
 
 
 def test_GitRepo_commit(gitrepo) -> None:
-    """
-    `GitRepo.commit()` must commit all staged changes.
+    """`GitRepo.commit()` must commit all staged changes.
 
     This test follows the scheme of `test_GitRepo_add()`.
     """
@@ -201,7 +197,7 @@ def test_GitRepo_commit(gitrepo) -> None:
     assert test_file in gitrepo.files
 
     # modify an existing file, and add it
-    test_file.open('w').write('Test: content')
+    test_file.write_text('Test: content')
     gitrepo.commit(test_file, "Test commit message")
     assert hexsha == gitrepo.get_hexsha('HEAD~1')
     assert test_file in gitrepo.files

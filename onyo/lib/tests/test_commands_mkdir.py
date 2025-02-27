@@ -66,9 +66,8 @@ def test_onyo_mkdir_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_mkdir_errors_before_mkdir(inventory: Inventory) -> None:
-    r"""`onyo_mkdir` must raise the correct error and is not allowed to create/commit anything, if
-    one of the specified paths is not valid.
-    """
+    r"""Raise and do not commit/modify if one of the specified paths is not valid."""
+
     dir_path_new = inventory.root / 'new_dir'
     dir_path_existing = inventory.root / 'empty'
     old_hexsha = inventory.repo.git.get_hexsha()

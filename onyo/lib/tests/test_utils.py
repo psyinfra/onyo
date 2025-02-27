@@ -26,6 +26,7 @@ model:  # comment at intermediate node
 # keys and values need to preserve leading zeroes and underscores:
 serial: 00012_3456
 003_5: true
+a_false: false
 explicit_null: null
 tilde_null: ~ # what now
 implicit_null:
@@ -87,7 +88,14 @@ def test_get_asset_content(tmp_path) -> None:
             if 'null' in key:
                 assert d[key] is None
                 continue
-            assert isinstance(d[key], int if key == 'explicit' else str)
+
+            match key:
+                case 'explicit':
+                    assert isinstance(d[key], int)
+                case '003_5'|'a_false':
+                    assert isinstance(d[key], bool)
+                case _:
+                    assert isinstance(d[key], str)
 
     assert_all_keys_strings(asset_dict)
 

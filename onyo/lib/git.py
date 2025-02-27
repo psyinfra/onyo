@@ -51,8 +51,7 @@ class GitRepo(object):
 
     @staticmethod
     def find_root(path: Path) -> Path:
-        r"""Return the absolute path of the git worktree root that ``path``
-        belongs to.
+        r"""Return the absolute path of the git worktree root that ``path`` belongs to.
 
         Checks ``path`` itself and each of its parents.
 
@@ -340,8 +339,7 @@ class GitRepo(object):
     def check_ignore(self,
                      ignore: Path,
                      paths: list[Path]) -> list[Path]:
-        r"""Get the subset of ``paths`` that are matched by patterns defined in
-        the ``ignore`` file.
+        r"""Get the subset of ``paths`` that match patterns defined in ``ignore``.
 
         Parameters
         ----------

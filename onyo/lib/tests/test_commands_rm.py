@@ -64,9 +64,8 @@ def test_onyo_rm_errors(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_rm_errors_before_rm(inventory: Inventory) -> None:
-    r"""`onyo_rm` must raise the correct error and is not allowed to delete anything if one of
-    the paths does not exist.
-    """
+    r"""Raise and do not delete/commit anything if one of the paths does not exist."""
+
     asset_path = inventory.root / "somewhere" / "nested" / "TYPE_MAKER_MODEL.SERIAL"
     destination_path = inventory.root / 'empty'
     old_hexsha = inventory.repo.git.get_hexsha()
