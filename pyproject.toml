@@ -18,10 +18,11 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "ruamel.yaml",
-    "rich",
+    "fastnumbers",  # not strictly necessary; makes natsort's number parsing faster
     "natsort",
-    "fastnumbers"  # not strictly neccessary, but makes natsort's number parsing faster
+    "pathspec",
+    "rich",
+    "ruamel.yaml",
 ]
 dynamic = ["version"]
 

@@ -323,9 +323,11 @@ def test_GitRepo_check_ignore(gitrepo) -> None:
                      committed]
     excluded = gitrepo.check_ignore(ignore=ignore_file,
                                     paths=paths_to_test)
+
+    assert len(excluded) == 3
     assert all(p in excluded for p in paths_to_test if p.name.endswith('.pdf'))
     assert all(p in excluded for p in paths_to_test if gitrepo.root / 'sub' in p.parents)
     assert all(p not in excluded for p in paths_to_test if p.name.endswith('.txt'))
 
-    pytest.raises(subprocess.CalledProcessError, gitrepo.check_ignore,
+    pytest.raises(ValueError, gitrepo.check_ignore,
                   ignore=ignore_file, paths=[Path('/') / 'outside' / 'sub' / 'file'])
