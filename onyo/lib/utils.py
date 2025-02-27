@@ -148,14 +148,14 @@ class DotNotationWrapper(UserDict):
                     except KeyError as e:
                         raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
                     except TypeError as e:
-                        raise TypeError(f"'{'.'.join(parts[:lvl])}' is not a dictionary.") from e
+                        raise KeyError(f"'{'.'.join(parts[:lvl])}' is not a dictionary.") from e
 
             try:
                 return effective_dict[parts[-1]]
             except KeyError as e:
                 raise KeyError(f"'{key}'") from e
             except TypeError as e:
-                raise TypeError(f"'{'.'.join(parts[:-1])}' is not a dictionary.") from e
+                raise KeyError(f"'{'.'.join(parts[:-1])}' is not a dictionary.") from e
 
         return super().__getitem__(key)
 
