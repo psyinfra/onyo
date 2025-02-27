@@ -9,7 +9,7 @@ For bug reports and suggestions, please [open an issue](https://github.com/psyin
 ### Setup
 
 > **Note**
-> Onyo requires Python 3.11 or higher.
+> Onyo requires Python 3.13 or higher.
 
 #### (1) Fork the Onyo repository
 
