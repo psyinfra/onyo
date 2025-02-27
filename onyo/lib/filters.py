@@ -113,13 +113,20 @@ class Filter:
             return False
 
     def _tags_or_types_match(self,
-                             item: Item) -> bool | None:
+                             item: Item) -> bool:
         r"""Whether the tags or types of ``self.value`` equals ``Item[self.key]``.
 
         Parameters
         ----------
         item
             Item to compare against.
+
+        Raises
+        ------
+        KeyError
+            ``self.key`` is not in ``item`` (and ``self.value`` is not ``<unset>``)
+        ValueError
+            ``self.key`` is not a tag or empty literal.
         """
 
         if self.value == TAG_UNSET:
@@ -128,7 +135,7 @@ class Filter:
 
         if self.key not in item:
             # we can't match anything other than TAG_UNSET, if key is not present
-            raise ValueError
+            raise KeyError
 
         item_value = item[self.key]
 
@@ -151,10 +158,10 @@ class Filter:
             case '""' | "''":
                 return str(item_value) == ''
 
-        return None
+        raise ValueError
 
     def _match_equal(self,
-                     item: Item) -> bool:  # pyre-ignore[7]
+                     item: Item) -> bool:
         r"""Whether ``self.value`` equals ``Item[self.key]``.
 
         Parameters
@@ -163,16 +170,14 @@ class Filter:
             Item to compare against.
         """
 
-        result = self._tags_or_types_match(item)
-
-        match result:
-            case True|False:
-                return result
-            case None:
-                return item[self.key] == self.value
+        try:
+            return self._tags_or_types_match(item)
+        except ValueError:
+            # not a tag or empty type literal
+            return item[self.key] == self.value
 
     def _match_equal_with_re(self,
-                             item: Item) -> bool:  # pyre-ignore[7]
+                             item: Item) -> bool:
         r"""Whether ``self.value`` equals ``Item[self.key]``.
 
         Regex is supported.
@@ -183,16 +188,12 @@ class Filter:
             Item to compare against.
         """
 
-        result = self._tags_or_types_match(item)
-
-        match result:
-            case True|False:
-                return result
-            case None:
-                # equivalence and regex match
-                item_value = item[self.key]
-                return item_value == self.value or self._re_match(str(item_value), self.value)
-
+        try:
+            return self._tags_or_types_match(item)
+        except ValueError:
+            # not a tag or empty type literal
+            item_value = item[self.key]
+            return item_value == self.value or self._re_match(str(item_value), self.value)
 
     def _match_not_equal(self,
                      item: Item) -> bool:
@@ -218,6 +219,13 @@ class Filter:
         ----------
         item
             Item to compare against.
+
+        Raises
+        ------
+        KeyError
+            ``self.key`` is not in ``item`` (and ``self.value`` is not ``<unset>``)
+        ValueError
+            Comparison is not possible (e.g. across types/tags)
         """
 
         if self.value in [*TAG_MAP_TYPES, *TAG_MAP_VALUES, TAG_EMPTY, TAG_UNSET]:
@@ -226,7 +234,7 @@ class Filter:
 
         if self.key not in item:
             # comparison with nothing is not possible
-            raise ValueError
+            raise KeyError
 
         item_value = item[self.key]
 
@@ -264,6 +272,11 @@ class Filter:
         ----------
         item
             Item to compare against.
+
+        Raises
+        ------
+        ValueError
+            Comparison is not possible (e.g. across types/tags)
         """
 
         if self.value in [*TAG_MAP_TYPES, *TAG_MAP_VALUES, TAG_EMPTY, TAG_UNSET]:
@@ -299,6 +312,11 @@ class Filter:
         ----------
         item
             Item to compare against.
+
+        Raises
+        ------
+        ValueError
+            Comparison is not possible (e.g. across types/tags)
         """
 
         if self.value in [*TAG_MAP_TYPES, *TAG_MAP_VALUES, TAG_EMPTY, TAG_UNSET]:
@@ -341,6 +359,6 @@ class Filter:
                     return self._match_less_than_or_equal(item)
                 case _:
                     raise OnyoInvalidFilterError
-        except ValueError:
+        except (KeyError, ValueError):
             # when the question makes no sense, return False
             return False
