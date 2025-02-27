@@ -11,7 +11,7 @@ authors = [
 ]
 description = "Textual inventory system backed by git"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 keywords = ["inventory", "git"]
 license = {text = "ISC"}
 classifiers = [
