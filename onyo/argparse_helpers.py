@@ -51,11 +51,9 @@ class StoreMultipleKeyValuePairs(argparse.Action):
 
         key_counts = {k: len(v) for k, v in key_lists.items()}
         key_max_count = max(key_counts.values())
-        # Python < 3.12 does not support backslashes in f-strings
-        linesep = '\n'
         if any([True for k, c in key_counts.items() if 1 < c < key_max_count]):
             parser.error(f"All keys given multiple times must be given the same number of times:\n"
-                         f"{f'{linesep}'.join(['{}: {}'.format(k, c) for k, c in key_counts.items() if 1 < c])}")
+                         f"{'\n'.join(['{}: {}'.format(k, c) for k, c in key_counts.items() if 1 < c])}")
 
         results = []
         for i in range(key_max_count):

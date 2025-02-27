@@ -19,7 +19,7 @@ and general information about Onyo.
 
 #### Non-Python Dependencies
 
-Onyo requires Python >= 3.11 and a few system utilities.
+Onyo requires Python >= 3.13 and a few system utilities.
 
 Debian/Ubuntu:
 ```
