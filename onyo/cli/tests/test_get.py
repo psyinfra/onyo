@@ -201,6 +201,104 @@ def test_get_tag_output(repo: OnyoRepo) -> None:
     assert expected_output == ret.stdout
 
 
+match_asset_contents = [
+    ('laptop_apple_model.1', {
+        'type': 'laptop', 'make': 'apple', 'model': 'model', 'serial': '1',
+    }),
+    ('laptop_apple_model.2', {
+        'type': 'laptop', 'make': 'apple', 'model': 'model', 'serial': '2',
+    }),
+    ('laptop_framework_model.3', {
+        'type': 'laptop', 'make': 'framework', 'model': 'model', 'serial': '3',
+    }),
+    ('laptop_framework_model.4', {
+        'type': 'laptop', 'make': 'framework', 'model': 'model', 'serial': '4',
+    }),
+    ('display_dell_model.5', {
+        'type': 'display', 'make': 'dell', 'model': 'model', 'serial': '5', 'key': True,
+    }),
+    ('display_dell_model.6', {
+        'type': 'display', 'make': 'dell', 'model': 'model', 'serial': '6',
+    }),
+    ('display_eizo_model.7', {
+        'type': 'display', 'make': 'eizo', 'model': 'model', 'serial': '7',
+    }),
+    ('display_eizo_model.8', {
+        'type': 'display', 'make': 'eizo', 'model': 'model', 'serial': '8',
+    }),
+    ('headphones_sennheiser_model.9', {
+        'type': 'headphones', 'make': 'sennheiser', 'model': 'model', 'serial': '9', 'key': 'value',
+    }),
+    ('headphones_sennheiser_model.10', {
+        'type': 'headphones', 'make': 'sennheiser', 'model': 'model', 'serial': '10',
+    }),
+]
+
+
+@pytest.mark.repo_contents(*convert_contents(match_asset_contents))
+def test_get_complex_match(repo: OnyoRepo) -> None:
+    r"""Multiple argument are passed to multiple match statements."""
+
+    cmd = ['onyo', 'get', '--machine-readable', '--keys', 'onyo.path.relative', 'key', '--sort-ascending', 'serial']
+
+    #
+    # all
+    #
+    ret = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "laptop_apple_model.1	<unset>\n"
+        "laptop_apple_model.2	<unset>\n"
+        "laptop_framework_model.3	<unset>\n"
+        "laptop_framework_model.4	<unset>\n"
+        "display_dell_model.5	True\n"
+        "display_dell_model.6	<unset>\n"
+        "display_eizo_model.7	<unset>\n"
+        "display_eizo_model.8	<unset>\n"
+        "headphones_sennheiser_model.9	value\n"
+        "headphones_sennheiser_model.10	<unset>\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # complex subset
+    #
+    match = ['--match', 'type=laptop', 'make=framework', '--match', 'type=display', 'make=eizo', '--match', 'key=<true>']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "laptop_framework_model.3	<unset>\n"
+        "laptop_framework_model.4	<unset>\n"
+        "display_dell_model.5	True\n"
+        "display_eizo_model.7	<unset>\n"
+        "display_eizo_model.8	<unset>\n"
+    )
+    assert expected_output == ret.stdout
+
+    #
+    # overlapping matches (ensure no duplicates)
+    #
+    match = ['--match', 'type=headphones', 'key!=<unset>', '--match', 'type=headphones', 'make=sennheiser', '--match', 'make=eizo']
+    ret = subprocess.run(cmd + match, capture_output=True, text=True)
+
+    assert ret.returncode == 0
+    assert not ret.stderr
+
+    expected_output = (
+        "display_eizo_model.7	<unset>\n"
+        "display_eizo_model.8	<unset>\n"
+        "headphones_sennheiser_model.9	value\n"
+        "headphones_sennheiser_model.10	<unset>\n"
+    )
+    assert expected_output == ret.stdout
+
+
 asset_contents = [
     ('laptop_apple_macbookpro.1', {'num': 8,
                                    'str': 'foo',

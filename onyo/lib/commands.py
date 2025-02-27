@@ -455,7 +455,7 @@ def onyo_get(inventory: Inventory,
              exclude: list[Path] | Path | None = None,
              depth: int = 0,
              machine_readable: bool = False,
-             match: list[Callable[[dict], bool]] | None = None,
+             match: list[Callable[[dict], bool]] | list[list[Callable[[dict], bool]]] | None = None,
              keys: list[str] | None = None,
              sort: dict[str, sort_t] | None = None,
              types: list[Literal['assets', 'directories']] | None = None,
@@ -472,13 +472,16 @@ def onyo_get(inventory: Inventory,
         The Inventory to query.
     include
         Paths under which to query. Default is inventory root.
+
         Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     exclude
         Paths to exclude (i.e. results underneath will not be returned).
+
         Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     depth
         Number of levels to descend into the directories specified by
         ``include``. A depth of ``0`` descends recursively without limit.
+
         Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     machine_readable
         Print results in a machine-friendly format (no headers; separate values
@@ -489,6 +492,12 @@ def onyo_get(inventory: Inventory,
         are passed an :py:class:`onyo.lib.items.Item` and are expected to
         return a ``bool``. All keys can be matched, and are not limited to
         those specified by ``keys``.
+
+        Within a list of Callables, all must return True for an Item to
+        match. When multiple lists are passed, only one list of Callables
+        must match for an Item to match (e.g. each list of Callables is
+        connected with a logical ``or``).
+
         Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
     keys
         Keys to print the values of. Default is asset-name keys and ``path``.
@@ -503,6 +512,7 @@ def onyo_get(inventory: Inventory,
         Types of inventory items to consider. Equivalent to
         ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
         Default is ``['assets']``.
+
         Passed to :py:func:`onyo.lib.inventory.Inventory.get_items`.
 
     Raises

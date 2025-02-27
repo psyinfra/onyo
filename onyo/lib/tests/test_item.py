@@ -37,6 +37,9 @@ def test_item_init(onyorepo) -> None:
         assert (item.get('some.nested') == '0_03') if idx in [1, 2] else item.get('some.nested') is None
         # Non-existing keys raise proper error:
         pytest.raises(KeyError, lambda: item['doesnotexist'])
+        # however get() does not raise for non-existing keys
+        for key in ['dne', 'type.dne', 'model.dne', 'path.dne', 'dne.dne']:
+            assert item.get(key) is None
         # If a Path was given, at the very least the absolute path is available:
         if idx in [3, 4, 5, 6]:
             assert isinstance(item.get('onyo.path.absolute'), Path)

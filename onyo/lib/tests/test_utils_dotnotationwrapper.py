@@ -36,19 +36,19 @@ def test_get_values():
     with pytest.raises(KeyError) as exc_info:
         dne = wrapper["dne"]  # noqa: F841
     assert exc_info.match("dne")
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(KeyError) as exc_info:
         dne = wrapper['some.dne']  # noqa: F841
     assert exc_info.match("'some' is not a dictionary.")
     with pytest.raises(KeyError) as exc_info:
         dne = wrapper['nested.dne']  # noqa: F841
     assert exc_info.match("nested.dne")
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(KeyError) as exc_info:
         dne = wrapper['nested.one.dne']  # noqa: F841
     assert exc_info.match("'nested.one' is not a dictionary.")
     with pytest.raises(KeyError) as exc_info:
         dne = wrapper['nested.deep.dne']  # noqa: F841
     assert exc_info.match("nested.deep.dne")
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(KeyError) as exc_info:
         dne = wrapper['nested.deep.key.dne']  # noqa: F841
     assert exc_info.match("'nested.deep.key' is not a dictionary.")
 
