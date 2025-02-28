@@ -5,6 +5,8 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pathspec
+
 from onyo.lib.exceptions import OnyoInvalidRepoError
 from onyo.lib.ui import ui
 
@@ -347,25 +349,27 @@ class GitRepo(object):
             Path to a file containing exclude patterns (in the style of ``.gitignore``).
         paths
             Paths to check
+
+        Raises
+        ------
+        ValueError
+            Path is outside of the repository.
         """
 
-        try:
-            output = self._git(['-c', f'core.excludesFile={str(ignore)}', 'check-ignore', '--no-index', '--verbose'] +
-                               [str(p) for p in paths])
-        except subprocess.CalledProcessError as e:
-            if e.returncode == 1:
-                # None of `paths` were ignored. That's ok.
-                return []
-            raise
+        # all paths must be in the repo
+        for p in paths:
+            if self.root not in p.parents:
+                raise ValueError(f"{str(p)} is not under {str(self.root)}")
 
-        excluded = []
-        for line in output.splitlines():
-            parts = line.split('\t')
-            src_file = Path(parts[0].split(':')[0])
-            if src_file == ignore:
-                excluded.append(Path(parts[1]))
+        # extract, load, and match the patterns
+        ignore_patterns = ignore.read_text().splitlines()
+        spec = pathspec.GitIgnoreSpec.from_lines(ignore_patterns)
+        matches = list(spec.match_files(paths))
 
-        return excluded
+        # build a list of the original Paths
+        ignored = [p for p in paths if p in matches]
+
+        return ignored
 
     def _parse_log_output(self,
                           lines: list[str]) -> dict:

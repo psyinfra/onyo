@@ -351,11 +351,14 @@ def _edit_asset(inventory: Inventory,
                     # should not be possible
                     raise RuntimeError(f"Unexpected response: {response}")
 
+        # if no edits were made, move on
+        if not operations:
+            break
+
         # show diff and ask for confirmation
-        if operations:
-            ui.print("Effective changes:")
-            for op in operations:
-                print_diff(op)
+        ui.print("Effective changes:")
+        for op in operations:
+            print_diff(op)
 
         response = ui.request_user_response(
             "Accept changes? (y)es / continue (e)diting / (s)kip asset / (a)bort command ",
