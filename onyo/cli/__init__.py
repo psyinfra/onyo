@@ -1,4 +1,3 @@
-from .cat import cat
 from .config import config
 from .edit import edit
 from .fsck import fsck
@@ -17,7 +16,6 @@ from .tsv_to_yaml import tsv_to_yaml
 from .unset import unset
 
 __all__ = [
-    'cat',
     'config',
     'edit',
     'fsck',

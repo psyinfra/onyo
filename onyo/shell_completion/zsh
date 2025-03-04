@@ -54,7 +54,6 @@ _onyo() {
     )
 
     subcommands=(
-        'cat:print the contents of ASSETs to the terminal'
         'config:set, query, and unset Onyo repository configuration options'
         'edit:open ASSETs using an editor'
         'fsck:run a suite of integrity checks on the Onyo repository and its contents'
@@ -84,12 +83,6 @@ _onyo() {
             curcontext="${curcontext%:*}-$words[2]:"
 
         case $words[1] in
-            cat)
-                args+=(
-                    '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '*:ASSET:_files -W "$(_onyo_dir)"'
-                )
-                ;;
             config)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'

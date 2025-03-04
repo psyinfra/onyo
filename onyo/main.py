@@ -254,7 +254,6 @@ subcmds = None
 def setup_parser() -> OnyoArgumentParser:
     r"""Return a fully populated OnyoArgumentParser for Onyo and all subcommands."""
 
-    from onyo.cli.cat import args_cat, epilog_cat
     from onyo.cli.config import args_config, epilog_config
     from onyo.cli.edit import args_edit, epilog_edit
     from onyo.cli.fsck import epilog_fsck
@@ -287,18 +286,6 @@ def setup_parser() -> OnyoArgumentParser:
         dest='cmd'
     )
     subcmds.metavar = '<command>'
-    #
-    # subcommand "cat"
-    #
-    cmd_cat = subcmds.add_parser(
-        'cat',
-        description=cli.cat.__doc__,
-        epilog=epilog_cat,
-        formatter_class=parser.formatter_class,
-        help='Print the contents of assets to the terminal.'
-    )
-    cmd_cat.set_defaults(run=cli.cat)
-    build_parser(cmd_cat, args_cat)
     #
     # subcommand "config"
     #
@@ -575,7 +562,6 @@ def main() -> None:
         # normally exit 1 on error. `get` is a special case. Exit with 2 on
         # error to mimic `grep`'s behavior.
         cmd_error_codes = {
-            'cat': 2,
             'get': 2,
         }
         error_returncode = cmd_error_codes.get(args.cmd, 1)

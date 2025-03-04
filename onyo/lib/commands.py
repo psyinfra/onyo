@@ -28,7 +28,6 @@ from onyo.lib.consts import (
 )
 from onyo.lib.exceptions import (
     InvalidArgumentError,
-    InvalidAssetError,
     InventoryDirNotEmpty,
     NotADirError,
     NoopError,
@@ -145,62 +144,6 @@ def fsck(repo: OnyoRepo,
             raise OnyoInvalidRepoError(f"'{repo.git.root}' failed fsck test '{key}'")
 
         ui.log(f"'{key}' succeeded")
-
-
-@raise_on_inventory_state
-def onyo_cat(inventory: Inventory,
-             assets: list[Path]) -> None:
-    r"""Print the contents of assets.
-
-    The same asset can be given multiple times.
-
-    If any path is not an asset, nothing is printed.
-    If any asset content is invalid, the contents of all assets are still printed.
-
-    Parameters
-    ----------
-    inventory
-        The Inventory containing the assets to print.
-    assets
-        Paths of assets to print the contents of.
-
-    Raises
-    ------
-    ValueError
-        The path is not an asset, or ``paths`` is empty.
-    InvalidAssetError
-        An invalid asset is encountered.
-    """
-
-    from rich.syntax import Syntax
-    from onyo.lib.utils import validate_yaml
-
-    if not assets:
-        raise ValueError("At least one asset must be specified.")
-
-    non_asset_paths = [str(a) for a in assets if not inventory.repo.is_asset_path(a)]
-    if non_asset_paths:
-        raise ValueError("The following paths are not assets:\n%s" %
-                         "\n".join(non_asset_paths))
-
-    files = list(a / ASSET_DIR_FILE_NAME
-                 if inventory.repo.is_asset_dir(a)
-                 else a
-                 for a in assets)
-    # open file and print to stdout
-    for f in files:
-        asset_text = f.read_text()
-        highlighted_text = Syntax('', 'yaml').highlight(asset_text)
-        # detect and strip when Syntax() ends with a newline that isn't in the input.
-        if not asset_text or asset_text[-1] != '\n':
-            highlighted_text = highlighted_text[0:-1]
-
-        ui.rich_print(highlighted_text, end='')
-
-    # TODO: "Full" asset validation. Address when fsck is reworked
-    assets_valid = validate_yaml(deduplicate(files))
-    if not assets_valid:
-        raise InvalidAssetError("Invalid assets")
 
 
 @raise_on_inventory_state

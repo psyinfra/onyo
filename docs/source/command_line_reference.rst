@@ -5,7 +5,6 @@ Command Line Reference
    :maxdepth: 1
 
    cmd_onyo
-   cmd_cat
    cmd_config
    cmd_edit
    cmd_fsck
