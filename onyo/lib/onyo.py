@@ -343,10 +343,10 @@ class OnyoRepo(object):
     def asset_paths(self) -> list[Path]:
         r"""Get the absolute ``Path``\ s of all assets in this repository.
 
-        This property is cached and is reset automatically on :py:func:`commit()`.
+        This property is cached and is reset automatically on :py:func:`commit`.
 
-        If changes are made by other means, use :py:func:`clear_cache()` to
-        reset the cache.
+        If changes are made by other means, use :py:func:`clear_cache` to reset
+        the cache.
         """
 
         if self._asset_paths is None:

@@ -109,7 +109,7 @@ class GitRepo(object):
     def files(self) -> list[Path]:
         r"""Get the absolute ``Path``\ s of all tracked files.
 
-        This property is cached, and is reset automatically by :py:func:`commit()`.
+        This property is cached, and is reset automatically by :py:func:`commit`.
         """
 
         if not self._files:
