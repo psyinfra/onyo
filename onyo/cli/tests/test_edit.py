@@ -76,11 +76,13 @@ def test_get_editor_precedence(repo: OnyoRepo) -> None:
 
     # onyo should win
     ret = subprocess.run(["git", "config", '--unset', "onyo.core.editor"])
+    repo.clear_cache()
     assert ret.returncode == 0
     assert repo.get_editor() == 'onyo'
 
     # $EDITOR is all that's left
     ret = subprocess.run(["onyo", "config", '--unset', "onyo.core.editor"])
+    repo.clear_cache()
     assert ret.returncode == 0
     assert repo.get_editor() == 'editor'
 

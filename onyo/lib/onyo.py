@@ -95,6 +95,7 @@ class OnyoRepo(object):
 
         # caches
         self._asset_paths: list[Path] | None = None
+        self._config_cache: dict[str, dict[str, str]] = {'git': {}, 'onyo': {}}
 
     def set_config(self,
                    key: str,
@@ -124,6 +125,10 @@ class OnyoRepo(object):
         if self.version == '1' and key == 'onyo.assets.name-format':
             key = 'onyo.assets.filename'
 
+        # clear the config cache
+        self._config_cache = {'git': {}, 'onyo': {}}
+
+        # set
         loc = ONYO_CONFIG if location == 'onyo' else location
         return self.git.set_config(key=key, value=value, location=loc)
 
@@ -133,6 +138,12 @@ class OnyoRepo(object):
 
         This first checks git's normal git-config locations and then
         :py:data:`onyo.lib.consts.ONYO_CONFIG` as a fallback.
+
+        The results are cached, which are cleared automatically by
+        :py:func:`commit` and :py:func:`set_config`.
+
+        If changes are made by other means, use :py:func:`clear_cache` to reset
+        the cache.
 
         Parameters
         ----------
@@ -144,11 +155,56 @@ class OnyoRepo(object):
                   KEY = VALUE
         """
 
+        value = None
+
         # repo version shim
         if self.version == '1' and key == 'onyo.assets.name-format':
             key = 'onyo.assets.filename'
 
-        return self.git.get_config(key) or self.git.get_config(key, self.onyo_config)
+        #
+        # check cache
+        #
+        cache_hit = False
+
+        try:
+            # git
+            value = self._config_cache['git'][key]
+            ui.log_debug(f"config '{key}' acquired from cache of git config: '{value}'")
+            cache_hit = True
+        except KeyError:
+            cache_hit = False
+            pass
+
+        if value is None:
+            # onyo
+            try:
+                value = self._config_cache['onyo'][key]
+                ui.log_debug(f"config '{key}' acquired from cache of onyo config: '{value}'")
+                cache_hit = True
+            except KeyError:
+                cache_hit = False
+                pass
+
+        if cache_hit:
+            return value
+
+        #
+        # query actual config files
+        #
+        ui.log_debug(f"config '{key}' cache miss")
+
+        # query the full git config stack
+        value = self.git.get_config(key)
+        self._config_cache['git'][key] = value  # pyre-ignore[6]
+
+        if value is not None:
+            return value
+
+        # query .onyo/config
+        value = self.git.get_config(key, self.onyo_config)
+        self._config_cache['onyo'][key] = value  # pyre-ignore[6]
+
+        return value
 
     @property
     def auto_message(self) -> bool:
@@ -234,6 +290,7 @@ class OnyoRepo(object):
         """
 
         self._asset_paths = None
+        self._config_cache = {'git': {}, 'onyo': {}}
         self.git.clear_cache()
 
     @staticmethod
