@@ -286,6 +286,83 @@ a393a9rjadm----
     assert message == gitrepo.get_commit_msg()
 
 
+def test_GitRepo_commit_long_message(gitrepo,
+                                     fake) -> None:
+    r"""Commit a long message.
+
+    With a length that exceeds the maximum argument/command lengths.
+
+    The maximum (that I am aware of) in the wild is 20,181,005 characters and
+    can be as low as 32,767.
+    """
+
+    # generate a message longer than 20.1 million characters.
+    message = fake.text(max_nb_chars=25000000) + "\n\n"
+    assert len(message) > 20181005
+
+    # create something to commit
+    path = gitrepo.root / fake.file_name(extension='.yaml')
+    path.touch()
+
+    # commit
+    gitrepo.commit(path, message)
+
+    # the repo is clean (i.e. everything was committed)
+    assert gitrepo.is_clean_worktree()
+
+    # the new git commit message matches (i.e. the commit was successful)
+    assert message == gitrepo.get_commit_msg()
+
+
+@pytest.mark.skip(reason="Too expensive to enable by default. 30 min to generate 150k paths.")
+def test_GitRepo_commit_long_paths(gitrepo,
+                                   fake) -> None:
+    r"""Commit long path lists.
+
+    With a stringified length that exceeds the maximum argument/command lengths.
+
+    The maximum (that I am aware of) in the wild is 20,181,005 characters and
+    can be as low as 32,767.
+    """
+
+    message = 'A very long list of paths.\n\n'
+
+    # generate a list of paths that will exceed 20.1 million characters.
+    # The max path length can be as low as 260 characters, so we can't simply
+    # create a few giga-length paths.
+    # Space needs to be left for possible long /tmp paths. A target of 100-150
+    # characters per path feels like a safe margin.
+
+    # 65 (sha256 as parent directory) + 65 (sha256 as filename) + 5 (.yaml) = 135
+    # 20,181,005 / 135 = 149,489
+    # 500 (dirs) * 300 (files) = 150,000
+    # 150,000 * 135 = 20,250,000
+
+    paths = []
+    for i in range(1, 500):
+        parent = gitrepo.root / fake.sha256()
+
+        new_paths = [parent / fake.sha256() / '.yaml' for x in range(1, 300)]
+        paths.extend(new_paths)
+
+    # create directories and files to commit
+    for p in paths:
+        # create the directory
+        p.parent.mkdir(parents=True, exist_ok=True)
+
+        # create the file
+        p.touch()
+
+    # commit
+    gitrepo.commit(paths, message)
+
+    # the repo is clean (i.e. everything was committed)
+    assert gitrepo.is_clean_worktree()
+
+    # the new git commit message matches (i.e. the commit was successful)
+    assert message == gitrepo.get_commit_msg()
+
+
 def test_GitRepo_config(gitrepo) -> None:
 
     assert gitrepo.get_config("section.name.option") is None

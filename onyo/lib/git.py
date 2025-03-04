@@ -109,7 +109,7 @@ class GitRepo(object):
     def files(self) -> list[Path]:
         r"""Get the absolute ``Path``\ s of all tracked files.
 
-        This property is cached, and is reset automatically by :py:func:`commit()`.
+        This property is cached, and is reset automatically by :py:func:`commit`.
         """
 
         if not self._files:
@@ -186,12 +186,29 @@ class GitRepo(object):
             The git commit message.
         """
 
+        from onyo.lib.utils import get_temp_file
+
         if isinstance(paths, Path):
             paths = [paths]
 
+        # Pass paths and message as files to avoid exceeding the OS's maximum
+        # command and argument length.
+        # Detecting this accurately cross-platform is buggy and complicated for
+        # no gain.
         pathspecs = [str(p) for p in paths]
-        self._git(['add'] + pathspecs)
-        self._git(['commit', '-m', message, '--'] + pathspecs)
+        tmpfile_paths = get_temp_file(suffix='.commit-paths')
+        tmpfile_paths.write_text('\x00'.join(pathspecs))
+
+        tmpfile_message = get_temp_file(suffix='.commit-message')
+        tmpfile_message.write_text(message)
+
+        # stage and commit
+        self._git(['add', '--pathspec-file-nul', '--pathspec-from-file', str(tmpfile_paths)])
+        self._git(['commit', '--file', str(tmpfile_message), '--pathspec-file-nul', '--pathspec-from-file', str(tmpfile_paths)])
+
+        # clean up
+        tmpfile_paths.unlink()
+        tmpfile_message.unlink()
         self.clear_cache()
 
     @staticmethod

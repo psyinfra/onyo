@@ -341,11 +341,13 @@ def _edit_asset(inventory: Inventory,
                 case 'edit':
                     continue
                 case 'skip':
+                    tmp_path.unlink()
                     return Item()
                 case 'abort':
                     # Error message was already passed to ui. Raise a different exception instead.
                     # TODO: Own exception class for that purpose? Can we have no message at all?
                     #       -> Make possible in main.py
+                    tmp_path.unlink()
                     raise ValueError("Command canceled.") from e
                 case _:
                     # should not be possible
@@ -380,8 +382,10 @@ def _edit_asset(inventory: Inventory,
             case 'edit':
                 continue
             case 'skip':
+                tmp_path.unlink()
                 return Item()
             case 'abort':
+                tmp_path.unlink()
                 raise KeyboardInterrupt
             case _:
                 # should not be possible

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import os
 from collections import UserDict
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -331,13 +332,22 @@ def get_asset_content(asset_file: Path) -> dict:
     return contents
 
 
-def get_temp_file() -> Path:
-    r"""Return the Path of a new temporary file."""
+def get_temp_file(suffix='.yaml') -> Path:
+    r"""Return the Path of a new temporary file.
+
+    Parameters
+    ----------
+    suffix
+        String to append to the filename. Passed to :py:func:`tempfile.mkstemp`.
+    """
 
     from tempfile import mkstemp
-    fd, tmp_path = mkstemp(prefix='onyo_', suffix='.yaml', text=True)
+    fd, file = mkstemp(prefix='onyo_', suffix=suffix, text=True)
 
-    return Path(tmp_path)
+    # close the file descriptor; we don't need it
+    os.close(fd)
+
+    return Path(file)
 
 
 def validate_yaml(asset_files: list[Path] | None) -> bool:
