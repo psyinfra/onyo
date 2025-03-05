@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import pytest
 
 from onyo.lib.commands import (
-    onyo_cat,
     onyo_get,
     onyo_new,
     onyo_set,
@@ -195,38 +194,3 @@ class TestOnyoBenchmark:
         assert len(onyo_get(inventory)) == num
         filters = [Filter('fifty=fifty').match]
         assert len(onyo_get(inventory, match=filters)) == 50  # pyre-ignore[6]
-
-
-    def test_api_onyo_cat_one(self,
-                              num: int,
-                              benchmark_inventory: Inventory,
-                              benchmark) -> None:
-        r"""Cat 1 asset in the repo."""
-
-        inventory = benchmark_inventory
-        # get 1 asset
-        assets = [a["onyo.path.absolute"]
-                  for a in random.sample(onyo_get(inventory, keys=["onyo.path.absolute"]), k=1)]
-
-        benchmark(onyo_cat, inventory, assets=assets)
-
-        # sanity checks
-        assert len(onyo_get(inventory)) == num
-
-
-    def test_cli_onyo_cat_one(self,
-                              num: int,
-                              benchmark_inventory: Inventory,
-                              benchmark) -> None:
-        r"""Cat 1 asset from the CLI."""
-
-        inventory = benchmark_inventory
-        # get 1 asset
-        asset = random.sample(onyo_get(inventory, keys=["onyo.path.absolute"]), k=1)[0]['onyo.path.absolute']
-
-        @benchmark
-        def bench():
-            subprocess.run(["onyo", "cat", str(asset)], capture_output=True, check=True)
-
-        # sanity checks
-        assert len(onyo_get(inventory)) == num

@@ -205,7 +205,8 @@ class Inventory(object):
 
         self.operations = []
 
-    def commit(self, message: str | None) -> None:
+    def commit(self,
+               message: str | None) -> None:
         r"""Execute pending operations and commit the results."""
 
         # get user message + generate appendix from operations
@@ -373,7 +374,6 @@ class Inventory(object):
             #       accounting for pending operations in the Inventory.
             asset['serial'] = self.get_faux_serials(num=1).pop()
         self.raise_required_key_empty_value(asset)
-        name = self.generate_asset_name(asset)
 
         if asset.get('onyo.is.directory', False):
             # 'onyo.path.absolute' needs to be given, if this is about an already existing dir.
@@ -381,7 +381,7 @@ class Inventory(object):
         if path is None:
             # Otherwise, a 'onyo.path.parent' to create the asset in is expected as with
             # any other asset.
-            path = asset['onyo.path.absolute'] = asset['onyo.path.parent'] / name
+            path = asset['onyo.path.absolute'] = asset['onyo.path.parent'] / self.generate_asset_name(asset)
         if not path:
             raise ValueError("Unable to determine asset path")
         assert isinstance(asset, Item)
@@ -400,7 +400,7 @@ class Inventory(object):
         if asset.get('onyo.is.directory', False):
             if self.repo.is_inventory_dir(path):
                 # We want to turn an existing dir into an asset dir.
-                operations.extend(self.rename_directory(Item(path, repo=self.repo), self.generate_asset_name(asset)))
+                operations.extend(self.rename_directory(asset, self.generate_asset_name(asset)))
                 # Temporary hack: Adjust the asset's path to the renamed one.
                 # TODO: Actual solution: This entire method must not be based on the dict's 'onyo.path.absolute', but
                 #       'onyo.path.parent' + generated name. This ties in with pulling parts of `onyo_new` in here.
@@ -677,7 +677,7 @@ class Inventory(object):
             if p_item['onyo.is.asset']:
                 operations.extend(self.remove_asset(p_item))
             if p_item['onyo.is.directory']:
-                operations.extend(self.remove_directory(Item(p, repo=self.repo)))
+                operations.extend(self.remove_directory(p_item))
 
         operations.append(self._add_operation('remove_directories', (item,)))
 
