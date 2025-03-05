@@ -42,7 +42,7 @@ from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.ui import ui
 from onyo.lib.utils import (
     deduplicate,
-    write_asset_file,
+    write_asset_to_file,
 )
 
 if TYPE_CHECKING:
@@ -236,7 +236,7 @@ def _edit_asset(inventory: Inventory,
     disallowed_keys.remove('onyo.path.parent')
 
     tmp_path = get_temp_file()
-    write_asset_file(tmp_path, asset)
+    write_asset_to_file(asset, path=tmp_path)
 
     # store operations queue length in case we need to roll-back
     queue_length = len(inventory.operations)

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         Mapping,
         TypeVar,
     )
+    from onyo.lib.items import Item
 
     _KT = TypeVar("_KT")  # Key type
     _VT = TypeVar("_VT")  # Value type
@@ -404,19 +405,20 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
     return True
 
 
-def write_asset_file(path: Path,
-                     asset: Dict | UserDict) -> None:
-    r"""Write content to an asset file.
+def write_asset_to_file(asset: Item,
+                        path: Path | None = None) -> None:
+    r"""Write asset content to a file.
 
-    All ``RESERVED_KEYS`` will be stripped from the content before writing.
+    Pseudokeys are not included in the written YAML.
 
     Parameters
     ----------
-    path
-        The Path to write content to.
     asset
-        A dictionary of content to write to the path.
+        Item to write to disk.
+    path
+        The Path to write content to. Default is the asset's ``'onyo.path.file'``
+        pseudokey.
     """
 
-    # TODO: Get file path from onyo.path.file?
+    path = asset.repo.git.root / asset.get('onyo.path.file') if path is None else path
     path.write_text(dict_to_asset_yaml(asset))

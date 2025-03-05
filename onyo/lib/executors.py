@@ -66,7 +66,7 @@ def exec_modify_asset(repo: OnyoRepo,
     """
 
     new = operands[1]
-    repo.write_asset_content(new)
+    repo.write_asset(new)
     return [new['onyo.path.absolute']], []
 
 
@@ -135,7 +135,7 @@ def exec_new_asset(repo: OnyoRepo,
 
     # No need to check/create parent dirs. That's done prior in its own operation.
     asset = operands[0]
-    repo.write_asset_content(asset)  # TODO: a = ...; reassignment for potential updates on metadata
+    repo.write_asset(asset)  # TODO: a = ...; reassignment for potential updates on metadata
     path = asset.get('onyo.path.absolute')
 
     return [path], [path]
@@ -161,7 +161,7 @@ def exec_new_directory(repo: OnyoRepo,
     """
 
     p: Path = operands[0]
-    asset = dict()
+    asset = Item()
     # This may be an asset file that needs to be turned into an asset dir:
     turn_asset_dir = p.is_file() and repo.is_asset_path(p)
     if turn_asset_dir:
@@ -170,7 +170,7 @@ def exec_new_directory(repo: OnyoRepo,
     paths = repo.mk_inventory_dirs(p)
     if turn_asset_dir:
         asset['onyo.is.directory'] = True
-        repo.write_asset_content(asset)
+        repo.write_asset(asset)
         paths.append(p / ASSET_DIR_FILE_NAME)
 
     return paths, paths
@@ -248,7 +248,7 @@ def exec_remove_directory(repo: OnyoRepo,
     p.rmdir()
     if is_asset_dir:
         asset['onyo.is.directory'] = False  # pyre-ignore[61]  No, this is not "not always defined".
-        repo.write_asset_content(asset)  # pyre-ignore[61]
+        repo.write_asset(asset)  # pyre-ignore[61]
         paths.append(p)  # TODO: Does this need staging? Don't think so, but make sure.
 
     return paths, []
