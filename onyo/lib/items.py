@@ -71,50 +71,17 @@ class Item(DotNotationWrapper):
         if kwargs:
             self.update(**kwargs)
 
-    def __setitem__(self,
-                    key: _KT,
-                    value: _VT) -> None:
-        r"""Set the value of a key."""
+    def __contains__(self,
+                     key: _KT) -> bool:
+        r"""Whether ``key`` is in self."""
 
-        key = resolve_alias(key)
-        super().__setitem__(key, value)
-
-    def __getitem__(self,
-                    key: _KT) -> Any:
-        r"""Get the value of a ``key``.
-
-        The initializer methods are referenced in the mapping
-        :py:data:`onyo.lib.pseudokeys.PSEUDO_KEYS`. They are called on-demand,
-        when a pseudo-key is first accessed.
-
-        This allows to distinguish a meaningful ``None`` (<unset>) from a not
-        yet evaluated pseudo-key.
-        """
-
-        key = resolve_alias(key)
-        value = super().__getitem__(key)
-
-        if key in onyo.lib.pseudokeys.PSEUDO_KEYS and \
-                isinstance(value, onyo.lib.pseudokeys.PseudoKey):
-            # Value still is the pseudo-key definition.
-            # Actually load and set the response as the new value.
-            new_value = value.implementation(self)
-            self[key] = new_value
-            return new_value
-
-        return value
+        return super().__contains__(resolve_alias(key))
 
     def __delitem__(self,
                     key: _KT) -> None:
         r"""Remove a ``key`` from self."""
 
         super().__delitem__(resolve_alias(key))
-
-    def __contains__(self,
-                     key: _KT) -> bool:
-        r"""Whether ``key`` is in self."""
-
-        return super().__contains__(resolve_alias(key))
 
     def __eq__(self,
                other: Any) -> bool:
@@ -150,12 +117,38 @@ class Item(DotNotationWrapper):
 
         return self.equal_content(other)
 
-    def get(self,  # pyre-ignore[14]
-            key: _KT,
-            default: Any = None) -> Any:
-        r"""Return the value of ``key`` if it's in the dictionary, otherwise ``default``."""
+    def __getitem__(self,
+                    key: _KT) -> Any:
+        r"""Get the value of a ``key``.
 
-        return super().get(resolve_alias(key), default=default)
+        The initializer methods are referenced in the mapping
+        :py:data:`onyo.lib.pseudokeys.PSEUDO_KEYS`. They are called on-demand,
+        when a pseudo-key is first accessed.
+
+        This allows to distinguish a meaningful ``None`` (<unset>) from a not
+        yet evaluated pseudo-key.
+        """
+
+        key = resolve_alias(key)
+        value = super().__getitem__(key)
+
+        if key in onyo.lib.pseudokeys.PSEUDO_KEYS and \
+                isinstance(value, onyo.lib.pseudokeys.PseudoKey):
+            # Value still is the pseudo-key definition.
+            # Actually load and set the response as the new value.
+            new_value = value.implementation(self)
+            self[key] = new_value
+            return new_value
+
+        return value
+
+    def __setitem__(self,
+                    key: _KT,
+                    value: _VT) -> None:
+        r"""Set the value of a key."""
+
+        key = resolve_alias(key)
+        super().__setitem__(key, value)
 
     def equal_content(self,
                       other: Item) -> bool:
@@ -170,6 +163,13 @@ class Item(DotNotationWrapper):
         """
 
         return dict_to_asset_yaml(self) == dict_to_asset_yaml(other)
+
+    def get(self,  # pyre-ignore[14]
+            key: _KT,
+            default: Any = None) -> Any:
+        r"""Return the value of ``key`` if it's in the dictionary, otherwise ``default``."""
+
+        return super().get(resolve_alias(key), default=default)
 
     def update_from_path(self,
                          path: Path) -> None:
