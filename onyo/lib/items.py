@@ -12,7 +12,11 @@ from onyo.lib.consts import (
 )
 import onyo.lib.onyo
 import onyo.lib.inventory
-import onyo.lib.pseudokeys
+from onyo.lib.pseudokeys import (
+    PSEUDO_KEYS,
+    PSEUDOKEY_ALIASES,
+    PseudoKey,
+)
 from onyo.lib.utils import (
     DotNotationWrapper,
     dict_to_asset_yaml,
@@ -34,7 +38,7 @@ def resolve_alias(key: Any) -> Any:
     r"""Return the target key of a key alias."""
 
     try:
-        return onyo.lib.pseudokeys.PSEUDOKEY_ALIASES[key]
+        return PSEUDOKEY_ALIASES[key]
     except KeyError:
         return key
 
@@ -56,7 +60,7 @@ class Item(DotNotationWrapper):
         self.repo: onyo.lib.onyo.OnyoRepo | None = repo
         self._path: Path | None = None
         self.data = CommentedMap()
-        self.update(onyo.lib.pseudokeys.PSEUDO_KEYS)
+        self.update(PSEUDO_KEYS)
 
         match item:
             case Item():
@@ -132,8 +136,8 @@ class Item(DotNotationWrapper):
         key = resolve_alias(key)
         value = super().__getitem__(key)
 
-        if key in onyo.lib.pseudokeys.PSEUDO_KEYS and \
-                isinstance(value, onyo.lib.pseudokeys.PseudoKey):
+        if key in PSEUDO_KEYS and \
+                isinstance(value, PseudoKey):
             # Value still is the pseudo-key definition.
             # Actually load and set the response as the new value.
             new_value = value.implementation(self)
@@ -279,7 +283,7 @@ class Item(DotNotationWrapper):
         # The latter implies it has non-pseudo-keys, or it is specifying "onyo.is.asset"
         # itself in which case this implementation here will be overruled anyway.
         return self.repo.is_asset_path(self._path) or \
-            any(k not in onyo.lib.pseudokeys.PSEUDO_KEYS for k in self.keys())
+            any(k not in PSEUDO_KEYS for k in self.keys())
 
     def _is_directory(self) -> bool | None:
         r"""Initializer for the ``'onyo.is.directory'`` pseudo-key."""
