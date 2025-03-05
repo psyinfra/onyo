@@ -793,7 +793,8 @@ class Inventory(object):
                   exclude: Iterable[Path] | Path | None = None,
                   depth: int | None = 0,
                   match: list[Callable[[Item], bool]] | list[list[Callable[[Item], bool]]] | None = None,
-                  types: list[Literal['assets', 'directories']] | None = None
+                  types: list[Literal['assets', 'directories']] | None = None,
+                  no_intermediates: bool = False
                   ) -> Generator[Item, None, None] | filter:
         r"""Yield all Items matching paths and filters.
 
@@ -831,6 +832,9 @@ class Inventory(object):
             Default is ``['assets']``.
 
             Passed to :py:func:`onyo.lib.onyo.OnyoRepo.get_item_paths`.
+        no_intermediates
+            Don't return intermediate directory items. The only directories explicitly
+            contained in the returned list are leaves.
         """
 
         depth = 0 if depth is None else depth
@@ -838,7 +842,11 @@ class Inventory(object):
         match = [[]] if match is None else match
         match = [match] if isinstance(match[0], Callable) else match  # pyre-ignore [9]
 
-        for p in self.repo.get_item_paths(include=include, exclude=exclude, depth=depth, types=types):
+        for p in self.repo.get_item_paths(include=include,
+                                          exclude=exclude,
+                                          depth=depth,
+                                          types=types,
+                                          no_intermediates=no_intermediates):
             try:
                 item = self.get_item(p)
                 # check against filters
