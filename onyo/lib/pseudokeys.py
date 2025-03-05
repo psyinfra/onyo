@@ -53,88 +53,88 @@ def delegate(self: Item,
 PSEUDO_KEYS: Dict[str, PseudoKey] = {
     'onyo.path.absolute': PseudoKey(
         description="Absolute path of the item.",
-        implementation=partial(delegate, attribute='get_path_absolute')
+        implementation=partial(delegate, attribute='_get_path_absolute')
     ),
     'onyo.path.relative': PseudoKey(
         description="Path of the item relative to the repository root.",
-        implementation=partial(delegate, attribute='get_path_relative')
+        implementation=partial(delegate, attribute='_get_path_relative')
     ),
     'onyo.path.parent': PseudoKey(
         description="Path of the directory the item is in, relative to the repository root.",
-        implementation=partial(delegate, attribute='get_path_parent')
+        implementation=partial(delegate, attribute='_get_path_parent')
     ),
     'onyo.path.file': PseudoKey(
         description="Path to the file containing an asset's YAML."
                     "Different from 'onyo.path.relative' in case of an asset directory.",
-        implementation=partial(delegate, attribute='get_path_file')
+        implementation=partial(delegate, attribute='_get_path_file')
     ),
     'onyo.path.name': PseudoKey(
         description="Basename of the item's path.",
-        implementation=partial(delegate, attribute='get_path_name')
+        implementation=partial(delegate, attribute='_get_path_name')
     ),
     'onyo.is.asset': PseudoKey(
         description="Is the item an asset.",
-        implementation=partial(delegate, attribute='is_asset')
+        implementation=partial(delegate, attribute='_is_asset')
     ),
     'onyo.is.directory': PseudoKey(
         description="Is the item a directory.",
-        implementation=partial(delegate, attribute='is_directory')
+        implementation=partial(delegate, attribute='_is_directory')
     ),
     'onyo.is.template': PseudoKey(
         description="Is the item a template.",
-        implementation=partial(delegate, attribute='is_template')
+        implementation=partial(delegate, attribute='_is_template')
     ),
     'onyo.is.empty': PseudoKey(
         description="Is the directory empty. <unset> if the item is not a directory.",
-        implementation=partial(delegate, attribute='is_empty')
+        implementation=partial(delegate, attribute='_is_empty')
     ),
     'onyo.was.modified.hexsha': PseudoKey(
         description="SHA of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', key='hexsha')
+        implementation=partial(delegate, attribute='_fill_modified', key='hexsha')
     ),
     'onyo.was.modified.time': PseudoKey(
         description="Time of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', key='time')
+        implementation=partial(delegate, attribute='_fill_modified', key='time')
     ),
     'onyo.was.modified.author.name': PseudoKey(
         description="Name of the author of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', key='author.time')
+        implementation=partial(delegate, attribute='_fill_modified', key='author.time')
     ),
     'onyo.was.modified.author.email': PseudoKey(
         description="Email of the author of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', key='author.email')
+        implementation=partial(delegate, attribute='_fill_modified', key='author.email')
     ),
     'onyo.was.modified.committer.name': PseudoKey(
         description="Name of the committer of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', key='committer.name')
+        implementation=partial(delegate, attribute='_fill_modified', key='committer.name')
     ),
     'onyo.was.modified.committer.email': PseudoKey(
         description="Email of the committer of the most recent commit that modified the item.",
-        implementation=partial(delegate, attribute='fill_modified', key='committer.email')
+        implementation=partial(delegate, attribute='_fill_modified', key='committer.email')
     ),
     'onyo.was.created.hexsha': PseudoKey(
         description="SHA of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', key='hexsha')
+        implementation=partial(delegate, attribute='_fill_created', key='hexsha')
     ),
     'onyo.was.created.time': PseudoKey(
         description="Time of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', key='time')
+        implementation=partial(delegate, attribute='_fill_created', key='time')
     ),
     'onyo.was.created.author.name': PseudoKey(
         description="Name of the author of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', key='author.time')
+        implementation=partial(delegate, attribute='_fill_created', key='author.time')
     ),
     'onyo.was.created.author.email': PseudoKey(
         description="Email of the author of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', key='author.email')
+        implementation=partial(delegate, attribute='_fill_created', key='author.email')
     ),
     'onyo.was.created.committer.name': PseudoKey(
         description="Name of the committer of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', key='committer.name')
+        implementation=partial(delegate, attribute='_fill_created', key='committer.name')
     ),
     'onyo.was.created.committer.email': PseudoKey(
         description="Email of the committer of the commit that created the item.",
-        implementation=partial(delegate, attribute='fill_created', key='committer.email')
+        implementation=partial(delegate, attribute='_fill_created', key='committer.email')
     ),
 }
 r"""Addressable keys that are not part of the on-disk asset YAML.

@@ -150,6 +150,164 @@ class Item(DotNotationWrapper):
         key = resolve_alias(key)
         super().__setitem__(key, value)
 
+    def _fill_created(self,
+                      key: str | None = None) -> str | None:
+        r"""Initializer for the ``'onyo.was.created'`` pseudo-keys.
+
+        The entire ``'onyo.was.created'`` dict is initialized, regardless of
+        which (if any) ``key`` is requested.
+
+        Parameters
+        ----------
+        key
+            Name of pseudo-key to get the value of.
+        """
+
+        # TODO: This is based on `git log --follow <path>`. The first appearance
+        #       of 'new_assets'/'new_directories' should be the match. However,
+        #       this is known to be problematic, both due to `git` and if the
+        #       Python interface was used. A more robust solution will involve a
+        #       more involved parsing of Inventory Operation records, and
+        #       tracing history and moves, etc.
+
+        if self['onyo.is.template']:
+            # Templates aren't tracked by inventory operations (only in git).
+            # Thus there are no operations records to be parsed.
+            return None
+
+        if self.repo and self['onyo.path.absolute']:
+            for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
+                if 'operations' in commit:
+                    if (self['onyo.is.asset'] and commit['operations']['new_assets']) or \
+                            (self['onyo.is.directory'] and commit['operations']['new_directories']):
+                        self['onyo.was.created'] = commit.data
+                        return commit[key] if key else None
+
+            return None
+
+    def _fill_modified(self,
+                       key: str | None = None) -> str | None:
+        r"""Initializer for the ``'onyo.was.modified'`` pseudo-keys.
+
+        The entire ``'onyo.was.modified'`` dict is initialized, regardless of
+        which (if any) ``key`` is requested.
+
+        Parameters
+        ----------
+        key
+            Name of pseudo-key to get the value of.
+        """
+
+        # TODO: see `fill_created()` todo.
+
+        if self['onyo.is.template']:
+            # Templates aren't tracked by inventory operations (only in git).
+            # Thus there are no operations records to be parsed.
+            return None
+
+        if self.repo and self['onyo.path.absolute']:
+            for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
+                if 'operations' in commit:
+                    if (self['onyo.is.asset'] and
+                        (commit['operations']['modify_assets'] or
+                         commit['operations']['new_assets'])) or \
+                       (self['onyo.is.directory'] and
+                        (commit['operations']['new_directories'] or
+                         commit['operations']['move_directories'] or
+                         commit['operations']['rename_directories'])):
+                        self['onyo.was.modified'] = commit.data
+                        return commit[key] if key else None
+
+        return None
+
+    def _get_path_absolute(self) -> Path | None:
+        r"""Initializer for the ``'onyo.path.absolute'`` pseudo-key."""
+
+        if self.repo and self._path and self._path.name == ASSET_DIR_FILE_NAME:
+            return self._path.parent
+
+        return self._path
+
+    def _get_path_file(self) -> Path | None:
+        r"""Initializer for the ``'onyo.path.file'`` pseudo-key."""
+
+        if self.repo and self['onyo.path.relative']:
+            if not self['onyo.is.directory']:
+                return self['onyo.path.relative']
+            if self['onyo.is.asset'] or self['onyo.is.template']:
+                return self['onyo.path.relative'] / ASSET_DIR_FILE_NAME
+            return self['onyo.path.relative'] / ANCHOR_FILE_NAME
+
+        return None
+
+    def _get_path_name(self) -> str | None:
+        r"""Initializer for the ``'onyo.path.name'`` pseudo-key."""
+
+        if self['onyo.path.absolute']:
+            return self['onyo.path.absolute'].name
+
+        return None
+
+    def _get_path_parent(self) -> Path | None:
+        r"""Initializer for the ``'onyo.path.parent'`` pseudo-key."""
+
+        if self.repo and self['onyo.path.relative']:
+            return self['onyo.path.relative'].parent
+
+        return None
+
+    def _get_path_relative(self) -> Path | None:
+        r"""Initializer for the ``'onyo.path.relative'`` pseudo-key."""
+
+        if self.repo and self['onyo.path.absolute']:
+            try:
+                return self['onyo.path.absolute'].relative_to(self.repo.git.root)  # pyre-ignore[16]
+            except ValueError:
+                # return None (translates to '<unset>') if relative_to() fails b/c path is outside repo.
+                pass
+
+        return None
+
+    def _is_asset(self) -> bool | None:
+        r"""Initializer for the ``'onyo.is.asset'`` pseudo-key."""
+
+        if not self.repo or not self._path:
+            return None
+
+        # True, if the item is either an existing asset in the inventory or
+        # it's representing "instructions" for creating one.
+        # The latter implies it has non-pseudo-keys, or it is specifying "onyo.is.asset"
+        # itself in which case this implementation here will be overruled anyway.
+        return self.repo.is_asset_path(self._path) or \
+            any(k not in onyo.lib.pseudokeys.PSEUDO_KEYS for k in self.keys())
+
+    def _is_directory(self) -> bool | None:
+        r"""Initializer for the ``'onyo.is.directory'`` pseudo-key."""
+
+        if not self.repo or not self._path:
+            return None
+
+        # True, if it's either an existing inventory dir or a template dir.
+        # TODO: `is_dir()` should be looking up git-committed dirs instead. -> Property at OnyoRepo
+        return self.repo.is_inventory_dir(self._path) or (self._path.is_dir() and self["onyo.is.template"])  # pyre-ignore[16]
+
+    def _is_empty(self) -> bool | None:
+        r"""Initializer for the ``'onyo.is.empty'`` pseudo-key."""
+
+        if self['onyo.is.directory'] and self.repo and self._path:
+            # TODO: This likely can be faster when redoing/enhancing caching of repo paths.
+            return not any(p.parent == self._path for p in self.repo.asset_paths)
+
+        return None
+
+    def _is_template(self) -> bool | None:
+        r"""Initializer for the ``'onyo.is.template'`` pseudo-key."""
+
+        if not self.repo or not self._path:
+            return None
+
+        return self._path == self.repo.template_dir or self.repo.template_dir in self._path.parents   # pyre-ignore[16]
+
     def equal_content(self,
                       other: Item) -> bool:
         r"""Whether another Item and self have the same content and comments.
@@ -202,164 +360,6 @@ class Item(DotNotationWrapper):
             # We got a (subclass of) ruamel.yaml.CommentBase.
             # Copy the attributes re comments, format, etc. for roundtrip.
             map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
-
-    def fill_created(self,
-                     key: str | None = None) -> str | None:
-        r"""Initializer for the ``'onyo.was.created'`` pseudo-keys.
-
-        The entire ``'onyo.was.created'`` dict is initialized, regardless of
-        which (if any) ``key`` is requested.
-
-        Parameters
-        ----------
-        key
-            Name of pseudo-key to get the value of.
-        """
-
-        # TODO: This is based on `git log --follow <path>`. The first appearance
-        #       of 'new_assets'/'new_directories' should be the match. However,
-        #       this is known to be problematic, both due to `git` and if the
-        #       Python interface was used. A more robust solution will involve a
-        #       more involved parsing of Inventory Operation records, and
-        #       tracing history and moves, etc.
-
-        if self['onyo.is.template']:
-            # Templates aren't tracked by inventory operations (only in git).
-            # Thus there are no operations records to be parsed.
-            return None
-
-        if self.repo and self['onyo.path.absolute']:
-            for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
-                if 'operations' in commit:
-                    if (self['onyo.is.asset'] and commit['operations']['new_assets']) or \
-                            (self['onyo.is.directory'] and commit['operations']['new_directories']):
-                        self['onyo.was.created'] = commit.data
-                        return commit[key] if key else None
-
-            return None
-
-    def fill_modified(self,
-                      key: str | None = None) -> str | None:
-        r"""Initializer for the ``'onyo.was.modified'`` pseudo-keys.
-
-        The entire ``'onyo.was.modified'`` dict is initialized, regardless of
-        which (if any) ``key`` is requested.
-
-        Parameters
-        ----------
-        key
-            Name of pseudo-key to get the value of.
-        """
-
-        # TODO: see `fill_created()` todo.
-
-        if self['onyo.is.template']:
-            # Templates aren't tracked by inventory operations (only in git).
-            # Thus there are no operations records to be parsed.
-            return None
-
-        if self.repo and self['onyo.path.absolute']:
-            for commit in self.repo.get_history(self['onyo.path.file']):  # pyre-ignore[16]
-                if 'operations' in commit:
-                    if (self['onyo.is.asset'] and
-                        (commit['operations']['modify_assets'] or
-                         commit['operations']['new_assets'])) or \
-                       (self['onyo.is.directory'] and
-                        (commit['operations']['new_directories'] or
-                         commit['operations']['move_directories'] or
-                         commit['operations']['rename_directories'])):
-                        self['onyo.was.modified'] = commit.data
-                        return commit[key] if key else None
-
-        return None
-
-    def get_path_absolute(self) -> Path | None:
-        r"""Initializer for the ``'onyo.path.absolute'`` pseudo-key."""
-
-        if self.repo and self._path and self._path.name == ASSET_DIR_FILE_NAME:
-            return self._path.parent
-
-        return self._path
-
-    def get_path_relative(self) -> Path | None:
-        r"""Initializer for the ``'onyo.path.relative'`` pseudo-key."""
-
-        if self.repo and self['onyo.path.absolute']:
-            try:
-                return self['onyo.path.absolute'].relative_to(self.repo.git.root)  # pyre-ignore[16]
-            except ValueError:
-                # return None (translates to '<unset>') if relative_to() fails b/c path is outside repo.
-                pass
-
-        return None
-
-    def get_path_parent(self) -> Path | None:
-        r"""Initializer for the ``'onyo.path.parent'`` pseudo-key."""
-
-        if self.repo and self['onyo.path.relative']:
-            return self['onyo.path.relative'].parent
-
-        return None
-
-    def get_path_file(self) -> Path | None:
-        r"""Initializer for the ``'onyo.path.file'`` pseudo-key."""
-
-        if self.repo and self['onyo.path.relative']:
-            if not self['onyo.is.directory']:
-                return self['onyo.path.relative']
-            if self['onyo.is.asset'] or self['onyo.is.template']:
-                return self['onyo.path.relative'] / ASSET_DIR_FILE_NAME
-            return self['onyo.path.relative'] / ANCHOR_FILE_NAME
-
-        return None
-
-    def get_path_name(self) -> str | None:
-        r"""Initializer for the ``'onyo.path.name'`` pseudo-key."""
-
-        if self['onyo.path.absolute']:
-            return self['onyo.path.absolute'].name
-
-        return None
-
-    def is_asset(self) -> bool | None:
-        r"""Initializer for the ``'onyo.is.asset'`` pseudo-key."""
-
-        if not self.repo or not self._path:
-            return None
-
-        # True, if the item is either an existing asset in the inventory or
-        # it's representing "instructions" for creating one.
-        # The latter implies it has non-pseudo-keys, or it is specifying "onyo.is.asset"
-        # itself in which case this implementation here will be overruled anyway.
-        return self.repo.is_asset_path(self._path) or \
-            any(k not in onyo.lib.pseudokeys.PSEUDO_KEYS for k in self.keys())
-
-    def is_directory(self) -> bool | None:
-        r"""Initializer for the ``'onyo.is.directory'`` pseudo-key."""
-
-        if not self.repo or not self._path:
-            return None
-
-        # True, if it's either an existing inventory dir or a template dir.
-        # TODO: `is_dir()` should be looking up git-committed dirs instead. -> Property at OnyoRepo
-        return self.repo.is_inventory_dir(self._path) or (self._path.is_dir() and self["onyo.is.template"])  # pyre-ignore[16]
-
-    def is_template(self) -> bool | None:
-        r"""Initializer for the ``'onyo.is.template'`` pseudo-key."""
-
-        if not self.repo or not self._path:
-            return None
-
-        return self._path == self.repo.template_dir or self.repo.template_dir in self._path.parents   # pyre-ignore[16]
-
-    def is_empty(self) -> bool | None:
-        r"""Initializer for the ``'onyo.is.empty'`` pseudo-key."""
-
-        if self['onyo.is.directory'] and self.repo and self._path:
-            # TODO: This likely can be faster when redoing/enhancing caching of repo paths.
-            return not any(p.parent == self._path for p in self.repo.asset_paths)
-
-        return None
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet
