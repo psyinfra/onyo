@@ -22,7 +22,11 @@ from .exceptions import (
 )
 from .git import GitRepo
 from .ui import ui
-from .utils import get_asset_content, write_asset_file
+from .utils import (
+    DotNotationWrapper,
+    get_asset_content,
+    write_asset_file,
+)
 
 if TYPE_CHECKING:
     from typing import (
@@ -640,7 +644,8 @@ class OnyoRepo(object):
                        include: Iterable[Path] | None = None,
                        exclude: Iterable[Path] | Path | None = None,
                        depth: int = 0,
-                       types: List[Literal['assets', 'directories']] | None = None
+                       types: List[Literal['assets', 'directories']] | None = None,
+                       intermediates: bool = True
                        ) -> List[Path]:
         r"""Get the Paths of all items matching paths and filters.
 
@@ -657,6 +662,9 @@ class OnyoRepo(object):
             List of types of inventory items to consider. Equivalent to
             ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
             Default is ``['assets']``.
+        intermediates
+            Return intermediate directory items. If ``False``, the only directories
+            explicitly contained in the returned list are leaves.
         """
 
         if types is None:
@@ -701,6 +709,12 @@ class OnyoRepo(object):
                 if f.parent not in paths:
                     paths.append(f.parent)
                 continue
+
+        if not intermediates:
+            # remove any directory that has children in `paths` and is not an asset dir
+            for p in [p for p in paths if
+                      (p / ASSET_DIR_FILE_NAME not in files) and any(i.parent == p for i in paths)]:
+                paths.remove(p)
 
         return paths
 
@@ -854,7 +868,6 @@ class OnyoRepo(object):
         #       or have sort of a proxy in OnyoRepo.
         #       -> May be: get_history(Item) in Inventory and get_history(path) in OnyoRepo.
         from onyo.lib.parser import parse_operations_record
-        from onyo.lib.utils import DotNotationWrapper
 
         for commit in self.git.history(path, n):
             record = []
