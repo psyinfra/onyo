@@ -1,12 +1,4 @@
-import pytest
-
-from onyo.lib.consts import RESERVED_KEYS
-from onyo.lib.pseudokeys import PSEUDO_KEYS
-from onyo.lib.utils import (
-    dict_to_asset_yaml,
-    DotNotationWrapper,
-    get_asset_content,
-)
+from onyo.lib.utils import get_asset_content
 
 asset_file_content = """---
 # top-level comment
@@ -35,35 +27,6 @@ description: |
   This is a long text
   containing multiple lines.
 """
-
-
-def test_dict_to_asset_yaml() -> None:
-    r"""``dict_to_asset_yaml`` accepts Dict, CommentedMap, and empty dict."""
-
-    # normal python dict
-    d = {'type': 'TYPE', 'make': 'MAKE', 'model': 'MODEL', 'serial': '008675309', 'explicit': 123}
-    d_expected_output = "---\ntype: TYPE\nmake: MAKE\nmodel: MODEL\nserial: 008675309\nexplicit: !!int '123'\n"
-    assert d_expected_output == dict_to_asset_yaml(d)
-
-    # empty top-level dict should be stripped
-    empty = {}
-    empty_expected_output = "---\n"
-    assert empty_expected_output == dict_to_asset_yaml(empty)
-
-    # empty nested dict should be retained
-    d = {'type': 'TYPE', 'make': 'MAKE', 'model': 'MODEL', 'serial': '008675309', 'explicit': 123, 'dict': {}}
-    d_expected_output = "---\ntype: TYPE\nmake: MAKE\nmodel: MODEL\nserial: 008675309\nexplicit: !!int '123'\ndict: {}\n"
-    assert d_expected_output == dict_to_asset_yaml(d)
-
-
-@pytest.mark.parametrize('rkey', list(PSEUDO_KEYS.keys()) + RESERVED_KEYS)
-def test_redaction_dict_to_asset_yaml(rkey: str) -> None:
-    r"""Reserved- and Pseudo-Keys are not serialized."""
-
-    d = DotNotationWrapper({'type': 'TYPE', 'make': 'MAKE', 'model': 'MODEL', 'serial': '008675309', 'explicit': 123})
-    d[rkey] = 'REDACT_ME'
-    d_expected_output = "---\ntype: TYPE\nmake: MAKE\nmodel: MODEL\nserial: 008675309\nexplicit: !!int '123'\n"
-    assert d_expected_output == dict_to_asset_yaml(d)
 
 
 def test_get_asset_content(tmp_path) -> None:
@@ -98,16 +61,3 @@ def test_get_asset_content(tmp_path) -> None:
                     assert isinstance(d[key], str)
 
     assert_all_keys_strings(asset_dict)
-
-
-def test_roundtrip(tmp_path) -> None:
-    """Test roundtrip get_asset_content->dict_to_asset_yaml."""
-
-    asset_file = tmp_path / "asset-file"
-    asset_file.write_text(asset_file_content)
-
-    asset_dict = get_asset_content(asset_file)
-    # For now values ruamel does not roundtrip the representation. It's the `empty:` form:
-    write_back = asset_file_content.replace("~", " ")  # Space, b/c the comment position is retained.
-    write_back = write_back.replace(" Null", "").replace(" NULL", "").replace(" null", "")
-    assert dict_to_asset_yaml(asset_dict) == write_back

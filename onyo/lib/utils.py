@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import os
 from collections import UserDict
 from pathlib import Path
@@ -9,15 +8,12 @@ from typing import TYPE_CHECKING
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
 
-from onyo.lib.consts import RESERVED_KEYS
-from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     from typing import (
         Any,
-        Dict,
         Generator,
         Mapping,
         TypeVar,
@@ -256,46 +252,6 @@ def deduplicate(sequence: list | None) -> list | None:
 
     seen = set()
     return [x for x in sequence if not (x in seen or seen.add(x))]
-
-
-def dict_to_asset_yaml(d: Dict | UserDict) -> str:
-    r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
-
-    Dictionaries that contain a map of comments (ruamel, etc) will have those
-    comments included in the string.
-
-    See Also
-    --------
-    onyo.lib.consts.RESERVED_KEYS
-
-    Parameters
-    ----------
-    d
-        Dictionary to strip of reserved-keys and convert to a YAML string.
-    """
-
-    # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
-    content = copy.deepcopy(d)
-    for key in RESERVED_KEYS + list(PSEUDO_KEYS.keys()):
-        if key in content:
-            del content[key]
-
-    # Empty dicts are serialized to '{}', and I was unable to find any input
-    # ('', None, etc) that would serialize to nothing. Hardcoding, though ugly,
-    # seems to be the only option.
-    if not content:
-        return '---\n'
-
-    from io import StringIO
-    yaml = get_patched_yaml()
-    yaml.explicit_start = True
-    s = StringIO()
-    yaml.dump(content.data
-              if isinstance(content, DotNotationWrapper)
-              else content,
-              s)
-
-    return s.getvalue()
 
 
 def get_asset_content(asset_file: Path) -> dict:

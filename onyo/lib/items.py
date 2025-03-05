@@ -8,7 +8,8 @@ from ruamel.yaml import CommentedMap  # pyre-ignore[21]
 
 from onyo.lib.consts import (
     ANCHOR_FILE_NAME,
-    ASSET_DIR_FILE_NAME
+    ASSET_DIR_FILE_NAME,
+    RESERVED_KEYS,
 )
 import onyo.lib.onyo
 import onyo.lib.inventory
@@ -19,7 +20,7 @@ from onyo.lib.pseudokeys import (
 )
 from onyo.lib.utils import (
     DotNotationWrapper,
-    dict_to_asset_yaml,
+    get_patched_yaml,
 )
 
 
@@ -371,7 +372,23 @@ class Item(DotNotationWrapper):
         Pseudokeys are not included.
         """
 
-        return dict_to_asset_yaml(self)
+        # deepcopy to keep comments
+        content = deepcopy(self)
+        for key in RESERVED_KEYS + list(PSEUDO_KEYS.keys()):
+            if key in content:
+                del content[key]
+
+        # empty dicts serialize to '{}'. Hardcode correct empty response.
+        if not content:
+            return '---\n'
+
+        from io import StringIO
+        yaml = get_patched_yaml()
+        yaml.explicit_start = True
+        s = StringIO()
+        yaml.dump(content.data, s)
+
+        return s.getvalue()
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet
