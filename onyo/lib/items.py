@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 def resolve_alias(key: Any) -> Any:
-    """Return the target key of a key alias."""
+    r"""Return the target key of a key alias."""
 
     try:
         return onyo.lib.pseudokeys.PSEUDOKEY_ALIASES[key]
@@ -40,7 +40,7 @@ def resolve_alias(key: Any) -> Any:
 
 
 class Item(DotNotationWrapper):
-    """An item that an :py:class:`onyo.lib.inventory.Inventory` can potentially track.
+    r"""An item that an :py:class:`onyo.lib.inventory.Inventory` can potentially track.
 
     The main purpose is to attach pseudo-keys and alias resolution to things
     that can be inventoried (directories and YAML-files).
@@ -112,7 +112,7 @@ class Item(DotNotationWrapper):
 
     def __contains__(self,
                      key: _KT) -> bool:
-        """Whether ``key`` is in self."""
+        r"""Whether ``key`` is in self."""
 
         return super().__contains__(resolve_alias(key))
 
@@ -173,7 +173,7 @@ class Item(DotNotationWrapper):
 
     def update_from_path(self,
                          path: Path) -> None:
-        """Update the internal dictionary with key/values from a YAML file.
+        r"""Update the internal dictionary with key/values from a YAML file.
 
         YAML comments are preserved on a best-effort basis. There is no
         straightforward way to merge YAML comments, and thus ones from ``path``
@@ -205,7 +205,7 @@ class Item(DotNotationWrapper):
 
     def fill_created(self,
                      key: str | None = None) -> str | None:
-        """Initializer for the ``'onyo.was.created'`` pseudo-keys.
+        r"""Initializer for the ``'onyo.was.created'`` pseudo-keys.
 
         The entire ``'onyo.was.created'`` dict is initialized, regardless of
         which (if any) ``key`` is requested.
@@ -240,7 +240,7 @@ class Item(DotNotationWrapper):
 
     def fill_modified(self,
                       key: str | None = None) -> str | None:
-        """Initializer for the ``'onyo.was.modified'`` pseudo-keys.
+        r"""Initializer for the ``'onyo.was.modified'`` pseudo-keys.
 
         The entire ``'onyo.was.modified'`` dict is initialized, regardless of
         which (if any) ``key`` is requested.
@@ -274,7 +274,7 @@ class Item(DotNotationWrapper):
         return None
 
     def get_path_absolute(self) -> Path | None:
-        """Initializer for the ``'onyo.path.absolute'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.path.absolute'`` pseudo-key."""
 
         if self.repo and self._path and self._path.name == ASSET_DIR_FILE_NAME:
             return self._path.parent
@@ -282,7 +282,7 @@ class Item(DotNotationWrapper):
         return self._path
 
     def get_path_relative(self) -> Path | None:
-        """Initializer for the ``'onyo.path.relative'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.path.relative'`` pseudo-key."""
 
         if self.repo and self['onyo.path.absolute']:
             try:
@@ -294,7 +294,7 @@ class Item(DotNotationWrapper):
         return None
 
     def get_path_parent(self) -> Path | None:
-        """Initializer for the ``'onyo.path.parent'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.path.parent'`` pseudo-key."""
 
         if self.repo and self['onyo.path.relative']:
             return self['onyo.path.relative'].parent
@@ -302,7 +302,7 @@ class Item(DotNotationWrapper):
         return None
 
     def get_path_file(self) -> Path | None:
-        """Initializer for the ``'onyo.path.file'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.path.file'`` pseudo-key."""
 
         if self.repo and self['onyo.path.relative']:
             if not self['onyo.is.directory']:
@@ -314,7 +314,7 @@ class Item(DotNotationWrapper):
         return None
 
     def get_path_name(self) -> Path | None:
-        """Initializer for the ``'onyo.path.name'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.path.name'`` pseudo-key."""
 
         if self['onyo.path.absolute']:
             return self['onyo.path.absolute'].name
@@ -322,7 +322,7 @@ class Item(DotNotationWrapper):
         return None
 
     def is_asset(self) -> bool | None:
-        """Initializer for the ``'onyo.is.asset'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.is.asset'`` pseudo-key."""
 
         if not self.repo or not self._path:
             return None
@@ -335,7 +335,7 @@ class Item(DotNotationWrapper):
             any(k not in onyo.lib.pseudokeys.PSEUDO_KEYS for k in self.keys())
 
     def is_directory(self) -> bool | None:
-        """Initializer for the ``'onyo.is.directory'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.is.directory'`` pseudo-key."""
 
         if not self.repo or not self._path:
             return None
@@ -345,7 +345,7 @@ class Item(DotNotationWrapper):
         return self.repo.is_inventory_dir(self._path) or (self._path.is_dir() and self["onyo.is.template"])  # pyre-ignore[16]
 
     def is_template(self) -> bool | None:
-        """Initializer for the ``'onyo.is.template'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.is.template'`` pseudo-key."""
 
         if not self.repo or not self._path:
             return None
@@ -353,7 +353,7 @@ class Item(DotNotationWrapper):
         return self._path == self.repo.template_dir or self.repo.template_dir in self._path.parents   # pyre-ignore[16]
 
     def is_empty(self) -> bool | None:
-        """Initializer for the ``'onyo.is.empty'`` pseudo-key."""
+        r"""Initializer for the ``'onyo.is.empty'`` pseudo-key."""
 
         if self['onyo.is.directory'] and self.repo and self._path:
             # TODO: This likely can be faster when redoing/enhancing caching of repo paths.
