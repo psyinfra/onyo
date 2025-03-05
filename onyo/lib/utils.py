@@ -397,4 +397,4 @@ def write_asset_to_file(asset: Item,
     """
 
     path = asset.get('onyo.path.file') if path is None else path
-    path.write_text(dict_to_asset_yaml(asset))
+    path.write_text(asset.yaml())

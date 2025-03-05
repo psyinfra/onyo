@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from onyo.lib.items import Item
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import dict_to_asset_yaml
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -25,8 +24,8 @@ def _diff_assets(asset_old: Item,
         Absolute Path of destination parent.
     """
 
-    yield from unified_diff(dict_to_asset_yaml(asset_old).splitlines(keepends=False),
-                            dict_to_asset_yaml(asset_new).splitlines(keepends=False),
+    yield from unified_diff(asset_old.yaml().splitlines(keepends=False),
+                            asset_new.yaml().splitlines(keepends=False),
                             fromfile=str(asset_old.get('onyo.path.absolute', '')),
                             tofile=str(asset_new.get('onyo.path.absolute', '')),
                             lineterm="")
