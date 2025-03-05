@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .consts import (
+from onyo.lib.consts import (
     ANCHOR_FILE_NAME,
     ASSET_DIR_FILE_NAME,
     IGNORE_FILE_NAME,
@@ -15,23 +15,27 @@ from .consts import (
     ONYO_DIR,
     TEMPLATE_DIR,
 )
-from .exceptions import (
+from onyo.lib.exceptions import (
     NotAnAssetError,
     OnyoInvalidRepoError,
     OnyoProtectedPathError
 )
-from .git import GitRepo
-from .ui import ui
-from .utils import get_asset_content, write_asset_file
+from onyo.lib.git import GitRepo
+from onyo.lib.ui import ui
+from onyo.lib.utils import (
+    get_asset_content,
+    write_asset_to_file,
+)
 
 if TYPE_CHECKING:
+    from collections import UserDict
     from typing import (
         Generator,
         Iterable,
         List,
         Literal,
     )
-    from collections import UserDict
+    from onyo.lib.items import Item
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
 
@@ -726,7 +730,7 @@ class OnyoRepo(object):
         return a
 
     def write_asset_content(self,
-                            asset: dict | UserDict) -> dict | UserDict:
+                            asset: Item) -> Item:
         r"""Write an asset's contents to disk.
 
         The correct path is determined using the asset's pseudo-keys.
@@ -734,19 +738,19 @@ class OnyoRepo(object):
         Parameters
         ----------
         asset
-            The asset dict to write.
+            The asset Item to write.
+
+        Raises
+        ------
+        ValueError
+            The pseudoeky ``'onyo.path.file'`` is not a valid inventory path.
         """
 
-        path = asset.get('onyo.path.absolute')
-        if not path:
-            raise RuntimeError("Cannot write asset to an unspecified path")
-
-        if self.is_inventory_path(path):
-            if asset.get('onyo.is.directory') and path.name != ASSET_DIR_FILE_NAME:
-                path = path / ASSET_DIR_FILE_NAME
-            write_asset_file(path, asset)
-        else:
+        path = asset.get('onyo.path.file')
+        if not self.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path")
+
+        write_asset_to_file(asset)
 
         # TODO: Potentially return/modify updated (pseudo-keys: last modified, etc.!) asset dict.
         return asset

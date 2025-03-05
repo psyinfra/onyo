@@ -161,7 +161,7 @@ def exec_new_directory(repo: OnyoRepo,
     """
 
     p: Path = operands[0]
-    asset = dict()
+    asset = Item()
     # This may be an asset file that needs to be turned into an asset dir:
     turn_asset_dir = p.is_file() and repo.is_asset_path(p)
     if turn_asset_dir:
