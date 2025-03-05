@@ -324,7 +324,7 @@ class Item(DotNotationWrapper):
             Item to compare with self.
         """
 
-        return dict_to_asset_yaml(self) == dict_to_asset_yaml(other)
+        return self.yaml() == other.yaml()
 
     def get(self,  # pyre-ignore[14]
             key: _KT,
@@ -364,6 +364,14 @@ class Item(DotNotationWrapper):
             # We got a (subclass of) ruamel.yaml.CommentBase.
             # Copy the attributes re comments, format, etc. for roundtrip.
             map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
+
+    def yaml(self) -> str:
+        r"""Get the stringified YAML including content and comments.
+
+        Pseudokeys are not included.
+        """
+
+        return dict_to_asset_yaml(self)
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet

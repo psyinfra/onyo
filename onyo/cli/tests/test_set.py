@@ -6,11 +6,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from onyo.lib.items import Item
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import (
-    dict_to_asset_yaml,
-    DotNotationWrapper,
-)
+from onyo.lib.utils import DotNotationWrapper
 
 if TYPE_CHECKING:
     from typing import List
@@ -35,7 +33,7 @@ for i, d in enumerate(directories):
     for spec in asset_specs:
         spec['serial'] = "00_" + str(i)
         name = f"{spec['type']}_{spec['make']}_{spec['model.name']}.{spec['serial']}"
-        content = dict_to_asset_yaml(spec)
+        content = Item(spec).yaml()
         assets.append([f"{d}/{name}", content])
 
 asset_paths = [a[0] for a in assets]

@@ -27,9 +27,9 @@ def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
     r"""Convert content dictionary to a plain-text string."""
 
-    from onyo.lib.utils import dict_to_asset_yaml
+    from onyo.lib.items import Item
     for file, raw_contents in raw_assets:
-        yield [file, dict_to_asset_yaml(raw_contents)]
+        yield [file, Item(raw_contents).yaml()]
 
 
 tag_asset_contents = [

@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 from pathlib import Path
+from types import NoneType
 
 import pytest
 
 from onyo.lib.consts import ANCHOR_FILE_NAME
-from ..items import Item
-from ..pseudokeys import PSEUDO_KEYS, PSEUDOKEY_ALIASES
+from onyo.lib.items import Item
+from onyo.lib.pseudokeys import (
+    PSEUDO_KEYS,
+    PSEUDOKEY_ALIASES,
+)
 
 asset_dict = Item({
     "type": "atype",
@@ -14,6 +20,34 @@ asset_dict = Item({
     "path": Path("subdir") / "atype_amake_amodel.1"
 }
 )
+
+asset_file_content = """---
+# top-level comment
+type: a  # key comment
+make: b
+model:  # comment at intermediate node
+  name: c # comment in nested dict-key
+  # comment in nested dict
+  more: d
+  integer: 1
+  explicit: !!int '2'
+  float: 1.2
+  list:
+  - 1.2
+  - b
+  - 003_5
+# keys and values need to preserve leading zeroes and underscores:
+serial: 00012_3456
+003_5: true
+a_false: false
+explicit_null: null
+tilde_null: ~ # what now
+implicit_null:
+emptystring: ''
+description: |
+  This is a long text
+  containing multiple lines.
+"""
 
 
 @pytest.mark.inventory_assets(asset_dict)
@@ -94,3 +128,82 @@ def test_item_init(onyorepo) -> None:
         # content is read from file:
         if idx in [5, 6]:
             assert all(k in item.keys() for k in ['type', 'make', 'model.name'])
+
+
+def test_item_init_path(tmp_path) -> None:
+    r"""Load an Item from a YAML file."""
+
+    asset_path = tmp_path / "asset-file"
+    asset_path.write_text(asset_file_content)
+
+    item = Item(asset_path)
+    assert isinstance(item, Item)
+
+    def assert_all_keys_strings(d: Item) -> None:
+        for key in d.keys():
+            assert isinstance(key, str)
+            if isinstance(d[key], list):
+                # This does not yet consider lists/dicts within lists!
+                assert all(isinstance(i, str) for i in d[key])
+                continue
+            if isinstance(d[key], dict):
+                assert_all_keys_strings(d[key])
+                continue
+
+            match key:
+                # pseudokeys
+                case k if k.startswith('onyo.is.'):
+                    assert isinstance(d[key], (bool, NoneType))
+                case 'onyo.path.name':
+                    assert isinstance(d[key], str)
+                case k if k.startswith('onyo.path.'):
+                    assert isinstance(d[key], (Path, NoneType))
+                case k if k.startswith('onyo.was.'):
+                    assert isinstance(d[key], (bool, str, NoneType))
+                # content
+                case k if 'null' in k:
+                    assert d[key] is None
+                case 'model.explicit':
+                    assert isinstance(d[key], int)
+                case '003_5'|'a_false':
+                    assert isinstance(d[key], bool)
+                case _:
+                    if d[key] is None:
+                        assert key == 'sdafdfasdfasd'
+                    assert isinstance(d[key], str)
+
+    assert_all_keys_strings(item)
+
+
+def test_item_yaml_no_pseudokeys(tmp_path) -> None:
+    """Pseudokeys are not included in the YAML output."""
+
+    asset_path = tmp_path / "asset-file"
+    asset_path.write_text(asset_file_content)
+
+    item = Item(asset_path)
+    item['onyo.test-pseudokey'] = 'should not be in YAML output'
+
+    output_yaml = item.yaml()
+    assert 'test-pseudokey' not in output_yaml
+    assert 'should not be in YAML output' not in output_yaml
+
+
+def test_item_roundtrip(tmp_path) -> None:
+    """Content roundtrips correctly.
+
+    Path -> Item(Path) -> Item.yaml().
+    """
+
+    asset_path = tmp_path / "asset-file"
+    asset_path.write_text(asset_file_content)
+
+    item = Item(asset_path)
+
+    # TODO: hack
+    # ruamel does not roundtrip the various representations of Null. And
+    # replaces them with the empty form.
+    fixed_content = asset_file_content.replace("~", " ")  # Space, b/c the comment position is retained.
+    fixed_content = fixed_content.replace(" Null", "").replace(" NULL", "").replace(" null", "")
+
+    assert item.yaml() == fixed_content
