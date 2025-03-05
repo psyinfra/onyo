@@ -313,7 +313,7 @@ class Item(DotNotationWrapper):
 
         return None
 
-    def get_path_name(self) -> Path | None:
+    def get_path_name(self) -> str | None:
         r"""Initializer for the ``'onyo.path.name'`` pseudo-key."""
 
         if self['onyo.path.absolute']:
