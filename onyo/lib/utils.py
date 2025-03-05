@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import os
 from collections import UserDict
 from pathlib import Path
@@ -9,7 +8,6 @@ from typing import TYPE_CHECKING
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
 
-from onyo.lib.consts import RESERVED_KEYS
 from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
@@ -257,61 +255,29 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict | UserDict) -> str:
-    r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
+def dict_to_yaml(d: Dict) -> str:
+    r"""Convert a dictionary to a YAML string.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
     comments included in the string.
-
-    See Also
-    --------
-    onyo.lib.consts.RESERVED_KEYS
 
     Parameters
     ----------
     d
-        Dictionary to strip of reserved-keys and convert to a YAML string.
+        Dictionary to render as YAML.
     """
 
-    # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
-    content = copy.deepcopy(d)
-
-    # TODO: RESERVED_KEYS has an artificial "onyo" in it, in order
-    #       to remove the subdict altogether, since iterating over pseudokeys would leave empty dicts behind.
-    #       This needs to be addressed in a nicer way with namespace handling in `Item`.
-    for key in RESERVED_KEYS:
-        if key in content:
-            del content[key]
-    return dict_to_yaml(content)
-
-
-def dict_to_yaml(d: dict | UserDict) -> str:
-    """Convert a python dictionary to a YAML string.
-
-    Dictionaries that contain a map of comments (ruamel, etc) will have those
-    comments included in the string.
-
-    Parameters
-    ----------
-    d:
-        Dictionary to convert to a YAML string.
-    """
-
-    # Empty dicts are serialized to '{}', and I was unable to find any input
-    # ('', None, etc) that would serialize to nothing. Hardcoding, though ugly,
-    # seems to be the only option.
+    # empty dicts serialize to '{}'. Hardcode correct empty response.
     if not d:
         return '---\n'
 
     from io import StringIO
+
     yaml = get_patched_yaml()
     yaml.explicit_start = True
     s = StringIO()
-    yaml.dump(d.data
-              if isinstance(d, DotNotationWrapper)
-              else d,
-              s)
 
+    yaml.dump(d, s)
     return s.getvalue()
 
 

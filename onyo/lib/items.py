@@ -8,7 +8,8 @@ from ruamel.yaml import CommentedMap  # pyre-ignore[21]
 
 from onyo.lib.consts import (
     ANCHOR_FILE_NAME,
-    ASSET_DIR_FILE_NAME
+    ASSET_DIR_FILE_NAME,
+    RESERVED_KEYS,
 )
 import onyo.lib.onyo
 import onyo.lib.inventory
@@ -19,7 +20,7 @@ from onyo.lib.pseudokeys import (
 )
 from onyo.lib.utils import (
     DotNotationWrapper,
-    dict_to_asset_yaml,
+    dict_to_yaml,
 )
 
 
@@ -365,13 +366,27 @@ class Item(DotNotationWrapper):
             # Copy the attributes re comments, format, etc. for roundtrip.
             map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
 
-    def yaml(self) -> str:
+    def yaml(self,
+             exclude: list | None = None) -> str:
         r"""Get the stringified YAML including content and comments.
 
-        Pseudokeys are not included.
+        Parameters
+        ----------
+        exclude
+            Keys to exclude from the output. By default, all
+            :py:data:`onyo.lib.consts.RESERVED_KEYS` (e.g. pseudokeys) are
+            excluded.
         """
 
-        return dict_to_asset_yaml(self)
+        exclude = RESERVED_KEYS if exclude is None else exclude
+
+        # deepcopy to keep comments
+        content = deepcopy(self)
+        for key in exclude:
+            if key in content:
+                del content[key]
+
+        return dict_to_yaml(content.data)
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet
