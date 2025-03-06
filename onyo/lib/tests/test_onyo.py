@@ -9,6 +9,7 @@ from onyo.lib.consts import (
 )
 from onyo.lib.onyo import OnyoRepo, OnyoInvalidRepoError
 from onyo.lib.items import Item
+from onyo.lib.utils import DotNotationWrapper
 
 
 def test_OnyoRepo_instantiation_existing(onyorepo: OnyoRepo) -> None:
@@ -147,7 +148,7 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
     """
 
     # Call the function without parameter to get the empty template:
-    assert onyorepo.get_template() == dict()
+    assert onyorepo.get_templates().__next__() == DotNotationWrapper()
 
     # from the 'templates' dir, use the filename of each template to find the
     # corresponding template file as a path.
@@ -155,16 +156,16 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
         if path.name == ANCHOR_FILE_NAME:
             continue
 
-        # specify path as absolute, relative to template dir and relative to CWD (repo root):
-        for given_path in [path, path.name, path.relative_to(onyorepo.git.root)]:
-            template = onyorepo.get_template(path.name)
-            assert isinstance(template, dict)  # allow wrapper?
-            assert template != dict()  # TODO: compare content
+        # specify path as absolute or relative to template dir:
+        for given_path in [path, path.relative_to(onyorepo.template_dir)]:
+            template = onyorepo.get_templates(given_path).__next__()
+            assert isinstance(template, DotNotationWrapper)  # allow wrapper?
+            assert template != DotNotationWrapper()  # TODO: compare content
 
     # verify the correct error response when called with a template name that
     # does not exist
     with pytest.raises(ValueError):
-        onyorepo.get_template('I DO NOT EXIST')
+        onyorepo.get_templates(Path('I DO NOT EXIST')).__next__()
 
     # TODO: test config
 

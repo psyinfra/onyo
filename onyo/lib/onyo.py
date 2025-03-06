@@ -22,7 +22,11 @@ from .exceptions import (
 )
 from .git import GitRepo
 from .ui import ui
-from .utils import get_asset_content, write_asset_file
+from .utils import (
+    DotNotationWrapper,
+    get_asset_content,
+    write_asset_file,
+)
 
 if TYPE_CHECKING:
     from typing import (
@@ -571,19 +575,23 @@ class OnyoRepo(object):
 
         return False
 
-    def get_template(self,
-                     path: Path | str | None = None) -> dict:
-        r"""Select a template file and return an asset dict from it.
+    def get_templates(self,
+                      path: Path | None = None,
+                      recursive: bool = False) -> Generator[DotNotationWrapper, None, None]:
+        r"""Select a template file and return a dict-like from it.
 
         Parameters
         ----------
         path
-            Path to a Template. If relative or a string, then it is considered
-            as relative to the template directory (:py:data:`onyo.lib.consts.TEMPLATE_DIR`).
+            Path to a Template. If relative, then it is considered relative
+            to the template directory (:py:data:`onyo.lib.consts.TEMPLATE_DIR`).
             If no path is given, the template defined in the config
             ``onyo.new.template`` is used.
 
-        If ``name`` is not specified and the config ``onyo.new.template`` is not
+        recursive
+            Recurse into directory templates
+
+        If ``path`` is not specified and the config ``onyo.new.template`` is not
         set, the dictionary will be empty.
 
         Raises
@@ -592,18 +600,36 @@ class OnyoRepo(object):
             If the requested template can't be found.
         """
 
+        from .utils import yaml_to_dict_multi
         if not path:
-            path = self.get_config('onyo.new.template')
-            if path is None:
-                return dict()
+            default_template = self.get_config('onyo.new.template')
+            if default_template is None:
+                yield DotNotationWrapper()
+                return
+            path = Path(default_template)
 
-        template_file = self.template_dir / path \
-            if isinstance(path, str) or not path.is_absolute() \
-            else path
-        if not template_file.is_file():
+        template_file = self.template_dir / path if not path.is_absolute() else path
+        if not template_file.exists():
             raise ValueError(f"Template {path} does not exist.")
+        for p in self.get_item_paths(include=[template_file],
+                                     depth=0 if recursive else 1,
+                                     no_intermediates=True):
+            for d in yaml_to_dict_multi(p):
+                yield DotNotationWrapper(d, pristine_original=False)
+            # maybe something like get_item_spec(path)->UnboundItem or DotNotation?
+            # - would deal with stripping everything but settable pseudokeys
+            #      - None or remove? If we update something from this, must not delete existing keys
+            #        Say, we get `onyo.path = {}`. Must not replace that dict in something that has `onyo.path.x` set.
+            # - needs a --base equivalent to be relative to `path.parent`
+            # - in opposition to a get_item() would accept pseudokeys in the YAML
 
-        return get_asset_content(template_file)
+
+            #get_asset_content(p)   # DotNotation? Probably!
+
+
+
+            # make a copy of onyo_new to work with
+        #return get_asset_content(template_file)
 
     def validate_anchors(self) -> bool:
         r"""Check if all inventory directories contain an ``.anchor`` file.
@@ -640,7 +666,8 @@ class OnyoRepo(object):
                        include: Iterable[Path] | None = None,
                        exclude: Iterable[Path] | Path | None = None,
                        depth: int = 0,
-                       types: List[Literal['assets', 'directories']] | None = None
+                       types: List[Literal['assets', 'directories']] | None = None,
+                       no_intermediates: bool = False
                        ) -> List[Path]:
         r"""Get the Paths of all items matching paths and filters.
 
@@ -657,6 +684,9 @@ class OnyoRepo(object):
             List of types of inventory items to consider. Equivalent to
             ``onyo.is.asset=True`` and ``onyo.is.directory=True``.
             Default is ``['assets']``.
+        no_intermediates
+            Don't return intermediate directory items. The only directories explicitly
+            contained in the returned list are leaves.
         """
 
         if types is None:
@@ -680,20 +710,32 @@ class OnyoRepo(object):
             files = [f
                      for f in files
                      for root in include
-                     if root in f.parents and (len(f.parents) - len(root.parents) <= depth)]
+                     if (f == root) or (root in f.parents and (len(f.parents) - len(root.parents) <= depth))]
         if exclude:
             files = [f for f in files if all(f != p and p not in f.parents for p in exclude)]
 
         paths = []
-        if 'assets' in types:
-            paths.extend([f for f in files if not f.name == ANCHOR_FILE_NAME and self.is_item_path(f)] +
-                         [f.parent for f in files if f.name == ASSET_DIR_FILE_NAME])
-        if 'directories' in types:
-            paths.extend([f.parent for f in files
-                          if f.name == ANCHOR_FILE_NAME and self.is_item_path(f.parent)])
-            # special case root - has no anchor file that would show up in `files`:
-            if self.git.root in include:
-                paths.append(self.git.root)
+        # special case root - has no anchor file that would show up in `files`:
+        if "directories" in types and self.git.root in include:
+            paths.append(self.git.root)
+
+        for f in files:
+            if "assets" in types and f.name == ASSET_DIR_FILE_NAME:
+                if f.parent not in paths:
+                    paths.append(f.parent)
+                continue
+            if "assets" in types and f.name != ANCHOR_FILE_NAME and self.is_item_path(f):
+                paths.append(f)
+                continue
+            if "directories" in types and f.name == ANCHOR_FILE_NAME and self.is_item_path(f.parent):
+                if f.parent not in paths:
+                    paths.append(f.parent)
+                continue
+
+        if no_intermediates:
+            # remove any directory that has children in `paths`
+            for p in [p for p in paths if any(i.parent == p for i in paths)]:
+                paths.remove(p)
 
         return paths
 
@@ -847,7 +889,6 @@ class OnyoRepo(object):
         #       or have sort of a proxy in OnyoRepo.
         #       -> May be: get_history(Item) in Inventory and get_history(path) in OnyoRepo.
         from onyo.lib.parser import parse_operations_record
-        from onyo.lib.utils import DotNotationWrapper
 
         for commit in self.git.history(path, n):
             record = []
