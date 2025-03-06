@@ -594,6 +594,13 @@ class Item(ItemSpec):
             loader = self.repo.get_asset_content
         elif path.is_file():
             loader = get_asset_content
+        elif (path / ASSET_DIR_FILE_NAME).is_file():
+            # This is a hack. Existing functionality for asset dirs does not consider templates.
+            # All the `is_asset_*` logic doesn't apply, since template files live outside of actual inventory paths and
+            # even possibly outside the repo altogether. Consider rewriting this in context of `ItemSpec`.
+            # Also needs to set "onyo.is.directory" and "onyo.path.file" accordingly if applicable.
+            loader = get_asset_content
+            path = path / ASSET_DIR_FILE_NAME
         else:
             return
 
