@@ -171,7 +171,7 @@ def yaml_to_dict_multi(stream: Path | str) -> Generator[dict | CommentedMap, Non
         for document in yaml.load_all(stream):
             if not isinstance(document, (dict, CommentedMap)):
                 # TODO: Better error. See also get_asset_content
-                raise NotAnAssetError("Invalid item in YAML document.")
+                raise NotAnAssetError(f"Invalid item in YAML document ({stream}).")
             yield document
     except YAMLError as e:  # pyre-ignore[66]
         # Remove ruamel usage pointer (see github issue 436)

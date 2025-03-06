@@ -857,12 +857,24 @@ class Inventory(object):
                 # report the error, and proceed
                 ui.error(e)
 
-    def get_asset_from_template(self,
-                                template: Path | str | None) -> Item:
-        r"""Get a template as an Item."""
+    def get_templates(self,
+                      template: Path | None,
+                      recursive: bool = False) -> Generator[Item, None, None]:
+        r"""Get templates as Items.
 
-        # TODO: Possibly join with get_asset_content()
-        return Item(self.repo.get_template(template))  # , repo=self.repo ?? Probably not. Template is not yet bound.
+        template:
+            Path to generate a template from. If relative, this is interpreted
+            as relative to the repository's template dir.
+        recursive:
+            Recursive into template directories.
+        """
+        # TODO: This function should pass on ItemSpecs, but `new` can't deal with that yet.
+        for d in self.repo.get_templates(template, recursive=recursive):
+            # TODO: The following is currently necessary, b/c `Item(ItemSpec)` has a bug
+            #       that kills pseudokeys.
+            item = Item(repo=self.repo)
+            item.update(d)
+            yield item
 
     def generate_asset_name(self,
                             asset: Item) -> str:
