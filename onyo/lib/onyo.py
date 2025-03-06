@@ -575,19 +575,23 @@ class OnyoRepo(object):
 
         return False
 
-    def get_template(self,
-                     path: Path | str | None = None) -> dict:
-        r"""Select a template file and return an asset dict from it.
+    def get_templates(self,
+                      path: Path | None = None,
+                      recursive: bool = False) -> Generator[DotNotationWrapper, None, None]:
+        r"""Select a template file and return a dict-like from it.
 
         Parameters
         ----------
         path
-            Path to a Template. If relative or a string, then it is considered
-            as relative to the template directory (:py:data:`onyo.lib.consts.TEMPLATE_DIR`).
+            Path to a Template. If relative, then it is considered relative
+            to the template directory (:py:data:`onyo.lib.consts.TEMPLATE_DIR`).
             If no path is given, the template defined in the config
             ``onyo.new.template`` is used.
 
-        If ``name`` is not specified and the config ``onyo.new.template`` is not
+        recursive
+            Recurse into directory templates
+
+        If ``path`` is not specified and the config ``onyo.new.template`` is not
         set, the dictionary will be empty.
 
         Raises
@@ -596,18 +600,36 @@ class OnyoRepo(object):
             If the requested template can't be found.
         """
 
+        from .utils import yaml_to_dict_multi
         if not path:
-            path = self.get_config('onyo.new.template')
-            if path is None:
-                return dict()
+            default_template = self.get_config('onyo.new.template')
+            if default_template is None:
+                yield DotNotationWrapper()
+                return
+            path = Path(default_template)
 
-        template_file = self.template_dir / path \
-            if isinstance(path, str) or not path.is_absolute() \
-            else path
-        if not template_file.is_file():
+        template_file = self.template_dir / path if not path.is_absolute() else path
+        if not template_file.exists():
             raise ValueError(f"Template {path} does not exist.")
+        for p in self.get_item_paths(include=[template_file],
+                                     depth=0 if recursive else 1,
+                                     no_intermediates=True):
+            for d in yaml_to_dict_multi(p):
+                yield DotNotationWrapper(d, pristine_original=False)
+            # maybe something like get_item_spec(path)->UnboundItem or DotNotation?
+            # - would deal with stripping everything but settable pseudokeys
+            #      - None or remove? If we update something from this, must not delete existing keys
+            #        Say, we get `onyo.path = {}`. Must not replace that dict in something that has `onyo.path.x` set.
+            # - needs a --base equivalent to be relative to `path.parent`
+            # - in opposition to a get_item() would accept pseudokeys in the YAML
 
-        return get_asset_content(template_file)
+
+            #get_asset_content(p)   # DotNotation? Probably!
+
+
+
+            # make a copy of onyo_new to work with
+        #return get_asset_content(template_file)
 
     def validate_anchors(self) -> bool:
         r"""Check if all inventory directories contain an ``.anchor`` file.
