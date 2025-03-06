@@ -687,7 +687,7 @@ class OnyoRepo(object):
             files = [f
                      for f in files
                      for root in include
-                     if root in f.parents and (len(f.parents) - len(root.parents) <= depth)]
+                     if (f == root) or (root in f.parents and (len(f.parents) - len(root.parents) <= depth))]
         if exclude:
             files = [f for f in files if all(f != p and p not in f.parents for p in exclude)]
 
