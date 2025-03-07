@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -217,3 +218,92 @@ def print_diff(diffable: Inventory | InventoryOperation) -> None:
                 style = ""
 
         ui.rich_print(line, style=style)
+
+
+def whosyourdaddy(inventory: Inventory,
+                  path: Path,
+                  recursive: bool = False,
+                  base: Path | None = None) -> str:
+    from onyo.lib.consts import SORT_ASCENDING
+    from onyo.lib.pseudokeys import PSEUDO_KEYS
+    from onyo.lib.utils import dict_to_yaml
+    base = base or (path.parent if path != inventory.root else inventory.root)
+    stream_uuid = uuid.uuid4()
+    items = list(inventory.get_items(include=[path],
+                                     depth=0 if recursive else 1,
+                                     types=['assets', 'directories'],
+                                     intermediates=False
+                                     ),
+
+                 )
+
+    items = natural_sort(items=items, keys={'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
+
+    asset_dirs_lookup = {}
+    for item in items:
+        if item["onyo.is.directory"]:
+            if item["onyo.is.asset"]:
+                # Generate an id to be used in a matching expression for children's "onyo.path.parent".
+                # This uses the relative path in the repo as a unique label guaranteed by the FS.
+                item["onyo.documentid"] = str(uuid.uuid5(stream_uuid, str(item["onyo.path.relative"])))
+                asset_dirs_lookup[item["onyo.path.relative"]] = item["onyo.documentid"]
+            else:
+                # plain directory:  trigger evaluation of the name pseudokey
+                item.get("onyo.path.name")
+
+    for item in items:
+        if item["onyo.path.absolute"] == path:
+            # top-level
+            item["onyo.path.parent"] = str((inventory.root / item["onyo.path.parent"]).relative_to(base))
+            continue
+        if item["onyo.path.parent"] in asset_dirs_lookup:
+            item["onyo.path.parent"] = f"<?onyo.documentid={asset_dirs_lookup[item['onyo.path.parent']]}>"
+        else:
+            item["onyo.path.parent"] = str((inventory.root / item["onyo.path.parent"]).relative_to(base))
+
+    output: str = ""
+    for item in items:
+        for key in list(PSEUDO_KEYS.keys()):
+            match key:
+                case "onyo.is.asset" | "onyo.is.directory" | "onyo.path.parent":
+                    # keep these keys
+                    continue
+                case "onyo.path.name":
+                    # do not keep for assets - names are generated
+                    if item["onyo.is.asset"]:
+                        del item[key]
+                case _:
+                    # remove all other pseudo-keys
+                    del item[key]
+        del item["onyo.was"]
+
+        output += dict_to_yaml(item)
+    return output
+
+
+def iamyourfather(inventory: Inventory,
+                  yaml_stream: str,
+                  base: Path | None = None) -> list[Item]:
+
+    from onyo.lib.utils import yaml_to_dict_multi
+    from onyo.lib.filters import Filter
+    from onyo.lib.items import Item
+
+    specs = [d for d in yaml_to_dict_multi(yaml_stream)]
+    for spec in specs:
+        if spec["onyo.is.asset"]:
+            spec["onyo.path.name"] = inventory.generate_asset_name(spec)
+    for spec in specs:
+        if not spec["onyo.path.parent"].startswith("<?") or not spec["onyo.path.parent"].endswith(">"):
+            spec["onyo.path.parent"] = Path(spec["onyo.path.parent"])
+            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
+    for spec in specs:
+        if isinstance(spec["onyo.path.parent"], str) and spec["onyo.path.parent"].startswith("<?") and spec["onyo.path.parent"].endswith(">"):
+            filter_ = Filter(spec["onyo.path.parent"][2:-1])
+            matches = [s for s in specs if filter_.match(s)]
+            assert len(matches) == 1
+            spec["onyo.path.parent"] = matches[0]["onyo.path.relative"]
+            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
+
+            # maybe put Filter.match in here and search for callables when resolving.
+    return [Item(spec) for spec in specs]

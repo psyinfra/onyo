@@ -6,6 +6,7 @@ from onyo.lib.utils import (
     dict_to_asset_yaml,
     DotNotationWrapper,
     get_asset_content,
+    yaml_to_dict_multi,
 )
 
 asset_file_content = """---
@@ -35,6 +36,29 @@ description: |
   This is a long text
   containing multiple lines.
 """
+
+
+def assert_all_keys_strings(d: dict) -> None:
+    for key in d.keys():
+        assert isinstance(key, str)
+        if isinstance(d[key], list):
+            # This does not yet consider lists/dicts within lists!
+            assert all(isinstance(i, str) for i in d[key])
+            continue
+        if isinstance(d[key], dict):
+            assert_all_keys_strings(d[key])
+            continue
+        if 'null' in key:
+            assert d[key] is None
+            continue
+
+        match key:
+            case 'explicit':
+                assert isinstance(d[key], int)
+            case '003_5' | 'a_false':
+                assert isinstance(d[key], bool)
+            case _:
+                assert isinstance(d[key], str)
 
 
 def test_dict_to_asset_yaml() -> None:
@@ -75,28 +99,6 @@ def test_get_asset_content(tmp_path) -> None:
     asset_dict = get_asset_content(asset_file)
     assert isinstance(asset_dict, dict)  # this includes ruamel's CommentedMap
 
-    def assert_all_keys_strings(d: dict) -> None:
-        for key in d.keys():
-            assert isinstance(key, str)
-            if isinstance(d[key], list):
-                # This does not yet consider lists/dicts within lists!
-                assert all(isinstance(i, str) for i in d[key])
-                continue
-            if isinstance(d[key], dict):
-                assert_all_keys_strings(d[key])
-                continue
-            if 'null' in key:
-                assert d[key] is None
-                continue
-
-            match key:
-                case 'explicit':
-                    assert isinstance(d[key], int)
-                case '003_5'|'a_false':
-                    assert isinstance(d[key], bool)
-                case _:
-                    assert isinstance(d[key], str)
-
     assert_all_keys_strings(asset_dict)
 
 
@@ -111,3 +113,20 @@ def test_roundtrip(tmp_path) -> None:
     write_back = asset_file_content.replace("~", " ")  # Space, b/c the comment position is retained.
     write_back = write_back.replace(" Null", "").replace(" NULL", "").replace(" null", "")
     assert dict_to_asset_yaml(asset_dict) == write_back
+
+
+def test_yaml_to_dict_multi(tmp_path) -> None:
+    asset_file = tmp_path / "asset-file"
+    multidoc = asset_file_content+asset_file_content
+    asset_file.write_text(multidoc)
+
+    from_file = [i for i in yaml_to_dict_multi(asset_file)]
+    from_string = [i for i in yaml_to_dict_multi(multidoc)]
+    assert len(from_file) == len(from_string) == 2
+    assert all(isinstance(d, dict) for d in from_file)
+    assert all(isinstance(d, dict) for d in from_string)
+    assert from_file[0] == from_string[0]
+    assert from_file[1] == from_string[1]
+
+    for d in from_file + from_string:
+        assert_all_keys_strings(d)

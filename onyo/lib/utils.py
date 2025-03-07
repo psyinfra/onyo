@@ -10,7 +10,6 @@ from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
 
 from onyo.lib.consts import RESERVED_KEYS
-from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
@@ -275,23 +274,41 @@ def dict_to_asset_yaml(d: Dict | UserDict) -> str:
 
     # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
     content = copy.deepcopy(d)
-    for key in RESERVED_KEYS + list(PSEUDO_KEYS.keys()):
+
+    # TODO: RESERVED_KEYS has an artificial "onyo" in it, in order
+    #       to remove the subdict altogether, since iterating over pseudokeys would leave empty dicts behind.
+    #       This needs to be addressed in a nicer way with namespace handling in `Item`.
+    for key in RESERVED_KEYS:
         if key in content:
             del content[key]
+    return dict_to_yaml(content)
+
+
+def dict_to_yaml(d: dict | UserDict) -> str:
+    """Convert a python dictionary to a YAML string.
+
+    Dictionaries that contain a map of comments (ruamel, etc) will have those
+    comments included in the string.
+
+    Parameters
+    ----------
+    d:
+        Dictionary to convert to a YAML string.
+    """
 
     # Empty dicts are serialized to '{}', and I was unable to find any input
     # ('', None, etc) that would serialize to nothing. Hardcoding, though ugly,
     # seems to be the only option.
-    if not content:
+    if not d:
         return '---\n'
 
     from io import StringIO
     yaml = get_patched_yaml()
     yaml.explicit_start = True
     s = StringIO()
-    yaml.dump(content.data
-              if isinstance(content, DotNotationWrapper)
-              else content,
+    yaml.dump(d.data
+              if isinstance(d, DotNotationWrapper)
+              else d,
               s)
 
     return s.getvalue()
@@ -311,25 +328,32 @@ def get_asset_content(asset_file: Path) -> dict:
         The YAML is invalid.
     """
 
-    yaml = get_patched_yaml()
-    contents = dict()
     try:
-        contents = yaml.load(asset_file)
+        contents = yaml_to_dict_multi(asset_file).__next__()
+    except StopIteration:
+        # no document yielded
+        contents = dict()
+    return contents
+
+
+def yaml_to_dict_multi(stream: Path | str) -> Generator[dict | CommentedMap, None, None]:  # pyre-ignore[11]
+    """Yield dictionaries from a (potential) multi-document YAML."""
+    # TODO: Input should actually be stream (`TextIO` or sth) not str
+    #       Figure when utilizing properly via `onyo_new` where things can come in from file or stdin.
+    # TODO: Utilize this function in `get_asset_content` by retrieving only the first document and ignore the rest.
+    yaml = get_patched_yaml()
+    try:
+        for document in yaml.load_all(stream):
+            if not isinstance(document, (dict, CommentedMap)):
+                # TODO: Better error. See also get_asset_content
+                raise NotAnAssetError("Invalid item in YAML document.")
+            yield document
     except YAMLError as e:  # pyre-ignore[66]
         # Remove ruamel usage pointer (see github issue 436)
         if hasattr(e, 'note') and isinstance(e.note, str) and "suppress this check" in e.note:
             e.note = ""
-        raise NotAnAssetError(f"Invalid YAML in {asset_file}:\n{str(e)}") from e
-
-    if contents is None:
-        return dict()
-
-    if not isinstance(contents, (dict, CommentedMap)):
-        # For example: a simple text file may technically be valid YAML,
-        # but we may get a string instead of dict.
-        raise NotAnAssetError(f"{asset_file} does not appear to be an asset.")
-
-    return contents
+        # TODO: Better error. See also get_asset_content
+        raise NotAnAssetError(f"Invalid YAML:\n{str(e)}") from e
 
 
 def get_temp_file(suffix='.yaml') -> Path:
