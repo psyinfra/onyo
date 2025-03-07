@@ -104,6 +104,8 @@ class ItemSpec(UserDict):
         matchable and return ``True``.
         """
 
+        key = resolve_alias(key)
+
         try:
             self.__getitem__(key)
             return True
@@ -113,6 +115,8 @@ class ItemSpec(UserDict):
     def __delitem__(self,
                     key: _KT) -> None:
         r"""Remove a ``key`` from self."""
+
+        key = resolve_alias(key)
 
         if isinstance(key, str):
             parts = key.split('.')
@@ -130,6 +134,8 @@ class ItemSpec(UserDict):
     def __getitem__(self,
                     key: _KT) -> Any:
         r"""Get the value of a key."""
+
+        key = resolve_alias(key)
 
         if isinstance(key, str):
             parts = key.split('.')
@@ -173,12 +179,14 @@ class ItemSpec(UserDict):
 
     def __setitem__(self,
                     key: _KT,
-                    item: _VT) -> None:
-        r"""Set a key.
+                    value: _VT) -> None:
+        r"""Set the value of a key.
 
         Keys that are strings are interpreted for dot notation, and intermediate
         dictionaries are created as needed.
         """
+
+        key = resolve_alias(key)
 
         if isinstance(key, str):
             parts = key.split('.')
@@ -192,9 +200,9 @@ class ItemSpec(UserDict):
                         effective_dict[parts[lvl]] = dict()
                         effective_dict = effective_dict[parts[lvl]]
 
-            effective_dict[parts[-1]] = item
+            effective_dict[parts[-1]] = value
         else:
-            super().__setitem__(key, item)
+            super().__setitem__(key, value)
 
     def _keys(self) -> Generator[str, None, None]:
         """Yield all keys recursively from nested dictionaries in dot notation.
@@ -215,6 +223,83 @@ class ItemSpec(UserDict):
                     yield str(k)
 
         yield from recursive_keys(self.data)
+
+    def equal_content(self,
+                      other: ItemSpec | Item) -> bool:
+        r"""Whether another ItemSpec/Item and self have the same content and comments.
+
+        Pseudokeys are ignored entirely.
+
+        Parameters
+        ----------
+        other
+            Item to compare with self.
+        """
+
+        return self.yaml() == other.yaml()
+
+    def get(self,  # pyre-ignore[14]
+            key: _KT,
+            default: Any = None) -> Any:
+        r"""Return the value of ``key`` if it's in the dictionary, otherwise ``default``."""
+
+        key = resolve_alias(key)
+
+        return super().get(key, default=default)
+
+    def update_from_path(self,
+                         path: Path) -> None:
+        r"""Update the internal dictionary with key/values from a YAML file.
+
+        YAML comments are preserved on a best-effort basis. There is no
+        straightforward way to merge YAML comments, and thus ones from ``path``
+        may overwrite internal ones.
+
+        Parameters
+        ----------
+        path
+            Path of YAML file to update from.
+        """
+
+        from onyo.lib.utils import get_asset_content
+
+        self._path = path
+
+        if self.repo and self.repo.is_asset_path(path):
+            loader = self.repo.get_asset_content
+        elif path.is_file():
+            loader = get_asset_content
+        else:
+            return
+
+        map_from_file = loader(path)
+        self.update(map_from_file)
+        if hasattr(map_from_file, 'copy_attributes'):
+            # We got a (subclass of) ruamel.yaml.CommentBase.
+            # Copy the attributes re comments, format, etc. for roundtrip.
+            map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
+
+    def yaml(self,
+             exclude: list | None = None) -> str:
+        r"""Get the stringified YAML including content and comments.
+
+        Parameters
+        ----------
+        exclude
+            Keys to exclude from the output. By default, all
+            :py:data:`onyo.lib.consts.RESERVED_KEYS` (e.g. pseudokeys) are
+            excluded.
+        """
+
+        exclude = RESERVED_KEYS if exclude is None else exclude
+
+        # deepcopy to keep comments
+        content = deepcopy(self)
+        for key in exclude:
+            if key in content:
+                del content[key]
+
+        return dict_to_yaml(content.data)
 
 
 class Item(ItemSpec):
@@ -248,18 +333,6 @@ class Item(ItemSpec):
 
         if kwargs:
             self.update(**kwargs)
-
-    def __contains__(self,
-                     key: _KT) -> bool:
-        r"""Whether ``key`` is in self."""
-
-        return super().__contains__(resolve_alias(key))
-
-    def __delitem__(self,
-                    key: _KT) -> None:
-        r"""Remove a ``key`` from self."""
-
-        super().__delitem__(resolve_alias(key))
 
     def __eq__(self,
                other: Any) -> bool:
@@ -307,7 +380,6 @@ class Item(ItemSpec):
         yet evaluated pseudo-key.
         """
 
-        key = resolve_alias(key)
         value = super().__getitem__(key)
 
         if key in PSEUDO_KEYS and \
@@ -319,14 +391,6 @@ class Item(ItemSpec):
             return new_value
 
         return value
-
-    def __setitem__(self,
-                    key: _KT,
-                    value: _VT) -> None:
-        r"""Set the value of a key."""
-
-        key = resolve_alias(key)
-        super().__setitem__(key, value)
 
     def _fill_created(self,
                       key: str | None = None) -> str | None:
@@ -485,81 +549,6 @@ class Item(ItemSpec):
             return None
 
         return self._path == self.repo.template_dir or self.repo.template_dir in self._path.parents   # pyre-ignore[16]
-
-    def equal_content(self,
-                      other: Item) -> bool:
-        r"""Whether another Item and self have the same content and comments.
-
-        Pseudokeys are ignored entirely.
-
-        Parameters
-        ----------
-        other
-            Item to compare with self.
-        """
-
-        return self.yaml() == other.yaml()
-
-    def get(self,  # pyre-ignore[14]
-            key: _KT,
-            default: Any = None) -> Any:
-        r"""Return the value of ``key`` if it's in the dictionary, otherwise ``default``."""
-
-        return super().get(resolve_alias(key), default=default)
-
-    def update_from_path(self,
-                         path: Path) -> None:
-        r"""Update the internal dictionary with key/values from a YAML file.
-
-        YAML comments are preserved on a best-effort basis. There is no
-        straightforward way to merge YAML comments, and thus ones from ``path``
-        may overwrite internal ones.
-
-        Parameters
-        ----------
-        path
-            Path of YAML file to update from.
-        """
-
-        from onyo.lib.utils import get_asset_content
-
-        self._path = path
-
-        if self.repo and self.repo.is_asset_path(path):
-            loader = self.repo.get_asset_content
-        elif path.is_file():
-            loader = get_asset_content
-        else:
-            return
-
-        map_from_file = loader(path)
-        self.update(map_from_file)
-        if hasattr(map_from_file, 'copy_attributes'):
-            # We got a (subclass of) ruamel.yaml.CommentBase.
-            # Copy the attributes re comments, format, etc. for roundtrip.
-            map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
-
-    def yaml(self,
-             exclude: list | None = None) -> str:
-        r"""Get the stringified YAML including content and comments.
-
-        Parameters
-        ----------
-        exclude
-            Keys to exclude from the output. By default, all
-            :py:data:`onyo.lib.consts.RESERVED_KEYS` (e.g. pseudokeys) are
-            excluded.
-        """
-
-        exclude = RESERVED_KEYS if exclude is None else exclude
-
-        # deepcopy to keep comments
-        content = deepcopy(self)
-        for key in exclude:
-            if key in content:
-                del content[key]
-
-        return dict_to_yaml(content.data)
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet
