@@ -903,12 +903,12 @@ class Inventory(object):
 
     def get_faux_serials(self,
                          num: int = 1,
-                         length: int = 6) -> set[str]:
+                         length: int = 8) -> set[str]:
         r"""Generate a set of unique faux serials.
 
         The generated faux serials are unique within the set and repository.
 
-        The minimum serial length of 4 offers a serial space of 62^4 (~14.7
+        The minimum serial length of 5 offers a serial space of 36^5 (~60.5
         million). That is (arbitrarily) determined to be the highest acceptable
         risk of collisions between independent checkouts of a repo generating
         serials at the same time.
@@ -918,7 +918,7 @@ class Inventory(object):
         num
             Number of serials to generate.
         length
-            String length of the serials to generate. Must be >= 4.
+            String length of the serials to generate. Must be >= 5.
 
         Raises
         ------
@@ -929,12 +929,12 @@ class Inventory(object):
         import random
         import string
 
-        if length < 4:
-            raise ValueError('The length of faux serial numbers must be >= 4.')
+        if length < 5:
+            raise ValueError('The length of faux serial numbers must be >= 5.')
         if num < 1:
             raise ValueError('The number of faux serial numbers must be >= 1.')
 
-        alphanum = string.ascii_letters + string.digits
+        alphanum = string.ascii_lowercase + string.digits
         faux_serials = set()
         # TODO: This split actually puts the entire filename in the set if there's no "faux".
         repo_faux_serials = {str(x.name).split('faux')[-1] for x in self.repo.asset_paths}
