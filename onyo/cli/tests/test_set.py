@@ -6,9 +6,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from onyo.lib.items import Item
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import DotNotationWrapper
 
 if TYPE_CHECKING:
     from typing import List
@@ -20,12 +22,12 @@ directories = ['.',
                'r/e/c/u/r/s/i/v/e',
                'very/very/very/deep'
                ]
-asset_specs = [DotNotationWrapper({'type': 'laptop',
-                                   'make': 'apple',
-                                   'model': {'name': 'macbookpro'}}),
-               DotNotationWrapper({'type': 'lap top',
-                                   'make': 'ap ple',
-                                   'model': {'name': 'mac book pro'}})
+asset_specs = [ItemSpec({'type': 'laptop',
+                         'make': 'apple',
+                         'model': {'name': 'macbookpro'}}),
+               ItemSpec({'type': 'lap top',
+                         'make': 'ap ple',
+                         'model': {'name': 'mac book pro'}})
                ]
 
 assets = []

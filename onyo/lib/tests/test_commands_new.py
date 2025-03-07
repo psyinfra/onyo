@@ -4,8 +4,10 @@ import pytest
 
 from onyo.lib.consts import ANCHOR_FILE_NAME
 from onyo.lib.inventory import Inventory
-from onyo.lib.items import Item
-from onyo.lib.utils import DotNotationWrapper
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 from . import check_commit_msg
 from ..commands import onyo_new
 
@@ -36,14 +38,14 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
 
     Each successful call of `onyo_new()` must add one commit.
     """
-    specs = [DotNotationWrapper({'type': 'a type',
-                                 'make': 'I made it',
-                                 'model': {'name': 'a model'},
-                                 'serial': '002'}),
-             DotNotationWrapper({'type': 'a type',
-                                 'make': 'I made it',
-                                 'model': {'name': 'a model'},
-                                 'serial': '003'})
+    specs = [ItemSpec({'type': 'a type',
+                       'make': 'I made it',
+                       'model': {'name': 'a model'},
+                       'serial': '002'}),
+             ItemSpec({'type': 'a type',
+                       'make': 'I made it',
+                       'model': {'name': 'a model'},
+                       'serial': '003'})
              ]
     old_hexsha = inventory.repo.git.get_hexsha()
     onyo_new(inventory,
@@ -61,16 +63,16 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         assert all(new_asset[k] == s[k] for k in s.keys())
 
     # faux serial and 'directory' key
-    specs = [DotNotationWrapper({'type': 'A',
-                                 'make': 'faux',
-                                 'model': {'name': 'serial'},
-                                 'directory': 'brandnew',
-                                 'serial': 'faux'}),
-             DotNotationWrapper({'type': 'Another',
-                                 'make': 'faux',
-                                 'model': {'name': 'serial'},
-                                 'directory': 'completely/elsewhere',
-                                 'serial': 'faux'})
+    specs = [ItemSpec({'type': 'A',
+                       'make': 'faux',
+                       'model': {'name': 'serial'},
+                       'directory': 'brandnew',
+                       'serial': 'faux'}),
+             ItemSpec({'type': 'Another',
+                       'make': 'faux',
+                       'model': {'name': 'serial'},
+                       'directory': 'completely/elsewhere',
+                       'serial': 'faux'})
              ]
     # 'directory' is in conflict with `directory` being given:
     pytest.raises(ValueError,
@@ -109,11 +111,11 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     # use templates and `directory`'s default - CWD.
     # Attention: CWD being inventory.root relies on current implementation of
     # the repo fixture, which the inventory fixture builds upon.
-    specs = [DotNotationWrapper({'type': 'flavor',
-                                 'make': 'manufacturer',
-                                 'model': {'name': 'exquisite'},
-                                 'template': 'laptop.example',
-                                 'serial': '1234'})]
+    specs = [ItemSpec({'type': 'flavor',
+                       'make': 'manufacturer',
+                       'model': {'name': 'exquisite'},
+                       'template': 'laptop.example',
+                       'serial': '1234'})]
     onyo_new(inventory,
              keys=specs)  # pyre-ignore[6]
     # another commit added

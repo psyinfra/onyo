@@ -13,8 +13,8 @@ from onyo.lib.commands import (
     onyo_set,
 )
 from onyo.lib.inventory import Inventory
+from onyo.lib.items import ItemSpec
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import DotNotationWrapper
 
 if TYPE_CHECKING:
     from typing import Generator
@@ -60,7 +60,7 @@ class TestOnyoBenchmark:
             inventory = Inventory(repo=repo)
 
             # populate the repo
-            assets = [DotNotationWrapper(a) for a in fake.onyo_asset_dicts(num=num)]
+            assets = [ItemSpec(a) for a in fake.onyo_asset_dicts(num=num)]
             directories = fake.onyo_directories(num=num)
             assets = [a | {'directory': d} for a, d in zip(assets, directories)]
             onyo_new(inventory, keys=assets)  # pyre-ignore[6]
@@ -89,7 +89,7 @@ class TestOnyoBenchmark:
 
         inventory = benchmark_inventory
         # fifty additional assets
-        fifty_assets = [DotNotationWrapper(a) for a in fake.onyo_asset_dicts(num=50)]
+        fifty_assets = [ItemSpec(a) for a in fake.onyo_asset_dicts(num=50)]
         fifty_assets_as_keys = [f'{k}={v}' for a in fifty_assets for k, v in a.items()]
 
         def setup():

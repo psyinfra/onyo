@@ -23,7 +23,6 @@ from onyo.lib.exceptions import (
 from onyo.lib.git import GitRepo
 from onyo.lib.ui import ui
 from onyo.lib.utils import (
-    DotNotationWrapper,
     get_asset_content,
 )
 
@@ -875,6 +874,7 @@ class OnyoRepo(object):
         #       from Inventory to OnyoRepo and turn it into a commit-message part only,
         #       or have sort of a proxy in OnyoRepo.
         #       -> May be: get_history(Item) in Inventory and get_history(path) in OnyoRepo.
+        from onyo.lib.items import ItemSpec
         from onyo.lib.parser import parse_operations_record
 
         for commit in self.git.history(path, n):
@@ -889,4 +889,4 @@ class OnyoRepo(object):
             if record:
                 commit['operations'] = parse_operations_record(record)
 
-            yield DotNotationWrapper(commit)
+            yield ItemSpec(commit)

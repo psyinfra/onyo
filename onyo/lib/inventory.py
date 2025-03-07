@@ -981,7 +981,7 @@ class Inventory(object):
         """
 
         if any(not k or not str(k).strip() or k == 'None' for k in asset.keys()):
-            # Note, that DotNotationWrapper.keys() delivers strings (and has to).
+            # Note, that ItemSpec.keys() delivers strings (and has to).
             # Hence, `None` as a key would show up here as 'None'.
             raise ValueError("Keys are not allowed to be empty or None-values.")
 
