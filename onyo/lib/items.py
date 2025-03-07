@@ -96,25 +96,36 @@ class ItemSpec(UserDict):
             # Resort to `UserDict` behavior.
             super().__init__(__dict, **kwargs)
 
-    def _keys(self) -> Generator[str, None, None]:
-        """Yield all keys recursively from nested dictionaries in dot notation.
+    def __contains__(self,
+                     key: _KT) -> bool:
+        """Whether ``key`` is in self.
 
-        A by-product of dot notation is that all keys are strings, regardless of
-        their original type in the underlying dictionary.
-
-        Keys that contain a dictionary not yielded.
+        Unlike iteration over keys, keys that contain a dictionary are
+        matchable and return ``True``.
         """
 
-        def recursive_keys(d: dict):
-            for k in d.keys():
-                if hasattr(d[k], "keys"):
-                    yield from (k + "." + sk for sk in recursive_keys(d[k]))
-                else:
-                    # Cast as a string. One can't have a key 'some.1.more',
-                    # where 1 remains an integer.
-                    yield str(k)
+        try:
+            self.__getitem__(key)
+            return True
+        except KeyError:
+            return False
 
-        yield from recursive_keys(self.data)
+    def __delitem__(self,
+                    key: _KT) -> None:
+        r"""Remove a ``key`` from self."""
+
+        if isinstance(key, str):
+            parts = key.split('.')
+            effective_dict = self.data
+            if len(parts) > 1:
+                for lvl in range(len(parts) - 1):
+                    try:
+                        effective_dict = effective_dict[parts[lvl]]
+                    except KeyError as e:
+                        raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
+            del effective_dict[parts[-1]]
+        else:
+            super().__delitem__(key)
 
     def __getitem__(self,
                     key: _KT) -> Any:
@@ -141,6 +152,25 @@ class ItemSpec(UserDict):
 
         return super().__getitem__(key)
 
+    def __iter__(self) -> Generator[str, None, None]:
+        r"""Return the iterator.
+
+        A by-product of dot notation is that all keys are strings, regardless of
+        their original type in the underlying dictionary.
+
+        Keys that contain a dictionary are not yielded.
+        """
+
+        return self._keys()
+
+    def __len__(self) -> int:
+        r"""Return the number of keys in the dot notation view.
+
+        Keys that contain a dictionary are not counted.
+        """
+
+        return len(list(self._keys()))
+
     def __setitem__(self,
                     key: _KT,
                     item: _VT) -> None:
@@ -166,55 +196,25 @@ class ItemSpec(UserDict):
         else:
             super().__setitem__(key, item)
 
-    def __delitem__(self,
-                    key: _KT) -> None:
-        r"""Remove a ``key`` from self."""
-
-        if isinstance(key, str):
-            parts = key.split('.')
-            effective_dict = self.data
-            if len(parts) > 1:
-                for lvl in range(len(parts) - 1):
-                    try:
-                        effective_dict = effective_dict[parts[lvl]]
-                    except KeyError as e:
-                        raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
-            del effective_dict[parts[-1]]
-        else:
-            super().__delitem__(key)
-
-    def __contains__(self,
-                     key: _KT) -> bool:
-        """Whether ``key`` is in self.
-
-        Unlike iteration over keys, keys that contain a dictionary are
-        matchable and return ``True``.
-        """
-
-        try:
-            self.__getitem__(key)
-            return True
-        except KeyError:
-            return False
-
-    def __iter__(self) -> Generator[str, None, None]:
-        r"""Return the iterator.
+    def _keys(self) -> Generator[str, None, None]:
+        """Yield all keys recursively from nested dictionaries in dot notation.
 
         A by-product of dot notation is that all keys are strings, regardless of
         their original type in the underlying dictionary.
 
-        Keys that contain a dictionary are not yielded.
+        Keys that contain a dictionary not yielded.
         """
 
-        return self._keys()
+        def recursive_keys(d: dict):
+            for k in d.keys():
+                if hasattr(d[k], "keys"):
+                    yield from (k + "." + sk for sk in recursive_keys(d[k]))
+                else:
+                    # Cast as a string. One can't have a key 'some.1.more',
+                    # where 1 remains an integer.
+                    yield str(k)
 
-    def __len__(self) -> int:
-        r"""Return the number of keys in the dot notation view.
-
-        Keys that contain a dictionary are not counted.
-        """
-
-        return len(list(self._keys()))
+        yield from recursive_keys(self.data)
 
 
 class Item(ItemSpec):
