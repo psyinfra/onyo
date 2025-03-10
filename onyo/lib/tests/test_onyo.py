@@ -11,14 +11,14 @@ from onyo.lib.onyo import OnyoRepo, OnyoInvalidRepoError
 from onyo.lib.items import Item
 
 
-def test_OnyoRepo_instantiation_existing(onyorepo: OnyoRepo) -> None:
+def test_instantiation_existing(onyorepo: OnyoRepo) -> None:
     """Instantiate OnyoRepo with an existing repository."""
 
     new_repo = OnyoRepo(onyorepo.git.root, init=False)
     assert new_repo.git.root.samefile(onyorepo.git.root)
 
 
-def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
+def test_instantiation_non_existing(tmp_path: Path) -> None:
     """Instantiate OnyoRepo with a non-existing repository."""
 
     new_repo = OnyoRepo(tmp_path, init=True)
@@ -41,7 +41,7 @@ def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
                   'HEAD~1')
 
 
-def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo: OnyoRepo,
+def test_incorrect_input_arguments_raise_error(onyorepo: OnyoRepo,
                                                         tmp_path: Path) -> None:
     """OnyoRepo riases for invalid or conflicting arguments.
 
@@ -92,7 +92,7 @@ def test_clear_cache(onyorepo) -> None:
     assert asset not in onyorepo.asset_paths
 
 
-def test_Repo_generate_commit_subject(onyorepo: OnyoRepo) -> None:
+def test_generate_commit_subject(onyorepo: OnyoRepo) -> None:
     """Commit subject has correct asset count and paths are relative."""
 
     modified = [onyorepo.git.root / 's p a c e s',
@@ -137,7 +137,7 @@ def test_is_onyo_path(onyorepo) -> None:
                for f in onyorepo.test_annotation['git'].test_annotation['files'])
 
 
-def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
+def test_get_template_simple(onyorepo: OnyoRepo) -> None:
     """``get_template`` gets a dictionary of a template file.
 
     If a relative path is specified, it looks in ``.onyo/templates/`` first and
@@ -171,7 +171,7 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
 
 @pytest.mark.inventory_dirs(Path('a/test/directory/structure/'),
                             Path('another/dir/'))
-def test_Repo_validate_anchors(onyorepo) -> None:
+def test_validate_anchors(onyorepo) -> None:
     """``validate_anchors()`` returns True when all dirs have an `.anchor` file, and otherwise False."""
 
     # Must be true for valid repository
