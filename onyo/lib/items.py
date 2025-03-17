@@ -57,17 +57,29 @@ def resolve_alias(key: _KT,
 
 
 class ItemSpec(UserDict):
-    """Access nested dictionaries via hierarchical keys.
+    r"""Nested dictionaries of static instructions to create an ``Item``.
 
-    Wrap a dictionary to traverse multidimensional dictionaries using a dot as
-    the delimiter. In other words, it provides a view of the flattened
-    dictionary::
+    Compared to a dictionary, the primary features are:
+
+    * load YAML (e.g. ``ItemSpec(Path('file.yaml'))``
+    * dump YAML (e.g. ``spec.yaml()``)
+    * equality including YAML comments (e.g. ``ItemSpec() == ItemSpec()``)
+    * dot notation (e.g. ``spec['nested.dict.key']``)
+    * alias resolution
+
+    In contrast to ``Item``, an ``ItemSpec`` is entirely static. It is not
+    associated with a repository, and thus has no sanity checks nor pseudokey
+    lookup capabilities. Alias resolution is possible, but the mapping must be
+    provided manually.
+
+    Multidimensional dictionaries are traversed using a dot as the delimiter.
+    In other words, it provides a view of the flattened dictionary::
 
       > d = {'key': 'value', 'nested': {'key': 'another value'}}
-      > wrapper = ItemSpec(d)
-      > wrapper['nested.key']
+      > spec = ItemSpec(d)
+      > spec['nested.key']
       'another value'
-      > list(wrapper.keys())
+      > list(spec.keys())
       ['key', 'nested.key']
 
     Iteration only considers the flattened view. Keys that contain a dictionary
@@ -78,16 +90,16 @@ class ItemSpec(UserDict):
     """
 
     def __init__(self,
-                 __dict: Mapping[_KT, _VT] | None = None,
+                 __spec: Mapping[_KT, _VT] | str | None = None,
                  pristine_original: bool = True,
                  alias_map: Mapping[str, str] | None = None,
                  **kwargs: _VT) -> None:
-        r"""Initialize a dot notation wrapped dictionary.
+        r"""Initialize an ItemSpec.
 
         Parameters
         ----------
-        __dict
-            Dictionary to wrap.
+        __spec
+            Dictionary or YAML string to load.
         pristine_original
             Store ``__dict`` unaltered in the ``.data`` attribute.
             This behavior is the primary intended use for the wrapper: just a
@@ -101,20 +113,20 @@ class ItemSpec(UserDict):
 
         self._alias_map: Mapping[str, str] = {} if alias_map is None else alias_map
 
-        if pristine_original and __dict and isinstance(__dict, dict):
+        if pristine_original and __spec and isinstance(__spec, dict):
             # Maintain the original dict object (and class).
             # NOTE: Would modify wrapped dict w/ kwargs if both are given.
             #       deepcopy would prevent this, but contradicts the idea of wrapping.
             super().__init__()
-            self.data = __dict
+            self.data = __spec
             self.update(**kwargs)
         else:
             # Resort to `UserDict` behavior.
-            super().__init__(__dict, **kwargs)
+            super().__init__(__spec, **kwargs)
 
     def __contains__(self,
                      key: _KT) -> bool:
-        """Whether ``key`` is in self.
+        r"""Whether ``key`` is in self.
 
         Unlike iteration over keys, keys that contain a dictionary are
         matchable and return ``True``.
@@ -221,7 +233,7 @@ class ItemSpec(UserDict):
             super().__setitem__(key, value)
 
     def _keys(self) -> Generator[str, None, None]:
-        """Yield all keys recursively from nested dictionaries in dot notation.
+        r"""Yield all keys recursively from nested dictionaries in dot notation.
 
         A by-product of dot notation is that all keys are strings, regardless of
         their original type in the underlying dictionary.
