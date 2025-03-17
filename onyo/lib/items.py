@@ -12,8 +12,6 @@ from onyo.lib.consts import (
     ASSET_DIR_FILE_NAME,
     RESERVED_KEYS,
 )
-import onyo.lib.onyo
-import onyo.lib.inventory
 from onyo.lib.pseudokeys import (
     PSEUDO_KEYS,
     PSEUDOKEY_ALIASES,
@@ -31,6 +29,7 @@ if TYPE_CHECKING:
         Mapping,
         TypeVar,
     )
+    from onyo.lib.onyo import OnyoRepo
 
     _KT = TypeVar("_KT")  # Key type
     _VT = TypeVar("_VT")  # Value type
@@ -322,29 +321,48 @@ class ItemSpec(UserDict):
 class Item(ItemSpec):
     r"""An item that an :py:class:`onyo.lib.inventory.Inventory` can potentially track.
 
-    The main purpose is to attach pseudo-keys and alias resolution to things
-    that can be inventoried (directories and YAML-files).
+    In contrast to an ``ItemSpec``, an ``Item`` is associated with a repository.
+    Thus, it gains the ability to lookup/generate pseudokey values and the
+    automatic resolution of user-defined key aliases.
+
+    On initialization, sanity checks are performed on the provided
+    pseudokey-related values (e.g. all ``'onyo.path'`` are consistent, generate
+    the asset name from keys, etc). However, once instantiated, ``Item`` allows
+    changes to be made and makes no assurances about the consistency of the
+    information stored in it. For example, modifying ``onyo.is.directory`` or a
+    key used in the asset name will not automatically update the value of
+    ``onyo.path.file``.
+
+    It is the responsibility of those modifying values to clear caches and
+    ensure consistency.
+
+    It is safest to use the operations available in :py:class:`onyo.lib.inventory.Inventory`
+    to modify Items.
     """
 
     def __init__(self,
                  item: Mapping[_KT, _VT] | Path | None = None,
-                 repo: onyo.lib.onyo.OnyoRepo | None = None,
+                 repo: OnyoRepo | None = None,
                  **kwargs: _VT) -> None:
         r"""Initialize an Item."""
 
         super().__init__()
-        self.repo: onyo.lib.onyo.OnyoRepo | None = repo
+        self.repo: OnyoRepo | None = repo
         self._path: Path | None = None
         self._alias_map: Mapping[str, str] = PSEUDOKEY_ALIASES
         self.data = CommentedMap()
         self.update(PSEUDO_KEYS)
 
         match item:
+            case ItemSpec():
+                self._path = getattr(item, '_path', None)
+                self.data = deepcopy(item.data)
             case Item():
                 self._path = item._path
                 self.data = deepcopy(item.data)
             case Path():
                 assert item.is_absolute()  # currently no support for relative. This is how all existing code should work ATM.
+                self._path = item
                 self.update_from_path(item)
             case _ if item is not None:
                 self.update(item)
@@ -400,8 +418,7 @@ class Item(ItemSpec):
 
         value = super().__getitem__(key)
 
-        if key in PSEUDO_KEYS and \
-                isinstance(value, PseudoKey):
+        if key in PSEUDO_KEYS and isinstance(value, PseudoKey):
             # Value still is the pseudo-key definition.
             # Actually load and set the response as the new value.
             new_value = value.implementation(self)
