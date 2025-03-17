@@ -783,16 +783,16 @@ def test_natural_sort(keys: dict[str, sort_t],
     assert expected == [data.get('id') for data in sorted_assets]
 
     # explicitly check path sorting:
-    assets = [{'path': Path('folder/file (1).txt')},
-              {'path': Path('folder/file.txt')},
-              {'path': Path('folder (1)/file.txt')},
-              {'path': Path('folder (10)/file.txt')}]
-    sorted_assets = natural_sort(assets, {'path': SORT_ASCENDING})  # pyre-ignore[6]
+    assets = [{'onyo.path.relative': Path('folder/file (1).txt')},
+              {'onyo.path.relative': Path('folder/file.txt')},
+              {'onyo.path.relative': Path('folder (1)/file.txt')},
+              {'onyo.path.relative': Path('folder (10)/file.txt')}]
+    sorted_assets = natural_sort(assets, {'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
     expectation = ['folder/file.txt',
                    'folder/file (1).txt',
                    'folder (1)/file.txt',
                    'folder (10)/file.txt']
-    assert expectation == [str(a.get('path')) for a in sorted_assets]
+    assert expectation == [str(a.get('onyo.path.relative')) for a in sorted_assets]
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents

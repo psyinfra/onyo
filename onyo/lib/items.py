@@ -36,11 +36,23 @@ if TYPE_CHECKING:
     _VT = TypeVar("_VT")  # Value type
 
 
-def resolve_alias(key: Any) -> Any:
-    r"""Return the target key of a key alias."""
+def resolve_alias(key: _KT,
+                  alias_map: Mapping[str, str] | None = None) -> Any:
+    r"""Return the target key of a key alias.
 
+    Parameters
+    ----------
+    key
+        Key name to resolve.
+    alias_map
+        Dictionary mapping aliases to key names.
+    """
+
+    alias_map = {} if alias_map is None else alias_map
     try:
-        return PSEUDOKEY_ALIASES[key]
+        resolved_key = alias_map[key]
+        # lookup again, in case it's an alias of an alias
+        return resolve_alias(resolved_key, alias_map=alias_map)
     except KeyError:
         return key
 
@@ -69,6 +81,7 @@ class ItemSpec(UserDict):
     def __init__(self,
                  __dict: Mapping[_KT, _VT] | None = None,
                  pristine_original: bool = True,
+                 alias_map: Mapping[str, str] | None = None,
                  **kwargs: _VT) -> None:
         r"""Initialize a dot notation wrapped dictionary.
 
@@ -83,7 +96,11 @@ class ItemSpec(UserDict):
 
             Set to ``False`` to interpret the incoming dict's keys for dot
             notation and set accordingly.
+        alias_map
+            Dictionary mapping aliases to key names.
         """
+
+        self._alias_map: Mapping[str, str] = {} if alias_map is None else alias_map
 
         if pristine_original and __dict and isinstance(__dict, dict):
             # Maintain the original dict object (and class).
@@ -104,7 +121,7 @@ class ItemSpec(UserDict):
         matchable and return ``True``.
         """
 
-        key = resolve_alias(key)
+        key = resolve_alias(key, alias_map=self._alias_map)
 
         try:
             self.__getitem__(key)
@@ -116,7 +133,7 @@ class ItemSpec(UserDict):
                     key: _KT) -> None:
         r"""Remove a ``key`` from self."""
 
-        key = resolve_alias(key)
+        key = resolve_alias(key, alias_map=self._alias_map)
 
         if isinstance(key, str):
             parts = key.split('.')
@@ -135,7 +152,7 @@ class ItemSpec(UserDict):
                     key: _KT) -> Any:
         r"""Get the value of a key."""
 
-        key = resolve_alias(key)
+        key = resolve_alias(key, alias_map=self._alias_map)
 
         if isinstance(key, str):
             parts = key.split('.')
@@ -186,7 +203,7 @@ class ItemSpec(UserDict):
         dictionaries are created as needed.
         """
 
-        key = resolve_alias(key)
+        key = resolve_alias(key, alias_map=self._alias_map)
 
         if isinstance(key, str):
             parts = key.split('.')
@@ -243,7 +260,7 @@ class ItemSpec(UserDict):
             default: Any = None) -> Any:
         r"""Return the value of ``key`` if it's in the dictionary, otherwise ``default``."""
 
-        key = resolve_alias(key)
+        key = resolve_alias(key, alias_map=self._alias_map)
 
         return super().get(key, default=default)
 
@@ -318,6 +335,7 @@ class Item(ItemSpec):
         super().__init__()
         self.repo: onyo.lib.onyo.OnyoRepo | None = repo
         self._path: Path | None = None
+        self._alias_map: Mapping[str, str] = PSEUDOKEY_ALIASES
         self.data = CommentedMap()
         self.update(PSEUDO_KEYS)
 
