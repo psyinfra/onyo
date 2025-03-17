@@ -19,6 +19,7 @@ from onyo.lib.pseudokeys import (
 )
 from onyo.lib.utils import (
     dict_to_yaml,
+    yaml_to_dict,
 )
 
 
@@ -112,6 +113,11 @@ class ItemSpec(UserDict):
         """
 
         self._alias_map: Mapping[str, str] = {} if alias_map is None else alias_map
+
+        if isinstance(__spec, str):
+            # TODO: unlike other input methods, this does /not/ do alias
+            #       resolution on init
+            __spec = yaml_to_dict(__spec)
 
         if pristine_original and __spec and isinstance(__spec, dict):
             # Maintain the original dict object (and class).

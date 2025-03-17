@@ -102,6 +102,43 @@ def dict_to_yaml(d: Dict) -> str:
     return s.getvalue()
 
 
+def yaml_to_dict(s: str) -> Dict | CommentedMap:
+    r"""Convert a YAML string to a dictionary.
+
+    YAML that contains comments will have them retained as a comment map.
+
+    Parameters
+    ----------
+    s
+        YAML string to load as a dictionary.
+
+    Raises
+    ------
+    NotAnAssetError
+        The YAML is invalid.
+    """
+
+    yaml = get_patched_yaml()
+    contents = dict()
+    try:
+        contents = yaml.load(s)
+    except YAMLError as e:  # pyre-ignore[66]
+        # Remove ruamel usage pointer (see github issue 436)
+        if hasattr(e, 'note') and isinstance(e.note, str) and "suppress this check" in e.note:
+            e.note = ""
+        raise YAMLError(f"Invalid YAML:\n{str(e)}") from e
+
+    if contents is None:
+        return dict()
+
+    if not isinstance(contents, (dict, CommentedMap)):
+        # For example: a simple text file may technically be valid YAML,
+        # but we may get a string instead of dict.
+        raise YAMLError(f"Invalid YAML:\n{s}")
+
+    return contents
+
+
 def get_asset_content(asset_file: Path) -> dict:
     r"""Get the contents of a Path as a dictionary.
 
