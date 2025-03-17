@@ -114,6 +114,9 @@ class ItemSpec(UserDict):
 
         self._alias_map: Mapping[str, str] = {} if alias_map is None else alias_map
 
+        if isinstance(__spec, (ItemSpec, Item, Path)):
+            raise ValueError(f'ItemSpec does not accept {type(__spec)}')
+
         if isinstance(__spec, str):
             # TODO: unlike other input methods, this does /not/ do alias
             #       resolution on init
