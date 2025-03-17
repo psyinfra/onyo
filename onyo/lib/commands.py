@@ -1311,7 +1311,7 @@ def onyo_tsv_to_yaml(tsv: Path) -> None:
         if reader.fieldnames is None:
             raise ValueError(f"No header fields in tsv {str(tsv)}")
 
-        dicts = [ItemSpec(row, pristine_original=False) for row in reader]
+        dicts = [ItemSpec(row) for row in reader]
 
         # check for content
         if not dicts:

@@ -9,7 +9,7 @@ def test_init_pristine_original():
          'nested.deep.key': 'value',
          }
 
-    wrapper = ItemSpec(d, pristine_original=False)
+    wrapper = ItemSpec(d)
     assert wrapper.data['some'] == d['some']
     assert 'nested' in wrapper.data and isinstance(wrapper.data['nested'], dict)
     assert wrapper.data['nested']['one'] == d['nested.one']
@@ -65,15 +65,15 @@ def test_set_values():
     wrapper = ItemSpec(d)
     wrapper['some'] = 'newvalue'
     assert wrapper.get('some') == 'newvalue'
-    assert d['some'] == 'newvalue'
 
     wrapper['nested.deep.key'] = 1
     assert wrapper.get('nested.deep.key') == 1
-    assert d['nested']['deep']['key'] == 1
 
     wrapper['nested.deep.newkey'] = 2
     assert wrapper.get('nested.deep.newkey') == 2
-    assert d['nested']['deep']['newkey'] == 2
+
+    wrapper['nested.newdict.newkey'] = 3
+    assert wrapper.get('nested.newdict.newkey') == 3
 
     # update from regular dict
     updater = {'regular': 'dict', 'some': 'different'}

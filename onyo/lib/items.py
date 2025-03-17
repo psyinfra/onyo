@@ -92,7 +92,6 @@ class ItemSpec(UserDict):
 
     def __init__(self,
                  __spec: Mapping[_KT, _VT] | str | None = None,
-                 pristine_original: bool = True,
                  alias_map: Mapping[str, str] | None = None,
                  **kwargs: _VT) -> None:
         r"""Initialize an ItemSpec.
@@ -101,13 +100,6 @@ class ItemSpec(UserDict):
         ----------
         __spec
             Dictionary or YAML string to load.
-        pristine_original
-            Store ``__dict`` unaltered in the ``.data`` attribute.
-            This behavior is the primary intended use for the wrapper: just a
-            namespace wrapper for dicts.
-
-            Set to ``False`` to interpret the incoming dict's keys for dot
-            notation and set accordingly.
         alias_map
             Dictionary mapping aliases to key names.
         """
@@ -122,16 +114,16 @@ class ItemSpec(UserDict):
             #       resolution on init
             __spec = yaml_to_dict(__spec)
 
-        if pristine_original and __spec and isinstance(__spec, dict):
-            # Maintain the original dict object (and class).
-            # NOTE: Would modify wrapped dict w/ kwargs if both are given.
-            #       deepcopy would prevent this, but contradicts the idea of wrapping.
-            super().__init__()
-            self.data = __spec
-            self.update(**kwargs)
-        else:
-            # Resort to `UserDict` behavior.
-            super().__init__(__spec, **kwargs)
+        match __spec:
+            case CommentedMap():
+                # TODO: unlike other input methods, this does /not/ do alias
+                #       resolution on init
+                super().__init__()
+                # direct assignment to retain comments
+                self.data = deepcopy(__spec)
+                self.update(**kwargs)
+            case _:
+                super().__init__(__spec, **kwargs)
 
     def __contains__(self,
                      key: _KT) -> bool:
