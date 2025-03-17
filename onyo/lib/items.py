@@ -492,11 +492,13 @@ class Item(ItemSpec):
         r"""Initializer for the ``'onyo.path.file'`` pseudo-key."""
 
         if self.repo and self['onyo.path.relative']:
-            if not self['onyo.is.directory']:
-                return self['onyo.path.relative']
-            if self['onyo.is.asset'] or self['onyo.is.template']:
-                return self['onyo.path.relative'] / ASSET_DIR_FILE_NAME
-            return self['onyo.path.relative'] / ANCHOR_FILE_NAME
+            if self['onyo.is.directory']:
+                if self['onyo.is.asset']:
+                    return self['onyo.path.relative'] / ASSET_DIR_FILE_NAME
+
+                return self['onyo.path.relative'] / ANCHOR_FILE_NAME
+
+            return self['onyo.path.relative']
 
         return None
 
