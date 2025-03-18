@@ -102,7 +102,7 @@ def dict_to_yaml(d: Dict) -> str:
     return s.getvalue()
 
 
-def yaml_to_dict(s: str) -> Dict | CommentedMap:
+def yaml_to_dict(s: str) -> Dict | CommentedMap:  # pyre-ignore[11]
     r"""Convert a YAML string to a dictionary.
 
     YAML that contains comments will have them retained as a comment map.
@@ -244,5 +244,6 @@ def write_asset_to_file(asset: Item,
         pseudokey.
     """
 
-    path = asset.repo.git.root / asset.get('onyo.path.file') if path is None else path
+    # TODO: This assumes that `repo` is always set in Item(). This is not yet true, but one day will be.
+    path = asset.repo.git.root / asset.get('onyo.path.file') if path is None else path  # pyre-ignore[16]
     path.write_text(asset.yaml())

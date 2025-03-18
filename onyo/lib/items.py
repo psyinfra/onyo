@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 
 def resolve_alias(key: _KT,
-                  alias_map: Mapping[str, str] | None = None) -> Any:
+                  alias_map: Mapping[str, str] | None = None) -> _KT:
     r"""Return the target key of a key alias.
 
     Parameters
@@ -50,9 +50,9 @@ def resolve_alias(key: _KT,
 
     alias_map = {} if alias_map is None else alias_map
     try:
-        resolved_key = alias_map[key]
+        resolved_key = alias_map[key]  # pyre-ignore[6]
         # lookup again, in case it's an alias of an alias
-        return resolve_alias(resolved_key, alias_map=alias_map)
+        return resolve_alias(resolved_key, alias_map=alias_map)  # pyre-ignore[7]
     except KeyError:
         return key
 
@@ -106,24 +106,24 @@ class ItemSpec(UserDict):
 
         self._alias_map: Mapping[str, str] = {} if alias_map is None else alias_map
 
-        if isinstance(__spec, (ItemSpec, Item, Path)):
-            raise ValueError(f'ItemSpec does not accept {type(__spec)}')
+        if isinstance(__spec, (ItemSpec, Item, Path)):  # pyre-ignore[61]
+            raise ValueError(f'ItemSpec does not accept {type(__spec)}')  # pyre-ignore[61]
 
-        if isinstance(__spec, str):
+        if isinstance(__spec, str):  # pyre-ignore[61]
             # TODO: unlike other input methods, this does /not/ do alias
             #       resolution on init
             __spec = yaml_to_dict(__spec)
 
-        match __spec:
+        match __spec:  # pyre-ignore[61]
             case CommentedMap():
                 # TODO: unlike other input methods, this does /not/ do alias
                 #       resolution on init
                 super().__init__()
                 # direct assignment to retain comments
-                self.data = deepcopy(__spec)
+                self.data = deepcopy(__spec)  # pyre-ignore[61]
                 self.update(**kwargs)
             case _:
-                super().__init__(__spec, **kwargs)
+                super().__init__(__spec, **kwargs)  # pyre-ignore[61]
 
     def __contains__(self,
                      key: _KT) -> bool:
