@@ -769,8 +769,8 @@ class OnyoRepo(object):
         if not self.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path")
 
-        # TODO: this should not be handled here. Perhaps Item.__setitem__() or
-        #       inventory.modify_asset().
+        # TODO: this should not be handled here. Rather in Inventory.modify_asset()
+        #       and Inventory.add_asset().
         if asset.get('onyo.is.directory') and path.name != ASSET_DIR_FILE_NAME:
             path = path / ASSET_DIR_FILE_NAME
 

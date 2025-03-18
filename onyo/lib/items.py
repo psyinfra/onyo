@@ -62,7 +62,7 @@ class ItemSpec(UserDict):
 
     Compared to a dictionary, the primary features are:
 
-    * load YAML (e.g. ``ItemSpec(Path('file.yaml'))``
+    * load YAML (e.g. ``ItemSpec(Path('file.yaml').read_text())``
     * dump YAML (e.g. ``spec.yaml()``)
     * equality including YAML comments (e.g. ``ItemSpec() == ItemSpec()``)
     * dot notation (e.g. ``spec['nested.dict.key']``)
@@ -327,6 +327,7 @@ class ItemSpec(UserDict):
         # deepcopy to keep comments
         content = deepcopy(self)
         for key in exclude:
+            # TODO: resolve_alias()?
             if key in content:
                 del content[key]
 
@@ -360,6 +361,12 @@ class Item(ItemSpec):
                  repo: OnyoRepo | None = None,
                  **kwargs: _VT) -> None:
         r"""Initialize an Item."""
+
+        # TODO:
+        # - accept only Item, ItemSpec, or Path (no dict or str)
+        # - repo is required
+        # - sanity check of incoming Path or ItemSpec (specifically
+        #   path-related keys)
 
         super().__init__()
         self.repo: OnyoRepo | None = repo
@@ -401,7 +408,7 @@ class Item(ItemSpec):
 
         if key in PSEUDO_KEYS and isinstance(value, PseudoKey):
             # Value still is the pseudo-key definition.
-            # Actually load and set the response as the new value.
+            # Query and set the response as the new value.
             new_value = value.implementation(self)
             self[key] = new_value
             return new_value
