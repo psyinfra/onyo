@@ -160,6 +160,40 @@ class ItemSpec(UserDict):
         else:
             super().__delitem__(key)
 
+    def __eq__(self,
+               other: Any) -> bool:
+        r"""Whether another ItemSpec/Item and self have the same content, comments, and paths.
+
+        Pseudokeys are ignored with the exception of:
+
+        - `'onyo.is.asset'`
+        - `'onyo.is.directory'`
+        - `'onyo.path.absolute'`
+        - `'onyo.path.file'`
+        - `'onyo.path.name'`
+        - `'onyo.path.relative'`
+        """
+
+        if not isinstance(other, (ItemSpec, Item)):
+            return False
+
+        # NOTE: 'onyo.path.file' is checked first because it actually covers all
+        #       other tests. The other keys are kept to be self-documenting and
+        #       to protect against future implementation changes causing bugs.
+        pseudo_keys_to_check = [
+            'onyo.path.file',
+            'onyo.is.asset',
+            'onyo.is.directory',
+            'onyo.path.absolute',
+            'onyo.path.name',
+            'onyo.path.relative',
+        ]
+        for k in pseudo_keys_to_check:
+            if self.get(k, None) != other.get(k, None):
+                return False
+
+        return self.equal_content(other)
+
     def __getitem__(self,
                     key: _KT) -> Any:
         r"""Get the value of a key."""
@@ -276,38 +310,6 @@ class ItemSpec(UserDict):
 
         return super().get(key, default=default)
 
-    def update_from_path(self,
-                         path: Path) -> None:
-        r"""Update the internal dictionary with key/values from a YAML file.
-
-        YAML comments are preserved on a best-effort basis. There is no
-        straightforward way to merge YAML comments, and thus ones from ``path``
-        may overwrite internal ones.
-
-        Parameters
-        ----------
-        path
-            Path of YAML file to update from.
-        """
-
-        from onyo.lib.utils import get_asset_content
-
-        self._path = path
-
-        if self.repo and self.repo.is_asset_path(path):
-            loader = self.repo.get_asset_content
-        elif path.is_file():
-            loader = get_asset_content
-        else:
-            return
-
-        map_from_file = loader(path)
-        self.update(map_from_file)
-        if hasattr(map_from_file, 'copy_attributes'):
-            # We got a (subclass of) ruamel.yaml.CommentBase.
-            # Copy the attributes re comments, format, etc. for roundtrip.
-            map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
-
     def yaml(self,
              exclude: list | None = None) -> str:
         r"""Get the stringified YAML including content and comments.
@@ -382,40 +384,6 @@ class Item(ItemSpec):
 
         if kwargs:
             self.update(**kwargs)
-
-    def __eq__(self,
-               other: Any) -> bool:
-        r"""Whether another Item and self have the same content, comments, and paths.
-
-        Pseudokeys are ignored with the exception of:
-
-        - `'onyo.is.asset'`
-        - `'onyo.is.directory'`
-        - `'onyo.path.absolute'`
-        - `'onyo.path.file'`
-        - `'onyo.path.name'`
-        - `'onyo.path.relative'`
-        """
-
-        if not isinstance(other, Item):
-            return False
-
-        # NOTE: 'onyo.path.file' is checked first because it actually covers all
-        #       other tests. The other keys are kept to be self-documenting and
-        #       to protect against future implementation changes causing bugs.
-        pseudo_keys_to_check = [
-            'onyo.path.file',
-            'onyo.is.asset',
-            'onyo.is.directory',
-            'onyo.path.absolute',
-            'onyo.path.name',
-            'onyo.path.relative',
-        ]
-        for k in pseudo_keys_to_check:
-            if self.get(k, None) != other.get(k, None):
-                return False
-
-        return self.equal_content(other)
 
     def __getitem__(self,
                     key: _KT) -> Any:
@@ -599,6 +567,38 @@ class Item(ItemSpec):
             return None
 
         return self._path == self.repo.template_dir or self.repo.template_dir in self._path.parents   # pyre-ignore[16]
+
+    def update_from_path(self,
+                         path: Path) -> None:
+        r"""Update the internal dictionary with key/values from a YAML file.
+
+        YAML comments are preserved on a best-effort basis. There is no
+        straightforward way to merge YAML comments, and thus ones from ``path``
+        may overwrite internal ones.
+
+        Parameters
+        ----------
+        path
+            Path of YAML file to update from.
+        """
+
+        from onyo.lib.utils import get_asset_content
+
+        self._path = path
+
+        if self.repo and self.repo.is_asset_path(path):
+            loader = self.repo.get_asset_content
+        elif path.is_file():
+            loader = get_asset_content
+        else:
+            return
+
+        map_from_file = loader(path)
+        self.update(map_from_file)
+        if hasattr(map_from_file, 'copy_attributes'):
+            # We got a (subclass of) ruamel.yaml.CommentBase.
+            # Copy the attributes re comments, format, etc. for roundtrip.
+            map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet
