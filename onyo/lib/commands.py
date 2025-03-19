@@ -835,10 +835,12 @@ def onyo_mv(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_new(inventory: Inventory,
-             directory: Path | None = None,
-             template: Path | str | None = None,
-             clone: Path | None = None,
+             base: Path | None = None,
+             template: list[Path] | None = None,
+             clone: list[Path] | None = None,
+             yaml: list[Path] | None = None,  # TODO: typing.TextIO? How do we want to deal with stdin? Same: template
              keys: list[Dict | UserDict] | None = None,
+             recursive: bool = False,
              edit: bool = False,
              message: str | None = None,
              auto_message: bool | None = None) -> None:
@@ -860,19 +862,27 @@ def onyo_new(inventory: Inventory,
     ----------
     inventory
         The Inventory in which to create new assets.
-    directory
-        The directory to create new asset(s) in. This cannot be used with the
-        ``directory`` Reserved Key.
-
-        If `None` and the ``directory`` Reserved Key is not found, it defaults
-        to CWD.
+    base
+        The directory to create new asset(s) in. All relative path specifications
+        are interpreted relative to this base.
+        Defaults to CWD.
     template
-        Path to a template to populate the contents of new assets.
-
+        List of Paths to template(s) to populate the contents of new assets.
         Relative paths are resolved relative to ``.onyo/templates``.
+
+        TODO: - mention layering
+              - mention 1-or-N rule
+              - mention directory templates and ``recursive``
+              - mention multidoc YAML
     clone
-        Path of an asset to clone. Cannot be used with the ``template`` argument
-        nor the ``template`` Reserved Key.
+        List of inventory paths to clone. Cannot be used with the ``template`` argument.
+    yaml
+        Paths to YAML files
+        TODO: - mention layering
+              - mention 1-or-N rule
+              - mention directory templates and ``recursive``
+              - mention multidoc YAML
+              - allow `-` as stdin
     keys
         List of dictionaries with key/value pairs to set in the new assets.
 
@@ -897,63 +907,75 @@ def onyo_new(inventory: Inventory,
         If information is invalid, missing, or contradictory.
     """
 
-    from copy import deepcopy
+    from itertools import zip_longest
+    from onyo.lib.filters import Filter
+    from onyo.lib.utils import DotNotationWrapper, yaml_to_dict_multi
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
-
-    keys = keys or []
-    if not any([keys, edit, template, clone]):
+    if not any([keys, edit, template, clone, yaml]):
         raise ValueError("Key-value pairs or a template/clone-target must be given.")
     if template and clone:
         raise ValueError("'template' and 'clone' options are mutually exclusive.")
 
+    auto_message = auto_message or inventory.repo.auto_message
+    keys = keys or []
+    base = base or Path.cwd()
     # get editor early in case it fails
     editor = inventory.repo.get_editor() if edit else ""
 
-    # Note that `keys` can be empty.
-    specs = deepcopy(keys)
+    layers = ([(t_path, inventory.get_templates(t_path, recursive=recursive)) for t_path in template]
+              + clone + yaml + ["--keys"])
+    if template:
+        layers.extend([(t_path, inventory.get_templates(t_path, recursive=recursive)) for t_path in template])
+    if clone:
+        layers.extend([(c_path, inventory.get_templates(c_path, recursive=recursive)) for c_path in clone])
+    if yaml:
+        layers.extend([(y_path, yaml_to_dict_multi(y_path)) for y_path in yaml])
+    if keys:
+        layers.extend([("--keys", keys)])
 
-    # TODO: These validations could probably be more efficient and neat.
-    #       For ex., only first dict is actually relevant. It came from --key,
-    #       where everything after the first one comes from repetition (However, what about python interface where one
-    #       could pass an arbitrary list of dicts? -> requires consistency check
-    if any('directory' in d.keys() for d in specs):
-        if directory:
-            raise ValueError("Can't use '--directory' option and specify 'directory' key.")
-    else:
-        # default
-        directory = directory or Path.cwd()
-    if template and any('template' in d.keys() for d in specs):
-        raise ValueError("Can't use 'template' key and 'template' option.")
-    if clone and any('template' in d.keys() for d in specs):
-        raise ValueError("Can't use 'clone' key and 'template' option.")
-
-    # Generate actual assets:
-    if edit and not specs:
-        # Special case: No asset specification defined via `keys`, but we have `edit`.
-        # This implies a single asset, starting with a (possibly empty) template.
-        specs = [{}]
+    specs = []
+    for spec_tuple in zip_longest(*[layer[1] for layer in layers]):
+        try:
+            # zip_longest fills in `None` if one iterable was exhausted earlier than another
+            too_short = spec_tuple.index(None)
+            raise InvalidArgumentError(f"Number of items mismatch. List from {layers[too_short][0]} too short.")
+        except ValueError:
+            pass
+        updated_spec = spec_tuple[0]
+        for layer in spec_tuple[1:]:
+            updated_spec.update(layer)
+        specs.append(updated_spec)
 
     for spec in specs:
-        # 1. Unify directory specification
-        directory = Path(spec.get('directory', directory))
-        if not directory.is_absolute():
-            directory = inventory.root / directory
-        spec['directory'] = directory
-        # 2. start from template
-        if clone:
-            asset = inventory.get_item(clone)
-        else:
-            t = spec.pop('template', None) or template
-            asset = inventory.get_templates(Path(t) if t else None).__next__()
-        # 3. fill in asset specification
-        asset.update(spec)
-        # 4. (try to) add to inventory
+        if spec["onyo.is.asset"]:
+            spec["onyo.path.name"] = inventory.generate_asset_name(spec)
+    for spec in specs:
+        if not spec["onyo.path.parent"].startswith("<?") or not spec["onyo.path.parent"].endswith(">"):
+            spec["onyo.path.parent"] = Path(spec["onyo.path.parent"])
+            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
+    for spec in specs:
+        if isinstance(spec["onyo.path.parent"], str) and spec["onyo.path.parent"].startswith("<?") and spec["onyo.path.parent"].endswith(">"):
+            filter_ = Filter(spec["onyo.path.parent"][2:-1])
+            matches = [s for s in specs if filter_.match(s)]
+            assert len(matches) == 1
+            spec["onyo.path.parent"] = matches[0]["onyo.path.relative"]
+            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
+
+    for spec in specs:
         if edit:
-            _edit_asset(inventory, asset, inventory.add_asset, editor)
+            _edit_asset(inventory, spec, inventory.add_asset, editor)
         else:
-            inventory.add_asset(asset)
+            inventory.add_asset(spec)
+
+    # TODOs: - actually apply `base` properly
+    #        - file-like input (stdin via '-' as the path in `yaml`)
+    #        - What if `template` points outside repo? Does that work? Should that work?
+    #        - Possibly throw `get_templates` away again and actually call onyo_show()
+    #        - Remove all traces of the "directory" key
+    #        - special safeguards/sanity checks: Templates/clones/yaml allow for different things.
+    #          Double-check the lower layers, once ItemSpec is in.
+    #        - Actually define settable pseudokeys properly.
+
 
     if inventory.operations_pending():
         if not edit:
