@@ -91,14 +91,14 @@ class ItemSpec(UserDict):
     """
 
     def __init__(self,
-                 __spec: Mapping[_KT, _VT] | str | None = None,
+                 spec: Mapping[_KT, _VT] | str | None = None,
                  alias_map: Mapping[str, str] | None = None,
                  **kwargs: _VT) -> None:
         r"""Initialize an ItemSpec.
 
         Parameters
         ----------
-        __spec
+        spec
             Dictionary or YAML string to load.
         alias_map
             Dictionary mapping aliases to key names.
@@ -106,24 +106,24 @@ class ItemSpec(UserDict):
 
         self._alias_map: Mapping[str, str] = {} if alias_map is None else alias_map
 
-        if isinstance(__spec, (ItemSpec, Item, Path)):  # pyre-ignore[61]
-            raise ValueError(f'ItemSpec does not accept {type(__spec)}')  # pyre-ignore[61]
+        if isinstance(spec, (ItemSpec, Item, Path)):
+            raise ValueError(f'ItemSpec does not accept {type(spec)}')
 
-        if isinstance(__spec, str):  # pyre-ignore[61]
+        if isinstance(spec, str):
             # TODO: unlike other input methods, this does /not/ do alias
             #       resolution on init
-            __spec = yaml_to_dict(__spec)
+            spec = yaml_to_dict(spec)
 
-        match __spec:  # pyre-ignore[61]
+        match spec:
             case CommentedMap():
                 # TODO: unlike other input methods, this does /not/ do alias
                 #       resolution on init
                 super().__init__()
                 # direct assignment to retain comments
-                self.data = deepcopy(__spec)  # pyre-ignore[61]
+                self.data = deepcopy(spec)
                 self.update(**kwargs)
             case _:
-                super().__init__(__spec, **kwargs)  # pyre-ignore[61]
+                super().__init__(spec, **kwargs)
 
     def __contains__(self,
                      key: _KT) -> bool:
