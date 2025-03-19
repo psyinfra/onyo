@@ -1,0 +1,9 @@
+---
+type: slot
+make: none
+model:
+  name: none
+serial: faux
+registered: true
+standard: DDR4-3200
+position: P0_E1
