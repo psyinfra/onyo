@@ -317,12 +317,10 @@ class ItemSpec(UserDict):
         Parameters
         ----------
         exclude
-            Keys to exclude from the output. By default, all
-            :py:data:`onyo.lib.consts.RESERVED_KEYS` (e.g. pseudokeys) are
-            excluded.
+            Keys to exclude from the output. By default, none are excluded.
         """
 
-        exclude = RESERVED_KEYS if exclude is None else exclude
+        exclude = exclude or []
 
         # deepcopy to keep comments
         content = deepcopy(self)
@@ -606,6 +604,21 @@ class Item(ItemSpec):
             # We got a (subclass of) ruamel.yaml.CommentBase.
             # Copy the attributes re comments, format, etc. for roundtrip.
             map_from_file.copy_attributes(self.data)  # pyre-ignore[16]
+
+    def yaml(self,
+             exclude: list | None = None) -> str:
+        r"""Get the stringified YAML including content and comments.
+
+        Parameters
+        ----------
+        exclude
+            Keys to exclude from the output. By default, all
+            :py:data:`onyo.lib.consts.RESERVED_KEYS` (e.g. pseudokeys) are
+            excluded.
+        """
+
+        exclude = exclude or RESERVED_KEYS
+        return super().yaml(exclude)
 
 # TODO/Notes for next PR(s):
 # - Bug/Missing feature: pseudo-keys that are supposed to be settable by commands, are not yet
