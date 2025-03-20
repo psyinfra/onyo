@@ -368,8 +368,7 @@ def onyo_edit(inventory: Inventory,
 
     from functools import partial
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
     if not paths:
         raise ValueError("At least one asset must be specified.")
 
@@ -653,8 +652,7 @@ def onyo_mkdir(inventory: Inventory,
         ``dirs`` is empty.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not dirs:
         raise NoopError("At least one directory path must be specified.")
@@ -751,8 +749,7 @@ def onyo_mv(inventory: Inventory,
         If multiple source paths are specified to be renamed.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     sources = [source] if not isinstance(source, list) else source
     implicit_move = False
@@ -902,8 +899,7 @@ def onyo_new(inventory: Inventory,
 
     from copy import deepcopy
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     keys = keys or []
     if not any([keys, edit, template, clone]):
@@ -1004,8 +1000,7 @@ def onyo_rm(inventory: Inventory,
         If ``None``, lookup the config value from ``onyo.commit.auto-message``.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     paths = [paths] if not isinstance(paths, list) else paths
     for p in paths:
@@ -1075,8 +1070,7 @@ def onyo_rmdir(inventory: Inventory,
         ``dirs`` is empty.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not dirs:
         raise NoopError("At least one directory path must be specified.")
@@ -1144,8 +1138,7 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or if ``keys`` is empty.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not assets:
         raise ValueError("At least one asset must be specified.")
@@ -1368,8 +1361,7 @@ def onyo_unset(inventory: Inventory,
         an asset's name are attempted to be unset.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not keys:
         raise ValueError("At least one key must be specified.")
