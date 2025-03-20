@@ -227,7 +227,7 @@ def _edit_asset(inventory: Inventory,
 
     from shlex import quote
     from onyo.lib.consts import RESERVED_KEYS
-    from onyo.lib.utils import get_temp_file, get_asset_content
+    from onyo.lib.utils import get_temp_file
 
     if not editor:
         editor = inventory.repo.get_editor()
@@ -249,7 +249,7 @@ def _edit_asset(inventory: Inventory,
         subprocess.run(f'{editor} {quote(str(tmp_path))}', check=True, shell=True)
         operations = None
         try:
-            tmp_asset = ItemSpec(get_asset_content(tmp_path))
+            tmp_asset = ItemSpec(tmp_path.read_text())
             if 'onyo.is.directory' in tmp_asset.keys():
                 # 'onyo.is.directory' currently is the only modifiable, reserved key
                 reserved_keys['onyo.is.directory'] = tmp_asset['onyo.is.directory']
