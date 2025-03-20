@@ -191,7 +191,7 @@ _onyo() {
             tsv-to-yaml)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '*::TSV:_files -W "$(_onyo_dir)" -/'
+                    '*::TSV:_files -W "$(_onyo_dir)"'
                 )
                 ;;
             unset)
