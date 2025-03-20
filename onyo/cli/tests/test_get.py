@@ -13,7 +13,10 @@ from onyo.lib.consts import (
 )
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.command_utils import natural_sort
-from onyo.lib.utils import DotNotationWrapper
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 
 if TYPE_CHECKING:
     from typing import (
@@ -27,9 +30,8 @@ def convert_contents(
         raw_assets: list[tuple[str, dict[str, Any]]]) -> Generator:
     r"""Convert content dictionary to a plain-text string."""
 
-    from onyo.lib.utils import dict_to_asset_yaml
     for file, raw_contents in raw_assets:
-        yield [file, dict_to_asset_yaml(raw_contents)]
+        yield [file, Item(raw_contents).yaml()]
 
 
 tag_asset_contents = [
@@ -590,7 +592,7 @@ def test_get_keys(repo: OnyoRepo,
 
     # Get all the key values and make sure they match
     for line in output:
-        asset = DotNotationWrapper(raw_assets[[a[0] for a in raw_assets].index(line[-1])][1])
+        asset = ItemSpec(raw_assets[[a[0] for a in raw_assets].index(line[-1])][1])
 
         for i, key in enumerate(keys):
             if key in PSEUDO_KEYS:
@@ -771,26 +773,26 @@ def test_natural_sort(keys: dict[str, sort_t],
                       expected: list[int]) -> None:
     r"""Test implementation of natural sorting algorithm."""
 
-    assets = [DotNotationWrapper(t[1]) for t in asset_contents
+    assets = [ItemSpec(t[1]) for t in asset_contents
               if t[0] in ['a13bc_foo_bar.1',
                           'a2cd_foo_bar.2',
                           'a36ab_foo_bar.3',
                           'a36ab_afoo_bar.4']]
     sorted_assets = natural_sort(assets, keys=keys)  # pyre-ignore[6]
-    # ^ No idea why this is the only place where pyre can't figure that DotNotationWrapper is a UserDict
+    # ^ No idea why this is the only place where pyre can't figure that ItemSpec is a UserDict
     assert expected == [data.get('id') for data in sorted_assets]
 
     # explicitly check path sorting:
-    assets = [{'path': Path('folder/file (1).txt')},
-              {'path': Path('folder/file.txt')},
-              {'path': Path('folder (1)/file.txt')},
-              {'path': Path('folder (10)/file.txt')}]
-    sorted_assets = natural_sort(assets, {'path': SORT_ASCENDING})  # pyre-ignore[6]
+    assets = [{'onyo.path.relative': Path('folder/file (1).txt')},
+              {'onyo.path.relative': Path('folder/file.txt')},
+              {'onyo.path.relative': Path('folder (1)/file.txt')},
+              {'onyo.path.relative': Path('folder (10)/file.txt')}]
+    sorted_assets = natural_sort(assets, {'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
     expectation = ['folder/file.txt',
                    'folder/file (1).txt',
                    'folder (1)/file.txt',
                    'folder (10)/file.txt']
-    assert expectation == [str(a.get('path')) for a in sorted_assets]
+    assert expectation == [str(a.get('onyo.path.relative')) for a in sorted_assets]
 
 
 @pytest.mark.repo_contents(*convert_contents([t for t in asset_contents

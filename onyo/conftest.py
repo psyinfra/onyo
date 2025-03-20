@@ -324,7 +324,7 @@ def fixture_onyorepo(gitrepo,
                 implicit_dirs.append(spec['onyo.path.absolute'])
             to_commit += onyo.mk_inventory_dirs(implicit_dirs)
             onyo.test_annotation['dirs'].extend(implicit_dirs)
-            onyo.write_asset_content(spec)
+            onyo.write_asset(spec)
             onyo.test_annotation['assets'].append(spec)
             to_commit.append(spec['onyo.path.absolute'])
 

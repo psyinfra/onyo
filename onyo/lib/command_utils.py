@@ -226,7 +226,6 @@ def whosyourdaddy(inventory: Inventory,
                   base: Path | None = None) -> str:
     from onyo.lib.consts import SORT_ASCENDING
     from onyo.lib.pseudokeys import PSEUDO_KEYS
-    from onyo.lib.utils import dict_to_yaml
     base = base or (path.parent if path != inventory.root else inventory.root)
     stream_uuid = uuid.uuid4()
     items = list(inventory.get_items(include=[path],
@@ -277,7 +276,7 @@ def whosyourdaddy(inventory: Inventory,
                     del item[key]
         del item["onyo.was"]
 
-        output += dict_to_yaml(item)
+        output += item.yaml()
     return output
 
 

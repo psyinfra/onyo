@@ -1,29 +1,21 @@
 from __future__ import annotations
 
-import copy
 import os
-from collections import UserDict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ruamel.yaml import CommentedMap, scanner, YAML  # pyre-ignore[21]
 from ruamel.yaml.error import YAMLError  # pyre-ignore[21]
 
-from onyo.lib.consts import RESERVED_KEYS
 from onyo.lib.exceptions import NotAnAssetError
 from onyo.lib.ui import ui
 
 if TYPE_CHECKING:
     from typing import (
-        Any,
         Dict,
         Generator,
-        Mapping,
-        TypeVar,
     )
-
-    _KT = TypeVar("_KT")  # Key type
-    _VT = TypeVar("_VT")  # Value type
+    from onyo.lib.items import Item
 
 
 def get_patched_yaml() -> YAML:  # pyre-ignore[11]
@@ -63,178 +55,6 @@ def get_patched_yaml() -> YAML:  # pyre-ignore[11]
     return yaml
 
 
-class DotNotationWrapper(UserDict):
-    """Access nested dictionaries via hierarchical keys.
-
-    Wrap a dictionary to traverse multidimensional dictionaries using a dot as
-    the delimiter. In other words, it provides a view of the flattened
-    dictionary::
-
-      > d = {'key': 'value', 'nested': {'key': 'another value'}}
-      > wrapper = DotNotationWrapper(d)
-      > wrapper['nested.key']
-      'another value'
-      > list(wrapper.keys())
-      ['key', 'nested.key']
-
-    Iteration only considers the flattened view. Keys that contain a dictionary
-    are not yielded when using ``.keys()``, ``.values()``, and ``.items()``.
-
-    The underlying dictionary is available via the ``.data`` attribute when the
-    standard Python behavior is needed.
-    """
-
-    def __init__(self,
-                 __dict: Mapping[_KT, _VT] | None = None,
-                 pristine_original: bool = True,
-                 **kwargs: _VT) -> None:
-        r"""Initialize a dot notation wrapped dictionary.
-
-        Parameters
-        ----------
-        __dict
-            Dictionary to wrap.
-        pristine_original
-            Store ``__dict`` unaltered in the ``.data`` attribute.
-            This behavior is the primary intended use for the wrapper: just a
-            namespace wrapper for dicts.
-
-            Set to ``False`` to interpret the incoming dict's keys for dot
-            notation and set accordingly.
-        """
-
-        if pristine_original and __dict and isinstance(__dict, dict):
-            # Maintain the original dict object (and class).
-            # NOTE: Would modify wrapped dict w/ kwargs if both are given.
-            #       deepcopy would prevent this, but contradicts the idea of wrapping.
-            super().__init__()
-            self.data = __dict
-            self.update(**kwargs)
-        else:
-            # Resort to `UserDict` behavior.
-            super().__init__(__dict, **kwargs)
-
-    def _keys(self) -> Generator[str, None, None]:
-        """Yield all keys recursively from nested dictionaries in dot notation.
-
-        A by-product of dot notation is that all keys are strings, regardless of
-        their original type in the underlying dictionary.
-
-        Keys that contain a dictionary not yielded.
-        """
-
-        def recursive_keys(d: dict):
-            for k in d.keys():
-                if hasattr(d[k], "keys"):
-                    yield from (k + "." + sk for sk in recursive_keys(d[k]))
-                else:
-                    # Cast as a string. One can't have a key 'some.1.more',
-                    # where 1 remains an integer.
-                    yield str(k)
-
-        yield from recursive_keys(self.data)
-
-    def __getitem__(self,
-                    key: _KT) -> Any:
-        r"""Get the value of a key."""
-
-        if isinstance(key, str):
-            parts = key.split('.')
-            effective_dict = self.data
-            if len(parts) > 1:
-                for lvl in range(len(parts) - 1):
-                    try:
-                        effective_dict = effective_dict[parts[lvl]]
-                    except KeyError as e:
-                        raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
-                    except TypeError as e:
-                        raise KeyError(f"'{'.'.join(parts[:lvl])}' is not a dictionary.") from e
-
-            try:
-                return effective_dict[parts[-1]]
-            except KeyError as e:
-                raise KeyError(f"'{key}'") from e
-            except TypeError as e:
-                raise KeyError(f"'{'.'.join(parts[:-1])}' is not a dictionary.") from e
-
-        return super().__getitem__(key)
-
-    def __setitem__(self,
-                    key: _KT,
-                    item: _VT) -> None:
-        r"""Set a key.
-
-        Keys that are strings are interpreted for dot notation, and intermediate
-        dictionaries are created as needed.
-        """
-
-        if isinstance(key, str):
-            parts = key.split('.')
-            effective_dict = self.data
-            if len(parts) > 1:
-                for lvl in range(len(parts) - 1):
-                    try:
-                        effective_dict = effective_dict[parts[lvl]]
-                    except KeyError:
-                        # nested dict doesn't exist yet
-                        effective_dict[parts[lvl]] = dict()
-                        effective_dict = effective_dict[parts[lvl]]
-
-            effective_dict[parts[-1]] = item
-        else:
-            super().__setitem__(key, item)
-
-    def __delitem__(self,
-                    key: _KT) -> None:
-        r"""Remove a ``key`` from self."""
-
-        if isinstance(key, str):
-            parts = key.split('.')
-            effective_dict = self.data
-            if len(parts) > 1:
-                for lvl in range(len(parts) - 1):
-                    try:
-                        effective_dict = effective_dict[parts[lvl]]
-                    except KeyError as e:
-                        raise KeyError(f"'{'.'.join(parts[:lvl + 1])}'") from e
-            del effective_dict[parts[-1]]
-        else:
-            super().__delitem__(key)
-
-    def __contains__(self,
-                     key: _KT) -> bool:
-        """Whether ``key`` is in self.
-
-        Unlike iteration over keys, keys that contain a dictionary are
-        matchable and return ``True``.
-        """
-
-        try:
-            self.__getitem__(key)
-            return True
-        except KeyError:
-            return False
-
-    def __iter__(self) -> Generator[str, None, None]:
-        r"""Return the iterator.
-
-        A by-product of dot notation is that all keys are strings, regardless of
-        their original type in the underlying dictionary.
-
-        Keys that contain a dictionary are not yielded.
-        """
-
-        return self._keys()
-
-    def __len__(self) -> int:
-        r"""Return the number of keys in the dot notation view.
-
-        Keys that contain a dictionary are not counted.
-        """
-
-        return len(list(self._keys()))
-
-
 def deduplicate(sequence: list | None) -> list | None:
     r"""Deduplicate a list and preserve its order.
 
@@ -256,62 +76,67 @@ def deduplicate(sequence: list | None) -> list | None:
     return [x for x in sequence if not (x in seen or seen.add(x))]
 
 
-def dict_to_asset_yaml(d: Dict | UserDict) -> str:
-    r"""Convert a dictionary to a YAML string, stripped of reserved-keys.
+def dict_to_yaml(d: Dict) -> str:
+    r"""Convert a dictionary to a YAML string.
 
     Dictionaries that contain a map of comments (ruamel, etc) will have those
     comments included in the string.
-
-    See Also
-    --------
-    onyo.lib.consts.RESERVED_KEYS
 
     Parameters
     ----------
     d
-        Dictionary to strip of reserved-keys and convert to a YAML string.
+        Dictionary to render as YAML.
     """
 
-    # deepcopy to keep comments when `d` is `ruamel.yaml.comments.CommentedMap`.
-    content = copy.deepcopy(d)
-
-    # TODO: RESERVED_KEYS has an artificial "onyo" in it, in order
-    #       to remove the subdict altogether, since iterating over pseudokeys would leave empty dicts behind.
-    #       This needs to be addressed in a nicer way with namespace handling in `Item`.
-    for key in RESERVED_KEYS:
-        if key in content:
-            del content[key]
-    return dict_to_yaml(content)
-
-
-def dict_to_yaml(d: dict | UserDict) -> str:
-    """Convert a python dictionary to a YAML string.
-
-    Dictionaries that contain a map of comments (ruamel, etc) will have those
-    comments included in the string.
-
-    Parameters
-    ----------
-    d:
-        Dictionary to convert to a YAML string.
-    """
-
-    # Empty dicts are serialized to '{}', and I was unable to find any input
-    # ('', None, etc) that would serialize to nothing. Hardcoding, though ugly,
-    # seems to be the only option.
+    # empty dicts serialize to '{}'. Hardcode correct empty response.
     if not d:
         return '---\n'
 
     from io import StringIO
+
     yaml = get_patched_yaml()
     yaml.explicit_start = True
     s = StringIO()
-    yaml.dump(d.data
-              if isinstance(d, DotNotationWrapper)
-              else d,
-              s)
 
+    yaml.dump(d, s)
     return s.getvalue()
+
+
+def yaml_to_dict(s: str) -> Dict | CommentedMap:  # pyre-ignore[11]
+    r"""Convert a YAML string to a dictionary.
+
+    YAML that contains comments will have them retained as a comment map.
+
+    Parameters
+    ----------
+    s
+        YAML string to load as a dictionary.
+
+    Raises
+    ------
+    NotAnAssetError
+        The YAML is invalid.
+    """
+
+    yaml = get_patched_yaml()
+    contents = dict()
+    try:
+        contents = yaml.load(s)
+    except YAMLError as e:  # pyre-ignore[66]
+        # Remove ruamel usage pointer (see github issue 436)
+        if hasattr(e, 'note') and isinstance(e.note, str) and "suppress this check" in e.note:
+            e.note = ""
+        raise YAMLError(f"Invalid YAML:\n{str(e)}") from e
+
+    if contents is None:
+        return dict()
+
+    if not isinstance(contents, (dict, CommentedMap)):
+        # For example: a simple text file may technically be valid YAML,
+        # but we may get a string instead of dict.
+        raise YAMLError(f"Invalid YAML:\n{s}")
+
+    return contents
 
 
 def get_asset_content(asset_file: Path) -> dict:
@@ -336,7 +161,7 @@ def get_asset_content(asset_file: Path) -> dict:
     return contents
 
 
-def yaml_to_dict_multi(stream: Path | str) -> Generator[dict | CommentedMap, None, None]:  # pyre-ignore[11]
+def yaml_to_dict_multi(stream: Path | str) -> Generator[dict | CommentedMap, None, None]:
     """Yield dictionaries from a (potential) multi-document YAML."""
     # TODO: Input should actually be stream (`TextIO` or sth) not str
     #       Figure when utilizing properly via `onyo_new` where things can come in from file or stdin.
@@ -404,19 +229,21 @@ def validate_yaml(asset_files: list[Path] | None) -> bool:
     return True
 
 
-def write_asset_file(path: Path,
-                     asset: Dict | UserDict) -> None:
-    r"""Write content to an asset file.
+def write_asset_to_file(asset: Item,
+                        path: Path | None = None) -> None:
+    r"""Write asset content to a file.
 
-    All ``RESERVED_KEYS`` will be stripped from the content before writing.
+    Pseudokeys are not included in the written YAML.
 
     Parameters
     ----------
-    path
-        The Path to write content to.
     asset
-        A dictionary of content to write to the path.
+        Item to write to disk.
+    path
+        The Path to write content to. Default is the asset's ``'onyo.path.file'``
+        pseudokey.
     """
 
-    # TODO: Get file path from onyo.path.file?
-    path.write_text(dict_to_asset_yaml(asset))
+    # TODO: This assumes that `repo` is always set in Item(). This is not yet true, but one day will be.
+    path = asset.repo.git.root / asset.get('onyo.path.file') if path is None else path  # pyre-ignore[16]
+    path.write_text(asset.yaml())

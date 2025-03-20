@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .consts import (
+from onyo.lib.consts import (
     ANCHOR_FILE_NAME,
     ASSET_DIR_FILE_NAME,
     IGNORE_FILE_NAME,
@@ -15,27 +15,26 @@ from .consts import (
     ONYO_DIR,
     TEMPLATE_DIR,
 )
-from .exceptions import (
+from onyo.lib.exceptions import (
     NotAnAssetError,
     OnyoInvalidRepoError,
     OnyoProtectedPathError
 )
-from .git import GitRepo
-from .ui import ui
-from .utils import (
-    DotNotationWrapper,
+from onyo.lib.git import GitRepo
+from onyo.lib.ui import ui
+from onyo.lib.utils import (
     get_asset_content,
-    write_asset_file,
 )
 
 if TYPE_CHECKING:
+    from collections import UserDict
     from typing import (
         Generator,
         Iterable,
         List,
         Literal,
     )
-    from collections import UserDict
+    from onyo.lib.items import Item
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
 
@@ -746,28 +745,36 @@ class OnyoRepo(object):
 
         return a
 
-    def write_asset_content(self,
-                            asset: dict | UserDict) -> dict | UserDict:
+    def write_asset(self,
+                    asset: Item) -> Item:
         r"""Write an asset's contents to disk.
 
-        The correct path is determined using the asset's pseudo-keys.
+        Pseudokeys are not included in the written YAML.
 
         Parameters
         ----------
         asset
-            The asset dict to write.
+            The asset Item to write.
+        path
+            The Path to write content to. Default is the asset's
+            ``'onyo.path.file'`` pseudokey.
+
+        Raises
+        ------
+        ValueError
+            The pseudokey ``'onyo.path.file'`` is not a valid inventory path.
         """
 
         path = asset.get('onyo.path.absolute')
-        if not path:
-            raise RuntimeError("Cannot write asset to an unspecified path")
-
-        if self.is_inventory_path(path):
-            if asset.get('onyo.is.directory') and path.name != ASSET_DIR_FILE_NAME:
-                path = path / ASSET_DIR_FILE_NAME
-            write_asset_file(path, asset)
-        else:
+        if not self.is_inventory_path(path):
             raise ValueError(f"{path} is not a valid inventory path")
+
+        # TODO: this should not be handled here. Rather in Inventory.modify_asset()
+        #       and Inventory.add_asset().
+        if asset.get('onyo.is.directory') and path.name != ASSET_DIR_FILE_NAME:
+            path = path / ASSET_DIR_FILE_NAME
+
+        path.write_text(asset.yaml())
 
         # TODO: Potentially return/modify updated (pseudo-keys: last modified, etc.!) asset dict.
         return asset
@@ -867,6 +874,7 @@ class OnyoRepo(object):
         #       from Inventory to OnyoRepo and turn it into a commit-message part only,
         #       or have sort of a proxy in OnyoRepo.
         #       -> May be: get_history(Item) in Inventory and get_history(path) in OnyoRepo.
+        from onyo.lib.items import ItemSpec
         from onyo.lib.parser import parse_operations_record
 
         for commit in self.git.history(path, n):
@@ -881,4 +889,4 @@ class OnyoRepo(object):
             if record:
                 commit['operations'] = parse_operations_record(record)
 
-            yield DotNotationWrapper(commit)
+            yield ItemSpec(commit)

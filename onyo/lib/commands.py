@@ -35,14 +35,17 @@ from onyo.lib.exceptions import (
     OnyoRepoError,
     PendingInventoryOperationError,
 )
-from onyo.lib.items import Item
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.ui import ui
 from onyo.lib.utils import (
     deduplicate,
-    write_asset_file,
+    write_asset_to_file,
 )
 
 if TYPE_CHECKING:
@@ -224,7 +227,7 @@ def _edit_asset(inventory: Inventory,
 
     from shlex import quote
     from onyo.lib.consts import RESERVED_KEYS
-    from onyo.lib.utils import DotNotationWrapper, get_temp_file, get_asset_content
+    from onyo.lib.utils import get_temp_file, get_asset_content
 
     if not editor:
         editor = inventory.repo.get_editor()
@@ -236,7 +239,7 @@ def _edit_asset(inventory: Inventory,
     disallowed_keys.remove('onyo.path.parent')
 
     tmp_path = get_temp_file()
-    write_asset_file(tmp_path, asset)
+    write_asset_to_file(asset, path=tmp_path)
 
     # store operations queue length in case we need to roll-back
     queue_length = len(inventory.operations)
@@ -246,7 +249,7 @@ def _edit_asset(inventory: Inventory,
         subprocess.run(f'{editor} {quote(str(tmp_path))}', check=True, shell=True)
         operations = None
         try:
-            tmp_asset = DotNotationWrapper(get_asset_content(tmp_path))
+            tmp_asset = ItemSpec(get_asset_content(tmp_path))
             if 'onyo.is.directory' in tmp_asset.keys():
                 # 'onyo.is.directory' currently is the only modifiable, reserved key
                 reserved_keys['onyo.is.directory'] = tmp_asset['onyo.is.directory']
@@ -1298,7 +1301,7 @@ def onyo_tsv_to_yaml(tsv: Path) -> None:
     import csv
     from io import StringIO
 
-    from onyo.lib.utils import DotNotationWrapper, get_patched_yaml
+    from onyo.lib.utils import get_patched_yaml
 
     dicts = []
     with tsv.open('r', newline='') as tsv_file:
@@ -1308,7 +1311,7 @@ def onyo_tsv_to_yaml(tsv: Path) -> None:
         if reader.fieldnames is None:
             raise ValueError(f"No header fields in tsv {str(tsv)}")
 
-        dicts = [DotNotationWrapper(row, pristine_original=False) for row in reader]
+        dicts = [ItemSpec(row) for row in reader]
 
         # check for content
         if not dicts:

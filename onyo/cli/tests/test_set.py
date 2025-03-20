@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from onyo.lib.onyo import OnyoRepo
-from onyo.lib.utils import (
-    dict_to_asset_yaml,
-    DotNotationWrapper,
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
 )
+from onyo.lib.onyo import OnyoRepo
 
 if TYPE_CHECKING:
     from typing import List
@@ -22,12 +22,12 @@ directories = ['.',
                'r/e/c/u/r/s/i/v/e',
                'very/very/very/deep'
                ]
-asset_specs = [DotNotationWrapper({'type': 'laptop',
-                                   'make': 'apple',
-                                   'model': {'name': 'macbookpro'}}),
-               DotNotationWrapper({'type': 'lap top',
-                                   'make': 'ap ple',
-                                   'model': {'name': 'mac book pro'}})
+asset_specs = [ItemSpec({'type': 'laptop',
+                         'make': 'apple',
+                         'model': {'name': 'macbookpro'}}),
+               ItemSpec({'type': 'lap top',
+                         'make': 'ap ple',
+                         'model': {'name': 'mac book pro'}})
                ]
 
 assets = []
@@ -35,7 +35,7 @@ for i, d in enumerate(directories):
     for spec in asset_specs:
         spec['serial'] = "00_" + str(i)
         name = f"{spec['type']}_{spec['make']}_{spec['model.name']}.{spec['serial']}"
-        content = dict_to_asset_yaml(spec)
+        content = Item(spec).yaml()
         assets.append([f"{d}/{name}", content])
 
 asset_paths = [a[0] for a in assets]
