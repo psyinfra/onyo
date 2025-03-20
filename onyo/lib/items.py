@@ -374,11 +374,10 @@ class Item(ItemSpec):
         self.update(PSEUDO_KEYS)
 
         match item:
-            case ItemSpec():
-                self._path = getattr(item, '_path', None)
-                self.data = deepcopy(item.data)
             case Item():
                 self._path = item._path
+                self.data = deepcopy(item.data)
+            case ItemSpec():
                 self.data = deepcopy(item.data)
             case Path():
                 assert item.is_absolute()  # currently no support for relative. This is how all existing code should work ATM.
