@@ -15,6 +15,7 @@ from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't fin
 
 from onyo.lib.command_utils import (
     inline_path_diff,
+    inventory_path_to_yaml,
     natural_sort,
     print_diff,
 )
@@ -1182,6 +1183,56 @@ def onyo_set(inventory: Inventory,
             return
 
     ui.print("No assets updated.")
+
+
+@raise_on_inventory_state
+def onyo_show(inventory: Inventory,
+              paths: list[Path],
+              base: Path) -> None:
+    r"""Serialize assets and/or directories into a multidocument YAML stream.
+
+    The same path can be given multiple times.
+
+    The filesystem hierarchy is encoded in pseudokeys (e.g. ``onyo.path.parent``).
+    Directories are included in the stream as needed.
+
+    Parameters
+    ----------
+    inventory
+        The Inventory containing the paths to serialize.
+    paths
+        Paths of assets and/or directories to serialize.
+    base
+        Base path that pseudokey-paths are relative to.
+
+    Raises
+    ------
+    ValueError
+        The ``paths`` is empty, ``base`` is unset, or a path is outside of the
+        repository.
+    """
+
+    if not paths:
+        raise ValueError("At least one path must be provided.")
+
+    if not base:
+        raise ValueError("A base path is required.")
+
+    non_inventory_paths = [str(p) for p in paths if \
+                           not inventory.repo.is_inventory_path(p) and \
+                           not p == inventory.root]
+    if non_inventory_paths:
+        raise ValueError("The following paths are not in the inventory repository:\n%s" %
+                         "\n".join(non_inventory_paths))
+
+    # bullshit for now
+    for p in paths:
+        output = inventory_path_to_yaml(
+                     inventory=inventory,
+                     path=p,
+                     recursive=True,
+                     base=base)
+        print(output)
 
 
 @raise_on_inventory_state

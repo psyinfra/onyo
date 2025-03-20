@@ -267,6 +267,7 @@ def setup_parser() -> OnyoArgumentParser:
     from onyo.cli.rmdir import args_rmdir, epilog_rmdir
     from onyo.cli.set import args_set, epilog_set
     from onyo.cli.shell_completion import args_shell_completion, epilog_shell_completion
+    from onyo.cli.show import args_show, epilog_show
     from onyo.cli.tree import args_tree, epilog_tree
     from onyo.cli.tsv_to_yaml import args_tsv_to_yaml, epilog_tsv_to_yaml
     from onyo.cli.unset import args_unset, epilog_unset
@@ -441,6 +442,18 @@ def setup_parser() -> OnyoArgumentParser:
     )
     cmd_shell_completion.set_defaults(run=cli.shell_completion)
     build_parser(cmd_shell_completion, args_shell_completion)
+    #
+    # subcommand "show"
+    #
+    cmd_show = subcmds.add_parser(
+        'show',
+        description=cli.show.__doc__,
+        epilog=epilog_show,
+        formatter_class=parser.formatter_class,
+        help='Serialize assets and directories into a multidocument YAML stream.'
+    )
+    cmd_show.set_defaults(run=cli.show)
+    build_parser(cmd_show, args_show)
     #
     # subcommand "tree"
     #
