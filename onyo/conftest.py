@@ -12,6 +12,10 @@ from typing import TYPE_CHECKING
 import pytest
 from _pytest.mark.structures import MarkDecorator
 
+from onyo.lib.consts import (
+    ANCHOR_FILE_NAME,
+    ASSET_DIR_FILE_NAME,
+)
 from onyo.lib.faker import OnyoProvider
 from onyo.lib.git import GitRepo
 from onyo.lib.inventory import Inventory
@@ -305,12 +309,36 @@ def fixture_onyorepo(gitrepo,
           assert onyorepo.is_asset_path(asset_path) is True
     """
 
+    from importlib import resources
+    from shutil import copytree
     from onyo.lib.utils import deduplicate
 
     onyo = AnnotatedOnyoRepo(gitrepo.root, init=True)
+    with resources.path("onyo.tests.templates") as p:
+        copytree(p, onyo.template_dir / "packaged_templates")
+    onyo.git.commit(onyo.template_dir, message="Add packaged test templates")
+
+    def get_resources_recursive(anchor: str) -> Generator[Path, None, None]:
+        for res in resources.files(anchor).iterdir():
+            if res.is_file():
+                yield Path(res.name)
+            else:
+                for p in get_resources_recursive(anchor + "." + res.name):
+                    yield Path(res.name) / p
+
+    resource_template_files = []
+    for p in get_resources_recursive("onyo.tests.templates"):
+        if p.name == ANCHOR_FILE_NAME:
+            continue  # TODO: Eventually we want to register plain dirs as templates as well.
+                      #       Requires adaption of a couple of tests, though.
+        if p.name == ASSET_DIR_FILE_NAME:
+            resource_template_files.append(onyo.template_dir / "packaged_templates" / p.parent)
+            continue
+        resource_template_files.append(onyo.template_dir / "packaged_templates" / p)
+
     onyo.test_annotation = {'assets': [],
                             'dirs': [],
-                            'templates': [onyo.template_dir / "laptop.example"],
+                            'templates': [onyo.template_dir / "laptop.example"] + resource_template_files,
                             'git': gitrepo}
 
     to_commit = []

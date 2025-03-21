@@ -1,0 +1,22 @@
+---
+type: type1
+make: someone1
+model:
+  name: somemodel1
+onyo.path.parent: template_dir_file
+---
+type: type2
+make: someone2
+model:
+  name: somemodel2
+onyo.path.parent: template_dir_file
+---
+type: type3
+make: someone3
+model:
+  name: somemodel3
+onyo.path.parent: template_dir_file/subdir
+---
+onyo.path.name: empty
+onyo.path.parent: template_dir_file/subdir
+onyo.is.directory: True
