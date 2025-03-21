@@ -379,9 +379,11 @@ class Inventory(object):
             # 'onyo.path.absolute' needs to be given, if this is about an already existing dir.
             path = asset.get('onyo.path.absolute')
         if path is None:
-            # Otherwise, a 'onyo.path.parent' to create the asset in is expected as with
-            # any other asset.
-            path = asset['onyo.path.absolute'] = asset['onyo.path.parent'] / self.generate_asset_name(asset)
+            # regenerate the 'onyo.path.name', 'onyo.path.relative', and 'onyo.path.absolute'
+            asset['onyo.path.name'] = self.generate_asset_name(asset)
+            asset['onyo.path.parent'] = (self.root / asset['onyo.path.parent']).relative_to(self.root)
+            asset['onyo.path.relative'] = asset['onyo.path.parent'] / asset['onyo.path.name']
+            path = asset['onyo.path.absolute'] = self.root / asset['onyo.path.relative']
         if not path:
             raise ValueError("Unable to determine asset path")
         assert isinstance(asset, Item)
@@ -404,7 +406,7 @@ class Inventory(object):
                 # Temporary hack: Adjust the asset's path to the renamed one.
                 # TODO: Actual solution: This entire method must not be based on the dict's 'onyo.path.absolute', but
                 #       'onyo.path.parent' + generated name. This ties in with pulling parts of `onyo_new` in here.
-                asset['onyo.path.absolute'] = path.parent / self.generate_asset_name(asset)
+                asset['onyo.path.absolute'] = self.root / path.parent / self.generate_asset_name(asset)
             else:
                 # The directory does not yet exist.
                 operations.extend(self.add_directory(Item(path, repo=self.repo)))
