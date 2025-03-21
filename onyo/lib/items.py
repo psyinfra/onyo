@@ -299,7 +299,7 @@ class ItemSpec(UserDict):
             Item to compare with self.
         """
 
-        return self.yaml() == other.yaml()
+        return self.yaml(exclude=RESERVED_KEYS) == other.yaml(exclude=RESERVED_KEYS)
 
     def get(self,  # pyre-ignore[14]
             key: _KT,
@@ -373,7 +373,10 @@ class Item(ItemSpec):
         self.data = CommentedMap()
         self.update(PSEUDO_KEYS)
 
+
         match item:
+            # TODO: BUG: Item/ItemSpec cases are incorrect. Direct assignment to self.data kills the pseudokeys
+            #            loaded above rather than only updating the ones that are specified in the incoming object.
             case Item():
                 self._path = item._path
                 self.data = deepcopy(item.data)
