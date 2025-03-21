@@ -411,6 +411,11 @@ class Inventory(object):
         elif not self.repo.is_inventory_dir(path.parent):
             operations.extend(self.add_directory(Item(path.parent, repo=self.repo)))
 
+        # HACK: regenerate the relative path when it's set, just in case we're
+        #       operating on a new asset that is a clone.
+        if asset.get('onyo.path.relative', False):
+            asset['onyo.path.relative'] = asset['onyo.path.relative'].parent / self.generate_asset_name(asset)
+
         # record operation
         operations.append(self._add_operation('new_assets', (asset,)))
         return operations
