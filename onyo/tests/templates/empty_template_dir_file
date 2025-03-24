@@ -1,0 +1,4 @@
+---
+onyo.path.name: empty_template_dir_file
+onyo.is.directory: True
+onyo.is.asset: False

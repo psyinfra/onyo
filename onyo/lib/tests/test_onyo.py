@@ -8,17 +8,20 @@ from onyo.lib.consts import (
     TEMPLATE_DIR,
 )
 from onyo.lib.onyo import OnyoRepo, OnyoInvalidRepoError
-from onyo.lib.items import Item
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 
 
-def test_OnyoRepo_instantiation_existing(onyorepo: OnyoRepo) -> None:
+def test_instantiation_existing(onyorepo: OnyoRepo) -> None:
     """Instantiate OnyoRepo with an existing repository."""
 
     new_repo = OnyoRepo(onyorepo.git.root, init=False)
     assert new_repo.git.root.samefile(onyorepo.git.root)
 
 
-def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
+def test_instantiation_non_existing(tmp_path: Path) -> None:
     """Instantiate OnyoRepo with a non-existing repository."""
 
     new_repo = OnyoRepo(tmp_path, init=True)
@@ -41,7 +44,7 @@ def test_OnyoRepo_instantiation_non_existing(tmp_path: Path) -> None:
                   'HEAD~1')
 
 
-def test_OnyoRepo_incorrect_input_arguments_raise_error(onyorepo: OnyoRepo,
+def test_incorrect_input_arguments_raise_error(onyorepo: OnyoRepo,
                                                         tmp_path: Path) -> None:
     """OnyoRepo riases for invalid or conflicting arguments.
 
@@ -92,7 +95,7 @@ def test_clear_cache(onyorepo) -> None:
     assert asset not in onyorepo.asset_paths
 
 
-def test_Repo_generate_commit_subject(onyorepo: OnyoRepo) -> None:
+def test_generate_commit_subject(onyorepo: OnyoRepo) -> None:
     """Commit subject has correct asset count and paths are relative."""
 
     modified = [onyorepo.git.root / 's p a c e s',
@@ -137,7 +140,7 @@ def test_is_onyo_path(onyorepo) -> None:
                for f in onyorepo.test_annotation['git'].test_annotation['files'])
 
 
-def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
+def test_get_template_simple(onyorepo: OnyoRepo) -> None:
     """``get_template`` gets a dictionary of a template file.
 
     If a relative path is specified, it looks in ``.onyo/templates/`` first and
@@ -147,7 +150,7 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
     """
 
     # Call the function without parameter to get the empty template:
-    assert onyorepo.get_template() == dict()
+    assert onyorepo.get_templates().__next__() == ItemSpec()
 
     # from the 'templates' dir, use the filename of each template to find the
     # corresponding template file as a path.
@@ -155,23 +158,97 @@ def test_Repo_get_template(onyorepo: OnyoRepo) -> None:
         if path.name == ANCHOR_FILE_NAME:
             continue
 
-        # specify path as absolute, relative to template dir and relative to CWD (repo root):
-        for given_path in [path, path.name, path.relative_to(onyorepo.git.root)]:
-            template = onyorepo.get_template(path.name)
-            assert isinstance(template, dict)  # allow wrapper?
-            assert template != dict()  # TODO: compare content
+        # specify path as absolute or relative to template dir:
+        for given_path in [path, path.relative_to(onyorepo.template_dir)]:
+            template = onyorepo.get_templates(given_path).__next__()
+            assert isinstance(template, ItemSpec)
+            assert template != ItemSpec()
 
     # verify the correct error response when called with a template name that
     # does not exist
     with pytest.raises(ValueError):
-        onyorepo.get_template('I DO NOT EXIST')
+        onyorepo.get_templates(Path('I DO NOT EXIST')).__next__()
 
     # TODO: test config
 
 
+def test_get_empty_template_directory(onyorepo: OnyoRepo) -> None:
+    template_base_dir = Path("packaged_templates")
+    # regular, empty dir represented as such or as a yaml file specifying this dir:
+    for p in ["empty_template_dir", "empty_template_dir_file"]:
+        specs = [s for s in onyorepo.get_templates(template_base_dir / p, recursive=False)]
+        assert len(specs) == 1
+        assert specs[0]["onyo.is.directory"] is True
+        #assert spec[is asset
+        assert specs[0]["onyo.path.name"] == p
+        assert specs[0]["onyo.path.parent"] == Path(".")
+        # no difference when recursive:
+        specs = [s for s in onyorepo.get_templates(template_base_dir / p, recursive=True)]
+        assert len(specs) == 1
+        assert specs[0]["onyo.is.directory"] is True
+        assert specs[0]["onyo.path.name"] == p
+        assert specs[0]["onyo.path.parent"] == Path(".")
+
+def test_get_template_directory(onyorepo: OnyoRepo) -> None:
+    template_base_dir = Path("packaged_templates")
+    # regular, non-empty dir represented as such or as a yaml file specifying this dir and its assets:
+    for p in ["template_dir", "template_dir_file"]:
+        specs = [s for s in onyorepo.get_templates(template_base_dir / p, recursive=True)]
+        assert len(specs) == 4  # Three assets and one explicit dir (it's empty). There are two implicit dirs.
+        num_dirs = 0
+        num_assets = 0
+        for s in specs:
+            if s.get("onyo.is.directory"):
+                num_dirs += 1
+                assert s["onyo.path.parent"] == Path(p) / "subdir"
+                assert s["onyo.path.name"] == "empty"
+            if s.get("onyo.is.asset"):
+                num_assets += 1
+                assert "model.name" in s.keys()
+                assert (s["model.name"] == "somemodel1" and s["onyo.path.parent"] == Path(p)) or \
+                       (s["model.name"] == "somemodel2" and s["onyo.path.parent"] == Path(p)) or \
+                       (s["model.name"] == "somemodel3" and s["onyo.path.parent"] == Path(p) / "subdir")
+        assert num_dirs == 1
+        assert num_assets == 3
+
+def test_get_template_asset_directory(onyorepo: OnyoRepo) -> None:
+    template_base_dir = Path("packaged_templates")
+
+    specs = [s for s in onyorepo.get_templates(template_base_dir / "asset_dir", recursive=False)]
+    assert len(specs) == 2  # TODO: link issue: depth=0 notion prevents correct non-recursive behavior for asset dirs
+    assert specs[0]["onyo.is.directory"] is True
+    assert specs[0]["onyo.is.asset"] is True
+    assert specs[0]["serial"] == "faux"
+    assert specs[0]["standard"] == "DDR4-3200"
+    assert "onyo.path.name" not in specs[0]
+    assert specs[0]["onyo.path.parent"] == Path(".")
+
+    # recursive
+    specs = [s for s in onyorepo.get_templates(template_base_dir / "asset_dir", recursive=True)]
+    assert len(specs) == 4  # 1 asset dir, 2 regular assets, and one explicit dir
+    num_asset_dirs = 0
+    num_dirs = 0
+    num_assets = 0
+    for s in specs:
+        if s.get("onyo.is.asset") and s.get("onyo.is.directory"):
+            num_asset_dirs += 1
+            assert s["standard"] == "DDR4-3200"
+        elif s.get("onyo.is.asset"):
+            num_assets += 1
+            assert (s["model.name"] == "somemodel1" and s["onyo.path.parent"] == Path("asset_dir")) or \
+                   (s["model.name"] == "somemodel3" and s["onyo.path.parent"] == Path("asset_dir") / "subdir")
+        else:
+            num_dirs += 1
+            assert s["onyo.is.directory"] is True
+            assert s["onyo.path.parent"] == Path("asset_dir") / "subdir"
+            assert s["onyo.path.name"] == "empty"
+    assert num_asset_dirs == 1
+    assert num_assets == 2
+    assert num_dirs == 1
+
 @pytest.mark.inventory_dirs(Path('a/test/directory/structure/'),
                             Path('another/dir/'))
-def test_Repo_validate_anchors(onyorepo) -> None:
+def test_validate_anchors(onyorepo) -> None:
     """``validate_anchors()`` returns True when all dirs have an `.anchor` file, and otherwise False."""
 
     # Must be true for valid repository

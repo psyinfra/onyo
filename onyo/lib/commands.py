@@ -949,7 +949,7 @@ def onyo_new(inventory: Inventory,
             asset = inventory.get_item(clone)
         else:
             t = spec.pop('template', None) or template
-            asset = inventory.get_asset_from_template(Path(t) if t else None)
+            asset = inventory.get_templates(Path(t) if t else None).__next__()
         # 3. fill in asset specification
         asset.update(spec)
         # 4. (try to) add to inventory

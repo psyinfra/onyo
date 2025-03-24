@@ -21,6 +21,10 @@ from onyo.lib.exceptions import (
     OnyoProtectedPathError
 )
 from onyo.lib.git import GitRepo
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 from onyo.lib.ui import ui
 from onyo.lib.utils import (
     get_asset_content,
@@ -34,7 +38,6 @@ if TYPE_CHECKING:
         List,
         Literal,
     )
-    from onyo.lib.items import Item
 
 log: logging.Logger = logging.getLogger('onyo.onyo')
 
@@ -574,19 +577,23 @@ class OnyoRepo(object):
 
         return False
 
-    def get_template(self,
-                     path: Path | str | None = None) -> dict:
-        r"""Select a template file and return an asset dict from it.
+    def get_templates(self,
+                      path: Path | None = None,
+                      recursive: bool = False) -> Generator[ItemSpec, None, None]:
+        r"""Yield ItemSpec(s) (recursively) from a path.
 
         Parameters
         ----------
         path
-            Path to a Template. If relative or a string, then it is considered
-            as relative to the template directory (:py:data:`onyo.lib.consts.TEMPLATE_DIR`).
+            Path to a Template. If relative, then it is considered relative
+            to the template directory (:py:data:`onyo.lib.consts.TEMPLATE_DIR`).
             If no path is given, the template defined in the config
             ``onyo.new.template`` is used.
 
-        If ``name`` is not specified and the config ``onyo.new.template`` is not
+        recursive
+            Recurse into directory templates
+
+        If ``path`` is not specified and the config ``onyo.new.template`` is not
         set, the dictionary will be empty.
 
         Raises
@@ -595,18 +602,63 @@ class OnyoRepo(object):
             If the requested template can't be found.
         """
 
+        from .utils import yaml_to_dict_multi
+        from .pseudokeys import PSEUDOKEY_ALIASES
+
         if not path:
-            path = self.get_config('onyo.new.template')
-            if path is None:
-                return dict()
+            default_template = self.get_config('onyo.new.template')
+            if default_template is None:
+                yield ItemSpec(alias_map=PSEUDOKEY_ALIASES)
+                return
+            path = Path(default_template)
 
-        template_file = self.template_dir / path \
-            if isinstance(path, str) or not path.is_absolute() \
-            else path
-        if not template_file.is_file():
+        template_file = self.template_dir / path if not path.is_absolute() else path
+        if not template_file.exists():
             raise ValueError(f"Template {path} does not exist.")
+        # TODO: This actually requires path to be within repo. Makes sense for an OnyoRepo method,
+        #       But we want to be able to read very similarly from elsewhere.
+        for p in self.get_item_paths(include=[template_file],
+                                     depth=0 if recursive else 1,
+                                     types=["assets", "directories"],
+                                     intermediates=False):
 
-        return get_asset_content(template_file)
+            if p.is_dir() or self.is_inventory_path(p):
+                # TODO: re `is_dir()`: self.is_inventory_dir/path etc. is insufficient.
+                #                      Needs an OR is_template_dir to avoid FS interaction.
+                #                      Ultimately, we want a (cached) prepopulated mapping of dirs/assets/templates
+                #                      in `self`, rather than using these path-checking functions everywhere.
+                # Note, re `is_inventory_path`: We just read the asset/dir. No multidoc!
+                item = Item(p, self)
+                # load relevant pseudokeys and remove all others:
+                # TODO: - These are settable pseudokeys. This property should likely be defined in `PseudoKey`, so we
+                #         can retrieve that list anywhere rather than hardcoding it here.
+                #       - the entire block suggests some form of `ItemSpec.from_item()` to be used here and in
+                #         onyo_show.
+                for key in ["onyo.path.parent", "onyo.path.name", "onyo.is.asset", "onyo.is.directory"]:
+                    item.get(key)
+                del item["onyo.was"]
+                # TODO: The following should be stripped as well, but inventory.get_templates() -> onyo_new isn't ready
+                #       for that yet.
+                #del item["onyo.path.absolute"]
+                #del item["onyo.path.relative"]
+                spec = ItemSpec(item.data, alias_map=PSEUDOKEY_ALIASES)
+                spec["onyo.path.parent"] = (self.git.root / spec["onyo.path.parent"]).relative_to(template_file.parent)
+                if spec["onyo.is.asset"]:
+                    # name is not to be taken from original, but generated when template is applied:
+                    del spec["onyo.path.name"]
+                yield spec
+            else:
+                for d in yaml_to_dict_multi(p):
+                    spec = ItemSpec(alias_map=PSEUDOKEY_ALIASES)
+                    spec.update(d)  # update rather than instantiate from it, in order to interpret dot notation.
+                    if any(k != "onyo" for k in spec.data.keys()):
+                        # we have non-pseudo-keys; ergo: an asset
+                        spec["onyo.is.asset"] = True
+                    if "onyo.path.parent" in spec.keys():
+                        spec["onyo.path.parent"] = (p.parent / spec["onyo.path.parent"]).relative_to(template_file.parent)
+                    else:
+                        spec["onyo.path.parent"] = p.parent.relative_to(template_file.parent)
+                    yield spec
 
     def validate_anchors(self) -> bool:
         r"""Check if all inventory directories contain an ``.anchor`` file.
@@ -687,7 +739,7 @@ class OnyoRepo(object):
             files = [f
                      for f in files
                      for root in include
-                     if root in f.parents and (len(f.parents) - len(root.parents) <= depth)]
+                     if (f == root) or (root in f.parents and (len(f.parents) - len(root.parents) <= depth))]
         if exclude:
             files = [f for f in files if all(f != p and p not in f.parents for p in exclude)]
 
