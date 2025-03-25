@@ -11,6 +11,7 @@ from .rm import rm
 from .rmdir import rmdir
 from .set import set
 from .shell_completion import shell_completion
+from .show import show
 from .tree import tree
 from .tsv_to_yaml import tsv_to_yaml
 from .unset import unset
@@ -29,6 +30,7 @@ __all__ = [
     'rmdir',
     'set',
     'shell_completion',
+    'show',
     'tree',
     'tsv_to_yaml',
     'unset'

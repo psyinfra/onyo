@@ -220,65 +220,82 @@ def print_diff(diffable: Inventory | InventoryOperation) -> None:
         ui.rich_print(line, style=style)
 
 
-def whosyourdaddy(inventory: Inventory,
-                  path: Path,
-                  recursive: bool = False,
-                  base: Path | None = None) -> str:
+def inventory_path_to_yaml(inventory: Inventory,
+                           path: Path,
+                           recursive: bool = False,
+                           base: Path | None = None) -> str:
+    r"""Generate Onyo-YAML records of an inventory Path.
+
+    Parameters
+    ----------
+    inventory
+        The inventory to operate on.
+    path
+        Path to generate YAML of.
+    recursive
+        Descend recursively under ``path``.
+    base
+        Absolute path that ``onyo.path.parent`` keys are relative to.
+    """
+
     from onyo.lib.consts import SORT_ASCENDING
     from onyo.lib.pseudokeys import PSEUDO_KEYS
+
     base = base or (path.parent if path != inventory.root else inventory.root)
     stream_uuid = uuid.uuid4()
-    items = list(inventory.get_items(include=[path],
-                                     depth=0 if recursive else 1,
-                                     types=['assets', 'directories'],
-                                     intermediates=False
-                                     ),
+    docid_table = {}
 
-                 )
-
+    items = list(inventory.get_items(
+                     include=[path],
+                     depth=0 if recursive else 1,
+                     types=['assets', 'directories'],
+                     intermediates=False)
+            )
     items = natural_sort(items=items, keys={'onyo.path.relative': SORT_ASCENDING})  # pyre-ignore[6]
 
-    asset_dirs_lookup = {}
+    # ensure that everything has a name or a document ID
     for item in items:
         if item["onyo.is.directory"]:
             if item["onyo.is.asset"]:
-                # Generate an id to be used in a matching expression for children's "onyo.path.parent".
+                # Asset directories require a unique ID so that children can use
+                # a match statement to declare what record is their `onyo.path.parent`.
                 # This uses the relative path in the repo as a unique label guaranteed by the FS.
                 item["onyo.documentid"] = str(uuid.uuid5(stream_uuid, str(item["onyo.path.relative"])))
-                asset_dirs_lookup[item["onyo.path.relative"]] = item["onyo.documentid"]
+                docid_table[item["onyo.path.relative"]] = item["onyo.documentid"]
             else:
-                # plain directory:  trigger evaluation of the name pseudokey
+                # directory: trigger evaluation of the name pseudokey
                 item.get("onyo.path.name")
 
+    # build 'onyo.path.parent' (string or match a document ID)
     for item in items:
         if item["onyo.path.absolute"] == path:
             # top-level
             item["onyo.path.parent"] = str((inventory.root / item["onyo.path.parent"]).relative_to(base))
             continue
-        if item["onyo.path.parent"] in asset_dirs_lookup:
-            item["onyo.path.parent"] = f"<?onyo.documentid={asset_dirs_lookup[item['onyo.path.parent']]}>"
+
+        if item["onyo.path.parent"] in docid_table:
+            item["onyo.path.parent"] = f"<?onyo.documentid={docid_table[item['onyo.path.parent']]}>"
         else:
             item["onyo.path.parent"] = str((inventory.root / item["onyo.path.parent"]).relative_to(base))
 
-    output: str = ""
+    # strip most pseudokeys
     for item in items:
         for key in list(PSEUDO_KEYS.keys()):
             match key:
                 case "onyo.is.asset" | "onyo.is.directory" | "onyo.path.parent":
-                    # keep these keys
+                    # keep
                     continue
-                case "onyo.path.name":
-                    # do not keep for assets - names are generated
-                    if item["onyo.is.asset"]:
-                        del item[key]
+                case "onyo.path.name" if item["onyo.is.asset"]:
+                    # remove asset path name --- names are generated
+                    del item[key]
                 case _:
                     # remove all other pseudo-keys
                     del item[key]
+
         del item["onyo.was"]
 
-        output += item.yaml()
-    return output
-
+    # dump YAML
+    return ''.join([i.yaml(exclude=[]) for i in items])
 
 def iamyourfather(inventory: Inventory,
                   yaml_stream: str,

@@ -67,6 +67,7 @@ _onyo() {
         'rmdir:delete empty DIRECTORYs or convert empty Asset Directories to Asset Files'
         'set:set the VALUE of KEYs for ASSETs'
         'shell-completion:display a tab-completion script for Onyo'
+        'show:serialize ASSETs and DIRECTORYs into a multidocument YAML stream'
         'tree:list the assets and directories of DIRECTORYs in a tree-like format'
         'tsv-to-yaml:convert a TSV file to YAML'
         'unset:remove KEY from ASSETs'
@@ -182,6 +183,13 @@ _onyo() {
                     '(-s --shell)'{-s,--shell}'[which shell to generate a tab-completion script for]:SHELL:(zsh)'
                 )
                 ;;
+            show)
+                args+=(
+                    '(- : *)'{-h,--help}'[show this help message and exit]'
+                    '(-b --base-path)'{-b,--base-path}'[base path that pseudokey-paths are relative to]:PATH:_files -W "$(_onyo_dir)"'
+                    '*::PATH:_files -W "$(_onyo_dir)"'
+                )
+                ;;
             tree)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
@@ -191,7 +199,7 @@ _onyo() {
             tsv-to-yaml)
                 args+=(
                     '(- : *)'{-h,--help}'[show this help message and exit]'
-                    '*::TSV:_files -W "$(_onyo_dir)" -/'
+                    '*::TSV:_files -W "$(_onyo_dir)"'
                 )
                 ;;
             unset)

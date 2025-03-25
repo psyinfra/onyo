@@ -15,6 +15,7 @@ from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't fin
 
 from onyo.lib.command_utils import (
     inline_path_diff,
+    inventory_path_to_yaml,
     natural_sort,
     print_diff,
 )
@@ -227,7 +228,7 @@ def _edit_asset(inventory: Inventory,
 
     from shlex import quote
     from onyo.lib.consts import RESERVED_KEYS
-    from onyo.lib.utils import get_temp_file, get_asset_content
+    from onyo.lib.utils import get_temp_file
 
     if not editor:
         editor = inventory.repo.get_editor()
@@ -249,7 +250,7 @@ def _edit_asset(inventory: Inventory,
         subprocess.run(f'{editor} {quote(str(tmp_path))}', check=True, shell=True)
         operations = None
         try:
-            tmp_asset = ItemSpec(get_asset_content(tmp_path))
+            tmp_asset = ItemSpec(tmp_path.read_text())
             if 'onyo.is.directory' in tmp_asset.keys():
                 # 'onyo.is.directory' currently is the only modifiable, reserved key
                 reserved_keys['onyo.is.directory'] = tmp_asset['onyo.is.directory']
@@ -368,8 +369,7 @@ def onyo_edit(inventory: Inventory,
 
     from functools import partial
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
     if not paths:
         raise ValueError("At least one asset must be specified.")
 
@@ -653,8 +653,7 @@ def onyo_mkdir(inventory: Inventory,
         ``dirs`` is empty.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not dirs:
         raise NoopError("At least one directory path must be specified.")
@@ -751,8 +750,7 @@ def onyo_mv(inventory: Inventory,
         If multiple source paths are specified to be renamed.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     sources = [source] if not isinstance(source, list) else source
     implicit_move = False
@@ -902,8 +900,7 @@ def onyo_new(inventory: Inventory,
 
     from copy import deepcopy
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     keys = keys or []
     if not any([keys, edit, template, clone]):
@@ -1004,8 +1001,7 @@ def onyo_rm(inventory: Inventory,
         If ``None``, lookup the config value from ``onyo.commit.auto-message``.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     paths = [paths] if not isinstance(paths, list) else paths
     for p in paths:
@@ -1075,8 +1071,7 @@ def onyo_rmdir(inventory: Inventory,
         ``dirs`` is empty.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not dirs:
         raise NoopError("At least one directory path must be specified.")
@@ -1144,8 +1139,7 @@ def onyo_set(inventory: Inventory,
         If a given path is invalid or if ``keys`` is empty.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not assets:
         raise ValueError("At least one asset must be specified.")
@@ -1189,6 +1183,56 @@ def onyo_set(inventory: Inventory,
             return
 
     ui.print("No assets updated.")
+
+
+@raise_on_inventory_state
+def onyo_show(inventory: Inventory,
+              paths: list[Path],
+              base: Path) -> None:
+    r"""Serialize assets and/or directories into a multidocument YAML stream.
+
+    The same path can be given multiple times.
+
+    The filesystem hierarchy is encoded in pseudokeys (e.g. ``onyo.path.parent``).
+    Directories are included in the stream as needed.
+
+    Parameters
+    ----------
+    inventory
+        The Inventory containing the paths to serialize.
+    paths
+        Paths of assets and/or directories to serialize.
+    base
+        Base path that pseudokey-paths are relative to.
+
+    Raises
+    ------
+    ValueError
+        The ``paths`` is empty, ``base`` is unset, or a path is outside of the
+        repository.
+    """
+
+    if not paths:
+        raise ValueError("At least one path must be provided.")
+
+    if not base:
+        raise ValueError("A base path is required.")
+
+    non_inventory_paths = [str(p) for p in paths if \
+                           not inventory.repo.is_inventory_path(p) and \
+                           not p == inventory.root]
+    if non_inventory_paths:
+        raise ValueError("The following paths are not in the inventory repository:\n%s" %
+                         "\n".join(non_inventory_paths))
+
+    # bullshit for now
+    for p in paths:
+        output = inventory_path_to_yaml(
+                     inventory=inventory,
+                     path=p,
+                     recursive=True,
+                     base=base)
+        print(output)
 
 
 @raise_on_inventory_state
@@ -1368,8 +1412,7 @@ def onyo_unset(inventory: Inventory,
         an asset's name are attempted to be unset.
     """
 
-    if auto_message is None:
-        auto_message = inventory.repo.auto_message
+    auto_message = inventory.repo.auto_message if auto_message is None else auto_message
 
     if not keys:
         raise ValueError("At least one key must be specified.")
