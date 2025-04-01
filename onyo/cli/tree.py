@@ -35,6 +35,13 @@ List all assets and directories in a directory:
 .. code:: shell
 
     $ onyo tree shelf
+
+List only the room structure of a building:
+
+.. code:: shell
+
+    $ onyo tree --dirs-only building_3/
+
 """
 
 
@@ -45,8 +52,9 @@ def tree(args: argparse.Namespace) -> None:
     If no directory is provided, the tree for the current working directory is
     listed.
 
-    Directories are printed sequentially. If one does not exist, no further
-    trees will be printed and an error is returned.
+    **DIRECTORY**\ s are printed sequentially. If one does not exist, or is not
+    an inventory directory, no further trees will be printed and an error is
+    returned.
     """
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
     dirs = [(d, Path(d).resolve()) for d in args.directory]

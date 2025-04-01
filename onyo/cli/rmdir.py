@@ -29,7 +29,7 @@ args_rmdir = {
 epilog_rmdir = r"""
 .. rubric:: Examples
 
-Remove a user from a group:
+Remove an empty user directory:
 
 .. code:: shell
 
@@ -48,9 +48,9 @@ def rmdir(args: argparse.Namespace) -> None:
     r"""
     Delete **DIRECTORY**\ s or convert Asset Directories into Asset Files.
 
-    If the **DIRECTORY** is not empty, does not exist, the path is protected, or
-    the asset is already an Asset File, then Onyo will error and leave
-    everything unmodified.
+    If any **DIRECTORY** is not empty, does not exist, its path is protected, or
+    the asset is already an Asset File, then Onyo errors and leaves everything
+    unmodified.
     """
 
     dirs = [Path(d).resolve() for d in args.directory]
