@@ -11,7 +11,7 @@ from typing import (
 from functools import wraps
 
 from rich import box
-from rich.table import Table  # pyre-ignore[21] for some reason pyre doesn't find Table
+from rich.table import Table
 
 from onyo.lib.command_utils import (
     inline_path_diff,
