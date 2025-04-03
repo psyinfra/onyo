@@ -29,18 +29,25 @@ args_edit = {
 epilog_edit = r"""
 .. rubric:: Examples
 
-Edit an asset (file or directory):
+Edit an asset:
 
 .. code:: shell
 
     $ onyo edit accounting/Bingo\ Bob/laptop_lenovo_T490s.abc123
     <spawns editor>
+
+Use ``sed`` to rename the key 'ram' to 'RAM' in all assets:
+
+.. code:: shell
+
+    $ ONYO_CORE_EDITOR="sed -i 's/ram:/RAM:/g'"
+    $ onyo get --machine-readable --keys onyo.path.relative | xargs -d "\n" onyo --yes edit
 """
 
 
 def edit(args: argparse.Namespace) -> None:
     r"""
-    Open **ASSET**\ s using an editor.
+    Open **ASSET**\ s in an editor.
 
     When multiple **ASSET**\ s are given, they are opened sequentially.
 
@@ -51,6 +58,9 @@ def edit(args: argparse.Namespace) -> None:
       * ``core.editor`` configuration option (git)
       * ``EDITOR`` environment variable
       * ``nano`` (as a final fallback)
+
+    ``ONYO_CORE_EDITOR`` is especially useful to programmatically modify assets
+    with a utility (e.g. ``sed`` or ``jq``) or a bespoke script.
 
     The contents of all edited **ASSET**\ s are checked for validity before
     committing. If problems are found, a prompt is offered to either reopen the
