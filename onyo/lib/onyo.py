@@ -261,14 +261,24 @@ class OnyoRepo(object):
     def get_editor(self) -> str:
         r"""Return the editor to use.
 
-        This progresses through: 1) ``onyo.core.editor`` 2) git's ``core.editor``
-        3) ``EDITOR`` environmental variable and 4) "nano" (fallback).
+        This progresses through:
+
+        1) ``ONYO_CORE_EDITOR`` environment variable
+        2) ``onyo.core.editor``
+        3) git's ``core.editor``
+        4) ``EDITOR`` environment variable
+        5) ``nano`` (fallback).
         """
 
         from os import environ
 
+        # $ONYO_CORE_EDITOR environment variable
+        editor = environ.get('ONYO_CORE_EDITOR')
+
         # onyo config setting (from onyo and git config files)
-        editor = self.get_config('onyo.core.editor')
+        if not editor:
+            ui.log_debug("ONYO_CORE_EDITOR is not set.")
+            editor = self.get_config('onyo.core.editor')
 
         # git config
         if not editor:
