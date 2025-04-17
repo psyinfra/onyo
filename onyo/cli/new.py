@@ -174,9 +174,9 @@ def new(args: argparse.Namespace) -> None:
     else:
         template = None
     onyo_new(inventory=inventory,
-             directory=Path(args.directory).resolve() if args.directory else None,
-             template=template,
-             clone=Path(args.clone).resolve() if args.clone else None,
+             base=Path(args.directory).resolve() if args.directory else None,
+             template=[template] if template else None,  #FIXME: Actually allow multiple
+             clone=[Path(args.clone).resolve()] if args.clone else None, #FIXME: Actually allow multiple
              keys=args.keys,
              edit=args.edit,
              message='\n\n'.join(m for m in args.message) if args.message else None,

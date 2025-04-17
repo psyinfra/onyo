@@ -626,7 +626,7 @@ class Item(ItemSpec):
             excluded.
         """
 
-        exclude = exclude or RESERVED_KEYS
+        exclude = exclude if exclude is not None else RESERVED_KEYS
         return super().yaml(exclude)
 
 # TODO/Notes for next PR(s):

@@ -1,11 +1,15 @@
 import pytest
+from copy import deepcopy
 
 from onyo.lib.consts import (
     ANCHOR_FILE_NAME,
     ASSET_DIR_FILE_NAME,
     RESERVED_KEYS,
 )
-from onyo.lib.pseudokeys import PSEUDO_KEYS
+from onyo.lib.pseudokeys import (
+    PSEUDO_KEYS,
+    PSEUDOKEY_ALIASES,
+)
 from onyo.lib.exceptions import (
     InvalidInventoryOperationError,
     NoopError,
@@ -14,7 +18,10 @@ from onyo.lib.exceptions import (
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.items import Item
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 
 
 # TODO: - Inventory fixture(s)
@@ -49,13 +56,14 @@ def test_add_asset(repo: OnyoRepo) -> None:
     newdir1 = inventory.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_file = newdir2 / "test_I_mk1.123"
-    asset = Item(some_key="some_value",
-                 other='1',
-                 directory=newdir2,
-                 type="test",
-                 make="I",
-                 model=dict(name="mk1"),
-                 serial="123")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other='1',
+                     directory=newdir2,
+                     type="test",
+                     make="I",
+                     model=dict(name="mk1"),
+                     serial="123")
     assert num_operations(inventory, 'new_assets') == 0
     assert num_operations(inventory, 'new_directories') == 0
 
@@ -66,9 +74,14 @@ def test_add_asset(repo: OnyoRepo) -> None:
     assert num_operations(inventory, 'new_directories') == 2
     operands = [op.operands for op in inventory.operations]
     assert all(isinstance(o, tuple) for o in operands)
-    assert (asset,) in operands
     assert (newdir1,) in operands
     assert (newdir2,) in operands
+
+    # assertions on the item in registered operation:
+    item_operands = [op[0] for op in operands if isinstance(op[0], Item)]
+    assert len(item_operands) == 1
+    assert item_operands[0].equal_content(asset)
+    assert item_operands[0]["onyo.path.absolute"] == asset_file
 
     # nothing done on disc yet:
     assert not asset_file.exists()
@@ -182,14 +195,14 @@ def test_move_asset(repo: OnyoRepo) -> None:
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_file = newdir2 / "test_I_mk1.123"
-    asset = Item(
-        some_key="some_value",
-        other='1',
-        directory=newdir2,
-        type="test",
-        make="I",
-        model=dict(name="mk1"),
-        serial="123")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other='1',
+                     directory=newdir2,
+                     type="test",
+                     make="I",
+                     model=dict(name="mk1"),
+                     serial="123")
 
     inventory.add_asset(asset)
     inventory.commit("First asset added")
@@ -239,16 +252,17 @@ def test_rename_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
-    asset = Item(
-        some_key="some_value",
-        type="TYPE",
-        make="MAKER",
-        model=dict(name="MODEL"),
-        serial="SERIAL",
-        other='1',
-        directory=newdir2)
-    inventory.add_asset(asset)
+    spec = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     type="TYPE",
+                     make="MAKER",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL",
+                     other='1',
+                     directory=newdir2)
+    inventory.add_asset(spec)
     inventory.commit("First asset added")
+    asset = inventory.get_item(newdir2 / inventory.generate_asset_name(spec))
 
     # rename to itself raises:
     pytest.raises(NoopError, inventory.rename_asset, asset)
@@ -266,21 +280,22 @@ def test_modify_asset(repo: OnyoRepo) -> None:
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_file = newdir2 / "TYPE_MAKER_MODEL.SERIAL"
-    asset = Item(
-        some_key="some_value",
-        type="TYPE",
-        make="MAKER",
-        model=dict(name="MODEL"),
-        serial="SERIAL",
-        other='1',
-        directory=newdir2)
-    inventory.add_asset(asset)
+    spec = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     type="TYPE",
+                     make="MAKER",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL",
+                     other='1',
+                     directory=newdir2)
+    inventory.add_asset(spec)
     inventory.commit("First asset added")
+    asset = inventory.get_item(newdir2 / inventory.generate_asset_name(spec))
 
     asset_changes = dict(some_key="new_value",  # arbitrary content change
                          model=dict(name="")  # empty required key
                          )
-    new_asset = asset.copy()
+    new_asset = deepcopy(asset)
     new_asset.update(asset_changes)
 
     # required keys must not be empty
@@ -404,14 +419,14 @@ def test_remove_directory(repo: OnyoRepo) -> None:
     emptydir = newdir1 / "empty"
     does_not_exist = repo.git.root / 'does' / 'not' / 'exist'
     asset_file = newdir2 / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Item(
-        some_key="some_value",
-        type="TYPE",
-        make="MAKE",
-        model=dict(name="MODEL"),
-        serial="SERIAL",
-        other='1',
-        directory=newdir2)
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     type="TYPE",
+                     make="MAKE",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL",
+                     other='1',
+                     directory=newdir2)
     inventory.add_asset(asset)
     inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
@@ -465,15 +480,15 @@ def test_move_directory(repo: OnyoRepo) -> None:
     newdir2 = newdir1 / "new"
     emptydir = newdir1 / "empty"
     asset_file = newdir2 / "asset_file"
-    asset = Item(
-        some_key="some_value",
-        type="TYPE",
-        make="MAKER",
-        model=dict(name="MODEL"),
-        serial="SERIAL",
-        other=1,
-        directory=newdir2)
-    inventory.add_asset(asset)
+    spec = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                    some_key="some_value",
+                    type="TYPE",
+                    make="MAKER",
+                    model=dict(name="MODEL"),
+                    serial="SERIAL",
+                    other=1,
+                    directory=newdir2)
+    inventory.add_asset(spec)
     inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
     asset = inventory.get_item(asset_file)
@@ -528,14 +543,14 @@ def test_rename_directory(repo: OnyoRepo) -> None:
     newdir2 = newdir1 / "new"
     emptydir = newdir1 / "empty"
     asset_file = newdir2 / "asset_file"
-    asset = Item(
-        some_key="some_value",
-        type="TYPE",
-        make="MAKER",
-        model=dict(name="MODEL"),
-        serial="SERIAL",
-        other=1,
-        directory=newdir2)
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     type="TYPE",
+                     make="MAKER",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL",
+                     other=1,
+                     directory=newdir2)
     inventory.add_asset(asset)
     inventory.add_directory(Item(emptydir, repo=repo))
     inventory.commit("First asset added")
@@ -587,13 +602,13 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
 
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Item(
-        some_key="some_value",
-        other=1,
-        type="TYPE",
-        make="MAKE",
-        model=dict(name="MODEL"),
-        serial="SERIAL")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other=1,
+                     type="TYPE",
+                     make="MAKE",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL")
     asset["onyo.path.absolute"] = asset_dir_path
     asset["onyo.is.directory"] = True
     inventory.add_asset(asset)
@@ -644,12 +659,13 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     inventory.add_directory(Item(dir_path, repo=repo))
     inventory.commit("New inventory dir")
 
-    asset = Item(some_key="some_value",
-                 other=1,
-                 type="TYPE1",
-                 make="MAKE1",
-                 model=dict(name="MODEL1"),
-                 serial="1X2")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other=1,
+                     type="TYPE1",
+                     make="MAKE1",
+                     model=dict(name="MODEL1"),
+                     serial="1X2")
     asset["onyo.path.absolute"] = dir_path
     asset["onyo.is.directory"] = True
     expected_name = inventory.generate_asset_name(asset)
@@ -663,7 +679,12 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
     assert num_operations(inventory, 'rename_directories') == 1
     operands = [op.operands for op in inventory.operations]
     assert all(isinstance(o, tuple) for o in operands)
-    assert (asset,) in operands
+
+    item_operands = [op[0] for op in operands if isinstance(op[0], Item)]
+    assert len(item_operands) == 1
+    assert item_operands[0].equal_content(asset)
+    assert item_operands[0]["onyo.path.absolute"] == expected_path
+
     assert (dir_path, expected_path) in operands
 
     # nothing done on disc yet
@@ -709,17 +730,18 @@ def test_add_asset_dir(repo: OnyoRepo) -> None:
 
 def test_add_dir_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
-    asset = Item(
-        some_key="some_value",
-        other=1,
-        type="TYPE1",
-        make="MAKE1",
-        model=dict(name="MODEL1"),
-        serial="1X2",
-        directory=inventory.root)
-    inventory.add_asset(asset)
+    spec = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                    some_key="some_value",
+                    other=1,
+                    type="TYPE1",
+                    make="MAKE1",
+                    model=dict(name="MODEL1"),
+                    serial="1X2",
+                    directory=inventory.root)
+    inventory.add_asset(spec)
     inventory.commit("Add an asset.")
     asset_path = inventory.root / "TYPE1_MAKE1_MODEL1.1X2"
+    asset = inventory.get_item(asset_path)
 
     # Add directory aspect to existing asset:
     inventory.add_directory(asset)
@@ -760,21 +782,22 @@ def test_add_dir_asset(repo: OnyoRepo) -> None:
 def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Item(
-        some_key="some_value",
-        other=1,
-        type="TYPE",
-        make="MAKE",
-        model=dict(name="MODEL"),
-        serial="SERIAL")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other=1,
+                     type="TYPE",
+                     make="MAKE",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL")
     asset["onyo.path.absolute"] = asset_dir_path
     asset["onyo.is.directory"] = True
     inventory.add_asset(asset)
-    asset_within = Item(type="a",
-                        make="b",
-                        model=dict(name="c"),
-                        serial="1A",
-                        directory=asset_dir_path)
+    asset_within = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                            type="a",
+                            make="b",
+                            model=dict(name="c"),
+                            serial="1A",
+                            directory=asset_dir_path)
     inventory.add_asset(asset_within)
     inventory.commit("Whatever")
 
@@ -823,21 +846,22 @@ def test_remove_asset_dir_directory(repo: OnyoRepo) -> None:
 def test_remove_asset_dir_asset(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Item(
-            some_key="some_value",
-            other=1,
-            type="TYPE",
-            make="MAKE",
-            model=dict(name="MODEL"),
-            serial="SERIAL")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other=1,
+                     type="TYPE",
+                     make="MAKE",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL")
     asset["onyo.path.absolute"] = asset_dir_path
     asset["onyo.is.directory"] = True
     inventory.add_asset(asset)
-    asset_within = Item(type="a",
-                        make="b",
-                        model=dict(name="c"),
-                        serial="1A",
-                        directory=asset_dir_path)
+    asset_within = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                            type="a",
+                            make="b",
+                            model=dict(name="c"),
+                            serial="1A",
+                            directory=asset_dir_path)
     inventory.add_asset(asset_within)
     inventory.commit("Whatever")
     inventory.remove_asset(asset)
@@ -887,12 +911,13 @@ def test_move_asset_dir(repo: OnyoRepo) -> None:
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
     dir_path = inventory.root / "destination"
-    asset = Item(some_key="some_value",
-                 other=1,
-                 type="TYPE",
-                 make="MAKE",
-                 model=dict(name="MODEL"),
-                 serial="SERIAL")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other=1,
+                     type="TYPE",
+                     make="MAKE",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL")
     asset["onyo.path.absolute"] = asset_dir_path
     asset["onyo.is.directory"] = True
     inventory.add_asset(asset)
@@ -974,12 +999,13 @@ def test_rename_asset_dir(repo: OnyoRepo) -> None:
 
     inventory = Inventory(repo)
     asset_dir_path = inventory.root / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Item(some_key="some_value",
-                 other=1,
-                 type="TYPE",
-                 make="MAKE",
-                 model=dict(name="MODEL"),
-                 serial="SERIAL")
+    asset = ItemSpec(alias_map=PSEUDOKEY_ALIASES,
+                     some_key="some_value",
+                     other=1,
+                     type="TYPE",
+                     make="MAKE",
+                     model=dict(name="MODEL"),
+                     serial="SERIAL")
     asset["onyo.path.absolute"] = asset_dir_path
     asset["onyo.is.directory"] = True
     inventory.add_asset(asset)
@@ -1043,7 +1069,7 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
     newdir1 = repo.git.root / "somewhere"
     newdir2 = newdir1 / "new"
     asset_path = newdir2 / "TYPE_MAKE_MODEL.SERIAL"
-    asset = Item(
+    asset = ItemSpec(
         {"some_key": "some_value",
          "type": "TYPE",
          "make": "MAKE",
@@ -1053,7 +1079,8 @@ def test_modify_asset_dir(repo: OnyoRepo) -> None:
          "onyo": {"is": {"asset": True,
                          "directory": True},
                   "path": {"absolute": asset_path}}
-         }
+         },
+        alias_map=PSEUDOKEY_ALIASES,
     )
     inventory.add_asset(asset)
     inventory.commit("asset dir added")
