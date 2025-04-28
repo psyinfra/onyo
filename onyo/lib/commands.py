@@ -671,7 +671,7 @@ def onyo_mkdir(inventory: Inventory,
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_directories']]))
                 message = inventory.repo.generate_commit_subject(
-                    format_string="mkdir [{len}]: {operation_paths}\n",
+                    format_string="mkdir [{len}]: {operation_paths}",
                     len=len(operation_paths),
                     operation_paths=sorted(operation_paths)) + (message or "")
 
@@ -820,10 +820,10 @@ def onyo_mv(inventory: Inventory,
 
                     inline_diff = inline_path_diff(operation_paths[0], dest)
                     ln = len(operation_paths)
-                    message = f"{subject_prefix} [{ln}]: {inline_diff}\n" + (message or "")
+                    message = f"{subject_prefix} [{ln}]: {inline_diff}\n\n" + (message or "")
                 else:  # multi-source moves
                     message = inventory.repo.generate_commit_subject(
-                        format_string="{prefix} [{ln}]: {operation_paths} -> {destination}\n",
+                        format_string="{prefix} [{ln}]: {operation_paths} -> {destination}",
                         prefix=subject_prefix,
                         ln=len(operation_paths),
                         operation_paths=operation_paths,
@@ -968,7 +968,7 @@ def onyo_new(inventory: Inventory,
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['new_assets']]))
                 message = inventory.repo.generate_commit_subject(
-                    format_string="new [{len}]: {operation_paths}\n",
+                    format_string="new [{len}]: {operation_paths}",
                     len=len(operation_paths),
                     operation_paths=operation_paths) + (message or "")
             inventory.commit(message=message)
@@ -1034,7 +1034,7 @@ def onyo_rm(inventory: Inventory,
                     if op.operator == OPERATIONS_MAPPING['remove_assets'] or
                     op.operator == OPERATIONS_MAPPING['remove_directories']]))
                 message = inventory.repo.generate_commit_subject(
-                    format_string="rm [{len}]: {operation_paths}\n",
+                    format_string="rm [{len}]: {operation_paths}",
                     len=len(operation_paths),
                     operation_paths=operation_paths) + (message or "")
             inventory.commit(message)
@@ -1093,7 +1093,7 @@ def onyo_rmdir(inventory: Inventory,
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['remove_directories']]))
                 message = inventory.repo.generate_commit_subject(
-                    format_string="rmdir [{len}]: {operation_paths}\n",
+                    format_string="rmdir [{len}]: {operation_paths}",
                     len=len(operation_paths),
                     operation_paths=sorted(operation_paths)) + (message or "")
 
@@ -1175,7 +1175,7 @@ def onyo_set(inventory: Inventory,
                     for op in inventory.operations
                     if op.operator == OPERATIONS_MAPPING['modify_assets']]))
                 message = inventory.repo.generate_commit_subject(
-                    format_string="set [{len}] ({keys}): {operation_paths}\n",
+                    format_string="set [{len}] ({keys}): {operation_paths}",
                     len=len(operation_paths),
                     keys=list(keys.keys()),
                     operation_paths=operation_paths) + (message or "")
@@ -1451,7 +1451,7 @@ def onyo_unset(inventory: Inventory,
                     if op.operator == OPERATIONS_MAPPING[
                         'modify_assets']]))
                 message = inventory.repo.generate_commit_subject(
-                    format_string="unset [{len}] ({keys}): {operation_paths}\n",
+                    format_string="unset [{len}] ({keys}): {operation_paths}",
                     len=len(operation_paths),
                     keys=keys,
                     operation_paths=operation_paths) + (message or "")
