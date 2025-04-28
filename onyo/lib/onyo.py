@@ -339,7 +339,7 @@ class OnyoRepo(object):
 
         message = format_string.format(**shortened_kwargs)
         if len(message) < max_length:
-            return message
+            return message + '\n\n'
 
         # shorter message: highest level (e.g. dir or asset name)
         shortened_kwargs = {}
@@ -353,7 +353,7 @@ class OnyoRepo(object):
                 shortened_kwargs[key] = str(value)
 
         message = format_string.format(**shortened_kwargs)
-        return message
+        return message + '\n\n'
 
     @property
     def asset_paths(self) -> list[Path]:
