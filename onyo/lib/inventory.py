@@ -951,7 +951,7 @@ class Inventory(object):
         if num < 1:
             raise ValueError('The number of faux serial numbers must be >= 1.')
 
-        alphanum = string.ascii_lowercase + string.digits
+        alphanum = string.ascii_uppercase + string.digits
         faux_serials = set()
         # TODO: This split actually puts the entire filename in the set if there's no "faux".
         repo_faux_serials = {str(x.name).split('faux')[-1] for x in self.repo.asset_paths}
