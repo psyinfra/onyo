@@ -29,13 +29,14 @@ jobs:
         python -m pip install --upgrade pip
         # get proper PyICU (for natsort)
         sudo apt-get install pkg-config libicu-dev
+        pip install uv
         pip install --no-binary=:pyicu: pyicu
         # install onyo
-        pip install -e ".[tests]"
+        uv pip install --system -e ".[tests]"
         sudo apt-get install -y zsh
     - name: ruff linting
       run: |
-        ruff check
+        uvx ruff check
     - name: Pyre type-checking
       run: |
         pyre --noninteractive check
