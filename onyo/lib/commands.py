@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import subprocess
+from copy import deepcopy
 from pathlib import Path
 from typing import (
     ParamSpec,
@@ -42,11 +43,13 @@ from onyo.lib.items import (
 )
 from onyo.lib.inventory import Inventory, OPERATIONS_MAPPING
 from onyo.lib.onyo import OnyoRepo
-from onyo.lib.pseudokeys import PSEUDO_KEYS
+from onyo.lib.pseudokeys import (
+    PSEUDOKEY_ALIASES,
+    PSEUDO_KEYS,
+)
 from onyo.lib.ui import ui
 from onyo.lib.utils import (
     deduplicate,
-    write_asset_to_file,
 )
 
 if TYPE_CHECKING:
@@ -194,9 +197,9 @@ def onyo_config(inventory: Inventory,
 
 
 def _edit_asset(inventory: Inventory,
-                asset: Item,
+                asset: ItemSpec,
                 operation: Callable,
-                editor: str | None) -> Item:
+                editor: str | None) -> ItemSpec:
     r"""Edit an ``asset`` (as a temporary file) with ``editor``.
 
     A helper for ``onyo_edit()`` and ``onyo_new(edit=True)``.
@@ -240,7 +243,10 @@ def _edit_asset(inventory: Inventory,
     disallowed_keys.remove('onyo.path.parent')
 
     tmp_path = get_temp_file()
-    write_asset_to_file(asset, path=tmp_path)
+    # stringify Paths ?? We need to deal with ItemSpec (via new) and Item (via edit) here.
+    # -> different .yaml() defaults WRT exclude=
+    # -> Do we want to dump settable pseudokeys here?
+    tmp_path.write_text(asset.yaml(exclude=list(reserved_keys.keys())))
 
     # store operations queue length in case we need to roll-back
     queue_length = len(inventory.operations)
@@ -836,10 +842,11 @@ def onyo_mv(inventory: Inventory,
 
 @raise_on_inventory_state
 def onyo_new(inventory: Inventory,
-             directory: Path | None = None,
-             template: Path | str | None = None,
-             clone: Path | None = None,
+             base: Path | None = None,
+             template: list[Path] | None = None,
+             clone: list[Path] | None = None,
              keys: list[Dict | UserDict] | None = None,
+             recursive: bool = False,
              edit: bool = False,
              message: str | None = None,
              auto_message: bool | None = None) -> None:
@@ -861,19 +868,20 @@ def onyo_new(inventory: Inventory,
     ----------
     inventory
         The Inventory in which to create new assets.
-    directory
-        The directory to create new asset(s) in. This cannot be used with the
-        ``directory`` Reserved Key.
-
-        If `None` and the ``directory`` Reserved Key is not found, it defaults
-        to CWD.
+    base
+        The directory to create new asset(s) in. All relative path specifications
+        are interpreted relative to this base.
+        Defaults to CWD.
     template
-        Path to a template to populate the contents of new assets.
-
+        List of Paths to template(s) to populate the contents of new assets.
         Relative paths are resolved relative to ``.onyo/templates``.
+
+        TODO: - mention layering
+              - mention 1-or-N rule
+              - mention directory templates and ``recursive``
+              - mention multidoc YAML
     clone
-        Path of an asset to clone. Cannot be used with the ``template`` argument
-        nor the ``template`` Reserved Key.
+        List of inventory paths to clone. Cannot be used with the ``template`` argument.
     keys
         List of dictionaries with key/value pairs to set in the new assets.
 
@@ -898,62 +906,104 @@ def onyo_new(inventory: Inventory,
         If information is invalid, missing, or contradictory.
     """
 
-    from copy import deepcopy
+    from onyo.lib.filters import Filter
+    from onyo.lib.utils import yaml_to_dict_multi
+    from onyo.lib.items import ItemSpec
 
     auto_message = inventory.repo.auto_message if auto_message is None else auto_message
-
     keys = keys or []
+    template = template or []
+    clone = clone or []
+
     if not any([keys, edit, template, clone]):
         raise ValueError("Key-value pairs or a template/clone-target must be given.")
     if template and clone:
         raise ValueError("'template' and 'clone' options are mutually exclusive.")
 
+    base = base or Path.cwd()
+    base = base.resolve()
+    if not base.is_relative_to(inventory.root):
+        raise ValueError(f"'base' ({str(base)}) outside inventory.")
+
     # get editor early in case it fails
     editor = inventory.repo.get_editor() if edit else ""
 
-    # Note that `keys` can be empty.
-    specs = deepcopy(keys)
+    specs = []
+    for t in template:
+        for spec in inventory.get_templates(t, recursive=recursive):
+            specs.append(spec)
+    for c in clone:
+        yaml_docs = inventory_path_to_yaml(inventory=inventory,
+                                           path=c,
+                                           recursive=recursive)
+        specs.extend([ItemSpec(d, alias_map=PSEUDOKEY_ALIASES) for d in yaml_to_dict_multi(yaml_docs)])
 
-    # TODO: These validations could probably be more efficient and neat.
-    #       For ex., only first dict is actually relevant. It came from --key,
-    #       where everything after the first one comes from repetition (However, what about python interface where one
-    #       could pass an arbitrary list of dicts? -> requires consistency check
-    if any('directory' in d.keys() for d in specs):
-        if directory:
-            raise ValueError("Can't use '--directory' option and specify 'directory' key.")
+    # Merge `specs` and `keys`, applying 1-or-N rule across options:
+    num_specs = len(specs)
+    num_keys = len(keys)
+    if num_keys > 1 and num_specs > 1 and num_specs != num_keys:
+        raise InvalidArgumentError(f"Number of items mismatch. 'keys' option wants to update"
+                                   f" {len(keys)} items, but {len(specs)} are given.")
+    if num_specs == 0 and num_keys > 0:
+        # 'keys' option is the only one providing any content.
+        # Create ItemSpec(s) and annotate necessary pseudokeys.
+        for item in keys:
+            # keys may come in as ItemSpec already.
+            # Instantiate new ItemSpecs with (repo-specific) alias mapping:
+            spec = ItemSpec(alias_map=PSEUDOKEY_ALIASES)
+            spec.update(item)
+            if "onyo.is.asset" not in spec.keys():
+                spec["onyo.is.asset"] = any(not k.startswith("onyo.") for k in spec.keys())
+            if "onyo.path.parent" not in spec.keys():
+                spec["onyo.path.parent"] = "."
+            specs.append(spec)
+    elif num_specs == 1 and num_keys > 1:
+        # one `spec` that is updated by different `keys`:
+        updated_specs = []
+        for k in keys:
+            spec = deepcopy(specs[0])
+            spec.update(k)
+            updated_specs.append(spec)
+        specs = updated_specs
+    elif num_specs > 1 and num_keys == 1:
+        # multiple specs that need to be updated form the same dict in `keys`
+        for spec in specs:
+            spec.update(keys[0])
     else:
-        # default
-        directory = directory or Path.cwd()
-    if template and any('template' in d.keys() for d in specs):
-        raise ValueError("Can't use 'template' key and 'template' option.")
-    if clone and any('template' in d.keys() for d in specs):
-        raise ValueError("Can't use 'clone' key and 'template' option.")
+        # same number of `specs` and `keys`; update pair-wise
+        for spec, k in zip(specs, keys):
+            spec.update(k)
 
-    # Generate actual assets:
+    # Resolve dynamic parts of specs:
+    for spec in specs:
+        if spec["onyo.is.asset"]:   # TODO: Is that guaranteed to be a bool? Check yaml_to_dict_multi
+            spec["onyo.path.name"] = inventory.generate_asset_name(spec)
+    for spec in specs:
+        if (((isinstance(spec["onyo.path.parent"], str) and
+                (not spec["onyo.path.parent"].startswith("<?") or not spec["onyo.path.parent"].endswith(">")))) or
+                isinstance(spec["onyo.path.parent"], Path)):
+            spec["onyo.path.parent"] = (base / spec["onyo.path.parent"]).relative_to(inventory.root)
+            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
+    for spec in specs:
+        if (isinstance(spec["onyo.path.parent"], str) and
+                (spec["onyo.path.parent"].startswith("<?") and spec["onyo.path.parent"].endswith(">"))):
+            filter_ = Filter(spec["onyo.path.parent"][2:-1])
+            matches = [s for s in specs if filter_.match(s)]
+            assert len(matches) == 1
+            spec["onyo.path.parent"] = matches[0]["onyo.path.relative"]
+            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
+
     if edit and not specs:
-        # Special case: No asset specification defined via `keys`, but we have `edit`.
-        # This implies a single asset, starting with a (possibly empty) template.
-        specs = [{}]
+        # Nothing but `edit` was given. Create one empty ItemSpec to edit.
+        spec = ItemSpec(alias_map=PSEUDOKEY_ALIASES)
+        spec["onyo.path.parent"] = base
+        specs.append(spec)
 
     for spec in specs:
-        # 1. Unify directory specification
-        directory = Path(spec.get('directory', directory))
-        if not directory.is_absolute():
-            directory = inventory.root / directory
-        spec['directory'] = directory
-        # 2. start from template
-        if clone:
-            asset = inventory.get_item(clone)
-        else:
-            t = spec.pop('template', None) or template
-            asset = inventory.get_templates(Path(t) if t else None).__next__()
-        # 3. fill in asset specification
-        asset.update(spec)
-        # 4. (try to) add to inventory
         if edit:
-            _edit_asset(inventory, asset, inventory.add_asset, editor)
+            _edit_asset(inventory, spec, inventory.add_asset, editor)
         else:
-            inventory.add_asset(asset)
+            inventory.add_asset(spec)
 
     if inventory.operations_pending():
         if not edit:

@@ -296,30 +296,3 @@ def inventory_path_to_yaml(inventory: Inventory,
 
     # dump YAML
     return ''.join([i.yaml(exclude=[]) for i in items])
-
-def iamyourfather(inventory: Inventory,
-                  yaml_stream: str,
-                  base: Path | None = None) -> list[Item]:
-
-    from onyo.lib.utils import yaml_to_dict_multi
-    from onyo.lib.filters import Filter
-    from onyo.lib.items import Item
-
-    specs = [d for d in yaml_to_dict_multi(yaml_stream)]
-    for spec in specs:
-        if spec["onyo.is.asset"]:
-            spec["onyo.path.name"] = inventory.generate_asset_name(spec)
-    for spec in specs:
-        if not spec["onyo.path.parent"].startswith("<?") or not spec["onyo.path.parent"].endswith(">"):
-            spec["onyo.path.parent"] = Path(spec["onyo.path.parent"])
-            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
-    for spec in specs:
-        if isinstance(spec["onyo.path.parent"], str) and spec["onyo.path.parent"].startswith("<?") and spec["onyo.path.parent"].endswith(">"):
-            filter_ = Filter(spec["onyo.path.parent"][2:-1])
-            matches = [s for s in specs if filter_.match(s)]
-            assert len(matches) == 1
-            spec["onyo.path.parent"] = matches[0]["onyo.path.relative"]
-            spec["onyo.path.relative"] = spec["onyo.path.parent"] / spec["onyo.path.name"]
-
-            # maybe put Filter.match in here and search for callables when resolving.
-    return [Item(spec) for spec in specs]

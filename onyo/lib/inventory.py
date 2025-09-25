@@ -42,7 +42,10 @@ from onyo.lib.executors import (
     exec_rename_directory,
     generic_executor,
 )
-from onyo.lib.items import Item
+from onyo.lib.items import (
+    Item,
+    ItemSpec,
+)
 from onyo.lib.onyo import OnyoRepo
 from onyo.lib.pseudokeys import PSEUDO_KEYS
 from onyo.lib.recorders import (
@@ -347,7 +350,7 @@ class Inventory(object):
         return op
 
     def add_asset(self,
-                  asset: Item) -> list[InventoryOperation]:
+                  asset: ItemSpec) -> list[InventoryOperation]:
         r"""Create an asset.
 
         Parameters
@@ -367,6 +370,8 @@ class Inventory(object):
         operations = []
         path = None
 
+        asset = Item(asset, repo=self.repo)
+
         self.raise_empty_keys(asset)
         # ### generate stuff - TODO: function - reuse in modify_asset
         if asset.get('serial') == 'faux':
@@ -381,7 +386,7 @@ class Inventory(object):
         if path is None:
             # Otherwise, a 'onyo.path.parent' to create the asset in is expected as with
             # any other asset.
-            path = asset['onyo.path.absolute'] = asset['onyo.path.parent'] / self.generate_asset_name(asset)
+            path = asset['onyo.path.absolute'] = self.root / asset['onyo.path.parent'] / self.generate_asset_name(asset)
         if not path:
             raise ValueError("Unable to determine asset path")
         assert isinstance(asset, Item)
@@ -400,7 +405,10 @@ class Inventory(object):
         if asset.get('onyo.is.directory', False):
             if self.repo.is_inventory_dir(path):
                 # We want to turn an existing dir into an asset dir.
-                operations.extend(self.rename_directory(asset, self.generate_asset_name(asset)))
+                operations.extend(self.rename_directory(
+                    self.get_item(path),  # get the existing dir, rather than the to-be-asset
+                    self.generate_asset_name(asset))
+                )
                 # Temporary hack: Adjust the asset's path to the renamed one.
                 # TODO: Actual solution: This entire method must not be based on the dict's 'onyo.path.absolute', but
                 #       'onyo.path.parent' + generated name. This ties in with pulling parts of `onyo_new` in here.
@@ -864,7 +872,7 @@ class Inventory(object):
 
     def get_templates(self,
                       template: Path | None,
-                      recursive: bool = False) -> Generator[Item, None, None]:
+                      recursive: bool = False) -> Generator[ItemSpec, None, None]:
         r"""Get templates as Items.
 
         template:
@@ -873,16 +881,10 @@ class Inventory(object):
         recursive:
             Recursive into template directories.
         """
-        # TODO: This function should pass on ItemSpecs, but `new` can't deal with that yet.
-        for d in self.repo.get_templates(template, recursive=recursive):
-            # TODO: The following is currently necessary, b/c `Item(ItemSpec)` has a bug
-            #       that kills pseudokeys.
-            item = Item(repo=self.repo)
-            item.update(d)
-            yield item
+        yield from self.repo.get_templates(template, recursive=recursive)
 
     def generate_asset_name(self,
-                            asset: Item) -> str:
+                            asset: ItemSpec) -> str:
         r"""Generate an ``asset``'s file or directory name.
 
         The asset name format is defined by the configuration
@@ -964,7 +966,7 @@ class Inventory(object):
         return faux_serials
 
     def raise_required_key_empty_value(self,
-                                       asset: Item) -> None:
+                                       asset: ItemSpec) -> None:
         r"""Raise if ``asset`` has an empty value for a required key.
 
         A validation helper. This checks only asset name keys.
@@ -986,7 +988,7 @@ class Inventory(object):
                              f" must not have empty values.")
 
     def raise_empty_keys(self,
-                         asset: Item) -> None:
+                         asset: ItemSpec) -> None:
         r"""Raise if ``asset`` has empty keys.
 
         A validation helper.

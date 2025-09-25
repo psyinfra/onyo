@@ -368,6 +368,7 @@ def test_new_with_flags_edit_keys_template(repo: OnyoRepo,
     assert ret.returncode == 1
 
     # create asset with --edit, --template and --keys
+
     ret = subprocess.run(['onyo', '--yes', 'new', '--edit',
                           '--template', template, '--directory', directory, '--keys'] + key_values,
                          capture_output=True, text=True)

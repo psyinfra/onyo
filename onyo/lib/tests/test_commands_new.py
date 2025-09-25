@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -12,11 +13,6 @@ from . import check_commit_msg
 from ..commands import onyo_new
 
 
-# TODO: Asset dirs!
-# TODO: Commit message!
-# TODO: Changed name scheme config
-
-
 def test_onyo_new_invalid(inventory: Inventory) -> None:
     # no arguments is insufficient
     pytest.raises(ValueError, onyo_new, inventory)
@@ -27,8 +23,8 @@ def test_onyo_new_invalid(inventory: Inventory) -> None:
     # clone and template are mutually exclusive
     pytest.raises(ValueError, onyo_new, inventory,
                   keys=[{'serial': 'faux'}],
-                  clone=inventory.root / "somewhere" / "nested" / "TYPE_MAKE_MODEL.SERIAL",
-                  template='laptop.example')
+                  clone=[inventory.root / "somewhere" / "nested" / "TYPE_MAKE_MODEL.SERIAL"],
+                  template=[Path('laptop.example')])
     assert inventory.repo.git.is_clean_worktree()
 
 
@@ -49,7 +45,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
              ]
     old_hexsha = inventory.repo.git.get_hexsha()
     onyo_new(inventory,
-             directory=inventory.root / "empty",
+             base=inventory.root / "empty",
              keys=specs)  # pyre-ignore[6]
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
@@ -62,7 +58,7 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
         assert new_asset.get("onyo.path.absolute") == p
         assert all(new_asset[k] == s[k] for k in s.keys())
 
-    # faux serial and 'directory' key
+    # faux serial and 'directory' key (alias to onyo.path.parent)
     specs = [ItemSpec({'type': 'A',
                        'make': 'faux',
                        'model': {'name': 'serial'},
@@ -74,13 +70,6 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
                        'directory': 'completely/elsewhere',
                        'serial': 'faux'})
              ]
-    # 'directory' is in conflict with `directory` being given:
-    pytest.raises(ValueError,
-                  onyo_new,
-                  inventory,
-                  directory=inventory.root / "empty",
-                  keys=specs)
-    # w/o `directory` everything is fine:
     onyo_new(inventory,
              keys=specs)  # pyre-ignore[6]
     # another commit added
@@ -114,9 +103,10 @@ def test_onyo_new_keys(inventory: Inventory) -> None:
     specs = [ItemSpec({'type': 'flavor',
                        'make': 'manufacturer',
                        'model': {'name': 'exquisite'},
-                       'template': 'laptop.example',
                        'serial': '1234'})]
+
     onyo_new(inventory,
+             template=[Path('laptop.example')],
              keys=specs)  # pyre-ignore[6]
     # another commit added
     assert inventory.repo.git.get_hexsha('HEAD~3') == old_hexsha
@@ -147,7 +137,7 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
     old_hexsha = inventory.repo.git.get_hexsha()
 
     onyo_new(inventory,
-             directory=new_directory,
+             base=new_directory,
              keys=specs)  # pyre-ignore[6]
 
     # exactly one commit added
@@ -171,18 +161,18 @@ def test_onyo_new_creates_directories(inventory: Inventory) -> None:
 
 @pytest.mark.ui({'yes': True})
 def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
-    directory = inventory.root / "edited"
+    base = inventory.root / "edited"
     monkeypatch.setenv('EDITOR', "printf 'key: value  #w/ comment' >>")
 
     specs = [{'model': {'name': 'MODEL'},
-              'make': 'MAKER',
+              'make': 'MAKE',
               'type': 'TYPE',
               'serial': 'totally_random'}]
     onyo_new(inventory,
              keys=specs,  # pyre-ignore[6]
-             directory=directory,
+             base=base,
              edit=True)
-    expected_path = directory / "TYPE_MAKER_MODEL.totally_random"
+    expected_path = base / "TYPE_MAKE_MODEL.totally_random"
     assert inventory.repo.is_asset_path(expected_path)
     assert expected_path in inventory.repo.git.files
     asset_content = inventory.get_item(expected_path)
@@ -190,24 +180,25 @@ def test_onyo_new_edit(inventory: Inventory, monkeypatch) -> None:
     assert 'key: value  #w/ comment' in expected_path.read_text()
     assert 'None' not in list(inventory.get_history(expected_path, n=1))[0]['message']
     # file already exists:
-    edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\n"
+    edit_str = "model:\n  name: MODEL\nmake: MAKE\ntype: TYPE\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     specs = [{'serial': 'totally_random'}]
 
-    pytest.raises(ValueError, onyo_new, inventory, keys=specs, directory=directory, edit=True)
+    pytest.raises(ValueError, onyo_new, inventory, keys=specs, base=base, edit=True)
+
 
     # missing required fields:
     monkeypatch.setenv('EDITOR', "printf 'key: value' >>")
-    pytest.raises(ValueError, onyo_new, inventory, directory=directory, edit=True)
+    pytest.raises(ValueError, onyo_new, inventory, base=base, edit=True)
 
     # content should be exactly as expected
-    edit_str = "model:\n  name: MODEL\nmake: MAKER\ntype: TYPE\nserial: 8675309\n"
+    edit_str = "model:\n  name: MODEL\nmake: MAKE\ntype: TYPE\nserial: 8675309\n"
     monkeypatch.setenv('EDITOR', f"printf '{edit_str}' >>")
     onyo_new(inventory,
-             directory=directory,
+             base=base,
              edit=True)
     expected_content = '---\n' + edit_str
-    expected_path = directory / "TYPE_MAKER_MODEL.8675309"
+    expected_path = base / "TYPE_MAKE_MODEL.8675309"
     assert expected_content == expected_path.read_text()
     assert 'None' not in list(inventory.get_history(expected_path, n=1))[0]['message']
 
@@ -222,8 +213,8 @@ def test_onyo_new_clones(inventory: Inventory) -> None:
     onyo_new(inventory,
              keys=[{'serial': 'ANOTHER'},
                    {'serial': 'whatever'}],
-             clone=existing_asset_path,
-             directory=asset_dir)
+             clone=[existing_asset_path],
+             base=asset_dir)
 
     # exactly one commit added
     assert inventory.repo.git.get_hexsha('HEAD~1') == old_hexsha
