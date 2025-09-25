@@ -68,7 +68,7 @@ def unset(args: argparse.Namespace) -> None:
     configuration option) cannot be unset.
 
     The contents of all modified assets are checked for validity before
-    committing. If problems are found, Onyo will error and leave the assets
+    committing. If problems are found, Onyo errors and leaves the assets
     unmodified.
     """
 

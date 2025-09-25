@@ -22,12 +22,13 @@ args_tsv_to_yaml = {
 epilog_tsv_to_yaml = r"""
 .. rubric:: Examples
 
+print a table's contents in the YAML format:
+
 .. code:: shell
 
     $ onyo tsv-to-yaml table.tsv
 
-The resulting multi-document YAML file can be split into multiple YAML files (if
-desired) using ``csplit``.
+Split the resulting multi-document YAML output into separate YAML documents:
 
 .. code:: shell
 
@@ -37,13 +38,14 @@ desired) using ``csplit``.
 
 def tsv_to_yaml(args: argparse.Namespace) -> None:
     r"""
-    Convert a TSV file into YAML suitable to pass to ``onyo new`` and ``onyo set``.
+    Print a TSV file's contents as YAML, suitable to pass into ``onyo new`` and ``onyo set``.
 
-    The header declares the key names to be populated. The values to populate
-    documents are declared with one line per YAML document.
+    The output is printed to stdout as a multi-document YAML file, and each
+    document is separated with a ``---`` line.
 
-    The output is printed to stdout as a multiple document YAML file (each
-    document is separated by a ``---`` line).
+    The TSV file's header row declares the key names for all resulting YAML
+    documents, and each row of the table declares the values for one of the
+    YAML documents.
     """
 
     onyo_tsv_to_yaml(tsv=Path(args.tsv[0]).resolve())

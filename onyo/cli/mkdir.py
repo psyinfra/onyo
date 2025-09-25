@@ -52,11 +52,8 @@ def mkdir(args: argparse.Namespace) -> None:
     Intermediate directories are created as needed (i.e. parent and child
     directories can be created in one call).
 
-    An empty ``.anchor`` file is added to each directory, to ensure that git
-    tracks them even when empty.
-
-    If a **DIRECTORY** is already a directory or a protected path, then Onyo
-    will error and leave everything unmodified.
+    If **DIRECTORY** is already a directory or a protected path, then Onyo
+    errors and leaves everything unmodified.
     """
     dirs = [Path(d).resolve() for d in args.directory]
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))

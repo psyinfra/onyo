@@ -37,7 +37,7 @@ args_mv = {
 epilog_mv = r"""
 .. rubric:: Examples
 
-Assign an asset:
+Assign an asset to a user:
 
 .. code:: shell
 
@@ -65,10 +65,10 @@ Rename a department:
 
 def mv(args: argparse.Namespace) -> None:
     r"""
-    Move **SOURCE**\ s into the **DEST** directory, or rename **SOURCE** to **DEST**.
+    Move **SOURCE**\ s into the **DEST** directory, or rename a **SOURCE** directory to **DEST**.
 
-    If **DEST** is an Asset File, it will be converted into an Asset Directory
-    and then the **SOURCE**\ s will be moved into it.
+    If **DEST** is an Asset File it is converted into an Asset Directory and the
+    **SOURCE**\ s are moved into it.
 
     Assets cannot be renamed using ``onyo mv``. Their names are generated from
     keys in their contents. To rename a file, use ``onyo set`` or ``onyo edit``.

@@ -39,9 +39,9 @@ def init(args: argparse.Namespace) -> None:
     r"""
     Initialize an Onyo repository.
 
-    The current working directory will be initialized if neither **DIR** nor the
+    The current working directory is initialized if neither **DIR** nor the
     ``onyo -C DIR`` flag are specified. If the target directory does not exist,
-    it will be created.
+    it is created.
 
     Initialization steps are:
 
@@ -49,12 +49,12 @@ def init(args: argparse.Namespace) -> None:
       * initialize as a git repository (if it is not one already)
       * create the ``.onyo/`` directory, populate its contents, and commit
 
-    Init-ing non-empty directories and git repositories is allowed. Only the
-    ``.onyo`` directory will be committed. All other contents will be left in
-    their state.
+    Initializing non-empty directories and existing git repositories is allowed,
+    and only the ``.onyo/`` directory and its contents are committed. All other
+    contents are left in their state.
 
-    Repeatedly init-ing a repository will not alter the contents, and will exit
-    with an error.
+    Executing ``onyo init`` on an existing Onyo repository does not alter its
+    contents, and exits with an error.
     """
     target_dir = Path(args.directory).resolve() if args.directory else Path.cwd()
     OnyoRepo(target_dir, init=True)

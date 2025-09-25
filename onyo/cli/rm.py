@@ -29,7 +29,7 @@ args_rm = {
         default=False,
         action='store_true',
         help=r"""
-            Remove directories recursively including their content.
+            Remove directories and their contents recursively.
         """
     ),
 
@@ -51,6 +51,13 @@ Retire a user:
 .. code:: shell
 
     $ onyo rm --message "Bob retired; he won at bingo" admin/Bingo\ Bob/
+
+Remove a building and all of its assets:
+
+.. code:: shell
+
+    $ onyo rm --recursive --message "The great fire..." buildings/20.3/
+
 """
 
 
@@ -58,11 +65,10 @@ def rm(args: argparse.Namespace) -> None:
     r"""
     Delete **ASSET**\ s and/or **DIRECTORY**\ s.
 
-    Directories and asset directories are deleted along with their contents,
-    if the ``--recursive`` flag is set. Otherwise, fails on non-empty directories.
+    If ``--recursive`` is used, directories are deleted along with their
+    contents. Otherwise it fails on non-empty directories.
 
-    If any of the given paths are invalid, Onyo will error and delete none of
-    them.
+    If any of the given paths are invalid, Onyo errors and nothing is deleted.
     """
 
     inventory = Inventory(repo=OnyoRepo(Path.cwd(), find_root=True))
