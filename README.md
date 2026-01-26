@@ -1,3 +1,9 @@
+# Migrated to Codeberg
+
+This project is no longer developed on GitHub and has been migrated to Codeberg:
+
+https://codeberg.org/psyinfra/onyo
+
 # Onyo
 
 ![Build Status](https://github.com/psyinfra/onyo/actions/workflows/tests.yaml/badge.svg)
